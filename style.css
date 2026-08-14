@@ -611,6 +611,12 @@ p {
         1px solid #343c4a;
 }
 
+.codigo-botones {
+    display: flex;
+
+    gap: 8px;
+}
+
 .codigo-header button {
     border:
         1px solid rgba(247, 223, 30, .25);
@@ -626,6 +632,8 @@ p {
 
     border-radius: 6px;
 
+    font-size: 12.5px;
+
     transition: var(--transition);
 }
 
@@ -633,6 +641,130 @@ p {
     background: var(--yellow);
 
     color: #111;
+}
+
+.btn-ejecutar {
+    border-color:
+        rgba(69, 212, 131, .35) !important;
+
+    background:
+        rgba(69, 212, 131, .10) !important;
+
+    color: var(--green) !important;
+}
+
+.btn-ejecutar:hover {
+    background: var(--green) !important;
+
+    color: #111 !important;
+}
+
+
+/* =========================================================
+   SALIDA / CONSOLA DE EJECUCIÓN
+========================================================= */
+
+.salida {
+    border-top:
+        1px solid #343c4a;
+
+    background: #10131a;
+
+    padding: 14px 22px;
+
+    font-family:
+        Consolas,
+        "Courier New",
+        monospace;
+
+    font-size: 13px;
+
+    max-height: 260px;
+
+    overflow-y: auto;
+}
+
+.salida-linea {
+    padding: 3px 0;
+
+    white-space: pre-wrap;
+
+    word-break: break-word;
+
+    color: var(--text-secondary);
+}
+
+.salida-log {
+    color: var(--text);
+}
+
+.salida-error {
+    color: var(--red);
+}
+
+.salida-warn {
+    color: var(--yellow);
+}
+
+.salida-info {
+    color: var(--text-muted);
+
+    font-style: italic;
+}
+
+
+/* =========================================================
+   PROGRESO POR CLASE (CHECKBOX)
+========================================================= */
+
+.barra-completado {
+    margin-top: 40px;
+
+    padding-top: 24px;
+
+    border-top:
+        1px dashed var(--border-light);
+}
+
+.check-completado {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    cursor: pointer;
+
+    color: var(--text-secondary);
+
+    font-size: 14px;
+
+    user-select: none;
+}
+
+.check-completado input[type="checkbox"] {
+    width: 18px;
+
+    height: 18px;
+
+    accent-color: var(--yellow);
+
+    cursor: pointer;
+}
+
+.check-completado:hover {
+    color: var(--text);
+}
+
+
+/* Marca de completado en el sidebar */
+
+.marca-completada {
+    color: var(--green);
+
+    font-weight: 800;
+
+    margin-left: 6px;
 }
 
 pre {
@@ -789,6 +921,193 @@ code {
 
 
 /* =========================================================
+   QUIZ / PREGUNTAS MULTIPLE CHOICE
+========================================================= */
+
+.quiz {
+    margin-top: 45px;
+
+    padding-top: 30px;
+
+    border-top:
+        1px dashed var(--border-light);
+}
+
+.quiz-titulo {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-bottom: 20px;
+
+    font-size: 13px;
+
+    font-weight: 800;
+
+    letter-spacing: 1px;
+
+    text-transform: uppercase;
+
+    color: var(--yellow);
+}
+
+.quiz-pregunta {
+    background: var(--surface);
+
+    border:
+        1px solid var(--border);
+
+    border-radius: var(--radius);
+
+    padding: 22px;
+
+    margin-bottom: 16px;
+
+    transition: var(--transition);
+}
+
+.quiz-enunciado {
+    color: var(--text);
+
+    font-weight: 700;
+
+    margin-bottom: 14px;
+}
+
+.quiz-opciones {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+}
+
+.quiz-opcion {
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+
+    padding: 11px 14px;
+
+    border-radius: 9px;
+
+    border:
+        1px solid var(--border);
+
+    color: var(--text-secondary);
+
+    cursor: pointer;
+
+    transition: var(--transition);
+}
+
+.quiz-opcion:hover {
+    background: var(--surface-hover);
+
+    color: var(--text);
+
+    border-color:
+        var(--border-light);
+}
+
+.quiz-opcion input[type="radio"] {
+    width: 16px;
+
+    height: 16px;
+
+    accent-color: var(--yellow);
+
+    cursor: pointer;
+
+    flex-shrink: 0;
+}
+
+.quiz-opcion.correcta {
+    border-color: var(--green);
+
+    background:
+        rgba(69, 212, 131, .10);
+
+    color: var(--green);
+}
+
+.quiz-opcion.incorrecta {
+    border-color: var(--red);
+
+    background:
+        rgba(255, 107, 95, .10);
+
+    color: var(--red);
+}
+
+.quiz-acciones {
+    display: flex;
+
+    align-items: center;
+
+    flex-wrap: wrap;
+
+    gap: 16px;
+
+    margin-top: 22px;
+}
+
+.btn-corregir {
+    padding: 11px 18px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: var(--yellow);
+
+    color: #111;
+
+    font-weight: 800;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 5px 15px rgba(247, 223, 30, .18);
+
+    transition: var(--transition);
+}
+
+.btn-corregir:hover {
+    background: var(--yellow-light);
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 8px 22px rgba(247, 223, 30, .28);
+}
+
+.quiz-puntaje {
+    font-size: 14px;
+
+    font-weight: 800;
+
+    color: var(--text-secondary);
+}
+
+.quiz-puntaje.bien {
+    color: var(--green);
+}
+
+.quiz-puntaje.regular {
+    color: var(--yellow);
+}
+
+.quiz-puntaje.mal {
+    color: var(--red);
+}
+
+
+/* =========================================================
    RESPONSIVE
 ========================================================= */
 
@@ -885,5 +1204,15 @@ code {
         padding: 17px;
 
         font-size: 12px;
+    }
+
+    .quiz-pregunta {
+        padding: 16px;
+    }
+
+    .quiz-acciones {
+        flex-direction: column;
+
+        align-items: flex-start;
     }
 }
