@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JS Escolar Interactivo v5.2 | IPEM 146</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Librería jsPDF para generación de PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Librería pdf-lib para cifrar y proteger el PDF generado -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-editor: #0d1117;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --primary: #38bdf8;
+            --primary-hover: #0284c7;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: #334155;
+            --sidebar-width: 280px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar */
+        aside {
+            width: var(--sidebar-width);
+            background-color: var(--bg-card);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .brand {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: rgba(15, 23, 42, 0.5);
+        }
+
+        .brand h2 {
+            font-size: 1.25rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .brand span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: block;
+            margin-top: 0.25rem;
+        }
+
+        .nav-list {
+            list-style: none;
+            overflow-y: auto;
+            padding: 1rem 0;
+            flex: 1;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--primary);
+            border-left-color: var(--primary);
+        }
+
+        .nav-item i.status-icon {
+            margin-left: auto;
+            color: var(--success);
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 2.5rem;
+            max-width: 1200px;
+        }
+
+        header.top-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .header-title h1 {
+            font-size: 1.8rem;
+            color: #ffffff;
+        }
+
+        .header-title p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Barra de Progreso */
+        .progress-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.3rem;
+        }
+
+        .progress-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .progress-bar-bg {
+            width: 180px;
+            background: var(--border);
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--success);
+            transition: width 0.4s ease;
+        }
+
+        .section-card {
+            display: none;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 2rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);
+            margin-bottom: 2rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .section-card.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            color: var(--primary);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .theory-box {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 1.25rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .exercise-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .exercise-box h3 {
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .exercise-box p {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .code-playground {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .editor-container {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .editor-header {
+            background: #1e1e1e;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2d2d2d;
+        }
+
+        textarea.code-editor {
+            width: 100%;
+            height: 180px;
+            background-color: var(--bg-editor);
+            color: #4ec9b0;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            padding: 1rem;
+            border: none;
+            outline: none;
+            resize: vertical;
+            line-height: 1.5;
+            tab-size: 4;
+        }
+
+        .console-output {
+            background: #000;
+            color: #10b981;
+            font-family: 'Fira Code', monospace;
+            padding: 1rem;
+            border-radius: 8px;
+            min-height: 80px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        button.btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #0f172a;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            color: white;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-secondary {
+            background: #475569;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #334155;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        /* Export Bar */
+        .export-bar {
+            background: var(--bg-card);
+            padding: 1.25rem 2rem;
+            border-top: 1px solid var(--border);
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            left: var(--sidebar-width);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 90;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.3);
+        }
+
+        .export-info {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .student-inputs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            background: rgba(15, 23, 42, 0.4);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .input-group label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .input-group input {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            aside { width: 70px; }
+            aside .brand h2 span, aside .nav-item span { display: none; }
+            main { margin-left: 70px; padding: 1rem; }
+            .export-bar { left: 70px; }
+            .student-inputs { flex-direction: column; align-items: stretch; }
+            header.top-header { flex-direction: column; align-items: flex-start; }
+            .progress-wrapper { align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar Navegación -->
+    <aside>
+        <div class="brand">
+            <h2><i class="fa-solid fa-code"></i> <span>IPEM 146</span></h2>
+            <span>JavaScript Práctico v5.2</span>
+        </div>
+        <ul class="nav-list" id="navList">
+            <!-- Renderizado dinámicamente -->
+        </ul>
+    </aside>
+
+    <!-- Contenido Principal -->
+    <main>
+        <header class="top-header">
+            <div class="header-title">
+                <h1 id="currentTitle">Cargando Módulo...</h1>
+                <p>Profesor J. Pantaleo — Plataforma Escolar de Entrenamiento JS</p>
+            </div>
+            
+            <!-- Barra de Progreso Global -->
+            <div class="progress-wrapper">
+                <span class="progress-label" id="progressText">Progreso: 0%</span>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" id="progressBar"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Datos del Alumno y Gestión de Avance -->
+        <div class="student-inputs">
+            <div class="input-group">
+                <label>Nombre y Apellido del Estudiante</label>
+                <input type="text" id="studentName" placeholder="Ej: Lucas González">
+            </div>
+            <div class="input-group">
+                <label>Curso y División</label>
+                <input type="text" id="studentCourse" placeholder="Ej: 5° Año 'A'">
+            </div>
+            
+            <!-- Botones para migrar progreso entre computadoras -->
+            <button class="btn btn-secondary" onclick="exportarProgresoJSON()" title="Guardar una copia de tu código en un archivo">
+                <i class="fa-solid fa-download"></i> Guardar Avance (.json)
+            </button>
+            <input type="file" id="importFile" style="display:none" onchange="importarProgresoJSON(event)">
+            <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()" title="Cargar tu avance previo desde un archivo">
+                <i class="fa-solid fa-upload"></i> Cargar Avance
+            </button>
+            
+            <!-- Botón de Limpieza para Rotación de Alumnos -->
+            <button class="btn btn-danger" onclick="reiniciarSesionEstudiante()" title="Borrar datos para que ingrese un nuevo alumno">
+                <i class="fa-solid fa-user-xmark"></i> Nuevo Estudiante
+            </button>
+        </div>
+
+        <!-- Contenedor dinámico de Secciones -->
+        <div id="sectionsContainer"></div>
+
+        <div style="height: 80px;"></div> <!-- Spacer para Export Bar -->
+    </main>
+
+    <!-- Barra Inferior Global para Exportar PDF -->
+    <div class="export-bar">
+        <div class="export-info">
+            <i class="fa-solid fa-file-pdf" style="color: var(--primary);"></i>
+            <span>Genera el reporte PDF protegido con los ejercicios completados.</span>
+        </div>
+        <button class="btn btn-success" onclick="exportarResultadosPDF()">
+            <i class="fa-solid fa-file-arrow-down"></i> Descargar Resueltos Protegidos (.PDF)
+        </button>
+    </div>
+
+    <script>
+        // Estructura de Datos de las 19 Secciones
+        const seccionesData = [
+            {
+                id: "sec-1",
+                icon: "fa-terminal",
+                title: "1. Introducción a JS",
+                theory: "JavaScript es el lenguaje que le da vida a la web interactiva. Nos permite reaccionar a acciones del usuario, procesar datos y actualizar la pantalla sin recargar la página.",
+                exerciseTitle: "Desafío Escolar: Cartelera Digital del IPEM 146",
+                exerciseDesc: "Crea un script que imprima en consola un mensaje oficial de bienvenida para la cartelera digital del colegio. Debe incluir tu nombre, una frase motivadora para tus compañeros y la fecha actual en un formato prolijo.",
+                initialCode: `// 1. Declarar variables para tu nombre y el mensaje motivador\n// 2. Usar console.log() para imprimir el encabezado, el nombre y el mensaje`
+            },
+            {
+                id: "sec-2",
+                icon: "fa-cube",
+                title: "2. Variables (let, const, var)",
+                theory: "Las variables son contenedores para almacenar datos. Usa 'const' para valores fijos que no cambian (como el DNI o el colegio) y 'let' para variables que cambiarán con el tiempo.",
+                exerciseTitle: "Desafío Escolar: Calculadora de Gastos del Recreo",
+                exerciseDesc: "Define constantes para el precio fijo de las empanadas y las gaseosas de la cantina escolar. Luego declara variables con 'let' para la cantidad que compraste hoy y calcula el total gastado.",
+                initialCode: `// 1. Define constantes para PRECIO_EMPANADA y PRECIO_GASEOSA\n// 2. Define variables con 'let' para empanadasCompradas y gaseosasCompradas\n// 3. Calcula el total gastado e imprímelo en consola`
+            },
+            {
+                id: "sec-3",
+                icon: "fa-font",
+                title: "3. Tipos de Datos",
+                theory: "JavaScript maneja datos Primarios: String (texto), Number (números), Boolean (true/false), Undefined y Null.",
+                exerciseTitle: "Desafío Escolar: Registro Ficha Médica Educación Física",
+                exerciseDesc: "Crea variables con diferentes tipos de datos para la ficha de deporte escolar: Nombre (string), Edad (number), Apto Médico Presentado (boolean), Observaciones (null o undefined). Muestra el tipo de dato de cada variable usando 'typeof'.",
+                initialCode: `// 1. Crea las 4 variables con sus tipos correspondientes\n// 2. Imprime el valor y el tipo de dato con typeof de cada una`
+            },
+            {
+                id: "sec-4",
+                icon: "fa-calculator",
+                title: "4. Operadores",
+                theory: "Soportamos operadores aritméticos (+, -, *, /, %), de comparación (===, !==, >, <) y lógicos (&&, ||, !).",
+                exerciseTitle: "Desafío Escolar: Sistema de Calificaciones y Asistencia",
+                exerciseDesc: "Determina si un alumno aprueba una materia. Para aprobar se necesita una nota final mayor o igual a 6 Y un porcentaje de asistencia mayor o igual al 75%. Muestra el resultado booleano usando operadores lógicos.",
+                initialCode: `// 1. Declara variables para notas, asistencia e inasistencias\n// 2. Calcula promedio y porcentaje de asistencia\n// 3. Evalúa si aprueba usando el operador lógico && e imprime el resultado`
+            },
+            {
+                id: "sec-5",
+                icon: "fa-code-branch",
+                title: "5. Condicionales",
+                theory: "Las estructuras if, else if y else ejecutan diferentes bloques de código según se cumpla una condición especificada.",
+                exerciseTitle: "Desafío Escolar: Clasificador de Beca Estudiantil",
+                exerciseDesc: "Desarrolla un algoritmo que determine la beca concedida según la nota promedio final: 9-10 (Beca Excelencia Total), 7-8.9 (Beca Parcial), 6-6.9 (Mención de Honor sin beca), menor a 6 (Refuerzo Pedagógico requerido).",
+                initialCode: `// 1. Declara una variable con el promedio del estudiante\n// 2. Usa estructuras if, else if y else para clasificar la beca según el promedio\n// 3. Muestra por consola el resultado del otorgamiento`
+            },
+            {
+                id: "sec-6",
+                icon: "fa-gears",
+                title: "6. Funciones",
+                theory: "Las funciones ejecutan bloques de código reutilizables. Pueden recibir parámetros y retornar un resultado.",
+                exerciseTitle: "Desafío Escolar: Conversor de Moneda para Viaje de Egresados",
+                exerciseDesc: "Crea una función llamada 'calcularAhorroEgresados' que reciba el monto ahorrado en pesos argentinos y el tipo de cambio oficial al dólar, devolviendo cuántos dólares equivale y si llegaron a la meta del viaje (Ej: $500 USD).",
+                initialCode: `// 1. Define la función calcularAhorroEgresados(pesosAhorrados, cotizacionDolar)\n// 2. Calcula la equivalencia en dólares\n// 3. Retorna si se alcanzó la meta ($500 USD) o cuánto falta`
+            },
+            {
+                id: "sec-7",
+                icon: "fa-layer-group",
+                title: "7. Arrays",
+                theory: "Un Array es una colección ordenada de elementos indexados secuencialmente comenzando en 0.",
+                exerciseTitle: "Desafío Escolar: Gestión de Libros Prestados de Biblioteca",
+                exerciseDesc: "Crea un array con los títulos de libros prestados a un curso. Agrega un nuevo libro prestado al final con '.push()', remueve el primer libro devuelto con '.shift()' y muestra el listado actualizado con la cantidad total.",
+                initialCode: `// 1. Crea un array con al menos 3 títulos de libros\n// 2. Agrega un nuevo libro usando .push()\n// 3. Quita el primer libro usando .shift()\n// 4. Muestra la cantidad total y la lista actualizada`
+            },
+            {
+                id: "sec-8",
+                icon: "fa-rotate",
+                title: "8. Bucles",
+                theory: "Los bucles (for, while) permiten repetir tareas sobre colecciones o según una condición determinada.",
+                exerciseTitle: "Desafío Escolar: Generador de Fixture del Torneo Interescolar",
+                exerciseDesc: "Dado un array con los nombres de 4 equipos de fútbol del colegio, utiliza un bucle 'for' anidado para generar todos los partidos posibles entre ellos sin repetir un equipo contra sí mismo.",
+                initialCode: `// 1. Crea un array con 4 equipos\n// 2. Usa un bucle 'for' anidado para cruzar todos los equipos\n// 3. Evita que un equipo juegue contra sí mismo`
+            },
+            {
+                id: "sec-9",
+                icon: "fa-id-card",
+                title: "9. Objetos Literales",
+                theory: "Los objetos agrupan propiedades (clave: valor) y métodos para modelar entidades complejas del mundo real.",
+                exerciseTitle: "Desafío Escolar: Perfil de Estudiante y Carnet Digital",
+                exerciseDesc: "Crea un objeto 'estudiante' con datos (nombre, curso, especialidad, notas) y un método 'obtenerEstado()' que imprima su ficha completa e indique si es alumno regular.",
+                initialCode: `// 1. Declara el objeto alumno con propiedades (nombre, curso, notas, etc.)\n// 2. Agrega un método interno que calcule el promedio y devuelva la condición del alumno\n// 3. Llama al método e imprime el resultado`
+            },
+            {
+                id: "sec-10",
+                icon: "fa-filter",
+                title: "10. Arrays Avanzados",
+                theory: "Métodos modernos como .map(), .filter(), .reduce() y .find() simplifican la transformación y consulta de datos.",
+                exerciseTitle: "Desafío Escolar: Auditoría de Inventario del Labo de Computación",
+                exerciseDesc: "Usa un array de objetos (computadoras con estado 'operativa' o 'mantenimiento'). Filtra las que necesitan reparación con '.filter()' y calcula la memoria RAM total en uso con '.reduce()'.",
+                initialCode: `// 1. Crea un array de objetos 'computadoras' con id, ram y estado\n// 2. Filtra las computadoras en 'mantenimiento' con .filter()\n// 3. Calcula el total de RAM operativa usando .reduce()`
+            },
+            {
+                id: "sec-11",
+                icon: "fa-quote-left",
+                title: "11. Métodos de Strings",
+                theory: "Permiten transformar texto: .toUpperCase(), .toLowerCase(), .includes(), .trim(), .slice(), .replace().",
+                exerciseTitle: "Desafío Escolar: Generador de Mails Institucionales",
+                exerciseDesc: "Crea una función que convierta el nombre completo de un nuevo alumno en un correo electrónico institucional estandarizado con el dominio '@ipem146.edu.ar' limpio de espacios y en minúsculas.",
+                initialCode: `// 1. Crea la función generarCorreoInstitucional(nombreCompleto)\n// 2. Limpia los espacios extra con .trim() y convierte a minúsculas con .toLowerCase()\n// 3. Separa el nombre y genera el mail final`
+            },
+            {
+                id: "sec-12",
+                icon: "fa-bullseye",
+                title: "12. Scope y Ámbito",
+                theory: "El Scope determina la accesibilidad de las variables: global, de función o de bloque (let/const dentro de {}).",
+                exerciseTitle: "Desafío Escolar: Sistema de Contraseña y Bloqueo de Tablero",
+                exerciseDesc: "Demuestra cómo una variable interna dentro de un bloque 'if' previene el acceso indebido desde el exterior manteniendo la seguridad del sistema de notas.",
+                initialCode: `// 1. Crea una variable global con el usuario activo\n// 2. Crea una función para validar un PIN\n// 3. Demuestra el scope creando variables locales de bloque para conceder o denegar acceso`
+            },
+            {
+                id: "sec-13",
+                icon: "fa-laptop-code",
+                title: "13. DOM (Document Object Model)",
+                theory: "El DOM representa la estructura HTML como un árbol de objetos modificables desde JavaScript.",
+                exerciseTitle: "Desafío Escolar: Dynamic DOM Banner del Colegio",
+                exerciseDesc: "Modifica el objeto DOM simulado para actualizar la marquesina principal del colegio, cambiando títulos y color de alerta según la urgencia de una notificación.",
+                initialCode: `// Objeto simulado de elemento DOM\nconst mockElement = { innerText: "", style: { color: "", backgroundColor: "" } };\n\n// 1. Crea una función actualizarAnuncioEscolar(mensaje, esUrgente)\n// 2. Modifica mockElement.innerText y mockElement.style según la urgencia`
+            },
+            {
+                id: "sec-14",
+                icon: "fa-wpforms",
+                title: "14. Formularios y Eventos",
+                theory: "Captura interacciones de usuario como 'submit', 'click', 'change' e impida comportamientos por defecto con e.preventDefault().",
+                exerciseTitle: "Desafío Escolar: Validador de Inscripción a Talleres Extracurriculares",
+                exerciseDesc: "Valida que los datos ingresados por un alumno para anotarse a un taller deportivo contengan al menos 3 caracteres en el nombre y una edad mayor o igual a 12 años.",
+                initialCode: `// 1. Crea la función validarFormularioInscripcion(datosForm)\n// 2. Revisa las condiciones de longitud de nombre y edad mínima\n// 3. Imprime los errores acumulados o el mensaje de éxito`
+            },
+            {
+                id: "sec-15",
+                icon: "fa-database",
+                title: "15. LocalStorage y Persistencia",
+                theory: "Permite almacenar datos clave-valor de forma local en el navegador web para que no se pierdan al recargar.",
+                exerciseTitle: "Desafío Escolar: Guardado de Configuración de Tema Estudiantil",
+                exerciseDesc: "Simula el guardado y recuperación del modo oscuro/claro de la app escolar del alumno usando una estructura de almacenamiento en clave-valor.",
+                initialCode: `// Objeto simulado de LocalStorage\nconst mockLocalStorage = {};\n\n// 1. Crea funciones para guardarPreferencia(clave, valor) y obtenerPreferencia(clave)\n// 2. Prueba guardar valores y leerlos de mockLocalStorage`
+            },
+            {
+                id: "sec-16",
+                icon: "fa-code",
+                title: "16. JSON y Fetch API",
+                theory: "JSON es un formato liviano de intercambio de datos. Fetch realiza peticiones HTTP asíncronas para traer información externa.",
+                exerciseTitle: "Desafío Escolar: Petición de Clima para la Excursión Escolar",
+                exerciseDesc: "Convierte un objeto de respuesta de API simulada en JSON y analiza si las condiciones climáticas son aptas para el viaje de campo educativo.",
+                initialCode: `const jsonRespuestaServidor = '{"ciudad": "Córdoba", "temperatura": 24, "clima": "Soleado", "lluviaProbabilidad": 5}';\n\n// 1. Parsea el texto JSON a Objeto JS con JSON.parse()\n// 2. Evalúa si la probabilidad de lluvia es baja para confirmar la excursión`
+            },
+            {
+                id: "sec-17",
+                icon: "fa-triangle-exclamation",
+                title: "17. Manejo de Errores (try...catch)",
+                theory: "Las cláusulas try, catch y finally permiten capturar excepciones sin interrumper drásticamente la ejecución de la aplicación.",
+                exerciseTitle: "Desafío Escolar: Validador de Carga de Promedios en Sistema",
+                exerciseDesc: "Crea una función para ingresar notas al sistema que dispare un error (throw new Error) si la nota introducida es negativa o superior a 10, capturándolo en el bloque catch.",
+                initialCode: `// 1. Crea la función registrarNotaOficial(nota)\n// 2. Usa un bloque try...catch...finally\n// 3. Dispara un error con 'throw new Error()' si la nota es inválida (< 1 o > 10)`
+            },
+            {
+                id: "sec-18",
+                icon: "fa-bolt",
+                title: "18. Eventos de Avanzada",
+                theory: "Manejo de propagación, delegación de eventos y eventos personalizados para arquitecturas complejas.",
+                exerciseTitle: "Desafío Escolar: Teclado de Turnos en Gabinete Informático",
+                exerciseDesc: "Simula un despachador de eventos donde los alumnos reservan máquinas de la sala de informática de forma concurrente con registro temporal.",
+                initialCode: `// 1. Crea una clase o estructura SalaInformatica\n// 2. Implementa un método para reservarCompu(alumno, numeroPC)\n// 3. Registra y muestra los eventos emitidos con timestamp`
+            },
+            {
+                id: "sec-19",
+                icon: "fa-flag-checkered",
+                title: "19. Proyecto Integrador Final",
+                theory: "Aplica todos los conceptos integrados: Variables, Objetos, Métodos de Array, Condicionales y Manejo de Errores.",
+                exerciseTitle: "PROYECTO FINAL: Sistema Integral de Gestión del Centro de Estudiantes",
+                exerciseDesc: "Construye el prototipo completo para registrar proyectos propuestos por los estudiantes, calcular presupuestos totales, filtrar proyectos aprobados por votación e imprimir el informe final consolidado.",
+                initialCode: `// PROYECTO FINAL\n// 1. Crea el objeto centroEstudiantes con un array 'proyectos'\n// 2. Crea métodos para agregarProyecto() y generarReporte()\n// 3. Calcula total de presupuestos de aprobados con .filter() y .reduce()`
+            }
+        ];
+
+        // Registro de ejecuciones de ejercicios
+        let historialResultados = {};
+
+        // Inicializar interfaz
+        function initApp() {
+            const navList = document.getElementById('navList');
+            const sectionsContainer = document.getElementById('sectionsContainer');
+
+            // Cargar datos guardados del estudiante
+            document.getElementById('studentName').value = localStorage.getItem('app_student_name') || '';
+            document.getElementById('studentCourse').value = localStorage.getItem('app_student_course') || '';
+
+            // Guardar automáticamente datos personales al escribir
+            document.getElementById('studentName').addEventListener('input', (e) => localStorage.setItem('app_student_name', e.target.value));
+            document.getElementById('studentCourse').addEventListener('input', (e) => localStorage.setItem('app_student_course', e.target.value));
+
+            seccionesData.forEach((sec, idx) => {
+                // Renderizar ítem de navegación
+                const li = document.createElement('li');
+                li.className = `nav-item ${idx === 0 ? 'active' : ''}`;
+                li.onclick = () => switchSection(sec.id);
+                li.id = `nav-btn-${sec.id}`;
+                li.innerHTML = `<i class="fa-solid ${sec.icon}"></i> <span>${sec.title}</span>`;
+                navList.appendChild(li);
+
+                // Recuperar borrador de código de localStorage si existe
+                const savedCode = localStorage.getItem(`draft_editor-${sec.id}`) || sec.initialCode;
+
+                // Renderizar Tarjeta de Sección
+                const card = document.createElement('div');
+                card.className = `section-card ${idx === 0 ? 'active' : ''}`;
+                card.id = sec.id;
+                card.innerHTML = `
+                    <h2 class="section-title"><i class="fa-solid ${sec.icon}"></i> ${sec.title}</h2>
+                    <div class="theory-box">
+                        <p>${sec.theory}</p>
+                    </div>
+                    
+                    <div class="exercise-box">
+                        <h3><i class="fa-solid fa-laptop-code"></i> ${sec.exerciseTitle}</h3>
+                        <p>${sec.exerciseDesc}</p>
+                        
+                        <div class="code-playground">
+                            <div class="editor-container">
+                                <div class="editor-header">
+                                    <span><i class="fa-solid fa-code"></i> Editor de Código JS</span>
+                                    <span>JavaScript (ES6)</span>
+                                </div>
+                                <textarea id="editor-${sec.id}" class="code-editor">${savedCode}</textarea>
+                            </div>
+
+                            <div class="btn-group">
+                                <button class="btn btn-primary" onclick="ejecutarCodigo('${sec.id}')">
+                                    <i class="fa-solid fa-play"></i> Ejecutar y Probar Código
+                                </button>
+                                <button class="btn btn-secondary" onclick="restablecerCodigo('${sec.id}')">
+                                    <i class="fa-solid fa-rotate-left"></i> Restablecer
+                                </button>
+                            </div>
+
+                            <div class="console-output" id="console-${sec.id}">// Pulsa "Ejecutar y Probar Código" para ver los resultados aquí...</div>
+                        </div>
+                    </div>
+                `;
+                sectionsContainer.appendChild(card);
+            });
+
+            document.getElementById('currentTitle').innerText = seccionesData[0].title;
+            
+            // Configurar Listeners de Editores (Auto-guardado y Sangría con TAB)
+            configurarEditores();
+            
+            // Activar bloqueo de copia y pegado
+            bloquearCopiaYPegado();
+
+            actualizarProgreso();
+        }
+
+        // Configuración de eventos para editores
+        function configurarEditores() {
+            document.querySelectorAll('.code-editor').forEach(textarea => {
+                textarea.addEventListener('input', (e) => {
+                    localStorage.setItem(`draft_${e.target.id}`, e.target.value);
+                });
+
+                textarea.addEventListener('keydown', function(e) {
+                    if (e.key === 'Tab') {
+                        e.preventDefault();
+                        const start = this.selectionStart;
+                        const end = this.selectionEnd;
+                        this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
+                        this.selectionStart = this.selectionEnd = start + 4;
+                        
+                        localStorage.setItem(`draft_${this.id}`, this.value);
+                    }
+                });
+            });
+        }
+
+        // BLOQUEO ANTI-COPIA Y PEGADO EN EDITORES DE CÓDIGO
+        function bloquearCopiaYPegado() {
+            document.querySelectorAll('.code-editor').forEach(editor => {
+                editor.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    alert('⚠️ El pegado de código está deshabilitado para esta actividad.');
+                });
+
+                editor.addEventListener('copy', (e) => {
+                    e.preventDefault();
+                    alert('⚠️ La copia de código está deshabilitada.');
+                });
+
+                editor.addEventListener('cut', (e) => {
+                    e.preventDefault();
+                });
+
+                editor.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                });
+            });
+        }
+
+        // Cambiar sección activa
+        function switchSection(sectionId) {
+            document.querySelectorAll('.section-card').forEach(card => card.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+
+            const targetCard = document.getElementById(sectionId);
+            const targetNav = document.getElementById(`nav-btn-${sectionId}`);
+
+            if (targetCard && targetNav) {
+                targetCard.classList.add('active');
+                targetNav.classList.add('active');
+
+                const data = seccionesData.find(s => s.id === sectionId);
+                if (data) {
+                    document.getElementById('currentTitle').innerText = data.title;
+                }
+            }
+        }
+
+        // Actualiza barra e indicador de progreso general
+        function actualizarProgreso() {
+            const resueltos = Object.keys(historialResultados).filter(k => historialResultados[k].exito).length;
+            const porcentaje = Math.round((resueltos / seccionesData.length) * 100);
+            
+            document.getElementById('progressBar').style.width = `${porcentaje}%`;
+            document.getElementById('progressText').innerText = `Progreso: ${porcentaje}% (${resueltos}/${seccionesData.length})`;
+        }
+
+        // Ejecutar código con captura amplia de consola
+        function ejecutarCodigo(sectionId) {
+            const editor = document.getElementById(`editor-${sectionId}`);
+            const consoleBox = document.getElementById(`console-${sectionId}`);
+            const code = editor.value;
+
+            consoleBox.innerHTML = "";
+            let logs = [];
+
+            const originalLog = console.log;
+            const originalWarn = console.warn;
+            const originalError = console.error;
+
+            console.log = function(...args) {
+                const output = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg).join(" ");
+                logs.push("[LOG]: " + output);
+                originalLog.apply(console, args);
+            };
+
+            console.warn = function(...args) {
+                const output = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg).join(" ");
+                logs.push("[WARN]: " + output);
+                originalWarn.apply(console, args);
+            };
+
+            console.error = function(...args) {
+                const output = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : arg).join(" ");
+                logs.push("[ERROR]: " + output);
+                originalError.apply(console, args);
+            };
+
+            try {
+                const cleanCode = `{ ${code} }`;
+                const runCode = new Function(cleanCode);
+                runCode();
+                
+                if (logs.length === 0) {
+                    logs.push("// Código ejecutado exitosamente (Sin salida por consola).");
+                }
+                
+                consoleBox.style.color = "#10b981";
+                consoleBox.innerText = logs.join("\n");
+            } catch (err) {
+                logs.push("[EXCEPCIÓN EN TIEMPO DE EJECUCIÓN]: " + err.message);
+                consoleBox.style.color = "#ef4444";
+                consoleBox.innerText = logs.join("\n");
+            } finally {
+                console.log = originalLog;
+                console.warn = originalWarn;
+                console.error = originalError;
+            }
+
+            const esExitoso = !logs.some(l => l.includes("[EXCEPCIÓN EN TIEMPO DE EJECUCIÓN]"));
+
+            historialResultados[sectionId] = {
+                codigo: code,
+                salida: logs.join("\n"),
+                fecha: new Date().toLocaleString(),
+                exito: esExitoso
+            };
+
+            const navBtn = document.getElementById(`nav-btn-${sectionId}`);
+            if (navBtn) {
+                let statusIcon = navBtn.querySelector('.status-icon');
+                if (!statusIcon) {
+                    statusIcon = document.createElement('i');
+                    statusIcon.className = 'fa-solid fa-circle-check status-icon';
+                    navBtn.appendChild(statusIcon);
+                }
+                statusIcon.style.color = esExitoso ? 'var(--success)' : 'var(--danger)';
+            }
+
+            actualizarProgreso();
+        }
+
+        // Restablecer código individual de un módulo
+        function restablecerCodigo(sectionId) {
+            if (confirm("¿Estás seguro de restablecer este ejercicio? Se perderá el código que escribiste.")) {
+                const sec = seccionesData.find(s => s.id === sectionId);
+                if (sec) {
+                    document.getElementById(`editor-${sectionId}`).value = sec.initialCode;
+                    document.getElementById(`console-${sectionId}`).innerText = '// Código restablecido.';
+                    document.getElementById(`console-${sectionId}`).style.color = '#10b981';
+                    
+                    localStorage.removeItem(`draft_editor-${sectionId}`);
+                    delete historialResultados[sectionId];
+
+                    const navBtn = document.getElementById(`nav-btn-${sectionId}`);
+                    if (navBtn) {
+                        const statusIcon = navBtn.querySelector('.status-icon');
+                        if (statusIcon) statusIcon.remove();
+                    }
+
+                    actualizarProgreso();
+                }
+            }
+        }
+
+        // REINICIAR Y LIMPIAR DATOS DE FORMA SEGURA AL CAMBIAR DE ALUMNO
+        function reiniciarSesionEstudiante() {
+            const confirmar = confirm(
+                "⚠️ ¿Estás seguro de iniciar una nueva sesión?\n\n" +
+                "Se borrarán el código y los datos de la pantalla para evitar que el siguiente alumno vea o copie tu trabajo.\n" +
+                "Asegúrate de haber guardado tu avance (.json) antes de continuar."
+            );
+
+            if (confirmar) {
+                localStorage.clear();
+                historialResultados = {};
+
+                document.getElementById('studentName').value = '';
+                document.getElementById('studentCourse').value = '';
+
+                seccionesData.forEach(sec => {
+                    const editor = document.getElementById(`editor-${sec.id}`);
+                    const consoleBox = document.getElementById(`console-${sec.id}`);
+                    
+                    if (editor) editor.value = sec.initialCode;
+                    if (consoleBox) {
+                        consoleBox.innerText = '// Pulsa "Ejecutar y Probar Código" para ver los resultados aquí...';
+                        consoleBox.style.color = '#10b981';
+                    }
+
+                    const navBtn = document.getElementById(`nav-btn-${sec.id}`);
+                    if (navBtn) {
+                        const statusIcon = navBtn.querySelector('.status-icon');
+                        if (statusIcon) statusIcon.remove();
+                    }
+                });
+
+                actualizarProgreso();
+                switchSection(seccionesData[0].id);
+
+                alert("La sesión fue reajustada correctamente. La pantalla quedó limpia para el siguiente alumno.");
+            }
+        }
+
+        // Exportar e Importar Avance JSON
+        function exportarProgresoJSON() {
+            const nombre = document.getElementById('studentName').value.trim();
+            const curso = document.getElementById('studentCourse').value.trim();
+
+            localStorage.setItem('app_student_name', nombre);
+            localStorage.setItem('app_student_course', curso);
+
+            const paqueteAvance = {
+                estudiante: { nombre: nombre, curso: curso },
+                codigos: {}
+            };
+
+            seccionesData.forEach(sec => {
+                paqueteAvance.codigos[sec.id] = localStorage.getItem(`draft_editor-${sec.id}`);
+            });
+            
+            const safeName = (nombre || 'estudiante').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            
+            const blob = new Blob([JSON.stringify(paqueteAvance, null, 2)], { type: "application/json" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `avance_js_${safeName}.json`;
+            a.click();
+        }
+
+        function importarProgresoJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const paqueteAvance = JSON.parse(e.target.result);
+                    
+                    if (paqueteAvance.estudiante) {
+                        const nombreImportado = paqueteAvance.estudiante.nombre || '';
+                        const cursoImportado = paqueteAvance.estudiante.curso || '';
+
+                        document.getElementById('studentName').value = nombreImportado;
+                        document.getElementById('studentCourse').value = cursoImportado;
+
+                        localStorage.setItem('app_student_name', nombreImportado);
+                        localStorage.setItem('app_student_course', cursoImportado);
+                    }
+
+                    const codigos = paqueteAvance.codigos || paqueteAvance;
+
+                    Object.keys(codigos).forEach(secId => {
+                        if (codigos[secId] && secId.startsWith('sec-')) {
+                            localStorage.setItem(`draft_editor-${secId}`, codigos[secId]);
+                            const editor = document.getElementById(`editor-${secId}`);
+                            if (editor) editor.value = codigos[secId];
+                        }
+                    });
+
+                    alert("¡Progreso, nombre y curso cargados y guardados con éxito!");
+                    event.target.value = '';
+                } catch (err) {
+                    alert("⚠️ Error al leer el archivo de avance. Asegúrate de seleccionar un archivo .json válido.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // EXPORTAR PDF PROTEGIDO CONTRA COPIA Y EDICIÓN
+        async function exportarResultadosPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const nombre = document.getElementById('studentName').value.trim() || "Estudiante No Especificado";
+            const curso = document.getElementById('studentCourse').value.trim() || "Sin Especificar";
+            const fechaGeneracion = new Date().toLocaleString();
+
+            const seccionesResueltas = seccionesData.filter(sec => historialResultados[sec.id]);
+
+            if (seccionesResueltas.length === 0) {
+                alert("⚠️ Aún no has ejecutado ningún ejercicio. Resuelve al menos uno en la consola haciendo clic en 'Ejecutar y Probar Código' para exportar tu PDF.");
+                return;
+            }
+
+            const resueltosCount = seccionesResueltas.length;
+            let etapaNombre = "Etapa 1: Fundamentos (Secciones 1-5)";
+
+            if (resueltosCount > 14) {
+                etapaNombre = "Etapa 4: Integración y Cierre (Secciones 15-19)";
+            } else if (resueltosCount > 9) {
+                etapaNombre = "Etapa 3: Lógica Avanzada (Secciones 10-14)";
+            } else if (resueltosCount > 5) {
+                etapaNombre = "Etapa 2: Control y Estructuras (Secciones 6-9)";
+            }
+
+            let y = 15;
+
+            function verificarEspacio(espacioRequerido) {
+                if (y + espacioRequerido > 275) {
+                    doc.addPage();
+                    y = 15;
+                    return true;
+                }
+                return false;
+            }
+
+            // Diseño visual del reporte
+            doc.setFillColor(15, 23, 42);
+            doc.rect(0, 0, 210, 38, 'F');
+
+            doc.setTextColor(56, 189, 248);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(16);
+            doc.text("IPEM 146 — INFORME DE EJERCICIOS RESUELTOS", 14, 15);
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text("Materia: JavaScript Interactivo | Profesor: J. Pantaleo", 14, 22);
+            doc.text(`Fecha de Emisión: ${fechaGeneracion}`, 14, 28);
+
+            y = 48;
+
+            doc.setDrawColor(51, 65, 85);
+            doc.setFillColor(241, 245, 249);
+            doc.roundedRect(14, y, 182, 28, 2, 2, 'FD');
+
+            doc.setTextColor(15, 23, 42);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            doc.text(`Estudiante: ${nombre}`, 18, y + 8);
+            doc.text(`Curso / División: ${curso}`, 18, y + 15);
+
+            doc.setTextColor(14, 116, 144);
+            doc.text(`ENTREGA: ${etapaNombre}`, 18, y + 22);
+
+            doc.setTextColor(16, 185, 129);
+            doc.text(`Resueltos: ${seccionesResueltas.length} / ${seccionesData.length}`, 140, y + 11);
+
+            y += 36;
+
+            doc.setTextColor(15, 23, 42);
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(12);
+            doc.text("DETALLE DE SOLUCIONES ENTREGADAS", 14, y);
+            y += 8;
+
+            seccionesResueltas.forEach((sec, idx) => {
+                const reg = historialResultados[sec.id];
+                
+                verificarEspacio(20);
+
+                doc.setFillColor(30, 41, 59);
+                doc.rect(14, y, 182, 7, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(9);
+                doc.text(`[MÓDULO ${idx + 1}] ${sec.title} — ${sec.exerciseTitle}`, 16, y + 5);
+
+                y += 10;
+
+                doc.setFont("courier", "normal");
+                doc.setFontSize(8);
+                
+                const codigoLineas = doc.splitTextToSize(reg.codigo.trim(), 174);
+                doc.setFillColor(248, 250, 252);
+                doc.setDrawColor(203, 213, 225);
+                
+                const startYCodigo = y;
+                let altoCodigo = (codigoLineas.length * 4) + 4;
+                doc.rect(14, startYCodigo, 182, altoCodigo, 'FD');
+                
+                doc.setTextColor(30, 41, 59);
+                y += 5;
+                codigoLineas.forEach(linea => {
+                    verificarEspacio(5);
+                    doc.text(linea, 18, y);
+                    y += 4;
+                });
+                
+                y += 4;
+
+                const salidaLineas = doc.splitTextToSize(reg.salida.trim(), 174);
+                let altoSalida = (salidaLineas.length * 4) + 4;
+
+                verificarEspacio(altoSalida);
+
+                if (reg.exito) {
+                    doc.setFillColor(236, 253, 245);
+                    doc.setDrawColor(16, 185, 129);
+                    doc.setTextColor(4, 120, 87);
+                } else {
+                    doc.setFillColor(254, 242, 242);
+                    doc.setDrawColor(239, 68, 68);
+                    doc.setTextColor(185, 28, 28);
+                }
+
+                doc.rect(14, y, 182, altoSalida, 'FD');
+                y += 5;
+                salidaLineas.forEach(linea => {
+                    verificarEspacio(5);
+                    doc.text(linea, 18, y);
+                    y += 4;
+                });
+
+                y += 8;
+            });
+
+            // APLICAR CAPA DE SEGURIDAD MEDIANTE PDF-LIB
+            try {
+                const pdfArrayBuffer = doc.output('arraybuffer');
+                const { PDFDocument } = PDFLib;
+                const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+
+                const pdfBytes = await pdfDoc.save({
+                    userPassword: '', // Vacío para que el estudiante pueda abrirlo sin clave al instante
+                    ownerPassword: 'clave_profe_ipem_146', // Clave interna de protección
+                    permissions: {
+                        copying: false,       // Bloquea la selección y copia de texto
+                        modifying: false,     // Bloquea modificaciones del archivo
+                        annotating: false,    // Bloquea inserción de anotaciones
+                    }
+                });
+
+                const safeName = nombre.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = `Resueltos_JS_${safeName}_IPEM146.pdf`;
+                link.click();
+                URL.revokeObjectURL(link.href);
+
+            } catch (error) {
+                console.error("Error al cifrar el PDF:", error);
+                alert("Ocurrió un error al aplicar la seguridad en el PDF.");
+            }
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>

@@ -1216,3 +1216,15 @@ code {
         align-items: flex-start;
     }
 }
+.practica {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 10px 15px;
+    background-color: var(--yellow);
+    color: #111;
+    font-weight: 300;
+    text-decoration: none;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(247, 223, 30, .18);
+    transition: var(--transition);
+}
