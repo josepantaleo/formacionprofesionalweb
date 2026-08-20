@@ -419,6 +419,63 @@
             line-height: 1.4;
         }
 
+        /* Analista de Viabilidad y Excelencia — RESPONDE AHORA */
+        .analyst-box {
+            display: none;
+            margin-top: 1rem;
+            padding: 1.2rem;
+            border: 1px solid #22c55e;
+            border-radius: 10px;
+            background: rgba(34, 197, 94, 0.06);
+        }
+        .analyst-box.active { display: block; }
+        .analyst-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #86efac;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+        }
+        .analyst-score {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .analyst-badge {
+            padding: 0.45rem 0.7rem;
+            border-radius: 999px;
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.35);
+            font-size: 0.8rem;
+        }
+        .analyst-question {
+            background: rgba(15, 23, 42, 0.75);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.9rem;
+            margin-bottom: 0.8rem;
+        }
+        .analyst-question strong { color: #e2e8f0; }
+        .analyst-option {
+            display: block;
+            margin-top: 0.45rem;
+            padding: 0.55rem 0.65rem;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .analyst-option:hover { background: rgba(56,189,248,0.08); border-color: rgba(56,189,248,0.25); }
+        .analyst-result {
+            margin-top: 0.8rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px dashed rgba(139, 92, 246, 0.5);
+            line-height: 1.5;
+        }
+
         .btn-group {
             display: flex;
             gap: 0.75rem;
@@ -586,7 +643,27 @@
             header.top-header { flex-direction: column; align-items: flex-start; }
             .progress-wrapper { align-items: flex-start; }
         }
-    </style>
+    
+        .analyst-option.analyst-selected-correct {
+            border: 2px solid #16a34a !important;
+            background: #dcfce7 !important;
+            color: #166534 !important;
+            font-weight: 700;
+        }
+        .analyst-option.analyst-wrong {
+            border: 2px solid #dc2626 !important;
+            background: #fee2e2 !important;
+            color: #991b1b !important;
+            font-weight: 700;
+        }
+        .analyst-option.analyst-correct {
+            border: 2px dashed #16a34a !important;
+            background: #f0fdf4 !important;
+            color: #166534 !important;
+            font-weight: 700;
+        }
+
+</style>
 </head>
 <body>
 
@@ -1018,6 +1095,27 @@
                                     </div>
                                 </div>
                                 <div class="ai-eval-summary" id="ai-text-${sec.id}">${isFinalized ? 'Actividad previamente evaluada de forma estricta y cerrada.' : 'Generando comparativa...'}</div>
+
+                                <div class="analyst-box" id="analyst-${sec.id}">
+                                    <div class="analyst-header">
+                                        <i class="fa-solid fa-user-check"></i>
+                                        Analista de Viabilidad y Excelencia — RESPONDE AHORA
+                                    </div>
+                                    <div style="margin-bottom:0.8rem;color:#cbd5e1;line-height:1.45;">
+                                        🤖 Al pulsar <strong>IA</strong>, estas preguntas se habilitan para responder.
+                                        Están basadas en <strong>tu código</strong>, en la <strong>solución de la IA</strong>
+                                        y en la <strong>comparación entre ambos</strong>. Algunas tienen más de una respuesta correcta.
+                                    </div>
+                                    <div class="analyst-score" id="analyst-score-${sec.id}">
+                                        <span class="analyst-badge" id="viability-${sec.id}">Viabilidad: pendiente</span>
+                                        <span class="analyst-badge" id="excellence-${sec.id}">Excelencia: pendiente</span>
+                                    </div>
+                                    <div id="analyst-questions-${sec.id}"></div>
+                                    <button class="btn btn-success" id="analyst-submit-${sec.id}" onclick="evaluarAnalista('${sec.id}')">
+                                        <i class="fa-solid fa-check-double"></i> Entregar respuestas al analista
+                                    </button>
+                                    <div class="analyst-result" id="analyst-result-${sec.id}"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1582,10 +1680,413 @@
             feedbackText.innerHTML = `🤖 <strong>Previsualización de Nota IA (${usos}/3):</strong> Con tu código actual obtendrías un <strong>${notaEstimada}/10</strong> según el criterio del 70%.`;
         }
 
+
+        /*
+         * Analista de Viabilidad y Excelencia — RESPONDE AHORA
+         * Las preguntas se construyen sobre el código entregado por el estudiante.
+         * No muestran la solución ideal ni la respuesta correcta antes de entregar.
+         */
+        /*
+         * Analista de Viabilidad y Excelencia — RESPONDE AHORA — versión dinámica
+         *
+         * Las preguntas se construyen a partir de:
+         *  1) código REAL entregado por el estudiante;
+         *  2) solución ideal programada por la IA.
+         *
+         * Cada pregunta puede tener 1, 2 o más respuestas correctas.
+         * Las alternativas se mezclan y la posición de las correctas cambia.
+         */
+
+        /*
+         * PREGUNTAS SOCRÁTICAS
+         * No buscan solamente recordar sintaxis: obligan al estudiante a
+         * justificar decisiones, detectar supuestos, anticipar errores y proponer mejoras.
+         */
+        const preguntasSocraticas = [
+            {
+                q: (code, ideal) => `Si tuvieras que defender tu código ante otro programador, ¿qué parte de tu solución considerarías indispensable y por qué?`,
+                opciones: (code, ideal) => [
+                    {t:"La parte que realmente participa en la resolución del problema, explicando su función.", c:true},
+                    {t:"La parte que tiene más líneas, aunque no sea necesaria.", c:false},
+                    {t:"Cualquier código que se parezca visualmente a la solución de IA.", c:false},
+                    {t:"No es necesario justificar ninguna decisión.", c:false}
+                ]
+            },
+            {
+                q: (code, ideal) => `¿Qué podría ocurrir si modificas una de las decisiones principales de tu código sin revisar las demás instrucciones que dependen de ella?`,
+                opciones: (code, ideal) => [
+                    {t:"Podrían producirse resultados incorrectos.", c:true},
+                    {t:"Podrían romperse dependencias entre partes del programa.", c:true},
+                    {t:"El programa necesariamente se vuelve más eficiente.", c:false},
+                    {t:"La modificación nunca puede afectar otras instrucciones.", c:false}
+                ]
+            },
+            {
+                q: (code, ideal) => `La IA propone una solución diferente a la tuya. ¿Qué preguntas deberías hacerte antes de afirmar que la solución de IA es mejor?`,
+                opciones: (code, ideal) => [
+                    {t:"¿Ambas soluciones cumplen realmente el objetivo del desafío?", c:true},
+                    {t:"¿Cuál solución es más clara y mantenible?", c:true},
+                    {t:"¿Cuál tiene más líneas de código?", c:false},
+                    {t:"¿Cuál utiliza nombres de variables más largos?", c:false}
+                ]
+            },
+            {
+                q: (code, ideal) => `Si tu código funciona con el ejemplo proporcionado, ¿qué deberías investigar para decidir si realmente es una solución viable?`,
+                opciones: (code, ideal) => [
+                    {t:"Qué ocurre con otros valores de entrada.", c:true},
+                    {t:"Qué ocurre en casos límite o inesperados.", c:true},
+                    {t:"Si la solución depende accidentalmente de un único ejemplo.", c:true},
+                    {t:"Si el código tiene exactamente el mismo aspecto que la solución de IA.", c:false}
+                ]
+            },
+            {
+                q: (code, ideal) => `Imagina que mañana otro estudiante debe mantener tu código. ¿Qué características deberías evaluar críticamente?`,
+                opciones: (code, ideal) => [
+                    {t:"Claridad de las variables y estructuras.", c:true},
+                    {t:"Separación lógica de responsabilidades.", c:true},
+                    {t:"Facilidad para detectar y corregir errores.", c:true},
+                    {t:"Cantidad máxima posible de instrucciones.", c:false}
+                ]
+            },
+            {
+                q: (code, ideal) => `¿Qué evidencia necesitarías para sostener que tu código es mejor que la solución de IA?`,
+                opciones: (code, ideal) => [
+                    {t:"Demostrar que cumple los requisitos.", c:true},
+                    {t:"Mostrar que funciona en diferentes casos.", c:true},
+                    {t:"Explicar por qué tus decisiones técnicas son adecuadas.", c:true},
+                    {t:"Decir simplemente que tu código es más corto.", c:false}
+                ]
+            },
+            {
+                q: (code, ideal) => `Si descubres que tu código obtiene el resultado correcto por una razón accidental, ¿qué actitud demuestra mayor excelencia?`,
+                opciones: (code, ideal) => [
+                    {t:"Investigar por qué funciona realmente.", c:true},
+                    {t:"Probar otros casos para confirmar el comportamiento.", c:true},
+                    {t:"Modificarlo si existe una solución más robusta.", c:true},
+                    {t:"Dejarlo igual porque una prueba funcionó.", c:false}
+                ]
+            },
+            {
+                q: (code, ideal) => `¿Qué diferencia existe entre que un código "funcione" y que sea una solución técnicamente excelente?`,
+                opciones: (code, ideal) => [
+                    {t:"Un código puede funcionar y aun así ser difícil de mantener.", c:true},
+                    {t:"La excelencia también considera claridad, robustez y adecuación al problema.", c:true},
+                    {t:"Funcionamiento y excelencia siempre significan exactamente lo mismo.", c:false},
+                    {t:"Un código excelente necesariamente tiene más líneas.", c:false}
+                ]
+            }
+        ];
+
+        const analistaPlantillas = [
+            {
+                tipo: "ESTUDIANTE",
+                q: code => `¿Cuál de las siguientes afirmaciones describe correctamente algo que aparece en el código que programaste?`,
+                opciones: code => {
+                    const snippets = extraerEvidencias(code);
+                    return [
+                        {t:`El código contiene: ${snippets[0] || "una instrucción ejecutable"}`, c:true},
+                        {t:`El código contiene: ${snippets[1] || "una estructura declarativa"}`, c:true},
+                        {t:"El código necesariamente utiliza una API externa aunque no aparezca en el código.", c:false},
+                        {t:"El código no contiene ninguna instrucción ejecutable.", c:false}
+                    ];
+                }
+            },
+            {
+                tipo: "ESTUDIANTE",
+                q: code => `Observando tu código, ¿cuáles de estas características pueden identificarse realmente?`,
+                opciones: code => {
+                    const features = detectarCaracteristicas(code);
+                    const correctas = features.filter(x => x.c).slice(0,2);
+                    const falsas = [
+                        "Utiliza una base de datos externa obligatoriamente.",
+                        "Contiene una clase CSS con el mismo comportamiento que una función JavaScript."
+                    ];
+                    return [...correctas, ...falsas.map(t=>({t,c:false}))];
+                }
+            },
+            {
+                tipo: "ESTUDIANTE",
+                q: code => `¿Qué afirmaciones son compatibles con la lógica de tu código entregado?`,
+                opciones: code => generarAfirmacionesEstudiante(code)
+            },
+            {
+                tipo: "IA",
+                q: (code, ideal) => `Al comparar tu solución con la solución programada por la IA, ¿cuáles afirmaciones describen correctamente la solución ideal?`,
+                opciones: (code, ideal) => generarAfirmacionesIA(ideal)
+            },
+            {
+                tipo: "IA",
+                q: (code, ideal) => `Respecto de la solución de IA mostrada en la evaluación, ¿qué elementos forman parte de su lógica?`,
+                opciones: (code, ideal) => generarAfirmacionesIA(ideal)
+            },
+            {
+                tipo: "COMPARACION",
+                q: (code, ideal) => `Comparando ambos códigos, ¿qué afirmaciones son verdaderas?`,
+                opciones: (code, ideal) => generarComparaciones(code, ideal)
+            }
+        ];
+
+        function escaparTextoAnalista(s) {
+            return String(s || "")
+                .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+                .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+        }
+
+        function extraerEvidencias(code) {
+            const lineas = String(code || "").split("\n")
+                .map(x => x.trim())
+                .filter(x => x && !x.startsWith("//"));
+            return lineas.slice(0, 4);
+        }
+
+        function detectarCaracteristicas(code) {
+            const c = String(code || "");
+            const out = [];
+            if (/\b(if|else if|else)\b/.test(c))
+                out.push({t:"Utiliza estructuras condicionales.",c:true});
+            if (/\b(for|while|forEach)\b/.test(c))
+                out.push({t:"Utiliza una estructura de repetición.",c:true});
+            if (/\bfunction\b|=>/.test(c))
+                out.push({t:"Define o utiliza funciones.",c:true});
+            if (/\b(const|let|var)\b/.test(c))
+                out.push({t:"Declara variables mediante const, let o var.",c:true});
+            if (/\b(array|push|pop|shift|unshift|map|filter|reduce)\b/i.test(c) || /\[[^\]]*\]/.test(c))
+                out.push({t:"Trabaja con estructuras tipo array.",c:true});
+            if (/console\.log/.test(c))
+                out.push({t:"Muestra información mediante console.log().",c:true});
+            if (/\.length\b/.test(c))
+                out.push({t:"Consulta la propiedad length.",c:true});
+            if (/\.trim\(\)|toLowerCase|toUpperCase/.test(c))
+                out.push({t:"Realiza operaciones de normalización de texto.",c:true});
+            if (/this\./.test(c))
+                out.push({t:"Utiliza this para acceder al estado de un objeto/clase.",c:true});
+
+            if (!out.length)
+                out.push({t:"Contiene instrucciones JavaScript ejecutables.",c:true});
+
+            return out;
+        }
+
+        function generarAfirmacionesEstudiante(code) {
+            const reales = detectarCaracteristicas(code).filter(x=>x.c).slice(0,2);
+            const opciones = reales.map(x=>({t:x.t,c:true}));
+            opciones.push(
+                {t:"El código contiene obligatoriamente una conexión a una base de datos.",c:false},
+                {t:"El código ejecuta automáticamente una solución generada por una IA externa.",c:false},
+                {t:"Todas las variables del código son constantes inmutables.",c:false}
+            );
+            return opciones.slice(0,5);
+        }
+
+        function generarAfirmacionesIA(ideal) {
+            const reales = detectarCaracteristicas(ideal).filter(x=>x.c).slice(0,3);
+            const opciones = reales.map(x=>({t:x.t,c:true}));
+            opciones.push(
+                {t:"La solución ideal no contiene ninguna instrucción ejecutable.",c:false},
+                {t:"La solución ideal depende obligatoriamente de una base de datos externa.",c:false},
+                {t:"La solución ideal utiliza solamente HTML y nunca JavaScript.",c:false}
+            );
+            return opciones.slice(0,5);
+        }
+
+        function generarComparaciones(code, ideal) {
+            const fc = detectarCaracteristicas(code).filter(x=>x.c);
+            const fi = detectarCaracteristicas(ideal).filter(x=>x.c);
+            const opciones = [];
+
+            const common = fc.find(a => fi.some(b => b.t === a.t));
+            if (common)
+                opciones.push({t:`Ambos códigos ${common.t.toLowerCase()}`,c:true});
+
+            const onlyIA = fi.find(a => !fc.some(b => b.t === a.t));
+            if (onlyIA)
+                opciones.push({t:`La solución de IA ${onlyIA.t.toLowerCase()} y eso no se detecta en tu código entregado.`,c:true});
+
+            const onlyStudent = fc.find(a => !fi.some(b => b.t === a.t));
+            if (onlyStudent)
+                opciones.push({t:`Tu código ${onlyStudent.t.toLowerCase()} y esa característica no se detecta en la solución ideal.`,c:true});
+
+            opciones.push(
+                {t:"Ambos códigos son necesariamente idénticos carácter por carácter.",c:false},
+                {t:"La solución de IA siempre debe tener exactamente la misma cantidad de líneas que tu código.",c:false},
+                {t:"Si dos códigos resuelven el mismo problema, obligatoriamente deben utilizar las mismas variables.",c:false}
+            );
+
+            return opciones.slice(0,5);
+        }
+
+        function mezclarArray(arr) {
+            const copia = [...arr];
+            for (let i = copia.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copia[i], copia[j]] = [copia[j], copia[i]];
+            }
+            return copia;
+        }
+
+        function construirPreguntasAnalista(sectionId, code, ideal) {
+            const preguntasBase = mezclarArray(analistaPlantillas).slice(0,4);
+            const socraticas = mezclarArray(preguntasSocraticas).slice(0,2);
+
+            const preguntas = [
+                ...preguntasBase.map(p => ({...p, categoria:"ANÁLISIS TÉCNICO"})),
+                ...socraticas.map(p => ({...p, categoria:"SOCRÁTICA"}))
+            ];
+
+            return preguntas.map((plantilla, indice) => {
+                let opciones = plantilla.opciones(code, ideal);
+                opciones = mezclarArray(opciones);
+
+                // Puede haber 1, 2 o 3 respuestas correctas.
+                // El generador conserva las correctas reales y nunca las fija en una posición.
+                const correctas = opciones.filter(x => x.c).length;
+                if (correctas === 0) {
+                    opciones[0].c = true;
+                }
+
+                return {
+                    id: indice,
+                    tipo: plantilla.tipo,
+                    q: plantilla.q(code, ideal),
+                    opciones
+                };
+            });
+        }
+
+        function construirAnalista(sectionId, code) {
+            const box = document.getElementById(`analyst-${sectionId}`);
+            const container = document.getElementById(`analyst-questions-${sectionId}`);
+            const result = document.getElementById(`analyst-result-${sectionId}`);
+            const sec = seccionesData.find(s => s.id === sectionId);
+            if (!box || !container || !sec) return;
+
+            const ideal = sec.aiSolution || "";
+            const preguntas = construirPreguntasAnalista(sectionId, code, ideal);
+
+            // Guardamos las preguntas en memoria para corregirlas después.
+            window.analistaActual = window.analistaActual || {};
+            window.analistaActual[sectionId] = preguntas;
+
+            container.innerHTML = preguntas.map((p, i) => `
+                <div class="analyst-question">
+                    <strong>${i + 1}. ${p.q}</strong>
+                    <div style="margin:.4rem 0 .7rem;color:var(--text-muted);font-size:.75rem">
+                        <span class="analyst-badge">${p.categoria || "ANÁLISIS"}</span>
+                        ${p.tipo === "ESTUDIANTE" ? "🔵 Basada en tu código" :
+                          p.tipo === "IA" ? "🟣 Basada en la solución de IA" :
+                          "🟢 Comparación entre ambos códigos"}
+                        <br>Puede haber <strong>más de una respuesta correcta</strong>.
+                    </div>
+                    ${p.opciones.map((op,j) => `
+                        <label class="analyst-option">
+                            <input type="checkbox"
+                                   name="analyst-${sectionId}-${i}"
+                                   value="${j}">
+                            ${String.fromCharCode(65+j)}) ${escaparTextoAnalista(op.t)}
+                        </label>
+                    `).join("")}
+                </div>
+            `).join("");
+
+            result.innerHTML = "";
+            box.classList.add("active");
+            document.getElementById(`analyst-submit-${sectionId}`).disabled = false;
+        }
+
+
+        function resaltarRespuestasAnalista(sectionId) {
+            const preguntas = (window.analistaActual && window.analistaActual[sectionId]) || [];
+            preguntas.forEach((p, i) => {
+                const inputs = document.querySelectorAll(`input[name="analyst-${sectionId}-${i}"]`);
+                inputs.forEach((input, j) => {
+                    const label = input.closest(".analyst-option");
+                    if (!label) return;
+                    const elegida = input.checked;
+                    const correcta = !!p.opciones[j].c;
+                    label.classList.remove("analyst-correct", "analyst-wrong", "analyst-selected-correct");
+                    if (elegida && correcta) label.classList.add("analyst-selected-correct");
+                    else if (elegida) label.classList.add("analyst-wrong");
+                    else if (correcta) label.classList.add("analyst-correct");
+                });
+            });
+        }
+
+        function evaluarAnalista(sectionId) {
+            const preguntas = (window.analistaActual && window.analistaActual[sectionId]) || [];
+            let correctas = 0;
+            let respondidas = 0;
+            let maxPuntos = preguntas.length;
+
+            preguntas.forEach((p,i) => {
+                const marcadas = [...document.querySelectorAll(`input[name="analyst-${sectionId}-${i}"]:checked`)]
+                    .map(x => Number(x.value)).sort((a,b)=>a-b);
+
+                if (marcadas.length) respondidas++;
+
+                const reales = p.opciones
+                    .map((x,j)=>x.c ? j : null)
+                    .filter(x=>x !== null)
+                    .sort((a,b)=>a-b);
+
+                if (JSON.stringify(marcadas) === JSON.stringify(reales)) {
+                    correctas++;
+                }
+            });
+
+            const result = document.getElementById(`analyst-result-${sectionId}`);
+
+            if (respondidas < preguntas.length) {
+                result.innerHTML = `⚠️ Debes responder todas las preguntas. Recuerda que algunas pueden tener 2 o más respuestas correctas.`;
+                return;
+            }
+
+            const porcentaje = Math.round((correctas / maxPuntos) * 100);
+            const viabilidad = porcentaje >= 80 ? "ALTA" : porcentaje >= 60 ? "MEDIA" : "BAJA";
+            const excelencia = porcentaje === 100 ? "EXCELENTE" :
+                               porcentaje >= 80 ? "MUY BUENA" :
+                               porcentaje >= 60 ? "EN DESARROLLO" : "REQUIERE MEJORA";
+
+            document.getElementById(`viability-${sectionId}`).innerText = `Viabilidad: ${viabilidad}`;
+            document.getElementById(`excellence-${sectionId}`).innerText = `Excelencia: ${excelencia}`;
+
+            result.innerHTML =
+                `<strong>Resultado del Analista:</strong><br>` +
+                `Aciertos completos: <strong>${correctas}/${maxPuntos}</strong> (${porcentaje}%).<br>` +
+                `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
+                `Excelencia: <strong>${excelencia}</strong>.<br>` +
+                `Las preguntas mezclaron evidencias de tu código, de la solución IA, de la comparación entre ambos y situaciones de razonamiento socrático.`;
+
+            resaltarRespuestasAnalista(sectionId);
+            document.querySelectorAll(`#analyst-${sectionId} input`).forEach(el => el.disabled = true);
+            document.getElementById(`analyst-submit-${sectionId}`).disabled = true;
+
+            if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
+            historialResultados[sectionId].analista = {
+                correctas,
+                total: maxPuntos,
+                porcentaje,
+                viabilidad,
+                excelencia,
+                preguntas: preguntas.map((p, i) => ({
+                    tipo: p.tipo,
+                    categoria: p.categoria || "ANÁLISIS",
+                    pregunta: p.q,
+                    opciones: p.opciones.map(x => ({
+                        texto: x.t || "",
+                        correcta: !!x.c
+                    })),
+                    seleccionadas: [...document.querySelectorAll(`input[name="analyst-${sectionId}-${i}"]:checked`)]
+                        .map(x => Number(x.value)),
+                    correctas: p.opciones.map((x,j)=>x.c?j:null).filter(x=>x!==null)
+                }))
+            };
+        }
+
+
         function resolverYCompararIA(sectionId) {
             if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
-            if (!confirm("⚠️ ATENCIÓN: Al pulsar este botón, la IA resolverá el ejercicio, evaluará strictly tu código y **bloqueará la actividad** de forma definitiva. ¿Deseas continuar?")) {
+            if (!confirm("⚠️ ATENCIÓN: Al pulsar este botón, la IA resolverá el ejercicio, evaluará tu código y bloqueará la actividad. ¿Deseas continuar?")) {
                 return;
             }
 
@@ -1593,42 +2094,46 @@
             const sec = seccionesData.find(s => s.id === sectionId);
             const feedbackBox = document.getElementById(`ai-feedback-${sectionId}`);
             const studentCodeDisplay = document.getElementById(`ai-student-code-${sectionId}`);
-            document.getElementById(`ai-ideal-code-${sectionId}`).innerText = sec.aiSolution;
+            const idealDisplay = document.getElementById(`ai-ideal-code-${sectionId}`);
             const feedbackText = document.getElementById(`ai-text-${sectionId}`);
             const code = editor.value.trim();
 
+            if (!editor || !sec || !feedbackBox || !feedbackText) return;
+
+            if (idealDisplay) idealDisplay.innerText = sec.aiSolution;
             feedbackBox.classList.add('active');
-            studentCodeDisplay.innerText = code;
-            feedbackText.innerHTML = "<i>🤖 Evaluando strictly (criterio 70%) y bloqueando actividad...</i>";
+            if (studentCodeDisplay) studentCodeDisplay.innerText = code;
+            feedbackText.innerHTML = "<i>🤖 Evaluando tu código y preparando el Analista...</i>";
 
             setTimeout(() => {
-                let puntaje = calcularNotaEstricta(code, sec);
+                const puntaje = calcularNotaEstricta(code, sec);
                 let analisis = "";
 
-                if (puntaje === 1) {
-                    analisis = "❌ <strong>Evaluación Estricta (1/10):</strong> Plantilla inicial sin resolver.";
-                } else if (puntaje === 4) {
-                    analisis = "⚠️ <strong>Evaluación Estricta (4/10):</strong> Código sin estructuras lógicas requeridas.";
-                } else if (puntaje === 7) {
-                    analisis = "🎯 <strong>Evaluación Estricta (7/10):</strong> ¡Muy bien! Alcanza o supera el 70% de desarrollo.";
-                } else if (puntaje === 5) {
-                    analisis = "🔍 <strong>Evaluación Estricta (5/10):</strong> Resolución parcial por debajo del 70%.";
-                } else if (puntaje === 3) {
-                    analisis = "⚠️ <strong>Evaluación Estricta (3/10):</strong> Código demasiado escueto.";
-                } else if (puntaje === 10) {
-                    analisis = "✅ <strong>¡Excelente Trabajo! (10/10):</strong> Cumple rigurosamente con los parámetros ideales.";
-                }
+                if (puntaje === 1) analisis = "❌ <strong>Evaluación Estricta (1/10):</strong> Plantilla inicial sin resolver.";
+                else if (puntaje === 4) analisis = "⚠️ <strong>Evaluación Estricta (4/10):</strong> Código sin estructuras lógicas requeridas.";
+                else if (puntaje === 7) analisis = "🎯 <strong>Evaluación Estricta (7/10):</strong> Alcanza o supera el 70% de desarrollo.";
+                else if (puntaje === 5) analisis = "🔍 <strong>Evaluación Estricta (5/10):</strong> Resolución parcial por debajo del 70%.";
+                else if (puntaje === 3) analisis = "⚠️ <strong>Evaluación Estricta (3/10):</strong> Código demasiado escueto.";
+                else if (puntaje === 10) analisis = "✅ <strong>¡Excelente Trabajo! (10/10):</strong> Cumple rigurosamente con los parámetros ideales.";
 
                 feedbackText.innerHTML = `<strong>Calificación Estricta IA: ${puntaje}/10</strong><br>${analisis}`;
 
-                editor.disabled = true;
-                document.getElementById(`btn-run-${sectionId}`).disabled = true;
-                document.getElementById(`btn-preview-${sectionId}`).disabled = true;
-                document.getElementById(`btn-ai-${sectionId}`).disabled = true;
-                document.getElementById(`btn-reset-${sectionId}`).disabled = true;
-                document.getElementById(`btn-pause-${sectionId}`).disabled = true;
+                // IMPORTANTE: el cuestionario se construye AQUÍ, al pulsar IA,
+                // usando el código real del estudiante + solución ideal de IA.
+                construirAnalista(sectionId, code);
 
-                if(cronometrosActivos[sectionId]) {
+                const analystBox = document.getElementById(`analyst-${sectionId}`);
+                if (analystBox) {
+                    analystBox.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+
+                editor.disabled = true;
+                ["run","preview","ai","reset","pause"].forEach(btn => {
+                    const el = document.getElementById(`btn-${btn}-${sectionId}`);
+                    if (el) el.disabled = true;
+                });
+
+                if (cronometrosActivos[sectionId]) {
                     clearInterval(cronometrosActivos[sectionId]);
                     cronometrosActivos[sectionId] = null;
                 }
@@ -1636,7 +2141,7 @@
                 actividadesFinalizadas[sectionId] = true;
                 localStorage.setItem(`finalized_${sectionId}`, 'true');
 
-                if(!historialResultados[sectionId]) historialResultados[sectionId] = {};
+                if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
                 historialResultados[sectionId].codigo = code;
                 historialResultados[sectionId].solucionIA = sec.aiSolution;
                 historialResultados[sectionId].notaIA = puntaje;
@@ -1646,6 +2151,47 @@
                 actualizarIconoEstado(sectionId, true);
                 actualizarProgreso();
             }, 800);
+        }
+
+
+        function generarTextoAnalistaPDF(sectionId) {
+            const analistaPDF = generarTextoAnalistaPDF(typeof sectionId !== "undefined" ? sectionId : "");
+
+            const data = historialResultados[sectionId] || {};
+            const preguntas = data.analista && data.analista.preguntas ? data.analista.preguntas : [];
+            if (!preguntas.length) return "ANALISTA DE VIABILIDAD Y EXCELENCIA\nNo se respondió el cuestionario del analista.\n";
+
+            let texto = "\n\n════════════════════════════════════════════════════\n";
+            texto += "ANALISTA DE VIABILIDAD Y EXCELENCIA\n";
+            texto += "════════════════════════════════════════════════════\n\n";
+
+            texto += `Resultado: ${data.analista.correctas || 0}/${data.analista.total || preguntas.length} `;
+            texto += `(${data.analista.porcentaje || 0}%)\n`;
+            texto += `Viabilidad: ${data.analista.viabilidad || "PENDIENTE"}\n`;
+            texto += `Excelencia: ${data.analista.excelencia || "PENDIENTE"}\n\n`;
+
+            preguntas.forEach((p, i) => {
+                texto += `${i + 1}. [${p.categoria || p.tipo || "ANÁLISIS"}]\n`;
+                texto += `${p.pregunta}\n`;
+
+                if (p.opciones) {
+                    p.opciones.forEach((op, j) => {
+                        const marcada = p.seleccionadas && p.seleccionadas.includes(j) ? "☑" : "☐";
+                        texto += `   ${marcada} ${String.fromCharCode(65 + j)}) ${op.texto || op.t || ""}`;
+                        if (op.correcta === true || op.c === true) texto += "  [CORRECTA]";
+                        texto += "\n";
+                    });
+                } else if (p.correctas) {
+                    texto += `   Respuestas correctas: ${p.correctas.map(j => String.fromCharCode(65 + j)).join(", ")}\n`;
+                }
+
+                if (p.respuestaTexto) {
+                    texto += `   Respuesta del estudiante: ${p.respuestaTexto}\n`;
+                }
+                texto += "\n";
+            });
+
+            return texto;
         }
 
         function configurarEditores() {
@@ -1866,6 +2412,187 @@
                     y += 3.5;
                 });
                 y += 6;
+
+                // ─────────────────────────────────────────────────────────────
+                // ANALISTA DE VIABILIDAD Y EXCELENCIA — PREGUNTAS Y RESPUESTAS
+                // Se incorpora al PDF cada pregunta, todas sus opciones, la
+                // selección del estudiante y las respuestas correctas.
+                // ─────────────────────────────────────────────────────────────
+                const analistaReg = reg.analista;
+                if (analistaReg && analistaReg.preguntas && analistaReg.preguntas.length) {
+                    verificarEspacio(35);
+
+                    doc.setFillColor(22, 101, 52);
+                    doc.rect(14, y, 182, 8, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(8.5);
+                    doc.text("ANALISTA DE VIABILIDAD Y EXCELENCIA", 17, y + 5.5);
+                    y += 11;
+
+                    doc.setTextColor(30, 41, 59);
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(8);
+                    doc.text(
+                        `Resultado: ${analistaReg.correctas || 0}/${analistaReg.total || analistaReg.preguntas.length} | ` +
+                        `Puntaje: ${analistaReg.porcentaje || 0}% | ` +
+                        `Viabilidad: ${analistaReg.viabilidad || "PENDIENTE"} | ` +
+                        `Excelencia: ${analistaReg.excelencia || "PENDIENTE"}`,
+                        16, y
+                    );
+                    y += 7;
+
+                    doc.setFont("helvetica", "bold");
+                    doc.setFontSize(7);
+
+                    doc.setTextColor(22, 101, 52);
+                    doc.text("★ ELEGIDA + CORRECTA", 16, y);
+                    doc.setTextColor(185, 28, 28);
+                    doc.text("✗ ELEGIDA INCORRECTA", 70, y);
+                    doc.setTextColor(161, 98, 7);
+                    doc.text("✓ CORRECTA NO ELEGIDA", 125, y);
+                    y += 6;
+
+                    analistaReg.preguntas.forEach((preg, qi) => {
+                        const opciones = preg.opciones || [];
+                        const seleccionadas = preg.seleccionadas || [];
+                        const correctas = preg.correctas || [];
+
+                        const bloque = [];
+                        bloque.push(`${qi + 1}. [${preg.categoria || preg.tipo || "ANÁLISIS"}]`);
+                        bloque.push(preg.pregunta || "");
+
+                        opciones.forEach((op, oi) => {
+                            const elegida = seleccionadas.includes(oi);
+                            const correcta = correctas.includes(oi);
+
+                            let marca = "";
+                            if (elegida && correcta) {
+                                marca = " ★ ELEGIDA + CORRECTA";
+                            } else if (elegida) {
+                                marca = " ✗ ELEGIDA (INCORRECTA)";
+                            } else if (correcta) {
+                                marca = " ✓ CORRECTA";
+                            }
+
+                            bloque.push(
+                                `   ${String.fromCharCode(65 + oi)}) ${op.texto || ""}${marca}`
+                            );
+                        });
+
+                        // Si el PDF se genera antes de entregar el analista,
+                        // igualmente informa cuáles serían las correctas.
+                        if (!seleccionadas.length) {
+                            bloque.push("   Respuesta del estudiante: SIN RESPONDER");
+                        } else {
+                            bloque.push(
+                                "   Respuesta del estudiante: " +
+                                seleccionadas.map(i => String.fromCharCode(65 + i)).join(", ")
+                            );
+                        }
+
+                        bloque.push(
+                            "   Respuesta correcta: " +
+                            (correctas.length
+                                ? correctas.map(i => String.fromCharCode(65 + i)).join(", ")
+                                : "NO DISPONIBLE")
+                        );
+
+                        // Encabezado de la pregunta.
+                        const preguntaLineas = doc.splitTextToSize(
+                            `${qi + 1}. [${preg.categoria || preg.tipo || "ANÁLISIS"}] ${preg.pregunta || ""}`,
+                            174
+                        );
+                        const altoPregunta = preguntaLineas.length * 3.4 + 5;
+                        verificarEspacio(altoPregunta + 3);
+
+                        doc.setFillColor(241, 245, 249);
+                        doc.setDrawColor(203, 213, 225);
+                        doc.roundedRect(14, y, 182, altoPregunta, 1.5, 1.5, 'FD');
+                        doc.setTextColor(30, 41, 59);
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(7.1);
+
+                        let yy = y + 4;
+                        preguntaLineas.forEach(linea => {
+                            doc.text(linea, 18, yy);
+                            yy += 3.4;
+                        });
+                        y += altoPregunta + 2;
+
+                        // Cada alternativa se muestra con color real.
+                        opciones.forEach((op, oi) => {
+                            const elegida = seleccionadas.includes(oi);
+                            const correcta = correctas.includes(oi);
+
+                            let bg, border, textColor, etiqueta;
+                            if (elegida && correcta) {
+                                // Verde fuerte: el estudiante eligió una correcta.
+                                bg = [187, 247, 208];
+                                border = [22, 163, 74];
+                                textColor = [20, 83, 45];
+                                etiqueta = "★ ELEGIDA + CORRECTA";
+                            } else if (elegida) {
+                                // Rojo: eligió una incorrecta.
+                                bg = [254, 202, 202];
+                                border = [220, 38, 38];
+                                textColor = [127, 29, 29];
+                                etiqueta = "✗ ELEGIDA (INCORRECTA)";
+                            } else if (correcta) {
+                                // Amarillo/verde claro: correcta pero no seleccionada.
+                                bg = [254, 249, 195];
+                                border = [202, 138, 4];
+                                textColor = [113, 63, 18];
+                                etiqueta = "✓ CORRECTA NO ELEGIDA";
+                            } else {
+                                bg = [248, 250, 252];
+                                border = [203, 213, 225];
+                                textColor = [51, 65, 85];
+                                etiqueta = "";
+                            }
+
+                            const textoOpcion = `${String.fromCharCode(65 + oi)}) ${op.texto || ""}${etiqueta ? " — " + etiqueta : ""}`;
+                            const lineasOpcion = doc.splitTextToSize(textoOpcion, 168);
+                            const altoOpcion = lineasOpcion.length * 3.4 + 4;
+
+                            verificarEspacio(altoOpcion + 2);
+
+                            doc.setFillColor(...bg);
+                            doc.setDrawColor(...border);
+                            doc.setLineWidth(elegida || correcta ? 0.8 : 0.3);
+                            doc.roundedRect(16, y, 178, altoOpcion, 1.2, 1.2, 'FD');
+
+                            doc.setTextColor(...textColor);
+                            doc.setFont("helvetica", elegida || correcta ? "bold" : "normal");
+                            doc.setFontSize(7);
+
+                            let oy = y + 4;
+                            lineasOpcion.forEach(linea => {
+                                doc.text(linea, 19, oy);
+                                oy += 3.4;
+                            });
+
+                            y += altoOpcion + 1.5;
+                        });
+
+                        // Resumen final de la pregunta.
+                        const resumen = seleccionadas.length
+                            ? `Respuesta del estudiante: ${seleccionadas.map(i => String.fromCharCode(65 + i)).join(", ")}`
+                            : "Respuesta del estudiante: SIN RESPONDER";
+                        const correctasTxt = correctas.length
+                            ? `Respuesta correcta: ${correctas.map(i => String.fromCharCode(65 + i)).join(", ")}`
+                            : "Respuesta correcta: NO DISPONIBLE";
+
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(6.8);
+                        doc.setTextColor(30, 41, 59);
+                        doc.text(resumen, 18, y + 3);
+                        doc.text(correctasTxt, 18, y + 6);
+                        y += 9;
+                    });
+
+                    y += 3;
+                }
             });
 
             try {
