@@ -1033,7 +1033,6 @@
             document.getElementById('currentTitle').innerText = seccionesData[0].title;
             configurarEditores();
             bloquearCopiaYPegado();
-            bloquearCopiaSolucionIA();
             actualizarProgreso();
 
             if (totalSalidasPestaña > 7) {
@@ -1172,19 +1171,24 @@
         function confirmarAccionProfesor() {
             const input = document.getElementById('modalPasswordInput');
             if (input.value === "aRNET$") {
+                // Guardamos la acción y la sección ANTES de cerrar el modal.
+                // cerrarModalPassword() limpia seccionPendientePausa.
+                const accionConfirmada = tipoAccionModal;
+                const sectionIdConfirmada = seccionPendientePausa;
+
                 cerrarModalPassword();
 
-                if (tipoAccionModal === 'global_reset') {
+                if (accionConfirmada === 'global_reset') {
                     resetearSistemaCompleto();
-                } else if (tipoAccionModal === 'unlock_current') {
+                } else if (accionConfirmada === 'unlock_current') {
                     desbloquearEjercicioActual();
-                } else if (tipoAccionModal === 'unlock_all') {
+                } else if (accionConfirmada === 'unlock_all') {
                     desbloquearTodosEjercicios();
-                } else if (tipoAccionModal === 'pausar_modulo' && seccionPendientePausa) {
-                    togglePausaModulo(seccionPendientePausa);
-                } else if (tipoAccionModal === 'pausar_global') {
+                } else if (accionConfirmada === 'pausar_modulo' && sectionIdConfirmada) {
+                    togglePausaModulo(sectionIdConfirmada);
+                } else if (accionConfirmada === 'pausar_global') {
                     togglePausaGlobal();
-                } else if (tipoAccionModal === 'reset_contador_salidas') {
+                } else if (accionConfirmada === 'reset_contador_salidas') {
                     reiniciarContadorSalidasProfesor();
                 }
             } else {
@@ -1679,31 +1683,6 @@
                 editor.addEventListener('copy', (e) => { e.preventDefault(); });
                 editor.addEventListener('cut', (e) => { e.preventDefault(); });
                 editor.addEventListener('contextmenu', (e) => { e.preventDefault(); });
-            });
-        }
-
-
-        function bloquearCopiaSolucionIA() {
-            const selectores = [
-                '[id^="ai-ideal-code-"]',
-                '[id^="ai-text-"]'
-            ];
-
-            document.querySelectorAll(selectores.join(',')).forEach(elemento => {
-                elemento.style.userSelect = 'none';
-                elemento.style.webkitUserSelect = 'none';
-
-                ['copy', 'cut', 'paste', 'contextmenu', 'dragstart'].forEach(evento => {
-                    elemento.addEventListener(evento, e => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    });
-                });
-
-                elemento.addEventListener('selectstart', e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                });
             });
         }
 
