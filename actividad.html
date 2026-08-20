@@ -17,6 +17,70 @@
     <!-- Librería pdf-lib para cifrar y proteger el PDF generado -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
+        /* Estilos del botón principal */
+    .btn-abrir {
+      padding: 12px 24px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .btn-abrir:hover {
+      background-color: #0056b3;
+    }
+
+    /* Estilos de la ventana Modal / Popup */
+    #popupModal {
+      padding: 0;
+      border: none;
+      border-radius: 12px;
+      width: 85vw;
+      max-width: 900px;
+      height: 80vh;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    /* Fondo oscuro al abrir el modal */
+    #popupModal::backdrop {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(3px);
+    }
+
+    /* Botón flotante para cerrar */
+    .btn-cerrar {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .btn-cerrar:hover {
+      background: #cc0000;
+    }
+
+    /* iFrame que carga index.html */
+    .iframe-contenido {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
       :root {
         --bg-dark: #0f172a;
         --bg-card: #1e293b;
@@ -789,7 +853,13 @@
           >
             <i class="fa-solid fa-rotate-right"></i> Reiniciar Salidas
           </button>
+<button class="btn-abrir" onclick="abrirPopup()">Acceder a los contenidos</button>
 
+  <!-- Ventana emergente (Modal) -->
+  <dialog id="popupModal">
+    <button class="btn-cerrar" onclick="cerrarPopup()">✕</button>
+    <iframe class="iframe-contenido" src="index.html"></iframe>
+  </dialog>
           <div class="progress-wrapper">
             <span class="progress-label" id="progressText">Progreso: 0%</span>
             <div class="progress-bar-bg">
@@ -2475,6 +2545,28 @@
               doc.save(`Reporte_JS_${nombre.replace(/\s+/g, '_')}.pdf`);
           }
       }
+       const modal = document.getElementById('popupModal');
+
+    function abrirPopup() {
+      modal.showModal();
+    }
+
+    function cerrarPopup() {
+      modal.close();
+    }
+
+    // Opcional: Cerrar el modal al hacer clic en el fondo oscuro
+    modal.addEventListener('click', (e) => {
+      const dialogDimensions = modal.getBoundingClientRect();
+      if (
+        e.clientX < dialogDimensions.left ||
+        e.clientX > dialogDimensions.right ||
+        e.clientY < dialogDimensions.top ||
+        e.clientY > dialogDimensions.bottom
+      ) {
+        modal.close();
+      }
+    });
     </script>
   </body>
 </html>
