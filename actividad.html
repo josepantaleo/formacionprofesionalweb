@@ -846,15 +846,14 @@
       // PEGA AQUÍ LA CONFIGURACIÓN DE TU PROYECTO FIREBASE
       // Firebase Console -> Configuración del proyecto -> Tus apps -> Web
       // ============================================================
-     const firebaseConfig = {
-    apiKey: "AIzaSyA9Xvz6_NoyWIcl2gU2rLYsNzj_6uwB3hA",
-    authDomain: "ipem146js.firebaseapp.com",
-    projectId: "ipem146js",
-    storageBucket: "ipem146js.firebasestorage.app",
-    messagingSenderId: "572464024232",
-    appId: "1:572464024232:web:a30ef451228ac9109d509d",
-    measurementId: "G-WBDVFLQD73"
-  };
+      const firebaseConfig = {
+        apiKey: "REEMPLAZAR_API_KEY",
+        authDomain: "REEMPLAZAR_PROJECT.firebaseapp.com",
+        projectId: "REEMPLAZAR_PROJECT_ID",
+        storageBucket: "REEMPLAZAR_PROJECT.appspot.com",
+        messagingSenderId: "REEMPLAZAR_SENDER_ID",
+        appId: "REEMPLAZAR_APP_ID"
+      };
 
       const firebaseConfigured = !Object.values(firebaseConfig).some(v => String(v).includes("REEMPLAZAR_"));
       let auth = null, db = null, googleProvider = null;
@@ -896,7 +895,11 @@
 
       window.cerrarSesionGoogle = async function() {
         if (!auth) return;
+        // El estado local está aislado por UID. No se comparte con otra cuenta.
+        // Firebase conserva el avance definitivo en Firestore.
         await signOut(auth);
+        localStorage.removeItem('firebase_active_uid');
+        firebaseStorageUid = null;
         window.location.reload();
       };
 
@@ -1316,7 +1319,7 @@
           const codigos = {};
           seccionesData.forEach(sec => {
               const editor = document.getElementById(`editor-${sec.id}`);
-              codigos[sec.id] = editor ? editor.value : (localStorage.getItem(`draft_editor-${sec.id}`) || sec.initialCode);
+              codigos[sec.id] = editor ? editor.value : (getLocalStorage(`draft_editor-${sec.id}`) || sec.initialCode);
           });
           return {
               estudiante: { nombre, curso },
@@ -1327,7 +1330,7 @@
               historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
               contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
               seccionActiva: seccionActivaActual,
-              versionApp: '6.4-firebase-1'
+              versionApp: '6.4-firebase-3-uid-isolated-storage'
           };
       }
 
@@ -1352,18 +1355,45 @@
           }
       }
 
+      // ============================================================
+      // ALMACENAMIENTO LOCAL AISLADO POR UID
+      // Cada cuenta de Google tiene sus propias claves de localStorage.
+      // Firebase sigue siendo la fuente principal de verdad.
+      // ============================================================
+      let firebaseStorageUid = null;
+
+      function storageKey(clave) {
+          if (clave === 'firebase_active_uid') return clave;
+          return firebaseStorageUid ? `firebase_user_${firebaseStorageUid}_${clave}` : `legacy_${clave}`;
+      }
+
+      function getLocalStorage(clave) {
+          return localStorage.getItem(storageKey(clave));
+      }
+
       function setLocalStorage(clave, valor) {
-          localStorage.setItem(clave, valor);
+          localStorage.setItem(storageKey(clave), String(valor));
           programarGuardadoFirebase();
       }
 
       function removeLocalStorage(clave) {
-          localStorage.removeItem(clave);
+          localStorage.removeItem(storageKey(clave));
           programarGuardadoFirebase();
       }
 
+      function limpiarDatosLocalesDelEstudiante(uid = firebaseStorageUid) {
+          if (!uid) return;
+          const prefijo = `firebase_user_${uid}_`;
+          const claves = [];
+          for (let i = 0; i < localStorage.length; i++) {
+              const clave = localStorage.key(i);
+              if (clave && clave.startsWith(prefijo)) claves.push(clave);
+          }
+          claves.forEach(clave => localStorage.removeItem(clave));
+      }
+
       function limpiarLocalStorage() {
-          localStorage.clear();
+          limpiarDatosLocalesDelEstudiante(firebaseStorageUid);
           programarGuardadoFirebase();
       }
 
@@ -1410,6 +1440,14 @@
               overlay.classList.remove('hidden');
               return;
           }
+          // FIX CRÍTICO PARA CAMBIO DE CUENTA:
+          // si entra otro UID en el mismo navegador, nunca debemos reutilizar
+          // el caché local del estudiante anterior. Firebase es la fuente de verdad.
+          // Desde aquí TODAS las claves locales pertenecen al UID actual.
+          // Los datos de otras cuentas permanecen aislados por su propia clave.
+          firebaseStorageUid = user.uid;
+          localStorage.setItem('firebase_active_uid', user.uid);
+
           firebaseInitialized = true;
           overlay.classList.add('hidden');
 
@@ -1421,9 +1459,11 @@
           document.getElementById('firebaseUserName').textContent = user.displayName || 'Estudiante';
           document.getElementById('firebaseUserEmail').textContent = user.email || '';
 
-          document.getElementById('studentName').value = localStorage.getItem('app_student_name') || user.displayName || '';
-          document.getElementById('studentCourse').value = localStorage.getItem('app_student_course') || '';
-          totalSalidasPestaña = parseInt(localStorage.getItem('app_blur_count') || '0');
+          // Si el estudiante actual no tenía documento en Firebase, arrancamos
+          // limpio y usamos solamente sus datos de Google.
+          document.getElementById('studentName').value = getLocalStorage('app_student_name') || user.displayName || '';
+          document.getElementById('studentCourse').value = getLocalStorage('app_student_course') || '';
+          totalSalidasPestaña = parseInt(getLocalStorage('app_blur_count') || '0');
           document.getElementById('blurCount').innerText = totalSalidasPestaña;
 
           document.getElementById('studentName').addEventListener('input', (e) => setLocalStorage('app_student_name', e.target.value));
@@ -1461,12 +1501,12 @@
               li.innerHTML = `<i class="fa-solid ${sec.icon}"></i> <span>${sec.title}</span>`;
               navList.appendChild(li);
 
-              const savedCode = localStorage.getItem(`draft_editor-${sec.id}`) || sec.initialCode;
-              const isFinalized = localStorage.getItem(`finalized_${sec.id}`) === 'true';
+              const savedCode = getLocalStorage(`draft_editor-${sec.id}`) || sec.initialCode;
+              const isFinalized = getLocalStorage(`finalized_${sec.id}`) === 'true';
               if (isFinalized) actividadesFinalizadas[sec.id] = true;
-              contadorPrevisualizaciones[sec.id] = parseInt(localStorage.getItem(`preview_count_${sec.id}`) || '0');
+              contadorPrevisualizaciones[sec.id] = parseInt(getLocalStorage(`preview_count_${sec.id}`) || '0');
 
-              let savedTime = localStorage.getItem(`timer_${sec.id}`);
+              let savedTime = getLocalStorage(`timer_${sec.id}`);
               tiemposRestantes[sec.id] = savedTime !== null ? parseInt(savedTime) : TIEMPO_MAXIMO_SEGUNDOS;
               modulosPausados[sec.id] = false;
 
@@ -2027,7 +2067,6 @@
 
       async function reiniciarSesionEstudiante() {
           if (confirm("⚠️ ¿Iniciar nueva sesión? Se cerrará la cuenta de Google y se borrará el avance local de este equipo.")) {
-              localStorage.clear();
               if (window.cerrarSesionGoogle) await window.cerrarSesionGoogle();
               else window.location.reload();
           }
@@ -2683,7 +2722,7 @@
 
           seccionesData.forEach(sec => {
               const editor = document.getElementById(`editor-${sec.id}`);
-              paqueteAvance.codigos[sec.id] = editor ? editor.value : (localStorage.getItem(`draft_editor-${sec.id}`) || sec.initialCode);
+              paqueteAvance.codigos[sec.id] = editor ? editor.value : (getLocalStorage(`draft_editor-${sec.id}`) || sec.initialCode);
           });
 
           const blob = new Blob([JSON.stringify(paqueteAvance, null, 2)], { type: "application/json" });
