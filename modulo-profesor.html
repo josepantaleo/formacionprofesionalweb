@@ -15,23 +15,6 @@ main{max-width:1400px;margin:0 auto;padding:24px}.hidden{display:none!important}
 .table-wrap{overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:15px}.table{width:100%;border-collapse:collapse;min-width:900px}.table th,.table td{padding:13px 12px;border-bottom:1px solid var(--border);text-align:left}.table th{color:var(--muted);font-size:13px}.table tr:hover{background:#ffffff05}.pill{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:800}.pill.ok{background:#123b28;color:#70f0a5}.pill.warn{background:#423511;color:#ffd66c}.pill.danger{background:#421a22;color:#ff91a0}.progress{height:8px;background:#24334b;border-radius:999px;overflow:hidden;min-width:100px}.progress i{display:block;height:100%;background:var(--accent)}
 .drawer{position:fixed;inset:0;background:#0009;z-index:20;display:flex;justify-content:flex-end}.drawer-panel{width:min(850px,100%);height:100%;overflow:auto;background:#0b1526;border-left:1px solid var(--border);padding:24px}.drawer-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}.profile{display:flex;gap:14px;align-items:center}.avatar{width:58px;height:58px;border-radius:50%;object-fit:cover;background:#22334e;display:grid;place-items:center;font-size:22px}.detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:20px 0}.box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:15px}.box h3{margin:0 0 10px;font-size:15px}.box p{margin:4px 0;color:var(--muted)}.activity-list{display:grid;gap:8px}.activity{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px}.dot{width:10px;height:10px;border-radius:50%;background:#687a92}.dot.ok{background:var(--ok)}
 pre{white-space:pre-wrap;background:#07101d;border:1px solid var(--border);padding:12px;border-radius:10px;max-height:250px;overflow:auto;color:#dbe7f8}.notice{background:#241e0d;border:1px solid #594a1d;color:#ffe39a;padding:12px;border-radius:10px;margin-bottom:15px}.answer-section{margin-top:12px}.answer-summary{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}.answer-pill{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800;background:#16243a;border:1px solid var(--border)}.question-card{background:#0d1929;border:1px solid var(--border);border-radius:12px;padding:14px;margin:10px 0}.question-card h4{margin:0 0 8px}.option-line{padding:8px 10px;border-radius:8px;margin:5px 0;border:1px solid transparent}.option-line.selected-correct{background:#123b28;border-color:#26794b;color:#a8f5c8}.option-line.selected-wrong{background:#421a22;border-color:#8d3344;color:#ffb0ba}.option-line.correct-not-selected{background:#3d3210;border-color:#75601f;color:#ffe18a}.option-line.normal{background:#07101d;border-color:#1d2c43;color:#b9c7da}.answer-mark{float:right;font-weight:800}.socratic{border-left:4px solid #a78bfa}.answer-code{margin-top:12px}.answer-empty{color:var(--muted);padding:10px 0}
-.answer-section .section-answer{margin:10px 0;border:1px solid var(--border);border-radius:12px;background:#0d1929;overflow:hidden}
-.answer-section .section-answer>summary{cursor:pointer;list-style:none;padding:12px 14px;font-weight:800;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.answer-section .section-answer>summary::-webkit-details-marker{display:none}
-.answer-section .section-answer>summary:before{content:"▸";color:var(--accent);font-size:14px;transition:.15s}
-.answer-section .section-answer[open]>summary:before{transform:rotate(90deg)}
-.answer-section .section-content{padding:0 12px 12px}
-.question-mini{margin:8px 0;border:1px solid var(--border);border-radius:10px;background:#07101d;overflow:hidden}
-.question-mini>summary{cursor:pointer;list-style:none;padding:10px 12px;display:flex;align-items:center;gap:8px}
-.question-mini>summary::-webkit-details-marker{display:none}
-.question-mini>summary:before{content:"▸";color:var(--muted);font-size:12px}
-.question-mini[open]>summary:before{transform:rotate(90deg)}
-.question-mini .student-answer{margin-left:auto;font-size:12px;font-weight:800;color:#a8f5c8;white-space:nowrap}
-.question-mini .question-body{padding:0 12px 10px}
-.compact-option{font-size:13px;padding:6px 8px;margin:4px 0}
-.section-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-left:auto}
-.section-meta .answer-pill{padding:4px 8px}
-
 @media(max-width:850px){.top{grid-template-columns:repeat(2,1fr)}.detail-grid{grid-template-columns:1fr}}
 @media(max-width:500px){.top{grid-template-columns:1fr}.main{padding:12px}}
 </style>
@@ -112,106 +95,30 @@ document.getElementById('search').oninput=render;document.getElementById('course
 function openStudent(uid){const s=students.find(x=>x.uid===uid);if(!s)return;const name=s.nombreGoogle||s.estudiante?.nombre||'Sin nombre';document.getElementById('profile').innerHTML=`<div class="profile"><img class="avatar" src="${escapeAttr(s.fotoGoogle||'')}" onerror="this.style.display='none'" alt=""><div><h2 style="margin:0">${escapeHtml(name)}</h2><div class="muted">${escapeHtml(s.email||'')}</div><div class="muted">${escapeHtml(s.estudiante?.curso||'Curso no indicado')}</div></div></div>`;
  let acts='';for(let i=1;i<=s.totalModules;i++){const id='sec-'+i,done=!!s.finalizadas[id];const r=s.resultados[id]||{};const nota=Number.isFinite(Number(r.notaIA))?Number(r.notaIA).toFixed(1):'—';acts+=`<div class="activity"><span class="dot ${done?'ok':''}"></span><div><b>Actividad ${i}</b><div class="muted">${done?'Finalizada':'Pendiente'} · Nota: ${nota}</div></div><span>${done?'✓':'○'}</span></div>`}
  const answerHtml = buildAnswerHtml(s);
- document.getElementById('detail').innerHTML=`<div class="detail-grid"><div class="box"><h3>Progreso</h3><p><b>${s.progress}%</b> (${s.completed}/${s.totalModules})</p><div class="progress"><i style="width:${s.progress}%"></i></div></div><div class="box"><h3>Rendimiento</h3><p>Promedio: <b>${s.avg==null?'—':s.avg.toFixed(1)}/10</b></p><p>Salidas de pestaña: <b>${Number(s.salidasPestaña||0)}</b></p></div><div class="box"><h3>Cuenta</h3><p>UID: ${escapeHtml(s.uid)}</p><p>Último guardado: ${formatDate(s.actualizadoEn)}</p></div><div class="box"><h3>Sección activa</h3><p>${escapeHtml(s.seccionActiva||'—')}</p></div></div><div class="box"><h3>Actividades</h3><div class="activity-list">${acts}</div></div><div class="box answer-section"><h3>📝 Respuestas del Analista</h3><p class="muted">Las respuestas están ordenadas por sección y minimizadas. Abrí una sección y luego una pregunta para ver el detalle.</p>${answerHtml}</div><div class="box" style="margin-top:12px"><h3>Código guardado</h3>${Object.keys(s.codigos||{}).length?Object.entries(s.codigos).map(([id,code])=>`<details><summary>${escapeHtml(id)}</summary><pre>${escapeHtml(code||'')}</pre></details>`).join(''):'<p>No hay código guardado.</p>'}</div>`;
+ document.getElementById('detail').innerHTML=`<div class="detail-grid"><div class="box"><h3>Progreso</h3><p><b>${s.progress}%</b> (${s.completed}/${s.totalModules})</p><div class="progress"><i style="width:${s.progress}%"></i></div></div><div class="box"><h3>Rendimiento</h3><p>Promedio: <b>${s.avg==null?'—':s.avg.toFixed(1)}/10</b></p><p>Salidas de pestaña: <b>${Number(s.salidasPestaña||0)}</b></p></div><div class="box"><h3>Cuenta</h3><p>UID: ${escapeHtml(s.uid)}</p><p>Último guardado: ${formatDate(s.actualizadoEn)}</p></div><div class="box"><h3>Sección activa</h3><p>${escapeHtml(s.seccionActiva||'—')}</p></div></div><div class="box"><h3>Actividades</h3><div class="activity-list">${acts}</div></div><div class="box answer-section"><h3>📝 Respuestas del Analista</h3><p class="muted">Aquí se muestran las preguntas generadas para el estudiante, sus opciones, las respuestas elegidas y las respuestas correctas.</p>${answerHtml}</div><div class="box" style="margin-top:12px"><h3>Código guardado</h3>${Object.keys(s.codigos||{}).length?Object.entries(s.codigos).map(([id,code])=>`<details><summary>${escapeHtml(id)}</summary><pre>${escapeHtml(code||'')}</pre></details>`).join(''):'<p>No hay código guardado.</p>'}</div>`;
  document.getElementById('drawer').classList.remove('hidden')}
 
 function buildAnswerHtml(s){
   const resultados=s.resultados||{};
-  const ids=Object.keys(resultados)
-    .filter(id=>resultados[id]?.analista)
-    .sort((a,b)=>Number(a.replace('sec-',''))-Number(b.replace('sec-','')));
-
+  const ids=Object.keys(resultados).filter(id=>resultados[id]?.analista);
   if(!ids.length) return '<div class="answer-empty">Todavía no hay respuestas del Analista guardadas.</div>';
-
-  const sectionTitles={
-    "sec-1":"1. Introducción a JS",
-    "sec-2":"2. Variables (let, const, var)",
-    "sec-3":"3. Tipos de Datos",
-    "sec-4":"4. Operadores",
-    "sec-5":"5. Condicionales",
-    "sec-6":"6. Funciones",
-    "sec-7":"7. Arrays",
-    "sec-8":"8. Bucles",
-    "sec-9":"9. Objetos Literales",
-    "sec-10":"10. Arrays Avanzados",
-    "sec-11":"11. Métodos de Strings",
-    "sec-12":"12. Scope y Ámbito",
-    "sec-13":"13. DOM (Document Object Model)",
-    "sec-14":"14. Formularios y Eventos",
-    "sec-15":"15. LocalStorage y Persistencia",
-    "sec-16":"16. JSON y Fetch API",
-    "sec-17":"17. Manejo de Errores (try...catch)",
-    "sec-18":"18. Eventos de Avanzada",
-    "sec-19":"19. Proyecto Integrador Final"
-  };
-
-  return ids.map(id=>{
-    const r=resultados[id]||{};
-    const a=r.analista||{};
-    const preguntas=Array.isArray(a.preguntas)?a.preguntas:[];
-    const titulo=sectionTitles[id] || ('Sección '+String(id).replace('sec-',''));
-    const total=Number(a.total||preguntas.length||0);
-    const aciertos=Number(a.correctas||0);
-    const porcentaje=Number(a.porcentaje||0);
-
+  return ids.sort((a,b)=>Number(a.replace('sec-',''))-Number(b.replace('sec-',''))).map(id=>{
+    const r=resultados[id]||{}; const a=r.analista||{}; const preguntas=Array.isArray(a.preguntas)?a.preguntas:[];
+    const titulo='Actividad '+String(id).replace('sec-','');
     const qs=preguntas.map((p,i)=>{
       const selected=Array.isArray(p.seleccionadas)?p.seleccionadas.map(Number):[];
       const correct=Array.isArray(p.correctas)?p.correctas.map(Number):[];
       const options=Array.isArray(p.opciones)?p.opciones:[];
-
-      // Resumen compacto: muestra únicamente qué respondió el estudiante.
-      const selectedTexts=selected
-        .map(j=>options[j]?.texto)
-        .filter(Boolean);
-
-      let responseLabel = selectedTexts.length
-        ? 'Respondió: '+selectedTexts.join(' · ')
-        : 'Sin respuesta';
-
-      if(responseLabel.length>115) responseLabel=responseLabel.slice(0,112)+'…';
-
-      const fullyCorrect =
-        JSON.stringify([...selected].sort((a,b)=>a-b)) ===
-        JSON.stringify([...correct].sort((a,b)=>a-b));
-
-      const responseClass = fullyCorrect ? 'student-answer' : 'student-answer' ;
-      const cat=escapeHtml(p.categoria||'ANÁLISIS');
-
       const opts=options.map((op,j)=>{
         const isSel=selected.includes(j), isCor=correct.includes(j);
         const cls=isSel&&isCor?'selected-correct':isSel?'selected-wrong':isCor?'correct-not-selected':'normal';
         const mark=isSel&&isCor?'✓ Elegida · Correcta':isSel?'✗ Elegida · Incorrecta':isCor?'✓ Correcta':'—';
-        return `<div class="option-line compact-option ${cls}">
-          <span>${String.fromCharCode(65+j)}) ${escapeHtml(op?.texto||'')}</span>
-          <span class="answer-mark">${mark}</span>
-        </div>`;
+        return `<div class="option-line ${cls}"><span>${String.fromCharCode(65+j)}) ${escapeHtml(op?.texto||'')}</span><span class="answer-mark">${mark}</span></div>`;
       }).join('');
-
-      return `<details class="question-mini">
-        <summary>
-          <span><b>${i+1}.</b> ${escapeHtml(p.pregunta||'')}</span>
-          <span class="${responseClass}">${escapeHtml(responseLabel)}</span>
-        </summary>
-        <div class="question-body">
-          <div style="margin:5px 0 8px"><span class="answer-pill">${cat}</span></div>
-          ${opts||'<div class="answer-empty">Sin opciones registradas.</div>'}
-        </div>
-      </details>`;
+      const cat=escapeHtml(p.categoria||'ANÁLISIS');
+      return `<div class="question-card ${p.categoria==='SOCRÁTICA'?'socratic':''}"><h4>${i+1}. ${escapeHtml(p.pregunta||'')} <span class="answer-pill">${cat}</span></h4>${opts||'<div class="answer-empty">Sin opciones registradas.</div>'}</div>`;
     }).join('');
-
-    return `<details class="section-answer">
-      <summary>
-        <span>📚 ${escapeHtml(titulo)}</span>
-        <span class="section-meta">
-          <span class="answer-pill">${aciertos}/${total}</span>
-          <span class="answer-pill">${porcentaje}%</span>
-          <span class="answer-pill">${escapeHtml(a.viabilidad||'—')}</span>
-        </span>
-      </summary>
-      <div class="section-content">
-        ${qs||'<div class="answer-empty">No hay preguntas registradas.</div>'}
-      </div>
-    </details>`;
+    return `<details open><summary><b>${titulo}</b> — ${Number(a.correctas||0)}/${Number(a.total||preguntas.length||0)} · ${Number(a.porcentaje||0)}% · Viabilidad: ${escapeHtml(a.viabilidad||'—')} · Excelencia: ${escapeHtml(a.excelencia||'—')}</summary><div>${qs||'<div class="answer-empty">No hay preguntas registradas.</div>'}</div></details>`;
   }).join('');
 }
 
