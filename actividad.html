@@ -808,9 +808,140 @@
         color: #166534 !important;
         font-weight: 700;
       }
+
+      /* ===== Firebase / Google Login ===== */
+      #firebaseAuthOverlay {
+        position: fixed; inset: 0; z-index: 5000;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(2, 6, 23, 0.96); backdrop-filter: blur(8px);
+      }
+      #firebaseAuthOverlay.hidden { display: none; }
+      .firebase-auth-card {
+        width: min(460px, calc(100vw - 32px)); padding: 2rem;
+        background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 16px; box-shadow: 0 25px 60px rgba(0,0,0,.45); text-align: center;
+      }
+      .firebase-auth-card h2 { color: var(--primary); margin-bottom: .7rem; }
+      .firebase-auth-card p { color: var(--text-muted); line-height: 1.5; margin-bottom: 1.25rem; }
+      .google-user { display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; }
+      .google-user img { width:38px; height:38px; border-radius:50%; }
+      .firebase-status { display:inline-flex; align-items:center; gap:.4rem; font-size:.75rem; padding:.3rem .6rem; border-radius:999px; margin-top:.4rem; }
+      .firebase-status.online { background:rgba(16,185,129,.12); color:#6ee7b7; border:1px solid rgba(16,185,129,.35); }
+      .firebase-status.saving { background:rgba(245,158,11,.12); color:#fbbf24; border:1px solid rgba(245,158,11,.35); }
+      .firebase-status.offline { background:rgba(239,68,68,.12); color:#fca5a5; border:1px solid rgba(239,68,68,.35); }
+      .firebase-account { display:flex; align-items:center; gap:.7rem; flex-wrap:wrap; }
+      .firebase-account img { width:32px; height:32px; border-radius:50%; }
+      .firebase-account .email { color:var(--text-muted); font-size:.75rem; }
+      .btn-google { background:#fff; color:#1f2937; }
+      .btn-google:hover { background:#f3f4f6; }
     </style>
+
+    <!-- Firebase Authentication + Firestore (modular browser SDK) -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+      import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+      import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+      // ============================================================
+      // PEGA AQUÍ LA CONFIGURACIÓN DE TU PROYECTO FIREBASE
+      // Firebase Console -> Configuración del proyecto -> Tus apps -> Web
+      // ============================================================
+      const firebaseConfig = {
+    apiKey: "AIzaSyBrZC3Cvz7aLS2C-EC5SafbJkLvbyrypQo",
+    authDomain: "ipem146-javascript.firebaseapp.com",
+    projectId: "ipem146-javascript",
+    storageBucket: "ipem146-javascript.firebasestorage.app",
+    messagingSenderId: "769326127250",
+    appId: "1:769326127250:web:a7ff764e519d6ff1382e4b",
+    measurementId: "G-T3B4X83CK5"
+  };
+
+      const firebaseConfigured = !Object.values(firebaseConfig).some(v => String(v).includes("REEMPLAZAR_"));
+      let auth = null, db = null, googleProvider = null;
+
+      if (firebaseConfigured) {
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+        googleProvider = new GoogleAuthProvider();
+        googleProvider.setCustomParameters({ prompt: "select_account" });
+      }
+
+      window.firebaseAuthReady = new Promise(resolve => {
+        if (!firebaseConfigured) return resolve(null);
+        let first = true;
+        onAuthStateChanged(auth, user => {
+          if (first) { first = false; resolve(user); }
+          window.firebaseCurrentUser = user || null;
+          window.dispatchEvent(new CustomEvent("firebase-auth-changed", { detail: user || null }));
+        });
+      });
+
+      window.firebaseConfigured = firebaseConfigured;
+      window.firebaseCurrentUser = null;
+
+      window.iniciarSesionGoogle = async function() {
+        if (!firebaseConfigured) {
+          alert("Firebase todavía no está configurado. Reemplaza los valores REEMPLAZAR_ en la configuración del archivo.");
+          return;
+        }
+        try {
+          await signInWithPopup(auth, googleProvider);
+          window.location.reload();
+        } catch (error) {
+          console.error(error);
+          alert("No se pudo iniciar sesión con Google. Revisa la configuración de Firebase y los dominios autorizados.\n\n" + (error.code || error.message));
+        }
+      };
+
+      window.cerrarSesionGoogle = async function() {
+        if (!auth) return;
+        await signOut(auth);
+        window.location.reload();
+      };
+
+      window.cargarProgresoFirebase = async function() {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db) return null;
+        const ref = doc(db, "estudiantes", user.uid);
+        const snap = await getDoc(ref);
+        return snap.exists() ? snap.data() : null;
+      };
+
+      window.guardarProgresoFirebase = async function(payload) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db) return false;
+        try {
+          const ref = doc(db, "estudiantes", user.uid);
+          await setDoc(ref, {
+            ...payload,
+            uid: user.uid,
+            email: user.email || "",
+            nombreGoogle: user.displayName || "",
+            fotoGoogle: user.photoURL || "",
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Firebase save error:", error);
+          return false;
+        }
+      };
+    </script>
   </head>
   <body onload="initApp()">
+    <div id="firebaseAuthOverlay">
+      <div class="firebase-auth-card">
+        <div style="font-size:3rem; margin-bottom:.5rem;">🔐</div>
+        <h2>Acceso de Estudiantes</h2>
+        <p id="firebaseAuthMessage">Inicia sesión con tu cuenta institucional de Google para guardar y recuperar automáticamente tu avance.</p>
+        <button class="btn btn-google" style="width:100%; justify-content:center; font-size:1rem; padding:.8rem 1rem;" onclick="iniciarSesionGoogle()">
+          <i class="fa-brands fa-google"></i> Iniciar sesión con Google
+        </button>
+        <div id="firebaseConfigWarning" style="display:none; margin-top:1rem; color:#fca5a5; font-size:.8rem;">Firebase no está configurado todavía.</div>
+      </div>
+    </div>
+
     <!-- Sidebar Navegación -->
     <aside>
       <div class="brand">
@@ -871,6 +1002,18 @@
 
       <!-- Datos del Alumno y Gestión de Avance -->
       <div class="student-inputs">
+        <div id="firebaseAccountBox" style="width:100%; display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:.25rem;">
+          <div class="firebase-account">
+            <img id="firebaseUserPhoto" src="" alt="Google" style="display:none;">
+            <div><strong id="firebaseUserName">Sin sesión</strong><div class="email" id="firebaseUserEmail"></div></div>
+            <span id="firebaseSaveStatus" class="firebase-status online">● Sincronización activa</span>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-success" onclick="guardarAhoraFirebase()"><i class="fa-solid fa-cloud-arrow-up"></i> Guardar ahora</button>
+            <button class="btn btn-danger" onclick="cerrarSesionGoogle()"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
+          </div>
+        </div>
+
         <div class="input-group">
           <label>Nombre y Apellido del Estudiante</label>
           <input
@@ -1156,23 +1299,141 @@
       let seccionPendientePausa = null;
       let tipoAccionModal = '';
 
-      function initApp() {
+      let firebaseSaveTimer = null;
+      let firebaseSaveInProgress = false;
+      let firebaseInitialized = false;
+
+      function mostrarEstadoFirebase(tipo, texto) {
+          const el = document.getElementById('firebaseSaveStatus');
+          if (!el) return;
+          el.className = `firebase-status ${tipo}`;
+          el.textContent = `● ${texto}`;
+      }
+
+      function construirPaqueteAvanceFirebase() {
+          const nombre = document.getElementById('studentName')?.value.trim() || '';
+          const curso = document.getElementById('studentCourse')?.value.trim() || '';
+          const codigos = {};
+          seccionesData.forEach(sec => {
+              const editor = document.getElementById(`editor-${sec.id}`);
+              codigos[sec.id] = editor ? editor.value : (localStorage.getItem(`draft_editor-${sec.id}`) || sec.initialCode);
+          });
+          return {
+              estudiante: { nombre, curso },
+              salidasPestaña: totalSalidasPestaña,
+              codigos,
+              tiemposRestantes: { ...tiemposRestantes },
+              finalizadas: { ...actividadesFinalizadas },
+              historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
+              contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
+              seccionActiva: seccionActivaActual,
+              versionApp: '6.4-firebase-1'
+          };
+      }
+
+      function programarGuardadoFirebase() {
+          if (!firebaseInitialized || !window.firebaseCurrentUser) return;
+          clearTimeout(firebaseSaveTimer);
+          firebaseSaveTimer = setTimeout(() => guardarAhoraFirebase(), 1200);
+      }
+
+      async function guardarAhoraFirebase() {
+          if (!firebaseInitialized || !window.firebaseCurrentUser || firebaseSaveInProgress) return;
+          firebaseSaveInProgress = true;
+          mostrarEstadoFirebase('saving', 'Guardando...');
+          try {
+              const ok = await window.guardarProgresoFirebase(construirPaqueteAvanceFirebase());
+              mostrarEstadoFirebase(ok ? 'online' : 'offline', ok ? 'Guardado en Firebase' : 'Error al guardar');
+          } catch (e) {
+              console.error(e);
+              mostrarEstadoFirebase('offline', 'Error de conexión');
+          } finally {
+              firebaseSaveInProgress = false;
+          }
+      }
+
+      function setLocalStorage(clave, valor) {
+          localStorage.setItem(clave, valor);
+          programarGuardadoFirebase();
+      }
+
+      function removeLocalStorage(clave) {
+          localStorage.removeItem(clave);
+          programarGuardadoFirebase();
+      }
+
+      function limpiarLocalStorage() {
+          localStorage.clear();
+          programarGuardadoFirebase();
+      }
+
+      async function restaurarDesdeFirebase(datos) {
+          if (!datos) return;
+          const estudiante = datos.estudiante || {};
+          if (estudiante.nombre !== undefined) {
+              document.getElementById('studentName').value = estudiante.nombre || '';
+              setLocalStorage('app_student_name', estudiante.nombre || '');
+          }
+          if (estudiante.curso !== undefined) {
+              document.getElementById('studentCourse').value = estudiante.curso || '';
+              setLocalStorage('app_student_course', estudiante.curso || '');
+          }
+          if (datos.salidasPestaña !== undefined) {
+              totalSalidasPestaña = Number(datos.salidasPestaña) || 0;
+              setLocalStorage('app_blur_count', totalSalidasPestaña);
+          }
+          if (datos.tiemposRestantes) Object.entries(datos.tiemposRestantes).forEach(([id,v]) => setLocalStorage(`timer_${id}`, Number(v)));
+          if (datos.finalizadas) Object.entries(datos.finalizadas).forEach(([id,v]) => v ? setLocalStorage(`finalized_${id}`, 'true') : removeLocalStorage(`finalized_${id}`));
+          if (datos.contadorPrevisualizaciones) Object.entries(datos.contadorPrevisualizaciones).forEach(([id,v]) => setLocalStorage(`preview_count_${id}`, Number(v)));
+          if (datos.codigos) Object.entries(datos.codigos).forEach(([id,v]) => { if (typeof v === 'string') setLocalStorage(`draft_editor-${id}`, v); });
+          historialResultados = datos.historialResultados || {};
+          actividadesFinalizadas = datos.finalizadas || {};
+          contadorPrevisualizaciones = datos.contadorPrevisualizaciones || {};
+          tiemposRestantes = datos.tiemposRestantes || {};
+          if (datos.seccionActiva && seccionesData.some(s => s.id === datos.seccionActiva)) seccionActivaActual = datos.seccionActiva;
+      }
+
+      async function initApp() {
           const navList = document.getElementById('navList');
           const sectionsContainer = document.getElementById('sectionsContainer');
 
-          document.getElementById('studentName').value = localStorage.getItem('app_student_name') || '';
+          const overlay = document.getElementById('firebaseAuthOverlay');
+          const warning = document.getElementById('firebaseConfigWarning');
+          if (!window.firebaseConfigured) {
+              if (warning) warning.style.display = 'block';
+              document.getElementById('firebaseAuthMessage').innerText = 'Primero configura Firebase en este archivo. Luego podrás ingresar con Google y guardar el avance en la nube.';
+              return;
+          }
+
+          const user = await window.firebaseAuthReady;
+          if (!user) {
+              overlay.classList.remove('hidden');
+              return;
+          }
+          firebaseInitialized = true;
+          overlay.classList.add('hidden');
+
+          const datosFirebase = await window.cargarProgresoFirebase();
+          if (datosFirebase) await restaurarDesdeFirebase(datosFirebase);
+
+          const photo = document.getElementById('firebaseUserPhoto');
+          if (user.photoURL) { photo.src = user.photoURL; photo.style.display = 'block'; }
+          document.getElementById('firebaseUserName').textContent = user.displayName || 'Estudiante';
+          document.getElementById('firebaseUserEmail').textContent = user.email || '';
+
+          document.getElementById('studentName').value = localStorage.getItem('app_student_name') || user.displayName || '';
           document.getElementById('studentCourse').value = localStorage.getItem('app_student_course') || '';
           totalSalidasPestaña = parseInt(localStorage.getItem('app_blur_count') || '0');
           document.getElementById('blurCount').innerText = totalSalidasPestaña;
 
-          document.getElementById('studentName').addEventListener('input', (e) => localStorage.setItem('app_student_name', e.target.value));
-          document.getElementById('studentCourse').addEventListener('input', (e) => localStorage.setItem('app_student_course', e.target.value));
+          document.getElementById('studentName').addEventListener('input', (e) => setLocalStorage('app_student_name', e.target.value));
+          document.getElementById('studentCourse').addEventListener('input', (e) => setLocalStorage('app_student_course', e.target.value));
 
           // Detectar salidas de pestaña con Page Visibility API
           document.addEventListener('visibilitychange', () => {
               if (document.hidden) {
                   totalSalidasPestaña++;
-                  localStorage.setItem('app_blur_count', totalSalidasPestaña);
+                  setLocalStorage('app_blur_count', totalSalidasPestaña);
                   document.getElementById('blurCount').innerText = totalSalidasPestaña;
 
                   if (totalSalidasPestaña >= 3 && totalSalidasPestaña <= 7) {
@@ -1326,12 +1587,24 @@
           if (totalSalidasPestaña > 7) {
               anularPorFraudeMasivo();
           }
+
+          // Autoguardado de respaldo: captura también cambios que no pasan por localStorage.
+          clearInterval(window.__firebaseAutoSaveInterval);
+          window.__firebaseAutoSaveInterval = setInterval(() => {
+              if (document.visibilityState !== 'hidden') guardarAhoraFirebase();
+          }, 10000);
+          window.addEventListener('beforeunload', () => {
+              // El último estado queda además en localStorage; Firebase se actualiza con el debounce normal.
+              programarGuardadoFirebase();
+          });
+
+          guardarAhoraFirebase();
       }
 
       function anularPorFraudeMasivo() {
           seccionesData.forEach(sec => {
               actividadesFinalizadas[sec.id] = true;
-              localStorage.setItem(`finalized_${sec.id}`, 'true');
+              setLocalStorage(`finalized_${sec.id}`, 'true');
               const editor = document.getElementById(`editor-${sec.id}`);
               if (editor) editor.disabled = true;
 
@@ -1370,7 +1643,7 @@
 
               if (tiemposRestantes[sectionId] > 0) {
                   tiemposRestantes[sectionId]--;
-                  localStorage.setItem(`timer_${sectionId}`, tiemposRestantes[sectionId]);
+                  setLocalStorage(`timer_${sectionId}`, tiemposRestantes[sectionId]);
                   actualizarDisplayTiempo(sectionId);
               } else {
                   clearInterval(cronometrosActivos[sectionId]);
@@ -1394,7 +1667,7 @@
           document.getElementById(`btn-pause-${sectionId}`).disabled = true;
 
           actividadesFinalizadas[sectionId] = true;
-          localStorage.setItem(`finalized_${sectionId}`, 'true');
+          setLocalStorage(`finalized_${sectionId}`, 'true');
 
           if(!historialResultados[sectionId]) historialResultados[sectionId] = {};
           historialResultados[sectionId].codigo = editor ? editor.value : '';
@@ -1486,7 +1759,7 @@
 
       function reiniciarContadorSalidasProfesor() {
           totalSalidasPestaña = 0;
-          localStorage.setItem('app_blur_count', totalSalidasPestaña);
+          setLocalStorage('app_blur_count', totalSalidasPestaña);
           document.getElementById('blurCount').innerText = totalSalidasPestaña;
           alert("¡El contador de salidas de pestaña ha sido reiniciado a 0 con éxito!");
       }
@@ -1499,8 +1772,8 @@
           }
 
           delete actividadesFinalizadas[sectionId];
-          localStorage.removeItem(`finalized_${sectionId}`);
-          localStorage.removeItem(`preview_count_${sectionId}`);
+          removeLocalStorage(`finalized_${sectionId}`);
+          removeLocalStorage(`preview_count_${sectionId}`);
           delete historialResultados[sectionId];
           contadorPrevisualizaciones[sectionId] = 0;
 
@@ -1525,7 +1798,7 @@
           }
 
           tiemposRestantes[sectionId] = TIEMPO_MAXIMO_SEGUNDOS;
-          localStorage.removeItem(`timer_${sectionId}`);
+          removeLocalStorage(`timer_${sectionId}`);
           actualizarDisplayTiempo(sectionId);
 
           actualizarProgreso();
@@ -1535,8 +1808,8 @@
       function desbloquearTodosEjercicios() {
           seccionesData.forEach(sec => {
               delete actividadesFinalizadas[sec.id];
-              localStorage.removeItem(`finalized_${sec.id}`);
-              localStorage.removeItem(`preview_count_${sec.id}`);
+              removeLocalStorage(`finalized_${sec.id}`);
+              removeLocalStorage(`preview_count_${sec.id}`);
               delete historialResultados[sec.id];
               contadorPrevisualizaciones[sec.id] = 0;
 
@@ -1561,7 +1834,7 @@
               }
 
               tiemposRestantes[sec.id] = TIEMPO_MAXIMO_SEGUNDOS;
-              localStorage.removeItem(`timer_${sec.id}`);
+              removeLocalStorage(`timer_${sec.id}`);
               actualizarDisplayTiempo(sec.id);
           });
 
@@ -1672,13 +1945,13 @@
           actividadesFinalizadas = {};
           contadorPrevisualizaciones = {};
           totalSalidasPestaña = 0;
-          localStorage.removeItem('app_blur_count');
+          removeLocalStorage('app_blur_count');
           document.getElementById('blurCount').innerText = '0';
 
           seccionesData.forEach(sec => {
-              localStorage.removeItem(`finalized_${sec.id}`);
-              localStorage.removeItem(`preview_count_${sec.id}`);
-              localStorage.removeItem(`timer_${sec.id}`);
+              removeLocalStorage(`finalized_${sec.id}`);
+              removeLocalStorage(`preview_count_${sec.id}`);
+              removeLocalStorage(`timer_${sec.id}`);
               tiemposRestantes[sec.id] = TIEMPO_MAXIMO_SEGUNDOS;
               modulosPausados[sec.id] = false;
               if(cronometrosActivos[sec.id]) {
@@ -1713,6 +1986,7 @@
               }
           });
           actualizarProgreso();
+          programarGuardadoFirebase();
           alert("🔓 ¡Sistema completo y contadores antifraude reiniciados con éxito!");
       }
 
@@ -1738,7 +2012,7 @@
                   document.getElementById(`editor-${sectionId}`).value = sec.initialCode;
                   document.getElementById(`console-${sectionId}`).innerText = '// Código restablecido.';
                   document.getElementById(`ai-feedback-${sectionId}`).classList.remove('active');
-                  localStorage.removeItem(`draft_editor-${sectionId}`);
+                  removeLocalStorage(`draft_editor-${sectionId}`);
                   delete historialResultados[sectionId];
 
                   const navBtn = document.getElementById(`nav-btn-${sectionId}`);
@@ -1751,10 +2025,11 @@
           }
       }
 
-      function reiniciarSesionEstudiante() {
-          if (confirm("⚠️ ¿Iniciar nueva sesión? Se borrará todo el avance, notas y cronómetros.")) {
+      async function reiniciarSesionEstudiante() {
+          if (confirm("⚠️ ¿Iniciar nueva sesión? Se cerrará la cuenta de Google y se borrará el avance local de este equipo.")) {
               localStorage.clear();
-              window.location.reload();
+              if (window.cerrarSesionGoogle) await window.cerrarSesionGoogle();
+              else window.location.reload();
           }
       }
 
@@ -1772,6 +2047,7 @@
               const data = seccionesData.find(s => s.id === sectionId);
               if (data) document.getElementById('currentTitle').innerText = data.title;
           }
+          programarGuardadoFirebase();
       }
 
       function actualizarProgreso() {
@@ -1845,7 +2121,7 @@
 
           usos++;
           contadorPrevisualizaciones[sectionId] = usos;
-          localStorage.setItem(`preview_count_${sectionId}`, usos);
+          setLocalStorage(`preview_count_${sectionId}`, usos);
 
           const btnPreview = document.getElementById(`btn-preview-${sectionId}`);
           btnPreview.innerText = `Consultar Nota Previa (${3 - usos} usos)`;
@@ -2239,6 +2515,7 @@
                   correctas: p.opciones.map((x,j)=>x.c?j:null).filter(x=>x!==null)
               }))
           };
+          programarGuardadoFirebase();
       }
 
       function resolverYCompararIA(sectionId) {
@@ -2295,7 +2572,7 @@
               }
 
               actividadesFinalizadas[sectionId] = true;
-              localStorage.setItem(`finalized_${sectionId}`, 'true');
+              setLocalStorage(`finalized_${sectionId}`, 'true');
 
               if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
               historialResultados[sectionId].codigo = code;
@@ -2303,6 +2580,7 @@
               historialResultados[sectionId].notaIA = puntaje;
               historialResultados[sectionId].analisisIA = analisis.replace(/<[^>]*>?/gm, '');
               historialResultados[sectionId].exito = true;
+              programarGuardadoFirebase();
 
               actualizarIconoEstado(sectionId, true);
               actualizarProgreso();
@@ -2360,7 +2638,7 @@
               textarea.addEventListener('input', (e) => {
                   const secId = e.target.id.replace('editor-', '');
                   if (!actividadesFinalizadas[secId] && !modulosPausados[secId]) {
-                      localStorage.setItem(`draft_${e.target.id}`, e.target.value);
+                      setLocalStorage(`draft_${e.target.id}`, e.target.value);
                   }
               });
               textarea.addEventListener('keydown', function(e) {
@@ -2370,7 +2648,7 @@
                       const end = this.selectionEnd;
                       this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
                       this.selectionStart = this.selectionEnd = start + 4;
-                      localStorage.setItem(`draft_${this.id}`, this.value);
+                      setLocalStorage(`draft_${this.id}`, this.value);
                   }
               });
           });
@@ -2429,43 +2707,43 @@
                       const curso = paqueteAvance.estudiante.curso || '';
                       document.getElementById('studentName').value = nombre;
                       document.getElementById('studentCourse').value = curso;
-                      localStorage.setItem('app_student_name', nombre);
-                      localStorage.setItem('app_student_course', curso);
+                      setLocalStorage('app_student_name', nombre);
+                      setLocalStorage('app_student_course', curso);
                   }
 
                   if (paqueteAvance.salidasPestaña !== undefined) {
                       totalSalidasPestaña = paqueteAvance.salidasPestaña;
-                      localStorage.setItem('app_blur_count', totalSalidasPestaña);
+                      setLocalStorage('app_blur_count', totalSalidasPestaña);
                       const elBlur = document.getElementById('blurCount');
                       if (elBlur) elBlur.innerText = totalSalidasPestaña;
                   }
 
                   if (paqueteAvance.tiemposRestantes) {
                       Object.keys(paqueteAvance.tiemposRestantes).forEach(secId => {
-                          localStorage.setItem(`timer_${secId}`, paqueteAvance.tiemposRestantes[secId]);
+                          setLocalStorage(`timer_${secId}`, paqueteAvance.tiemposRestantes[secId]);
                       });
                   }
 
                   if (paqueteAvance.finalizadas) {
                       Object.keys(paqueteAvance.finalizadas).forEach(secId => {
                           if (paqueteAvance.finalizadas[secId]) {
-                              localStorage.setItem(`finalized_${secId}`, 'true');
+                              setLocalStorage(`finalized_${secId}`, 'true');
                           } else {
-                              localStorage.removeItem(`finalized_${secId}`);
+                              removeLocalStorage(`finalized_${secId}`);
                           }
                       });
                   }
 
                   if (paqueteAvance.contadorPrevisualizaciones) {
                       Object.keys(paqueteAvance.contadorPrevisualizaciones).forEach(secId => {
-                          localStorage.setItem(`preview_count_${secId}`, paqueteAvance.contadorPrevisualizaciones[secId]);
+                          setLocalStorage(`preview_count_${secId}`, paqueteAvance.contadorPrevisualizaciones[secId]);
                       });
                   }
 
                   const codigos = paqueteAvance.codigos || {};
                   Object.keys(codigos).forEach(secId => {
                       if (codigos[secId]) {
-                          localStorage.setItem(`draft_editor-${secId}`, codigos[secId]);
+                          setLocalStorage(`draft_editor-${secId}`, codigos[secId]);
                       }
                   });
 
