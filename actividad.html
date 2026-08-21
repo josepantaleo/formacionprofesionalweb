@@ -780,7 +780,7 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+      import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
       // ============================================================
       // PEGA AQUÍ LA CONFIGURACIÓN DE TU PROYECTO FIREBASE
@@ -879,6 +879,68 @@
           window.dispatchEvent(new CustomEvent('profesor-data', { detail: snap.docs.map(x => x.data()) }));
         }, err => window.dispatchEvent(new CustomEvent('profesor-data-error', { detail: err.message })));
       };
+      
+      // ============================================================
+      // DESAFÍOS EDITABLES EN FIREBASE
+      // Colección: desafios / Documentos: sec-1 ... sec-19
+      // ============================================================
+      window.cargarDesafiosFirebase = async function() {
+        if (!db) return null;
+        try {
+          const snap = await getDocs(collection(db, 'desafios'));
+          if (snap.empty) return null;
+          return snap.docs.map(d => ({ id:d.id, ...d.data() }));
+        } catch (error) {
+          console.error(error);
+          window.dispatchEvent(new CustomEvent('desafios-firebase-error', { detail:error.message }));
+          return null;
+        }
+      };
+
+      window.guardarDesafioFirebase = async function(desafio) {
+        if (!db || !desafio?.id) return false;
+        try {
+          await setDoc(doc(db,'desafios',desafio.id), {
+            ...desafio,
+            id:desafio.id,
+            actualizadoEn:serverTimestamp(),
+            actualizadoPor:window.firebaseCurrentUser?.email || ''
+          }, {merge:true});
+          return true;
+        } catch(error) {
+          console.error(error);
+          window.dispatchEvent(new CustomEvent('desafio-firebase-error',{detail:error.message}));
+          return false;
+        }
+      };
+
+      window.guardarTodosDesafiosFirebase = async function(desafios) {
+        if (!db || !Array.isArray(desafios)) return false;
+        try {
+          for (const desafio of desafios) {
+            if (!desafio?.id) continue;
+            await setDoc(doc(db,'desafios',desafio.id), {
+              ...desafio,
+              id:desafio.id,
+              actualizadoEn:serverTimestamp(),
+              actualizadoPor:window.firebaseCurrentUser?.email || ''
+            }, {merge:true});
+          }
+          return true;
+        } catch(error) {
+          console.error(error);
+          return false;
+        }
+      };
+
+      window.__abrirDesafiosProfesorRealtime = function() {
+        if (!db) return;
+        if (window.__desafiosProfesorUnsubscribe) window.__desafiosProfesorUnsubscribe();
+        window.__desafiosProfesorUnsubscribe = onSnapshot(collection(db,'desafios'), snap => {
+          const remotos=snap.docs.map(d=>({id:d.id,...d.data()}));
+          if(remotos.length===19) window.dispatchEvent(new CustomEvent('desafios-profesor-data',{detail:remotos}));
+        }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
+      };
 </script>
   </head>
   <body onload="initApp()">
@@ -955,6 +1017,7 @@
           </div>
           <div class="btn-group">
             <button class="btn btn-success" onclick="guardarAhoraFirebase()"><i class="fa-solid fa-cloud-arrow-up"></i> Guardar ahora</button>
+            <button class="btn btn-primary" onclick="window.open('editor_desafios.html','_blank')"><i class="fa-solid fa-puzzle-piece"></i> Editor de desafíos</button>
             <button class="btn btn-primary" onclick="solicitarAccionProfesor('panel_profesor')"><i class="fa-solid fa-chalkboard-user"></i> Panel Profesor</button>
             <button class="btn btn-danger" onclick="cerrarSesionGoogle()"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
           </div>
@@ -994,7 +1057,7 @@
       <div class="modal-box" style="max-width:1100px;width:95vw;max-height:90vh;overflow:auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
           <div><h3><i class="fa-solid fa-chalkboard-user"></i> Panel del Profesor</h3><p>Estudiantes y progreso sincronizados en tiempo real.</p></div>
-          <button class="btn btn-secondary" onclick="cerrarPanelProfesor()">Cerrar</button>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;"><button class="btn btn-primary" onclick="abrirEditorDesafiosFirebase()">🧩 Editar 19 desafíos</button><button class="btn btn-secondary" onclick="cerrarPanelProfesor()">Cerrar</button></div>
         </div>
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
           <input id="filtroProfesor" placeholder="Buscar estudiante o email" style="flex:1;min-width:220px;">
@@ -1004,6 +1067,24 @@
         <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
         <div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;min-width:850px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Progreso</th><th>Nota</th><th>Salidas</th><th>Última actualización</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
         <p id="estadoPanelProfesor" style="margin-top:1rem;color:var(--text-muted);font-size:.8rem;"></p>
+      </div>
+    </div>
+
+    <!-- Editor de desafíos del profesor, persistido en Firestore -->
+    <div class="modal-overlay" id="editorDesafiosFirebaseModal">
+      <div class="modal-box" style="max-width:1250px;width:96vw;max-height:92vh;overflow:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+          <div><h3>🧩 Editor de los 19 Desafíos en Firebase</h3><p style="color:var(--text-muted);margin:.3rem 0;">Editá contenido, rúbrica y reglas de IA sin modificar el HTML.</p></div>
+          <button class="btn btn-secondary" onclick="cerrarEditorDesafiosFirebase()">Cerrar</button>
+        </div>
+        <div style="display:grid;grid-template-columns:250px 1fr;gap:1rem;margin-top:1rem;">
+          <div>
+            <input id="buscarDesafioFirebase" placeholder="Buscar..." style="width:100%;padding:.7rem;border-radius:8px;">
+            <div id="listaDesafiosFirebase" style="margin-top:.6rem;max-height:65vh;overflow:auto;"></div>
+          </div>
+          <div id="formDesafioFirebase"></div>
+        </div>
+        <div id="estadoEditorDesafiosFirebase" style="margin-top:1rem;color:var(--text-muted);"></div>
       </div>
     </div>
 
@@ -1046,9 +1127,10 @@
       </button>
     </div>
 
+    <script src="desafios_ia.js"></script>
     <script>
       // Estructura de Datos de las 19 Secciones con descripciones de desafíos ampliadas y detalladas
-      const seccionesData = [
+      const seccionesDataBase = [
           {
               id: "sec-1",
               icon: "fa-terminal",
@@ -1240,6 +1322,11 @@
               aiSolution: `let centroEstudiantes = {\n    proyectos: [\n        { nombre: "Torneo Ajedrez", presupuesto: 15000, aprobado: true },\n        { nombre: "Pintar mural", presupuesto: 25000, aprobado: true },\n        { nombre: "Comprar red voley", presupuesto: 40000, aprobado: false }\n    ],\n    generarReporte: function() {\n        let aprobados = this.proyectos.filter(p => p.aprobado);\n        let totalPresupuesto = aprobados.reduce((acc, p) => acc + p.presupuesto, 0);\n        console.log("Proyectos Aprobados:", aprobados.length);\n        console.log("Presupuesto Total Requerido: $" + totalPresupuesto);\n    }\n};\ncentroEstudiantes.generarReporte();`
           }
       ];
+      // Fuente editable externa: desafios.js. Si no está disponible, usa la copia integrada.
+      let seccionesData = (Array.isArray(window.DESAFIOS_DATA) && window.DESAFIOS_DATA.length === 19)
+          ? window.DESAFIOS_DATA
+          : seccionesDataBase;
+
 
       let historialResultados = {};
       let actividadesFinalizadas = {};
@@ -1326,7 +1413,7 @@
               historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
               contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
               seccionActiva: seccionActivaActual,
-              versionApp: '7.0-firebase-uid-profesor-ia-antifraude-pdf'
+              versionApp: '8.0-desafios-externos-editables-ia'
           };
       }
 
@@ -1479,6 +1566,15 @@
 
           firebaseInitialized = true;
           overlay.classList.add('hidden');
+
+          // La configuración docente de desafíos tiene prioridad sobre la copia local.
+          if (typeof window.cargarDesafiosFirebase === 'function') {
+              const remotos = await window.cargarDesafiosFirebase();
+              if (Array.isArray(remotos) && remotos.length === 19) {
+                  const mapa = new Map(remotos.map(d => [d.id,d]));
+                  seccionesData = seccionesData.map(local => ({...local,...(mapa.get(local.id)||{})}));
+              }
+          }
 
           const datosFirebase = await window.cargarProgresoFirebase();
           if (datosFirebase) await restaurarDesdeFirebase(datosFirebase);
@@ -2480,29 +2576,22 @@
       }
 
       function construirPreguntasAnalista(sectionId, code, ideal) {
-          const preguntasBase = mezclarArray(analistaPlantillas).slice(0,4);
-          const socraticas = mezclarArray(preguntasSocraticas).slice(0,2);
-
-          const preguntas = [
-              ...preguntasBase.map(p => ({...p, categoria:"ANÁLISIS TÉCNICO"})),
-              ...socraticas.map(p => ({...p, categoria:"SOCRÁTICA"}))
-          ];
-
-          return preguntas.map((plantilla, indice) => {
-              let opciones = plantilla.opciones(code, ideal);
-              opciones = mezclarArray(opciones);
-
-              const correctas = opciones.filter(x => x.c).length;
-              if (correctas === 0) {
-                  opciones[0].c = true;
-              }
-
-              return {
-                  id: indice,
-                  tipo: plantilla.tipo,
-                  q: plantilla.q(code, ideal),
-                  opciones
-              };
+          const sec = seccionesData.find(s => s.id === sectionId) || {};
+          const configuradas = Array.isArray(sec.preguntasSocraticas) ? sec.preguntasSocraticas.filter(Boolean) : [];
+          const base = mezclarArray(analistaPlantillas).slice(0,4);
+          const personalizadas = configuradas.slice(0,2).map(q => ({
+              tipo:"SOCRÁTICA", categoria:"SOCRÁTICA DEL DESAFÍO", q:()=>q,
+              opciones:()=>[
+                {t:"Relacionar la decisión del código con el objetivo del desafío y justificarla.",c:true},
+                {t:"Copiar una solución completa sin comprenderla.",c:false},
+                {t:"Elegir la respuesta más larga.",c:false},
+                {t:"Suponer que funciona sin probar otros casos.",c:false}
+              ]
+          }));
+          const gen = mezclarArray(preguntasSocraticas).slice(0,Math.max(0,2-personalizadas.length));
+          return [...base.map(p=>({...p,categoria:"ANÁLISIS TÉCNICO"})),...personalizadas,...gen.map(p=>({...p,categoria:"SOCRÁTICA"}))].map((p,i)=>{
+            let opciones=mezclarArray(p.opciones(code,ideal));if(!opciones.some(x=>x.c))opciones[0].c=true;
+            return {id:i,tipo:p.tipo,q:p.q(code,ideal),opciones};
           });
       }
 
@@ -2667,7 +2756,14 @@
               else if (puntaje === 3) analisis = "⚠️ <strong>Evaluación Estricta (3/10):</strong> Código demasiado escueto.";
               else if (puntaje === 10) analisis = "✅ <strong>¡Excelente Trabajo! (10/10):</strong> Cumple rigurosamente con los parámetros ideales.";
 
-              feedbackText.innerHTML = `<strong>Calificación Estricta IA: ${puntaje}/10</strong><br>${analisis}`;
+              const objetivos = Array.isArray(sec.objetivosPedagogicos) ? sec.objetivosPedagogicos : [];
+              const conceptos = Array.isArray(sec.conceptosDetectar) ? sec.conceptosDetectar : [];
+              const errores = Array.isArray(sec.erroresFrecuentes) ? sec.erroresFrecuentes : [];
+              feedbackText.innerHTML = `<strong>Calificación Estricta IA: ${puntaje}/10</strong><br>${analisis}` +
+                (objetivos.length ? `<hr><strong>🎯 Objetivos:</strong><ul>${objetivos.map(x=>`<li>${escaparTextoAnalista(x)}</li>`).join("")}</ul>`:"") +
+                (conceptos.length ? `<strong>🧠 Conceptos que la IA revisa:</strong> ${conceptos.map(x=>escaparTextoAnalista(x)).join(", ")}<br>`:"") +
+                (errores.length ? `<strong>⚠️ Errores frecuentes a revisar:</strong> ${errores.slice(0,3).map(x=>escaparTextoAnalista(x)).join(" · ")}<br>`:"") +
+                `<div style="margin-top:.6rem;color:#a5b4fc"><strong>🚫 Protección IA:</strong> no se entrega código listo para copiar ni se revelan directamente las respuestas.</div>`;
 
               construirAnalista(sectionId, code);
 
@@ -2844,6 +2940,115 @@
               profesorUnsubscribe = () => { if (window.__profesorUnsubscribe) window.__profesorUnsubscribe(); window.__profesorUnsubscribe = null; };
           } catch(e) { document.getElementById('estadoPanelProfesor').textContent='Error al conectar con Firebase: '+e.message; }
       }
+
+
+      // ============================================================
+      // EDITOR DE DESAFÍOS DEL PANEL PROFESOR
+      // ============================================================
+      let desafioEditorActual=0;
+      let desafiosEditorFirebase=[];
+
+      function abrirEditorDesafiosFirebase(){
+        document.getElementById('editorDesafiosFirebaseModal').classList.add('active');
+        desafiosEditorFirebase=JSON.parse(JSON.stringify(seccionesData));
+        desafioEditorActual=0;
+        renderListaDesafiosFirebase();
+        renderFormularioDesafioFirebase();
+      }
+      function cerrarEditorDesafiosFirebase(){document.getElementById('editorDesafiosFirebaseModal').classList.remove('active');}
+      function textoArray(v){return Array.isArray(v)?v.join('\\n'):String(v||'');}
+      function lineas(id){return String(document.getElementById(id)?.value||'').split(/\\n+/).map(x=>x.trim()).filter(Boolean);}
+
+      function renderListaDesafiosFirebase(){
+        const q=(document.getElementById('buscarDesafioFirebase')?.value||'').toLowerCase().trim();
+        const el=document.getElementById('listaDesafiosFirebase'); if(!el)return;
+        el.innerHTML='';
+        desafiosEditorFirebase.forEach((d,i)=>{
+          if(q&&!JSON.stringify(d).toLowerCase().includes(q))return;
+          const b=document.createElement('button');
+          b.className='btn '+(i===desafioEditorActual?'btn-primary':'btn-secondary');
+          b.style='display:block;width:100%;text-align:left;margin-bottom:.4rem;';
+          b.textContent=(d.id||('sec-'+(i+1)))+' — '+(d.title||'Sin título');
+          b.onclick=()=>{guardarFormularioDesafioFirebase(false);desafioEditorActual=i;renderListaDesafiosFirebase();renderFormularioDesafioFirebase();};
+          el.appendChild(b);
+        });
+      }
+
+      function renderFormularioDesafioFirebase(){
+        const d=desafiosEditorFirebase[desafioEditorActual];if(!d)return;
+        const criterios=d.criteriosEvaluacion||[];
+        document.getElementById('formDesafioFirebase').innerHTML=`
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;">
+            <div><label>ID</label><input id="edf_id" value="${escapeHtml(d.id||'')}" readonly></div>
+            <div><label>Ícono</label><input id="edf_icon" value="${escapeHtml(d.icon||'')}"></div>
+            <div><label>Título</label><input id="edf_title" value="${escapeHtml(d.title||'')}"></div>
+            <div><label>Título del desafío</label><input id="edf_exerciseTitle" value="${escapeHtml(d.exerciseTitle||'')}"></div>
+            <div style="grid-column:1/-1"><label>Teoría</label><textarea id="edf_theory">${escapeHtml(d.theory||'')}</textarea></div>
+            <div style="grid-column:1/-1"><label>Consigna</label><textarea id="edf_exerciseDesc" style="min-height:120px">${escapeHtml(d.exerciseDesc||'')}</textarea></div>
+            <div style="grid-column:1/-1"><label>Código inicial</label><textarea id="edf_initialCode" style="min-height:140px">${escapeHtml(d.initialCode||'')}</textarea></div>
+            <div style="grid-column:1/-1"><label>Solución de referencia IA</label><textarea id="edf_aiSolution" style="min-height:160px">${escapeHtml(d.aiSolution||'')}</textarea></div>
+            <div style="grid-column:1/-1"><label>🎯 Objetivos pedagógicos</label><textarea id="edf_objetivos">${escapeHtml(textoArray(d.objetivosPedagogicos))}</textarea></div>
+            <div style="grid-column:1/-1"><label>🧠 Conceptos que debe detectar la IA</label><textarea id="edf_conceptos">${escapeHtml(textoArray(d.conceptosDetectar))}</textarea></div>
+            <div style="grid-column:1/-1"><label>❓ Preguntas socráticas</label><textarea id="edf_preguntas" style="min-height:120px">${escapeHtml(textoArray(d.preguntasSocraticas))}</textarea></div>
+            <div style="grid-column:1/-1"><label>⚠️ Errores frecuentes</label><textarea id="edf_errores" style="min-height:120px">${escapeHtml(textoArray(d.erroresFrecuentes))}</textarea></div>
+            <div style="grid-column:1/-1"><label>🚫 Qué NO debe revelar la IA</label><textarea id="edf_norevelar" style="min-height:120px">${escapeHtml(textoArray(d.noRevelarIA))}</textarea></div>
+          </div>
+          <h4>📊 Criterios de evaluación</h4>
+          <p style="color:var(--text-muted);font-size:.8rem;">Los pesos deben sumar 100.</p>
+          <table style="width:100%;border-collapse:collapse;min-width:650px;"><thead><tr><th>Criterio</th><th>Peso</th><th>Indicador</th><th></th></tr></thead><tbody id="edf_criterios"></tbody></table>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem;">
+            <button class="btn btn-secondary" onclick="agregarCriterioFirebase()">➕ Criterio</button>
+            <button class="btn btn-secondary" onclick="normalizarCriteriosFirebase()">⚖️ Normalizar</button>
+            <button class="btn btn-primary" onclick="guardarDesafioActualFirebase()">☁️ Guardar desafío</button>
+            <button class="btn btn-secondary" onclick="guardarLos19Firebase()">☁️ Guardar los 19</button>
+          </div>`;
+        criterios.forEach(c=>agregarFilaCriterioFirebase(c));
+      }
+
+      function agregarFilaCriterioFirebase(c={criterio:'',peso:0,indicador:''}){
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td><input data-k="criterio" value="${escapeHtml(c.criterio||'')}"></td>
+          <td><input data-k="peso" type="number" min="0" max="100" value="${Number(c.peso)||0}" style="width:80px"></td>
+          <td><input data-k="indicador" value="${escapeHtml(c.indicador||'')}"></td>
+          <td><button class="btn btn-danger" onclick="this.closest('tr').remove()">🗑️</button></td>`;
+        document.getElementById('edf_criterios').appendChild(tr);
+      }
+      function agregarCriterioFirebase(){agregarFilaCriterioFirebase();}
+      function criteriosFirebase(){return [...document.querySelectorAll('#edf_criterios tr')].map(tr=>{
+        const o={};tr.querySelectorAll('[data-k]').forEach(x=>o[x.dataset.k]=x.dataset.k==='peso'?Number(x.value)||0:x.value.trim());return o;
+      }).filter(x=>x.criterio||x.indicador);}
+      function normalizarCriteriosFirebase(){
+        const rows=[...document.querySelectorAll('#edf_criterios tr')],v=rows.map(r=>Number(r.querySelector('[data-k="peso"]').value)||0),t=v.reduce((a,b)=>a+b,0);
+        if(!t){alert('Asigná los pesos primero.');return;} rows.forEach((r,i)=>r.querySelector('[data-k="peso"]').value=Math.round(v[i]*100/t));
+      }
+      function guardarFormularioDesafioFirebase(){
+        const d=desafiosEditorFirebase[desafioEditorActual];if(!d)return;
+        const map={icon:'edf_icon',title:'edf_title',exerciseTitle:'edf_exerciseTitle',theory:'edf_theory',exerciseDesc:'edf_exerciseDesc',initialCode:'edf_initialCode',aiSolution:'edf_aiSolution'};
+        Object.entries(map).forEach(([k,id])=>d[k]=document.getElementById(id)?.value||'');
+        d.objetivosPedagogicos=lineas('edf_objetivos');d.conceptosDetectar=lineas('edf_conceptos');d.preguntasSocraticas=lineas('edf_preguntas');d.erroresFrecuentes=lineas('edf_errores');d.noRevelarIA=lineas('edf_norevelar');d.criteriosEvaluacion=criteriosFirebase();
+        return d;
+      }
+      async function guardarDesafioActualFirebase(){
+        const d=guardarFormularioDesafioFirebase();if(!d)return;
+        const suma=(d.criteriosEvaluacion||[]).reduce((a,c)=>a+(Number(c.peso)||0),0);
+        if(Math.round(suma)!==100){alert('La rúbrica debe sumar 100%. Actualmente suma '+suma+'%.');return;}
+        const ok=await window.guardarDesafioFirebase(d);
+        if(ok){
+          seccionesData=seccionesData.map(x=>x.id===d.id?({...x,...d}):x);
+          document.getElementById('estadoEditorDesafiosFirebase').textContent='✅ '+d.id+' guardado en Firebase. Los próximos ingresos usarán esta versión.';
+        }else document.getElementById('estadoEditorDesafiosFirebase').textContent='❌ No se pudo guardar. Revisá las reglas de Firestore.';
+      }
+      async function guardarLos19Firebase(){
+        guardarFormularioDesafioFirebase();
+        const invalid=desafiosEditorFirebase.find(d=>Math.round((d.criteriosEvaluacion||[]).reduce((a,c)=>a+(Number(c.peso)||0),0))!==100);
+        if(invalid){alert('La rúbrica de '+invalid.id+' no suma 100%.');return;}
+        const ok=await window.guardarTodosDesafiosFirebase(desafiosEditorFirebase);
+        if(ok){
+          seccionesData=JSON.parse(JSON.stringify(desafiosEditorFirebase));
+          document.getElementById('estadoEditorDesafiosFirebase').textContent='✅ Los 19 desafíos fueron guardados en Firebase.';
+        }else document.getElementById('estadoEditorDesafiosFirebase').textContent='❌ No se pudieron guardar los desafíos.';
+      }
+      document.getElementById('buscarDesafioFirebase')?.addEventListener('input',renderListaDesafiosFirebase);
 
       async function exportarResultadosPDF() {
           const { jsPDF } = window.jspdf;
