@@ -1952,6 +1952,9 @@
               });
 
               if(!historialResultados[sec.id]) historialResultados[sec.id] = {};
+              historialResultados[sec.id].notaCodigo = 1;
+              historialResultados[sec.id].notaPreguntas = 0;
+              historialResultados[sec.id].notaFinal = 1;
               historialResultados[sec.id].notaIA = 1;
               historialResultados[sec.id].analisisIA = "EJERCICIO ANULADO: Exceso de salidas de pestaña (>7). Nota: 1/10.";
               actualizarIconoEstado(sec.id, false);
@@ -2009,6 +2012,9 @@
 
           if(!historialResultados[sectionId]) historialResultados[sectionId] = {};
           historialResultados[sectionId].codigo = editor ? editor.value : '';
+          historialResultados[sectionId].notaCodigo = 1;
+          historialResultados[sectionId].notaPreguntas = 0;
+          historialResultados[sectionId].notaFinal = 1;
           historialResultados[sectionId].notaIA = 1;
           historialResultados[sectionId].analisisIA = "Módulo expirado por límite de tiempo (40 minutos). Nota: 1/10.";
           historialResultados[sectionId].exito = false;
@@ -2506,6 +2512,12 @@
           return 3;
       }
 
+      function calcularNotaCombinada(notaCodigo, porcentajePreguntas) {
+          const codigo = Math.max(0, Math.min(10, Number(notaCodigo) || 0));
+          const preguntas = Math.max(0, Math.min(100, Number(porcentajePreguntas) || 0)) / 10;
+          return Number((codigo * 0.7 + preguntas * 0.3).toFixed(1));
+      }
+
       function previsualizarNotaIA(sectionId) {
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
@@ -2534,7 +2546,7 @@
           document.getElementById(`ai-ideal-code-${sectionId}`).innerText = "// (Oculto en previsualización parcial)";
 
           let notaEstimada = calcularNotaEstricta(code, sec);
-          feedbackText.innerHTML = `<strong>Estimación automática (${usos}/3):</strong> El indicador orientativo es <strong>${notaEstimada}/10</strong>. Requiere revisión docente: esta estimación no comprueba por sí sola que el programa resuelva correctamente la consigna.`;
+          feedbackText.innerHTML = `<strong>Estimación del código (${usos}/3):</strong> El indicador orientativo del código es <strong>${notaEstimada}/10</strong>. Representará el 70% de la nota final; las preguntas representarán el 30% restante.`;
       }
 
       const preguntasSocraticas = [
@@ -2865,6 +2877,7 @@
           }
 
           const porcentaje = Math.round((correctas / maxPuntos) * 100);
+          const notaPreguntas = Number((porcentaje / 10).toFixed(1));
           const viabilidad = porcentaje >= 80 ? "ALTA" : porcentaje >= 60 ? "MEDIA" : "BAJA";
           const excelencia = porcentaje === 100 ? "EXCELENTE" :
                              porcentaje >= 80 ? "MUY BUENA" :
@@ -2873,9 +2886,14 @@
           document.getElementById(`viability-${sectionId}`).innerText = `Viabilidad: ${viabilidad}`;
           document.getElementById(`excellence-${sectionId}`).innerText = `Excelencia: ${excelencia}`;
 
+          if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
+          const notaCodigo = Number(historialResultados[sectionId].notaCodigo ?? historialResultados[sectionId].notaIA ?? 0);
+          const notaFinal = calcularNotaCombinada(notaCodigo, porcentaje);
+
           result.innerHTML =
-              `<strong>Resultado del Analista:</strong><br>` +
-              `Aciertos completos: <strong>${correctas}/${maxPuntos}</strong> (${porcentaje}%).<br>` +
+              `<strong>Calificación final del módulo: ${notaFinal}/10</strong><br>` +
+              `Código: <strong>${notaCodigo}/10</strong> (70%).<br>` +
+              `Preguntas: <strong>${notaPreguntas}/10</strong> (30%) — ${correctas}/${maxPuntos} respuestas completas correctas.<br>` +
               `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
               `Excelencia: <strong>${excelencia}</strong>.<br>` +
               `Las preguntas mezclaron evidencias de tu código, de la solución IA, de la comparación entre ambos y situaciones de razonamiento socrático.`;
@@ -2884,7 +2902,9 @@
           document.querySelectorAll(`#analyst-${sectionId} input`).forEach(el => el.disabled = true);
           document.getElementById(`analyst-submit-${sectionId}`).disabled = true;
 
-          if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
+          historialResultados[sectionId].notaPreguntas = notaPreguntas;
+          historialResultados[sectionId].notaFinal = notaFinal;
+          historialResultados[sectionId].notaIA = notaFinal;
           historialResultados[sectionId].analista = {
               correctas,
               total: maxPuntos,
@@ -2904,6 +2924,20 @@
                   correctas: p.opciones.map((x,j)=>x.c?j:null).filter(x=>x!==null)
               }))
           };
+          actividadesFinalizadas[sectionId] = true;
+          setLocalStorage(`finalized_${sectionId}`, 'true');
+          actualizarIconoEstado(sectionId, true);
+          actualizarProgreso();
+          const feedbackText = document.getElementById(`ai-text-${sectionId}`);
+          if (feedbackText) {
+              feedbackText.insertAdjacentHTML(
+                  "beforeend",
+                  `<div style="margin-top:.8rem;padding:.7rem;border:1px solid rgba(16,185,129,.4);border-radius:6px;color:#a7f3d0">
+                      <strong>Nota final: ${notaFinal}/10</strong><br>
+                      Código ${notaCodigo}/10 × 70% + preguntas ${notaPreguntas}/10 × 30%.
+                  </div>`
+              );
+          }
           programarGuardadoFirebase();
       }
 
@@ -2943,7 +2977,7 @@
               const objetivos = Array.isArray(sec.objetivosPedagogicos) ? sec.objetivosPedagogicos : [];
               const conceptos = Array.isArray(sec.conceptosDetectar) ? sec.conceptosDetectar : [];
               const errores = Array.isArray(sec.erroresFrecuentes) ? sec.erroresFrecuentes : [];
-              feedbackText.innerHTML = `<strong>Resultado automático orientativo: ${puntaje}/10</strong><br><small>Debe ser revisado por el docente; el cálculo usa indicadores simples y no reemplaza pruebas funcionales.</small><br>${analisis}` +
+              feedbackText.innerHTML = `<strong>Nota del código: ${puntaje}/10 (70% de la nota final)</strong><br><small>La nota final se calculará después de entregar todas las preguntas, que representan el 30%.</small><br>${analisis}` +
                 (objetivos.length ? `<hr><strong>🎯 Objetivos:</strong><ul>${objetivos.map(x=>`<li>${escaparTextoAnalista(x)}</li>`).join("")}</ul>`:"") +
                 (conceptos.length ? `<strong>🧠 Conceptos que la IA revisa:</strong> ${conceptos.map(x=>escaparTextoAnalista(x)).join(", ")}<br>`:"") +
                 (errores.length ? `<strong>⚠️ Errores frecuentes a revisar:</strong> ${errores.slice(0,3).map(x=>escaparTextoAnalista(x)).join(" · ")}<br>`:"") +
@@ -2967,19 +3001,17 @@
                   cronometrosActivos[sectionId] = null;
               }
 
-              actividadesFinalizadas[sectionId] = true;
-              setLocalStorage(`finalized_${sectionId}`, 'true');
-
               if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
               historialResultados[sectionId].codigo = code;
               historialResultados[sectionId].solucionIA = sec.aiSolution;
-              historialResultados[sectionId].notaIA = puntaje;
+              historialResultados[sectionId].notaCodigo = puntaje;
+              delete historialResultados[sectionId].notaPreguntas;
+              delete historialResultados[sectionId].notaFinal;
+              delete historialResultados[sectionId].notaIA;
               historialResultados[sectionId].analisisIA = analisis.replace(/<[^>]*>?/gm, '');
               historialResultados[sectionId].exito = true;
               programarGuardadoFirebase();
 
-              actualizarIconoEstado(sectionId, true);
-              actualizarProgreso();
           }, 800);
       }
 
@@ -3084,7 +3116,9 @@
       }
       function calcularNotaEstudiante(d) {
           const h = d.historialResultados || {};
-          const notas = Object.values(h).map(x => Number(x?.notaIA)).filter(n => Number.isFinite(n));
+          const notas = Object.values(h)
+              .map(x => Number(x?.notaFinal ?? x?.notaIA))
+              .filter(n => Number.isFinite(n));
           if (!notas.length) return '—';
           return (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1);
       }
@@ -3255,7 +3289,9 @@
           doc.line(14, 43, 196, 43);
 
           let yPos = 50;
-          const notasFinales = Object.values(historialResultados).map(r => Number(r?.notaIA)).filter(Number.isFinite);
+          const notasFinales = Object.values(historialResultados)
+              .map(r => Number(r?.notaFinal ?? r?.notaIA))
+              .filter(Number.isFinite);
           const promedioFinal = notasFinales.length ? (notasFinales.reduce((a,b)=>a+b,0)/notasFinales.length).toFixed(2) : 'Sin evaluar';
           doc.setFontSize(11);
           doc.text(`Promedio final: ${promedioFinal}/10 | Turno: ${turno}`, 14, yPos);
@@ -3268,13 +3304,22 @@
               }
 
               const res = historialResultados[sec.id] || {};
-              const nota = res.notaIA !== undefined ? `${res.notaIA}/10` : 'Sin evaluar';
+              const notaFinalModulo = res.notaFinal ?? res.notaIA;
+              const nota = notaFinalModulo !== undefined ? `${notaFinalModulo}/10` : 'Pendiente de preguntas';
               const codigo = res.codigo || document.getElementById(`editor-${sec.id}`)?.value || '// Sin código';
 
               doc.setFontSize(12);
               doc.setFont("helvetica", "bold");
-              doc.text(`${sec.title} - Nota IA: ${nota}`, 14, yPos);
+              doc.text(`${sec.title} - Nota final: ${nota}`, 14, yPos);
               yPos += 6;
+
+              if (res.notaCodigo !== undefined || res.notaPreguntas !== undefined) {
+                  doc.setFontSize(9);
+                  doc.setFont("helvetica", "normal");
+                  const desglose = `Código (70%): ${res.notaCodigo ?? 'Pendiente'}/10 | Preguntas (30%): ${res.notaPreguntas ?? 'Pendiente'}/10`;
+                  doc.text(desglose, 14, yPos);
+                  yPos += 5;
+              }
 
               doc.setFontSize(9);
               doc.setFont("courier", "normal");
