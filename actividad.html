@@ -1027,8 +1027,12 @@
           />
         </div>
         <div class="input-group">
-          <label>Curso y División</label>
-          <input type="text" id="studentCourse" placeholder="Ej: 5° Año 'A'" />
+          <label>Curso</label>
+          <input type="text" id="studentCourse" placeholder="Ej: 5° Año" />
+        </div>
+        <div class="input-group">
+          <label>División</label>
+          <input type="text" id="studentDivision" placeholder="Ej: A" />
         </div>
 
         <button class="btn btn-secondary" onclick="exportarProgresoJSON()">
@@ -1317,13 +1321,18 @@
       function construirPaqueteAvanceFirebase() {
           const nombre = document.getElementById('studentName')?.value.trim() || '';
           const curso = document.getElementById('studentCourse')?.value.trim() || '';
+          const division = document.getElementById('studentDivision')?.value.trim() || '';
+          const user = window.firebaseCurrentUser || null;
+          const email = user?.email || '';
+          const nombreGoogle = user?.displayName || '';
           const codigos = {};
           seccionesData.forEach(sec => {
               const editor = document.getElementById(`editor-${sec.id}`);
               codigos[sec.id] = editor ? editor.value : (getLocalStorage(`draft_editor-${sec.id}`) || sec.initialCode);
           });
           return {
-              estudiante: { nombre, curso },
+              estudiante: { nombre, curso, division, email, nombreGoogle },
+              email,
               salidasPestaña: totalSalidasPestaña,
               codigos,
               tiemposRestantes: { ...tiemposRestantes },
@@ -1331,7 +1340,7 @@
               historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
               contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
               seccionActiva: seccionActivaActual,
-              versionApp: '6.4-firebase-3-uid-isolated-storage'
+              versionApp: '6.5-firebase-datos-estudiante'
           };
       }
 
@@ -1467,8 +1476,10 @@
           totalSalidasPestaña = parseInt(getLocalStorage('app_blur_count') || '0');
           document.getElementById('blurCount').innerText = totalSalidasPestaña;
 
-          document.getElementById('studentName').addEventListener('input', (e) => setLocalStorage('app_student_name', e.target.value));
-          document.getElementById('studentCourse').addEventListener('input', (e) => setLocalStorage('app_student_course', e.target.value));
+          document.getElementById('studentName').addEventListener('input', (e) => { setLocalStorage('app_student_name', e.target.value); programarGuardadoFirebase(); });
+          document.getElementById('studentCourse').addEventListener('input', (e) => { setLocalStorage('app_student_course', e.target.value); programarGuardadoFirebase(); });
+           const divisionInput = document.getElementById('studentDivision');
+           if (divisionInput) divisionInput.addEventListener('input', (e) => { setLocalStorage('app_student_division', e.target.value); programarGuardadoFirebase(); });
 
           // Detectar salidas de pestaña con Page Visibility API
           document.addEventListener('visibilitychange', () => {
@@ -2710,9 +2721,11 @@
       function exportarProgresoJSON() {
           const nombre = document.getElementById('studentName').value.trim();
           const curso = document.getElementById('studentCourse').value.trim();
+          const division = document.getElementById('studentDivision')?.value.trim() || '';
+          const email = window.firebaseCurrentUser?.email || '';
 
           const paqueteAvance = {
-              estudiante: { nombre, curso },
+              estudiante: { nombre, curso, division, email },
               salidasPestaña: totalSalidasPestaña,
               codigos: {},
               tiemposRestantes: tiemposRestantes,
@@ -2805,7 +2818,9 @@
           doc.setFontSize(16);
           doc.text("IPEM 146 - Reporte de Evaluaciones JavaScript", 14, 20);
           doc.setFontSize(10);
-          doc.text(`Alumno: ${nombre} | Curso: ${curso}`, 14, 28);
+          doc.text(`Alumno: ${nombre} | Curso: ${curso} | División: ${division}`, 14, 28);
+           doc.text(`Email: ${email}`, 14, 34);
+           doc.text(`Salidas de Pestaña (Anti-Fraude): ${totalSalidasPestaña}`, 14, 40);
           doc.text(`Salidas de Pestaña (Anti-Fraude): ${totalSalidasPestaña}`, 14, 34);
           doc.text(`Fecha de Emisión: ${new Date().toLocaleString()}`, 14, 40);
           doc.line(14, 43, 196, 43);
