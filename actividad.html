@@ -17,70 +17,6 @@
     <!-- Librería pdf-lib para cifrar y proteger el PDF generado -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <style>
-        /* Estilos del botón principal */
-    .btn-abrir {
-      padding: 12px 24px;
-      font-size: 16px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .btn-abrir:hover {
-      background-color: #0056b3;
-    }
-
-    /* Estilos de la ventana Modal / Popup */
-    #popupModal {
-      padding: 0;
-      border: none;
-      border-radius: 12px;
-      width: 85vw;
-      max-width: 900px;
-      height: 80vh;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      overflow: hidden;
-    }
-
-    /* Fondo oscuro al abrir el modal */
-    #popupModal::backdrop {
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(3px);
-    }
-
-    /* Botón flotante para cerrar */
-    .btn-cerrar {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      background: #ff4d4d;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    }
-    .btn-cerrar:hover {
-      background: #cc0000;
-    }
-
-    /* iFrame que carga index.html */
-    .iframe-contenido {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-    }
       :root {
         --bg-dark: #0f172a;
         --bg-card: #1e293b;
@@ -834,13 +770,17 @@
       .firebase-account .email { color:var(--text-muted); font-size:.75rem; }
       .btn-google { background:#fff; color:#1f2937; }
       .btn-google:hover { background:#f3f4f6; }
-    </style>
+    
+      #panelProfesorModal table th,#panelProfesorModal table td{padding:.55rem;border-bottom:1px solid rgba(148,163,184,.15);text-align:left;font-size:.78rem}
+      #panelProfesorModal table th{color:var(--primary);position:sticky;top:0;background:var(--surface,#0f172a)}
+      #panelProfesorModal input,#panelProfesorModal select{width:100%;padding:.65rem;border-radius:8px;border:1px solid rgba(148,163,184,.25);background:rgba(15,23,42,.65);color:inherit}
+</style>
 
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+      import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
       // ============================================================
       // PEGA AQUÍ LA CONFIGURACIÓN DE TU PROYECTO FIREBASE
@@ -931,7 +871,15 @@
           return false;
         }
       };
-    </script>
+    
+      window.__abrirPanelProfesorFirestore = function() {
+        if (!db) return;
+        if (window.__profesorUnsubscribe) window.__profesorUnsubscribe();
+        window.__profesorUnsubscribe = onSnapshot(collection(db, 'estudiantes'), snap => {
+          window.dispatchEvent(new CustomEvent('profesor-data', { detail: snap.docs.map(x => x.data()) }));
+        }, err => window.dispatchEvent(new CustomEvent('profesor-data-error', { detail: err.message })));
+      };
+</script>
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay">
@@ -988,13 +936,6 @@
           >
             <i class="fa-solid fa-rotate-right"></i> Reiniciar Salidas
           </button>
-<button class="btn-abrir" onclick="abrirPopup()">Acceder a los contenidos</button>
-
-  <!-- Ventana emergente (Modal) -->
-  <dialog id="popupModal">
-    <button class="btn-cerrar" onclick="cerrarPopup()">✕</button>
-    <iframe class="iframe-contenido" src="index.html"></iframe>
-  </dialog>
           <div class="progress-wrapper">
             <span class="progress-label" id="progressText">Progreso: 0%</span>
             <div class="progress-bar-bg">
@@ -1014,6 +955,7 @@
           </div>
           <div class="btn-group">
             <button class="btn btn-success" onclick="guardarAhoraFirebase()"><i class="fa-solid fa-cloud-arrow-up"></i> Guardar ahora</button>
+            <button class="btn btn-primary" onclick="solicitarAccionProfesor('panel_profesor')"><i class="fa-solid fa-chalkboard-user"></i> Panel Profesor</button>
             <button class="btn btn-danger" onclick="cerrarSesionGoogle()"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
           </div>
         </div>
@@ -1034,22 +976,10 @@
           <label>División</label>
           <input type="text" id="studentDivision" placeholder="Ej: A" maxlength="10" required autocomplete="off" />
         </div>
-
-        <button class="btn btn-secondary" onclick="exportarProgresoJSON()">
-          <i class="fa-solid fa-download"></i> Guardar Avance (.json)
-        </button>
-        <input
-          type="file"
-          id="importFile"
-          style="display: none"
-          onchange="importarProgresoJSON(event)"
-        />
-        <button
-          class="btn btn-secondary"
-          onclick="document.getElementById('importFile').click()"
-        >
-          <i class="fa-solid fa-upload"></i> Cargar Avance
-        </button>
+        <div class="input-group">
+          <label>Turno</label>
+          <select id="studentTurno" required><option value="">Seleccionar turno</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select>
+        </div>
         <button class="btn btn-danger" onclick="reiniciarSesionEstudiante()">
           <i class="fa-solid fa-user-xmark"></i> Nuevo Estudiante
         </button>
@@ -1058,6 +988,24 @@
       <div id="sectionsContainer"></div>
       <div style="height: 80px"></div>
     </main>
+
+    <!-- Panel docente en tiempo real -->
+    <div class="modal-overlay" id="panelProfesorModal">
+      <div class="modal-box" style="max-width:1100px;width:95vw;max-height:90vh;overflow:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+          <div><h3><i class="fa-solid fa-chalkboard-user"></i> Panel del Profesor</h3><p>Estudiantes y progreso sincronizados en tiempo real.</p></div>
+          <button class="btn btn-secondary" onclick="cerrarPanelProfesor()">Cerrar</button>
+        </div>
+        <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
+          <input id="filtroProfesor" placeholder="Buscar estudiante o email" style="flex:1;min-width:220px;">
+          <select id="filtroCursoProfesor"><option value="">Todos los cursos</option></select>
+          <select id="filtroTurnoProfesor"><option value="">Todos los turnos</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select>
+        </div>
+        <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
+        <div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;min-width:850px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Progreso</th><th>Nota</th><th>Salidas</th><th>Última actualización</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
+        <p id="estadoPanelProfesor" style="margin-top:1rem;color:var(--text-muted);font-size:.8rem;"></p>
+      </div>
+    </div>
 
     <!-- Modal Oculto para Contraseña con asteriscos (****) y opciones flexibles de profesor -->
     <div class="modal-overlay" id="passwordModal">
@@ -1311,6 +1259,13 @@
       let firebaseSaveInProgress = false;
       let firebaseInitialized = false;
 
+      window.addEventListener('profesor-data', e => { estudiantesProfesor = e.detail || []; document.getElementById('estadoPanelProfesor').textContent = `Actualizado en tiempo real: ${new Date().toLocaleTimeString()}`; renderPanelProfesor(); });
+      window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
+      window.addEventListener('load', () => {
+        ['filtroProfesor','filtroCursoProfesor','filtroTurnoProfesor'].forEach(id => document.getElementById(id)?.addEventListener('input', renderPanelProfesor));
+        document.getElementById('filtroTurnoProfesor')?.addEventListener('change', renderPanelProfesor);
+      });
+
       function mostrarEstadoFirebase(tipo, texto) {
           const el = document.getElementById('firebaseSaveStatus');
           if (!el) return;
@@ -1336,12 +1291,13 @@
           const nombre = document.getElementById('studentName')?.value.trim() || '';
           const curso = document.getElementById('studentCourse')?.value.trim() || '';
           const division = document.getElementById('studentDivision')?.value.trim().toUpperCase() || '';
+          const turno = document.getElementById('studentTurno')?.value.trim() || '';
 
-          if (!division) return false;
+          if (!nombre || !curso || !division || !turno) return false;
 
           try {
               const ok = await window.guardarProgresoFirebase({
-                  estudiante: { nombre, curso, division }
+                  estudiante: { nombre, curso, division, turno }
               });
               if (ok) mostrarEstadoFirebase('online', 'Datos del estudiante guardados en Firebase');
               return ok;
@@ -1355,13 +1311,14 @@
           const nombre = document.getElementById('studentName')?.value.trim() || '';
           const curso = document.getElementById('studentCourse')?.value.trim() || '';
           const division = document.getElementById('studentDivision')?.value.trim() || '';
+          const turno = document.getElementById('studentTurno')?.value.trim() || '';
           const codigos = {};
           seccionesData.forEach(sec => {
               const editor = document.getElementById(`editor-${sec.id}`);
               codigos[sec.id] = editor ? editor.value : (getLocalStorage(`draft_editor-${sec.id}`) || sec.initialCode);
           });
           return {
-              estudiante: { nombre, curso, division },
+              estudiante: { nombre, curso, division, turno },
               salidasPestaña: totalSalidasPestaña,
               codigos,
               tiemposRestantes: { ...tiemposRestantes },
@@ -1369,7 +1326,7 @@
               historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
               contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
               seccionActiva: seccionActivaActual,
-              versionApp: '6.6-firebase-identificacion-completa'
+              versionApp: '7.0-firebase-uid-profesor-ia-antifraude-pdf'
           };
       }
 
@@ -1467,6 +1424,10 @@
               document.getElementById('studentDivision').value = divisionFirebase;
               setLocalStorage('app_student_division', divisionFirebase);
           }
+          if (estudiante.turno !== undefined) {
+              document.getElementById('studentTurno').value = estudiante.turno || '';
+              setLocalStorage('app_student_turno', estudiante.turno || '');
+          }
           if (datos.salidasPestaña !== undefined) {
               totalSalidasPestaña = Number(datos.salidasPestaña) || 0;
               setLocalStorage('app_blur_count', totalSalidasPestaña);
@@ -1480,6 +1441,15 @@
           contadorPrevisualizaciones = datos.contadorPrevisualizaciones || {};
           tiemposRestantes = datos.tiemposRestantes || {};
           if (datos.seccionActiva && seccionesData.some(s => s.id === datos.seccionActiva)) seccionActivaActual = datos.seccionActiva;
+      }
+
+      function solicitarDatosNuevoEstudiante() {
+        return new Promise((resolve) => {
+          const modal=document.createElement('div'); modal.className='modal-overlay'; modal.style.display='flex';
+          modal.innerHTML=`<div class="modal-box" style="max-width:520px;width:92%;"><h3>👨‍🎓 Datos del estudiante</h3><p>Primera vez con este correo. Completá tus datos para comenzar.</p><div class="input-group"><label>Nombre y Apellido</label><input id="nuevoNombre" type="text"></div><div class="input-group"><label>Curso</label><input id="nuevoCurso" type="text" placeholder="Ej: 5° Año"></div><div class="input-group"><label>División</label><input id="nuevoDivision" type="text" maxlength="10"></div><div class="input-group"><label>Turno</label><select id="nuevoTurno"><option value="">Seleccionar turno</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select></div><div id="nuevoError" style="display:none;color:#fca5a5">Completá todos los campos.</div><div class="modal-actions"><button class="btn btn-primary" id="confirmarNuevo">Comenzar actividad</button></div></div>`;
+          document.body.appendChild(modal); const n=modal.querySelector('#nuevoNombre'); n.value=window.firebaseCurrentUser?.displayName||''; n.focus();
+          modal.querySelector('#confirmarNuevo').onclick=async()=>{const nombre=n.value.trim(),curso=modal.querySelector('#nuevoCurso').value.trim(),division=modal.querySelector('#nuevoDivision').value.trim().toUpperCase(),turno=modal.querySelector('#nuevoTurno').value;if(!nombre||!curso||!division||!turno){modal.querySelector('#nuevoError').style.display='block';return;}document.getElementById('studentName').value=nombre;document.getElementById('studentCourse').value=curso;document.getElementById('studentDivision').value=division;document.getElementById('studentTurno').value=turno;setLocalStorage('app_student_name',nombre);setLocalStorage('app_student_course',curso);setLocalStorage('app_student_division',division);setLocalStorage('app_student_turno',turno);modal.remove();await guardarIdentificacionFirebase();resolve();};
+        });
       }
 
       async function initApp() {
@@ -1523,6 +1493,7 @@
           document.getElementById('studentName').value = getLocalStorage('app_student_name') || user.displayName || '';
           document.getElementById('studentCourse').value = getLocalStorage('app_student_course') || '';
           document.getElementById('studentDivision').value = getLocalStorage('app_student_division') || '';
+           document.getElementById('studentTurno').value = getLocalStorage('app_student_turno') || '';
           totalSalidasPestaña = parseInt(getLocalStorage('app_blur_count') || '0');
           document.getElementById('blurCount').innerText = totalSalidasPestaña;
 
@@ -1542,22 +1513,34 @@
               clearTimeout(window.__guardarIdentificacionTimer);
               window.__guardarIdentificacionTimer = setTimeout(() => guardarIdentificacionFirebase(), 500);
           });
+          document.getElementById('studentTurno').addEventListener('change', (e) => {
+              setLocalStorage('app_student_turno', e.target.value);
+              programarGuardadoFirebase();
+              guardarIdentificacionFirebase();
+          });
 
-          // Si el registro anterior no tenía división, no la inventamos:
-          // la pedimos al estudiante y la guardamos inmediatamente en Firebase.
-          const divisionActual = document.getElementById('studentDivision').value.trim();
-          if (!divisionActual) {
-              const divisionInput = document.getElementById('studentDivision');
-              divisionInput.required = true;
-              divisionInput.style.border = '2px solid #f59e0b';
-              setTimeout(() => {
-                  alert('⚠️ Falta la DIVISIÓN del estudiante. Ingresala (por ejemplo: A) y se guardará automáticamente en Firebase.');
-                  divisionInput.focus();
-              }, 300);
+          // Primer ingreso: el documento de Firebase es la fuente de verdad.
+          // Si no existe o le faltan datos obligatorios, se solicita el registro completo.
+          const registroCompleto = !!(datosFirebase && datosFirebase.estudiante &&
+              datosFirebase.estudiante.nombre && datosFirebase.estudiante.curso &&
+              datosFirebase.estudiante.division && datosFirebase.estudiante.turno);
+          if (!registroCompleto) {
+              await solicitarDatosNuevoEstudiante();
           } else {
-              // Garantiza que una división ya existente quede persistida en Firebase.
               setTimeout(() => guardarIdentificacionFirebase(), 300);
           }
+
+          // Refuerzo antifraude: pérdida de foco de la ventana.
+          window.addEventListener('blur', () => {
+              if (document.visibilityState === 'visible') {
+                  totalSalidasPestaña++;
+                  setLocalStorage('app_blur_count', totalSalidasPestaña);
+                  const b=document.getElementById('blurCount'); if(b)b.innerText=totalSalidasPestaña;
+                  programarGuardadoFirebase();
+              }
+          });
+          document.addEventListener('copy', e => { if (e.target && e.target.closest && e.target.closest('.code-editor')) e.preventDefault(); });
+          document.addEventListener('cut', e => { if (e.target && e.target.closest && e.target.closest('.code-editor')) e.preventDefault(); });
 
           // Detectar salidas de pestaña con Page Visibility API
           document.addEventListener('visibilitychange', () => {
@@ -1834,6 +1817,8 @@
               desc.innerHTML = `Autorizar desbloqueo del ejercicio actual <b>(${seccionActivaActual})</b>:`;
           } else if (accion === 'unlock_all') {
               desc.innerHTML = `Autorizar desbloqueo <b>global de todos los ejercicios</b> de la plataforma:`;
+          } else if (accion === 'panel_profesor') {
+              desc.innerHTML = `Autorizar <b>acceso al Panel del Profesor</b>:`;
           } else if (accion === 'reset_contador_salidas') {
               desc.innerHTML = `Autorizar el reinicio del contador de salidas de pestaña:`;
           } else if (accion === 'pausar_modulo') {
@@ -1878,6 +1863,8 @@
                   togglePausaGlobal();
               } else if (accionConfirmada === 'reset_contador_salidas') {
                   reiniciarContadorSalidasProfesor();
+              } else if (accionConfirmada === 'panel_profesor') {
+                  abrirPanelProfesor();
               }
               seccionPendientePausa = null;
           } else {
@@ -2796,97 +2783,66 @@
       // FUNCIONES DE IMPORTACIÓN Y EXPORTACIÓN JSON Y PDF
       // ==========================================
 
-      function exportarProgresoJSON() {
-          const nombre = document.getElementById('studentName').value.trim();
-          const curso = document.getElementById('studentCourse').value.trim();
-            const division = document.getElementById('studentDivision').value.trim();
-
-          const paqueteAvance = {
-              estudiante: { nombre, curso, division },
-              salidasPestaña: totalSalidasPestaña,
-              codigos: {},
-              tiemposRestantes: tiemposRestantes,
-              finalizadas: actividadesFinalizadas,
-              historialResultados: historialResultados,
-              contadorPrevisualizaciones: contadorPrevisualizaciones
-          };
-
-          seccionesData.forEach(sec => {
-              const editor = document.getElementById(`editor-${sec.id}`);
-              paqueteAvance.codigos[sec.id] = editor ? editor.value : (getLocalStorage(`draft_editor-${sec.id}`) || sec.initialCode);
-          });
-
-          const blob = new Blob([JSON.stringify(paqueteAvance, null, 2)], { type: "application/json" });
-          const a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = `avance_js_${(nombre || 'estudiante').replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
-          a.click();
+      // ===============================
+      // PANEL PROFESOR EN TIEMPO REAL
+      // ===============================
+      let profesorUnsubscribe = null;
+      let estudiantesProfesor = [];
+      function abrirPanelProfesor() {
+          document.getElementById('panelProfesorModal').classList.add('active');
+          iniciarPanelProfesorTiempoReal();
       }
-
-      function importarProgresoJSON(event) {
-          const file = event.target.files[0];
-          if (!file) return;
-
-          const reader = new FileReader();
-          reader.onload = function(e) {
-              try {
-                  const paqueteAvance = JSON.parse(e.target.result);
-
-                  if (paqueteAvance.estudiante) {
-                      const nombre = paqueteAvance.estudiante.nombre || '';
-                       const curso = paqueteAvance.estudiante.curso || '';
-                       const division = paqueteAvance.estudiante.division || '';
-                       document.getElementById('studentName').value = nombre;
-                       document.getElementById('studentCourse').value = curso;
-                       document.getElementById('studentDivision').value = division;
-                       setLocalStorage('app_student_name', nombre);
-                       setLocalStorage('app_student_course', curso);
-                       setLocalStorage('app_student_division', division);
-                  }
-
-                  if (paqueteAvance.salidasPestaña !== undefined) {
-                      totalSalidasPestaña = paqueteAvance.salidasPestaña;
-                      setLocalStorage('app_blur_count', totalSalidasPestaña);
-                      const elBlur = document.getElementById('blurCount');
-                      if (elBlur) elBlur.innerText = totalSalidasPestaña;
-                  }
-
-                  if (paqueteAvance.tiemposRestantes) {
-                      Object.keys(paqueteAvance.tiemposRestantes).forEach(secId => {
-                          setLocalStorage(`timer_${secId}`, paqueteAvance.tiemposRestantes[secId]);
-                      });
-                  }
-
-                  if (paqueteAvance.finalizadas) {
-                      Object.keys(paqueteAvance.finalizadas).forEach(secId => {
-                          if (paqueteAvance.finalizadas[secId]) {
-                              setLocalStorage(`finalized_${secId}`, 'true');
-                          } else {
-                              removeLocalStorage(`finalized_${secId}`);
-                          }
-                      });
-                  }
-
-                  if (paqueteAvance.contadorPrevisualizaciones) {
-                      Object.keys(paqueteAvance.contadorPrevisualizaciones).forEach(secId => {
-                          setLocalStorage(`preview_count_${secId}`, paqueteAvance.contadorPrevisualizaciones[secId]);
-                      });
-                  }
-
-                  const codigos = paqueteAvance.codigos || {};
-                  Object.keys(codigos).forEach(secId => {
-                      if (codigos[secId]) {
-                          setLocalStorage(`draft_editor-${secId}`, codigos[secId]);
-                      }
-                  });
-
-                  alert("¡Progreso cargado con éxito! Se reiniciará la vista para aplicar los cambios.");
-                  window.location.reload();
-              } catch (err) {
-                  alert("⚠️ Error al procesar el archivo JSON. Asegúrate de seleccionar un archivo con formato válido.");
-              }
-          };
-          reader.readAsText(file);
+      function cerrarPanelProfesor() {
+          document.getElementById('panelProfesorModal').classList.remove('active');
+          if (profesorUnsubscribe) { profesorUnsubscribe(); profesorUnsubscribe = null; }
+          if (window.__profesorUnsubscribe) { window.__profesorUnsubscribe(); window.__profesorUnsubscribe = null; }
+      }
+      function calcularProgresoEstudiante(d) {
+          const finalizadas = d.finalizadas || {};
+          const total = seccionesData.length || 1;
+          return Math.round((Object.values(finalizadas).filter(Boolean).length / total) * 100);
+      }
+      function calcularNotaEstudiante(d) {
+          const h = d.historialResultados || {};
+          const notas = Object.values(h).map(x => Number(x?.notaIA)).filter(n => Number.isFinite(n));
+          if (!notas.length) return '—';
+          return (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1);
+      }
+      function renderPanelProfesor() {
+          const q = (document.getElementById('filtroProfesor').value || '').toLowerCase().trim();
+          const curso = document.getElementById('filtroCursoProfesor').value;
+          const turno = document.getElementById('filtroTurnoProfesor').value;
+          const rows = estudiantesProfesor.filter(d => {
+              const e=d.estudiante||{};
+              const text=`${e.nombre||''} ${d.email||''}`.toLowerCase();
+              return (!q || text.includes(q)) && (!curso || e.curso===curso) && (!turno || e.turno===turno);
+          });
+          const cursos=[...new Set(estudiantesProfesor.map(d=>d.estudiante?.curso).filter(Boolean))].sort();
+          const sel=document.getElementById('filtroCursoProfesor');
+          const old=sel.value; sel.innerHTML='<option value="">Todos los cursos</option>'+cursos.map(c=>`<option>${c}</option>`).join(''); if(cursos.includes(old)) sel.value=old;
+          const total=rows.length, completos=rows.filter(d=>calcularProgresoEstudiante(d)>=100).length;
+          const notas=rows.map(calcularNotaEstudiante).filter(n=>n!=='—').map(Number);
+          const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'—';
+          document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Completaron',completos],['Promedio',promedio],['Sin datos',''+(total-completos)]].map(x=>`<div style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
+          document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
+              const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaEstudiante(d);
+              const fecha=d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : '—';
+              return `<tr><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${fecha}</td></tr>`;
+          }).join('') || '<tr><td colspan="9" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
+      }
+      function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+      async function iniciarPanelProfesorTiempoReal() {
+          if (profesorUnsubscribe) profesorUnsubscribe();
+          try {
+              const { getFirestore, collection, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+              // Usamos la instancia Firestore ya inicializada dentro del módulo Firebase.
+              if (!window.__firestorePanel) { document.getElementById('estadoPanelProfesor').textContent='Panel disponible cuando las reglas de Firestore permitan consultar la colección estudiantes.'; }
+              const u=window.firebaseCurrentUser;
+              if (!u) return;
+              // Solicita la colección mediante un evento al módulo Firebase.
+              window.__abrirPanelProfesorFirestore?.();
+              profesorUnsubscribe = () => { if (window.__profesorUnsubscribe) window.__profesorUnsubscribe(); window.__profesorUnsubscribe = null; };
+          } catch(e) { document.getElementById('estadoPanelProfesor').textContent='Error al conectar con Firebase: '+e.message; }
       }
 
       async function exportarResultadosPDF() {
@@ -2895,16 +2851,22 @@
           const nombre = document.getElementById('studentName').value.trim() || 'Estudiante Sin Nombre';
           const curso = document.getElementById('studentCourse').value.trim() || 'Sin Curso';
            const division = document.getElementById('studentDivision').value.trim() || 'Sin División';
+          const turno = document.getElementById('studentTurno').value.trim() || 'Sin Turno';
 
           doc.setFontSize(16);
           doc.text("IPEM 146 - Reporte de Evaluaciones JavaScript", 14, 20);
           doc.setFontSize(10);
-          doc.text(`Alumno: ${nombre} | Curso: ${curso} | División: ${division}`, 14, 28);
+          doc.text(`Alumno: ${nombre} | Curso: ${curso} | División: ${division} | Turno: ${turno}`, 14, 28);
           doc.text(`Salidas de Pestaña (Anti-Fraude): ${totalSalidasPestaña}`, 14, 34);
           doc.text(`Fecha de Emisión: ${new Date().toLocaleString()}`, 14, 40);
           doc.line(14, 43, 196, 43);
 
           let yPos = 50;
+          const notasFinales = Object.values(historialResultados).map(r => Number(r?.notaIA)).filter(Number.isFinite);
+          const promedioFinal = notasFinales.length ? (notasFinales.reduce((a,b)=>a+b,0)/notasFinales.length).toFixed(2) : 'Sin evaluar';
+          doc.setFontSize(11);
+          doc.text(`Promedio final: ${promedioFinal}/10 | Turno: ${turno}`, 14, yPos);
+          yPos += 8;
 
           seccionesData.forEach((sec, idx) => {
               if (yPos > 260) {
@@ -2957,28 +2919,6 @@
               doc.save(`Reporte_JS_${nombre.replace(/\s+/g, '_')}.pdf`);
           }
       }
-       const modal = document.getElementById('popupModal');
-
-    function abrirPopup() {
-      modal.showModal();
-    }
-
-    function cerrarPopup() {
-      modal.close();
-    }
-
-    // Opcional: Cerrar el modal al hacer clic en el fondo oscuro
-    modal.addEventListener('click', (e) => {
-      const dialogDimensions = modal.getBoundingClientRect();
-      if (
-        e.clientX < dialogDimensions.left ||
-        e.clientX > dialogDimensions.right ||
-        e.clientY < dialogDimensions.top ||
-        e.clientY > dialogDimensions.bottom
-      ) {
-        modal.close();
-      }
-    });
     </script>
   </body>
 </html>
