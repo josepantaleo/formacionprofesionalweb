@@ -168,7 +168,7 @@
         font-size: 0.95rem;
       }
 
-      /* Alerta Antifraude Visual en Header */
+      /* Indicador de cambios de pestaña */
       .antifraud-badge {
         background: rgba(239, 68, 68, 0.15);
         border: 1px solid var(--danger);
@@ -1031,6 +1031,25 @@
           return false;
         }
       };
+
+      window.guardarRevisionDocenteFirebase = async function(uid, revision) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db || !uid || !revision) return false;
+        try {
+          await setDoc(doc(db, "estudiantes", uid), {
+            revisionSalidas: {
+              ...revision,
+              revisadoPor: user.email || user.displayName || user.uid,
+              revisadoEn: serverTimestamp()
+            },
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error guardando revisión docente:", error);
+          return false;
+        }
+      };
     
       window.__abrirPanelProfesorFirestore = function() {
         if (!db) return;
@@ -1138,10 +1157,13 @@
         <div
           style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap"
         >
-          <div class="antifraud-badge" id="blurBadge">
-            <i class="fa-solid fa-shield-halved"></i> Salidas de pestaña:
+          <div class="antifraud-badge" id="blurBadge" title="Registro de cambios de pestaña para revisión docente">
+            <i class="fa-solid fa-eye"></i> Cambios de pestaña:
             <span id="blurCount">0</span>
           </div>
+          <button class="btn btn-secondary" id="btnJustificarSalida" style="display:none;font-size:.75rem;padding:.4rem .8rem" onclick="abrirJustificacionUltimaSalida()">
+            <i class="fa-solid fa-comment"></i> Justificar última
+          </button>
 
           <!-- Botones protegidos del profesor -->
           <button
@@ -1231,7 +1253,7 @@
           Las actividades pendientes no se incluyen.
         </div>
         <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
-        <div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;min-width:950px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Progreso</th><th>Nota</th><th>Salidas</th><th>Última actualización</th><th>Detalle</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
+        <div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;min-width:980px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Última actualización</th><th>Detalle</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
         <p id="estadoPanelProfesor" style="margin-top:1rem;color:var(--text-muted);font-size:.8rem;"></p>
       </div>
     </div>
@@ -1247,6 +1269,32 @@
           <button class="btn btn-secondary" onclick="cerrarDetalleEstudianteProfesor()">Cerrar</button>
         </div>
         <div id="detalleEstudianteProfesorContenido"></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="justificarSalidaModal" role="dialog" aria-modal="true" aria-labelledby="justificarSalidaTitle">
+      <div class="modal-box">
+        <h3 id="justificarSalidaTitle"><i class="fa-solid fa-comment-dots"></i> Justificar cambio de pestaña</h3>
+        <p id="justificarSalidaDescripcion">Indicá brevemente por qué la página dejó de estar visible.</p>
+        <div class="input-group">
+          <label for="motivoJustificacionSalida">Motivo</label>
+          <select id="motivoJustificacionSalida">
+            <option value="">Seleccionar motivo</option>
+            <option>Problema técnico</option>
+            <option>Llamada o notificación</option>
+            <option>Autorización docente</option>
+            <option>Necesidad de accesibilidad</option>
+            <option>Otro motivo</option>
+          </select>
+        </div>
+        <div class="input-group" style="margin-top:.7rem">
+          <label for="detalleJustificacionSalida">Explicación</label>
+          <textarea id="detalleJustificacionSalida" style="min-height:100px;padding:.7rem;border-radius:6px;background:var(--bg-dark);color:white;border:1px solid var(--border)"></textarea>
+        </div>
+        <div class="modal-actions" style="margin-top:1rem">
+          <button class="btn btn-secondary" onclick="cerrarJustificacionSalida()">Cancelar</button>
+          <button class="btn btn-primary" onclick="guardarJustificacionSalida()">Guardar justificación</button>
+        </div>
       </div>
     </div>
 
@@ -1511,6 +1559,9 @@
       let actividadesFinalizadas = {};
       let contadorPrevisualizaciones = {};
       let totalSalidasPestaña = 0;
+      let eventosSalidasPestaña = [];
+      let salidaActivaPestaña = null;
+      let revisionSalidasActual = { estado: "pendiente", penalizacion: 0, motivo: "" };
       let seccionActivaActual = seccionesData[0].id;
 
       // Control de Cronómetros por Módulo (40 minutos = 2400 segundos)
@@ -1586,6 +1637,7 @@
           return {
               estudiante: { nombre, curso, division, turno },
               salidasPestaña: totalSalidasPestaña,
+              eventosSalidasPestaña: JSON.parse(JSON.stringify(eventosSalidasPestaña || [])),
               codigos,
               tiemposRestantes: { ...tiemposRestantes },
               finalizadas: { ...actividadesFinalizadas },
@@ -1698,6 +1750,18 @@
               totalSalidasPestaña = Number(datos.salidasPestaña) || 0;
               setLocalStorage('app_blur_count', totalSalidasPestaña);
           }
+          if (Array.isArray(datos.eventosSalidasPestaña)) {
+              eventosSalidasPestaña = datos.eventosSalidasPestaña;
+              setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
+          }
+          if (datos.revisionSalidas && typeof datos.revisionSalidas === 'object') {
+              revisionSalidasActual = {
+                  estado: datos.revisionSalidas.estado || 'pendiente',
+                  penalizacion: Number(datos.revisionSalidas.penalizacion) || 0,
+                  motivo: datos.revisionSalidas.motivo || '',
+                  revisadoPor: datos.revisionSalidas.revisadoPor || ''
+              };
+          }
           if (datos.tiemposRestantes) Object.entries(datos.tiemposRestantes).forEach(([id,v]) => setLocalStorage(`timer_${id}`, Number(v)));
           if (datos.finalizadas) Object.entries(datos.finalizadas).forEach(([id,v]) => v ? setLocalStorage(`finalized_${id}`, 'true') : removeLocalStorage(`finalized_${id}`));
           if (datos.contadorPrevisualizaciones) Object.entries(datos.contadorPrevisualizaciones).forEach(([id,v]) => setLocalStorage(`preview_count_${id}`, Number(v)));
@@ -1770,7 +1834,14 @@
           document.getElementById('studentDivision').value = getLocalStorage('app_student_division') || '';
            document.getElementById('studentTurno').value = getLocalStorage('app_student_turno') || '';
           totalSalidasPestaña = parseInt(getLocalStorage('app_blur_count') || '0');
+          try {
+              const eventosLocales = JSON.parse(getLocalStorage('app_tab_events') || '[]');
+              if (!eventosSalidasPestaña.length && Array.isArray(eventosLocales)) eventosSalidasPestaña = eventosLocales;
+          } catch {
+              eventosSalidasPestaña = [];
+          }
           document.getElementById('blurCount').innerText = totalSalidasPestaña;
+          document.getElementById('btnJustificarSalida').style.display = eventosSalidasPestaña.length ? 'inline-flex' : 'none';
 
           document.getElementById('studentName').addEventListener('input', (e) => {
               setLocalStorage('app_student_name', e.target.value);
@@ -1805,40 +1876,65 @@
               setTimeout(() => guardarIdentificacionFirebase(), 300);
           }
 
-          // ============================================================
-          // ANTIFRAUDE ROBUSTO
-          // Una salida de pestaña puede generar blur + visibilitychange.
-          // Por eso visibilitychange es la fuente principal y se aplica
-          // antirrebote para impedir el doble conteo.
-          // ============================================================
-          let ultimoEventoAntifraude = 0;
+          // Registro de cambios de pestaña para revisión docente.
+          let ultimoEventoVisibilidad = 0;
 
-          function registrarSalidaAntifraude(origen = 'visibility') {
+          function persistirEventosSalidas() {
+              setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
+              document.getElementById('btnJustificarSalida').style.display = eventosSalidasPestaña.length ? 'inline-flex' : 'none';
+              programarGuardadoFirebase();
+          }
+
+          function registrarCambioPestaña(origen = 'visibility') {
               const ahora = Date.now();
-              if (ahora - ultimoEventoAntifraude < 1500) return;
-              ultimoEventoAntifraude = ahora;
+              if (ahora - ultimoEventoVisibilidad < 1500) return;
+              ultimoEventoVisibilidad = ahora;
 
               totalSalidasPestaña++;
               setLocalStorage('app_blur_count', totalSalidasPestaña);
+              salidaActivaPestaña = {
+                  id: `${ahora}-${totalSalidasPestaña}`,
+                  numero: totalSalidasPestaña,
+                  salidaEn: new Date(ahora).toISOString(),
+                  regresoEn: null,
+                  duracionSegundos: null,
+                  seccion: seccionActivaActual,
+                  origen,
+                  justificacion: null
+              };
+              eventosSalidasPestaña.push(salidaActivaPestaña);
+              persistirEventosSalidas();
 
               const badge = document.getElementById('blurCount');
               if (badge) badge.innerText = String(totalSalidasPestaña);
 
-              programarGuardadoFirebase();
-
-              if (totalSalidasPestaña >= 3 && totalSalidasPestaña <= 7) {
-                  alert(`⚠️ ADVERTENCIA ANTI-FRAUDE (${totalSalidasPestaña} salidas): Has salido de la pestaña. Se aplicará un descuento de 2 puntos en tu nota final.`);
-              } else if (totalSalidasPestaña > 7) {
-                  alert(`🚨 ¡ALERTA CRÍTICA DE FRAUDE! Has salido ${totalSalidasPestaña} veces de la pestaña. Todos los ejercicios activos han sido anulados.`);
-                  anularPorFraudeMasivo();
+              if (totalSalidasPestaña === 3) {
+                  alert('Aviso: se registraron 3 cambios de pestaña. No hay sanción automática; el profesor podrá revisar los eventos y sus justificaciones.');
+              } else if (totalSalidasPestaña === 6) {
+                  alert('Atención: se registraron 6 cambios de pestaña. El caso quedará marcado para revisión docente.');
+              } else if (totalSalidasPestaña === 8) {
+                  alert('Alerta de revisión: se registraron 8 cambios de pestaña. Las actividades continúan habilitadas y el profesor decidirá si corresponde alguna medida.');
               }
+          }
+
+          function registrarRegresoPestaña() {
+              if (!salidaActivaPestaña) return;
+              const regreso = Date.now();
+              salidaActivaPestaña.regresoEn = new Date(regreso).toISOString();
+              salidaActivaPestaña.duracionSegundos = Math.max(
+                  0,
+                  Math.round((regreso - new Date(salidaActivaPestaña.salidaEn).getTime()) / 1000)
+              );
+              salidaActivaPestaña = null;
+              persistirEventosSalidas();
           }
 
           // Fuente principal: cambio real de visibilidad de la página.
           document.addEventListener('visibilitychange', () => {
               if (document.visibilityState === 'hidden') {
-                  registrarSalidaAntifraude('visibility');
+                  registrarCambioPestaña('visibility');
               } else {
+                  registrarRegresoPestaña();
                   programarGuardadoFirebase();
               }
           });
@@ -1846,7 +1942,7 @@
           // Respaldo para navegadores muy antiguos sin Page Visibility API.
           // En navegadores modernos NO se usa blur para evitar falsos positivos.
           if (!('visibilityState' in document)) {
-              window.addEventListener('blur', () => registrarSalidaAntifraude('blur-fallback'));
+              window.addEventListener('blur', () => registrarCambioPestaña('blur-fallback'));
           }
 
           document.addEventListener('copy', e => { if (e.target && e.target.closest && e.target.closest('.code-editor')) e.preventDefault(); });
@@ -2002,10 +2098,6 @@
           bloquearCopiaYPegado();
           actualizarProgreso();
 
-          if (totalSalidasPestaña > 7) {
-              anularPorFraudeMasivo();
-          }
-
           // Autoguardado de respaldo: captura también cambios que no pasan por localStorage.
           clearInterval(window.__firebaseAutoSaveInterval);
           window.__firebaseAutoSaveInterval = setInterval(() => {
@@ -2019,27 +2111,42 @@
           guardarAhoraFirebase();
       }
 
-      function anularPorFraudeMasivo() {
-          seccionesData.forEach(sec => {
-              actividadesFinalizadas[sec.id] = true;
-              setLocalStorage(`finalized_${sec.id}`, 'true');
-              const editor = document.getElementById(`editor-${sec.id}`);
-              if (editor) editor.disabled = true;
+      function abrirJustificacionUltimaSalida() {
+          const evento = [...eventosSalidasPestaña].reverse().find(x => !x.justificacion);
+          if (!evento) {
+              alert('No hay cambios de pestaña pendientes de justificación.');
+              return;
+          }
+          document.getElementById('justificarSalidaDescripcion').textContent =
+              `Evento ${evento.numero}, actividad ${evento.seccion || 'sin identificar'}, duración ${evento.duracionSegundos ?? 'en curso'} segundos.`;
+          document.getElementById('motivoJustificacionSalida').value = '';
+          document.getElementById('detalleJustificacionSalida').value = '';
+          document.getElementById('justificarSalidaModal').dataset.eventoId = evento.id;
+          document.getElementById('justificarSalidaModal').classList.add('active');
+      }
 
-              ['run', 'preview', 'ai', 'reset', 'pause'].forEach(btn => {
-                  const el = document.getElementById(`btn-${btn}-${sec.id}`);
-                  if (el) el.disabled = true;
-              });
+      function cerrarJustificacionSalida() {
+          document.getElementById('justificarSalidaModal').classList.remove('active');
+      }
 
-              if(!historialResultados[sec.id]) historialResultados[sec.id] = {};
-              historialResultados[sec.id].notaCodigo = 1;
-              historialResultados[sec.id].notaPreguntas = 0;
-              historialResultados[sec.id].notaFinal = 1;
-              historialResultados[sec.id].notaIA = 1;
-              historialResultados[sec.id].analisisIA = "EJERCICIO ANULADO: Exceso de salidas de pestaña (>7). Nota: 1/10.";
-              actualizarIconoEstado(sec.id, false);
-          });
-          actualizarProgreso();
+      function guardarJustificacionSalida() {
+          const modal = document.getElementById('justificarSalidaModal');
+          const evento = eventosSalidasPestaña.find(x => x.id === modal.dataset.eventoId);
+          const motivo = document.getElementById('motivoJustificacionSalida').value;
+          const detalle = document.getElementById('detalleJustificacionSalida').value.trim();
+          if (!evento || !motivo || !detalle) {
+              alert('Seleccioná un motivo y escribí una explicación.');
+              return;
+          }
+          evento.justificacion = {
+              motivo,
+              detalle,
+              enviadaEn: new Date().toISOString()
+          };
+          setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
+          cerrarJustificacionSalida();
+          programarGuardadoFirebase();
+          alert('La justificación quedó registrada para revisión docente.');
       }
 
       function actualizarDisplayTiempo(sectionId) {
@@ -2191,9 +2298,14 @@
 
       function reiniciarContadorSalidasProfesor() {
           totalSalidasPestaña = 0;
+          eventosSalidasPestaña = [];
+          salidaActivaPestaña = null;
+          revisionSalidasActual = { estado: "pendiente", penalizacion: 0, motivo: "" };
           setLocalStorage('app_blur_count', totalSalidasPestaña);
+          setLocalStorage('app_tab_events', '[]');
           document.getElementById('blurCount').innerText = totalSalidasPestaña;
-          alert("¡El contador de salidas de pestaña ha sido reiniciado a 0 con éxito!");
+          document.getElementById('btnJustificarSalida').style.display = 'none';
+          alert("El registro de cambios de pestaña fue reiniciado.");
       }
 
       function desbloquearEjercicioActual() {
@@ -2377,8 +2489,13 @@
           actividadesFinalizadas = {};
           contadorPrevisualizaciones = {};
           totalSalidasPestaña = 0;
+          eventosSalidasPestaña = [];
+          salidaActivaPestaña = null;
+          revisionSalidasActual = { estado: "pendiente", penalizacion: 0, motivo: "" };
           removeLocalStorage('app_blur_count');
+          removeLocalStorage('app_tab_events');
           document.getElementById('blurCount').innerText = '0';
+          document.getElementById('btnJustificarSalida').style.display = 'none';
 
           seccionesData.forEach(sec => {
               removeLocalStorage(`finalized_${sec.id}`);
@@ -2419,7 +2536,7 @@
           });
           actualizarProgreso();
           programarGuardadoFirebase();
-          alert("🔓 ¡Sistema completo y contadores antifraude reiniciados con éxito!");
+          alert("Sistema, actividades y registro de cambios de pestaña reiniciados.");
       }
 
       function actualizarIconoEstado(sectionId, esExitoso) {
@@ -3202,6 +3319,12 @@
           if (!notas.length) return '—';
           return (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1);
       }
+      function calcularNotaDefinitivaEstudiante(d) {
+          const academica = Number(calcularNotaEstudiante(d));
+          if (!Number.isFinite(academica)) return '—';
+          const penalizacion = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
+          return Math.max(0, academica - penalizacion).toFixed(1);
+      }
       function obtenerDetallePromedioEstudiante(d) {
           const historial = d.historialResultados || {};
           const actividades = seccionesData.map(sec => {
@@ -3230,6 +3353,33 @@
       }
       function cerrarDetalleEstudianteProfesor() {
           document.getElementById('detalleEstudianteProfesorModal').classList.remove('active');
+      }
+      async function guardarRevisionSalidasProfesor(indice) {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) {
+              alert('No se encontró el identificador Firebase del estudiante.');
+              return;
+          }
+          const penalizacion = Math.max(0, Math.min(10, Number(document.getElementById('penalizacionRevisionProfesor')?.value) || 0));
+          const estado = document.getElementById('estadoRevisionProfesor')?.value || 'pendiente';
+          const motivo = document.getElementById('motivoRevisionProfesor')?.value.trim() || '';
+          if (penalizacion > 0 && !motivo) {
+              alert('Escribí una justificación antes de aplicar una penalización.');
+              return;
+          }
+          const revision = { estado, penalizacion, motivo };
+          const ok = await window.guardarRevisionDocenteFirebase?.(d.uid, revision);
+          if (!ok) {
+              alert('No se pudo guardar la revisión. Verificá los permisos de Firestore.');
+              return;
+          }
+          d.revisionSalidas = {
+              ...revision,
+              revisadoPor: window.firebaseCurrentUser?.email || window.firebaseCurrentUser?.displayName || ''
+          };
+          renderPanelProfesor();
+          abrirDetalleEstudianteProfesor(indice);
+          alert('Revisión docente guardada.');
       }
       function renderPreguntaProfesor(p, indice) {
           const seleccionadas = Array.isArray(p?.seleccionadas) ? p.seleccionadas : [];
@@ -3268,7 +3418,10 @@
           const previews = d.contadorPrevisualizaciones || {};
           const progreso = calcularProgresoEstudiante(d);
           const promedio = calcularNotaEstudiante(d);
+          const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
+          const eventos = Array.isArray(d.eventosSalidasPestaña) ? d.eventosSalidasPestaña : [];
+          const revision = d.revisionSalidas || {};
           const fecha = d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : 'Sin fecha';
           document.getElementById('detalleEstudianteProfesorTitle').innerHTML =
               `<i class="fa-solid fa-user-graduate"></i> ${escapeHtml(e.nombre || d.nombreGoogle || 'Estudiante sin nombre')}`;
@@ -3318,6 +3471,22 @@
           const formulaPromedio = detallePromedio.promedio !== null
               ? `${detallePromedio.evaluadas.map(x=>x.nota).join(' + ')} = ${detallePromedio.suma.toFixed(1)}; ${detallePromedio.suma.toFixed(1)} ÷ ${detallePromedio.evaluadas.length} = ${detallePromedio.promedio.toFixed(1)}`
               : 'Pendiente';
+          const eventosHtml = eventos.length ? eventos.map(evento => {
+              const salida = evento.salidaEn ? new Date(evento.salidaEn).toLocaleString() : 'Sin fecha';
+              const duracion = evento.duracionSegundos === null || evento.duracionSegundos === undefined
+                  ? 'No registrada'
+                  : `${evento.duracionSegundos} segundos`;
+              const justificacion = evento.justificacion
+                  ? `<div style="margin-top:.4rem;color:#cbd5e1"><strong>Justificación:</strong> ${escapeHtml(evento.justificacion.motivo || '')} — ${escapeHtml(evento.justificacion.detalle || '')}</div>`
+                  : '<div style="margin-top:.4rem;color:#fbbf24">Sin justificación del estudiante.</div>';
+              return `<div class="teacher-question">
+                  <strong>Evento ${Number(evento.numero || 0)} · ${escapeHtml(salida)}</strong>
+                  <div style="margin-top:.3rem;color:var(--text-muted)">
+                      Actividad: ${escapeHtml(evento.seccion || 'Sin identificar')} · Duración: ${escapeHtml(duracion)}
+                  </div>
+                  ${justificacion}
+              </div>`;
+          }).join('') : '<p style="color:var(--text-muted)">No hay cambios de pestaña registrados.</p>';
 
           document.getElementById('detalleEstudianteProfesorContenido').innerHTML = `
               <div class="teacher-detail-summary">
@@ -3326,7 +3495,8 @@
                   <div class="teacher-detail-stat"><small>Curso y división</small><strong>${escapeHtml(`${e.curso || '—'} ${e.division || ''}`)}</strong></div>
                   <div class="teacher-detail-stat"><small>Turno</small><strong>${escapeHtml(e.turno || '—')}</strong></div>
                   <div class="teacher-detail-stat"><small>Progreso</small><strong>${progreso}%</strong></div>
-                  <div class="teacher-detail-stat"><small>Promedio final</small><strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong></div>
+                  <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong></div>
+                  <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === '—' ? 'Pendiente' : `${notaDefinitiva}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Salidas de pestaña</small><strong>${Number(d.salidasPestaña || 0)}</strong></div>
                   <div class="teacher-detail-stat"><small>Última actualización</small><strong>${escapeHtml(fecha)}</strong></div>
               </div>
@@ -3338,6 +3508,45 @@
                       <p style="margin-top:.7rem;"><strong>Actividades incluidas (${detallePromedio.evaluadas.length}):</strong></p>
                       <div style="margin-top:.35rem;color:#cbd5e1;line-height:1.5">${notasUsadas}</div>
                       <p style="margin-top:.7rem;color:var(--text-muted);">Las actividades sin nota final no forman parte del promedio hasta que se entreguen las preguntas.</p>
+                  </div>
+              </details>
+              <details class="teacher-activity" open>
+                  <summary>Registro de cambios de pestaña y revisión docente</summary>
+                  <div class="teacher-activity-content">
+                      <p style="color:var(--text-muted);margin-bottom:.7rem;">Estos eventos son indicadores para revisión; no constituyen por sí solos una prueba de fraude.</p>
+                      ${eventosHtml}
+                      <div style="margin-top:1rem;padding:1rem;border:1px solid rgba(245,158,11,.35);border-radius:8px;background:rgba(245,158,11,.06)">
+                          <h4>Decisión docente</h4>
+                          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.7rem;margin-top:.7rem">
+                              <div class="input-group">
+                                  <label for="estadoRevisionProfesor">Estado</label>
+                                  <select id="estadoRevisionProfesor">
+                                      <option value="pendiente" ${revision.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
+                                      <option value="sin_observaciones" ${revision.estado === 'sin_observaciones' ? 'selected' : ''}>Sin observaciones</option>
+                                      <option value="advertencia" ${revision.estado === 'advertencia' ? 'selected' : ''}>Advertencia</option>
+                                      <option value="penalizacion" ${revision.estado === 'penalizacion' ? 'selected' : ''}>Penalización</option>
+                                      <option value="repetir_actividad" ${revision.estado === 'repetir_actividad' ? 'selected' : ''}>Solicitar repetición</option>
+                                  </select>
+                              </div>
+                              <div class="input-group">
+                                  <label for="penalizacionRevisionProfesor">Descuento sobre el promedio</label>
+                                  <input id="penalizacionRevisionProfesor" type="number" min="0" max="10" step="0.1" value="${Number(revision.penalizacion || 0)}">
+                              </div>
+                          </div>
+                          <div class="input-group" style="margin-top:.7rem">
+                              <label for="motivoRevisionProfesor">Fundamento de la decisión</label>
+                              <textarea id="motivoRevisionProfesor" style="min-height:90px;padding:.7rem;border-radius:6px;background:var(--bg-dark);color:white;border:1px solid var(--border)">${escapeHtml(revision.motivo || '')}</textarea>
+                          </div>
+                          <div style="margin-top:.7rem;line-height:1.5">
+                              Promedio académico: <strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong><br>
+                              Penalización: <strong>-${Number(revision.penalizacion || 0).toFixed(1)}</strong><br>
+                              Nota definitiva: <strong>${notaDefinitiva === '—' ? 'Pendiente' : `${notaDefinitiva}/10`}</strong>
+                              ${revision.revisadoPor ? `<br><small>Última revisión: ${escapeHtml(revision.revisadoPor)}</small>` : ''}
+                          </div>
+                          <button class="btn btn-warning" style="margin-top:.8rem" onclick="guardarRevisionSalidasProfesor(${indice})">
+                              <i class="fa-solid fa-floppy-disk"></i> Guardar decisión
+                          </button>
+                      </div>
                   </div>
               </details>
               <div style="display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;margin:1rem 0 .7rem;">
@@ -3363,11 +3572,11 @@
           const sel=document.getElementById('filtroCursoProfesor');
           const old=sel.value; sel.innerHTML='<option value="">Todos los cursos</option>'+cursos.map(c=>`<option>${c}</option>`).join(''); if(cursos.includes(old)) sel.value=old;
           const total=rows.length, completos=rows.filter(d=>calcularProgresoEstudiante(d)>=100).length;
-          const notas=rows.map(calcularNotaEstudiante).filter(n=>n!=='—').map(Number);
+          const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='—').map(Number);
           const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'—';
-          document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Completaron',completos],['Promedio',promedio],['Sin datos',''+(total-completos)]].map(x=>`<div style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
+          document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Completaron',completos],['Promedio definitivo',promedio],['Sin datos',''+(total-completos)]].map(x=>`<div style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
           document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
-              const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaEstudiante(d);
+              const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
               const fecha=d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : '—';
               const indice=estudiantesProfesor.indexOf(d);
               return `<tr><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button></td></tr>`;
@@ -3513,7 +3722,7 @@
           doc.text("IPEM 146 - Reporte de Evaluaciones JavaScript", 14, 20);
           doc.setFontSize(10);
           doc.text(`Alumno: ${nombre} | Curso: ${curso} | División: ${division} | Turno: ${turno}`, 14, 28);
-          doc.text(`Salidas de Pestaña (Anti-Fraude): ${totalSalidasPestaña}`, 14, 34);
+          doc.text(`Cambios de pestaña registrados: ${totalSalidasPestaña}`, 14, 34);
           doc.text(`Fecha de Emisión: ${new Date().toLocaleString()}`, 14, 40);
           doc.line(14, 43, 196, 43);
 
@@ -3536,8 +3745,13 @@
           const sumaNotasFinales = notasFinales.reduce((a,b)=>a+b,0);
           const promedioFinalNumero = notasFinales.length ? sumaNotasFinales / notasFinales.length : null;
           const promedioFinal = promedioFinalNumero !== null ? promedioFinalNumero.toFixed(2) : 'Sin evaluar';
+          const penalizacionRevision = Math.max(0, Math.min(10, Number(revisionSalidasActual.penalizacion) || 0));
+          const notaDefinitivaNumero = promedioFinalNumero !== null
+              ? Math.max(0, promedioFinalNumero - penalizacionRevision)
+              : null;
+          const notaDefinitivaPDF = notaDefinitivaNumero !== null ? notaDefinitivaNumero.toFixed(2) : 'Sin evaluar';
           doc.setFontSize(11);
-          doc.text(`Promedio final: ${promedioFinal}/10 | Turno: ${turno}`, 14, yPos);
+          doc.text(`Promedio académico: ${promedioFinal}/10 | Nota definitiva: ${notaDefinitivaPDF}/10`, 14, yPos);
           yPos += 8;
 
           doc.setFont("helvetica", "bold");
@@ -3580,6 +3794,53 @@
           } else {
               doc.text("No hay actividades con nota final para calcular el promedio.", 14, yPos);
               yPos += 7;
+          }
+
+          asegurarEspacioPDF(25);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(11);
+          doc.text("Revisión docente de cambios de pestaña", 14, yPos);
+          yPos += 6;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          const estadoRevision = revisionSalidasActual.estado || 'pendiente';
+          doc.text(`Estado: ${estadoRevision} | Penalización: -${penalizacionRevision.toFixed(1)} puntos`, 14, yPos);
+          yPos += 5;
+          const motivoRevision = revisionSalidasActual.motivo || 'Sin fundamento docente registrado.';
+          const lineasMotivoRevision = doc.splitTextToSize(`Fundamento: ${motivoRevision}`, 180);
+          doc.text(lineasMotivoRevision, 14, yPos);
+          yPos += lineasMotivoRevision.length * 4 + 1;
+          doc.text(
+              `Cálculo definitivo: ${promedioFinal}/10 - ${penalizacionRevision.toFixed(1)} = ${notaDefinitivaPDF}/10`,
+              14,
+              yPos
+          );
+          yPos += 7;
+
+          asegurarEspacioPDF(12);
+          doc.setFont("helvetica", "bold");
+          doc.text(`Detalle de cambios de pestaña (${eventosSalidasPestaña.length})`, 14, yPos);
+          yPos += 6;
+          doc.setFont("helvetica", "normal");
+          if (eventosSalidasPestaña.length) {
+              eventosSalidasPestaña.forEach(evento => {
+                  const salida = evento.salidaEn ? new Date(evento.salidaEn).toLocaleString() : 'Sin fecha';
+                  const duracion = evento.duracionSegundos === null || evento.duracionSegundos === undefined
+                      ? 'duración no registrada'
+                      : `${evento.duracionSegundos} segundos`;
+                  const justificacion = evento.justificacion
+                      ? `${evento.justificacion.motivo}: ${evento.justificacion.detalle}`
+                      : 'Sin justificación';
+                  const textoEvento =
+                      `Evento ${evento.numero || ''}: ${salida} | Actividad ${evento.seccion || 'sin identificar'} | ${duracion}. Justificación: ${justificacion}`;
+                  const lineasEvento = doc.splitTextToSize(textoEvento, 176);
+                  asegurarEspacioPDF(lineasEvento.length * 4 + 3);
+                  doc.text(lineasEvento, 18, yPos);
+                  yPos += lineasEvento.length * 4 + 2;
+              });
+          } else {
+              doc.text("No se registraron cambios de pestaña.", 18, yPos);
+              yPos += 6;
           }
 
           asegurarEspacioPDF(12);
