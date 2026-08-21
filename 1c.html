@@ -3518,19 +3518,76 @@
           doc.line(14, 43, 196, 43);
 
           let yPos = 50;
-          const notasFinales = Object.values(historialResultados)
-              .map(r => Number(r?.notaFinal ?? r?.notaIA))
-              .filter(Number.isFinite);
-          const promedioFinal = notasFinales.length ? (notasFinales.reduce((a,b)=>a+b,0)/notasFinales.length).toFixed(2) : 'Sin evaluar';
+          const asegurarEspacioPDF = (altoNecesario = 10) => {
+              if (yPos + altoNecesario > 280) {
+                  doc.addPage();
+                  yPos = 20;
+              }
+          };
+          const actividadesEvaluadasPDF = seccionesData.map(sec => {
+              const resultado = historialResultados[sec.id] || {};
+              const valor = Number(resultado.notaFinal ?? resultado.notaIA);
+              return {
+                  titulo: sec.title,
+                  nota: Number.isFinite(valor) ? valor : null
+              };
+          }).filter(x => x.nota !== null);
+          const notasFinales = actividadesEvaluadasPDF.map(x => x.nota);
+          const sumaNotasFinales = notasFinales.reduce((a,b)=>a+b,0);
+          const promedioFinalNumero = notasFinales.length ? sumaNotasFinales / notasFinales.length : null;
+          const promedioFinal = promedioFinalNumero !== null ? promedioFinalNumero.toFixed(2) : 'Sin evaluar';
           doc.setFontSize(11);
           doc.text(`Promedio final: ${promedioFinal}/10 | Turno: ${turno}`, 14, yPos);
           yPos += 8;
 
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(12);
+          doc.text("Desarrollo del cálculo del promedio", 14, yPos);
+          yPos += 6;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          const formulaGeneral = doc.splitTextToSize(
+              "Fórmula: suma de las notas finales de las actividades evaluadas ÷ cantidad de actividades evaluadas. Las actividades pendientes no se incluyen.",
+              180
+          );
+          doc.text(formulaGeneral, 14, yPos);
+          yPos += formulaGeneral.length * 4 + 3;
+
+          if (actividadesEvaluadasPDF.length) {
+              actividadesEvaluadasPDF.forEach((actividad, indice) => {
+                  asegurarEspacioPDF(7);
+                  doc.text(
+                      `${indice + 1}. ${actividad.titulo}: ${actividad.nota.toFixed(1)}/10`,
+                      18,
+                      yPos
+                  );
+                  yPos += 5;
+              });
+              asegurarEspacioPDF(18);
+              const operacionSuma = notasFinales.map(n => n.toFixed(1)).join(" + ");
+              const lineasSuma = doc.splitTextToSize(
+                  `Suma: ${operacionSuma} = ${sumaNotasFinales.toFixed(1)}`,
+                  176
+              );
+              doc.text(lineasSuma, 14, yPos);
+              yPos += lineasSuma.length * 4 + 1;
+              doc.text(
+                  `División: ${sumaNotasFinales.toFixed(1)} ÷ ${actividadesEvaluadasPDF.length} actividades = ${promedioFinal}/10`,
+                  14,
+                  yPos
+              );
+              yPos += 7;
+          } else {
+              doc.text("No hay actividades con nota final para calcular el promedio.", 14, yPos);
+              yPos += 7;
+          }
+
+          asegurarEspacioPDF(12);
+          doc.line(14, yPos, 196, yPos);
+          yPos += 7;
+
           seccionesData.forEach((sec, idx) => {
-              if (yPos > 260) {
-                  doc.addPage();
-                  yPos = 20;
-              }
+              asegurarEspacioPDF(20);
 
               const res = historialResultados[sec.id] || {};
               const notaFinalModulo = res.notaFinal ?? res.notaIA;
@@ -3548,12 +3605,19 @@
                   const desglose = `Código (70%): ${res.notaCodigo ?? 'Pendiente'}/10 | Preguntas (30%): ${res.notaPreguntas ?? 'Pendiente'}/10`;
                   doc.text(desglose, 14, yPos);
                   yPos += 5;
+                  if (res.notaCodigo !== undefined && res.notaPreguntas !== undefined && notaFinalModulo !== undefined) {
+                      const formulaModulo =
+                          `Cálculo: (${res.notaCodigo} × 0,70) + (${res.notaPreguntas} × 0,30) = ${notaFinalModulo}/10`;
+                      doc.text(formulaModulo, 14, yPos);
+                      yPos += 5;
+                  }
               }
 
               doc.setFontSize(9);
               doc.setFont("courier", "normal");
               
               const codeLines = doc.splitTextToSize(`Código:\n${codigo}`, 180);
+              asegurarEspacioPDF(Math.min(codeLines.length * 4 + 4, 250));
               doc.text(codeLines, 14, yPos);
               yPos += (codeLines.length * 4) + 4;
 
