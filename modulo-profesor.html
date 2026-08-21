@@ -115,6 +115,33 @@ function openStudent(uid){const s=students.find(x=>x.uid===uid);if(!s)return;con
  document.getElementById('detail').innerHTML=`<div class="detail-grid"><div class="box"><h3>Progreso</h3><p><b>${s.progress}%</b> (${s.completed}/${s.totalModules})</p><div class="progress"><i style="width:${s.progress}%"></i></div></div><div class="box"><h3>Rendimiento</h3><p>Promedio: <b>${s.avg==null?'—':s.avg.toFixed(1)}/10</b></p><p>Salidas de pestaña: <b>${Number(s.salidasPestaña||0)}</b></p></div><div class="box"><h3>Cuenta</h3><p>UID: ${escapeHtml(s.uid)}</p><p>Último guardado: ${formatDate(s.actualizadoEn)}</p></div><div class="box"><h3>Sección activa</h3><p>${escapeHtml(s.seccionActiva||'—')}</p></div></div><div class="box"><h3>Actividades</h3><div class="activity-list">${acts}</div></div><div class="box answer-section"><h3>📝 Respuestas del Analista</h3><p class="muted">Las respuestas están ordenadas por sección y minimizadas. Abrí una sección y luego una pregunta para ver el detalle.</p>${answerHtml}</div><div class="box" style="margin-top:12px"><h3>Código guardado</h3>${Object.keys(s.codigos||{}).length?Object.entries(s.codigos).map(([id,code])=>`<details><summary>${escapeHtml(id)}</summary><pre>${escapeHtml(code||'')}</pre></details>`).join(''):'<p>No hay código guardado.</p>'}</div>`;
  document.getElementById('drawer').classList.remove('hidden')}
 
+
+const sectionTitles = {
+    "sec-1": "1. Introducción a JS",
+    "sec-2": "2. Variables (let, const, var)",
+    "sec-3": "3. Tipos de Datos",
+    "sec-4": "4. Operadores",
+    "sec-5": "5. Condicionales",
+    "sec-6": "6. Funciones",
+    "sec-7": "7. Arrays",
+    "sec-8": "8. Bucles",
+    "sec-9": "9. Objetos Literales",
+    "sec-10": "10. Arrays Avanzados",
+    "sec-11": "11. Métodos de Strings",
+    "sec-12": "12. Scope y Ámbito",
+    "sec-13": "13. DOM (Document Object Model)",
+    "sec-14": "14. Formularios y Eventos",
+    "sec-15": "15. LocalStorage y Persistencia",
+    "sec-16": "16. JSON y Fetch API",
+    "sec-17": "17. Manejo de Errores (try...catch)",
+    "sec-18": "18. Eventos de Avanzada",
+    "sec-19": "19. Proyecto Integrador Final"
+};
+
+function obtenerNombreSeccion(sectionId) {
+    return sectionTitles[sectionId] || `Sección ${String(sectionId).replace(/^sec-/, "")}`;
+}
+
 function buildAnswerHtml(s){
   const resultados=s.resultados||{};
   const ids=Object.keys(resultados)
@@ -149,7 +176,7 @@ function buildAnswerHtml(s){
     const r=resultados[id]||{};
     const a=r.analista||{};
     const preguntas=Array.isArray(a.preguntas)?a.preguntas:[];
-    const titulo=sectionTitles[id] || ('Sección '+String(id).replace('sec-',''));
+    const titulo=obtenerNombreSeccion(id);
     const total=Number(a.total||preguntas.length||0);
     const aciertos=Number(a.correctas||0);
     const porcentaje=Number(a.porcentaje||0);
