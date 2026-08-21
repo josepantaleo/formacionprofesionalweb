@@ -12,7 +12,7 @@ button,input,select{font:inherit}button{border:0;border-radius:10px;padding:10px
 main{max-width:1400px;margin:0 auto;padding:24px}.hidden{display:none!important}.auth{min-height:100vh;display:grid;place-items:center;padding:20px}.auth-card{width:min(440px,100%);background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;text-align:center;box-shadow:0 20px 70px #0007}.auth-card h1{margin:0 0 8px}.muted{color:var(--muted)}
 .top{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}.stat{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:18px}.stat b{display:block;font-size:30px;margin-top:4px}.stat small{color:var(--muted)}
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.toolbar input{flex:1;min-width:220px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px}.toolbar select{background:var(--card);border:1px solid var(--border);color:var(--text);padding:11px;border-radius:10px}
-.table-wrap{overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:15px}.table{width:100%;border-collapse:collapse;min-width:900px}.table th,.table td{padding:13px 12px;border-bottom:1px solid var(--border);text-align:left}.table th{color:var(--muted);font-size:13px}.table tr:hover{background:#ffffff05}.pill{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:800}.pill.ok{background:#123b28;color:#70f0a5}.pill.warn{background:#423511;color:#ffd66c}.pill.danger{background:#421a22;color:#ff91a0}.progress{height:8px;background:#24334b;border-radius:999px;overflow:hidden;min-width:100px}.progress i{display:block;height:100%;background:var(--accent)}
+.table-wrap{overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:15px}.table{width:100%;border-collapse:collapse;min-width:1150px}.table th,.table td{padding:13px 12px;border-bottom:1px solid var(--border);text-align:left}.table th{color:var(--muted);font-size:13px}.table tr:hover{background:#ffffff05}.pill{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:800}.pill.ok{background:#123b28;color:#70f0a5}.pill.warn{background:#423511;color:#ffd66c}.pill.danger{background:#421a22;color:#ff91a0}.progress{height:8px;background:#24334b;border-radius:999px;overflow:hidden;min-width:100px}.progress i{display:block;height:100%;background:var(--accent)}
 .drawer{position:fixed;inset:0;background:#0009;z-index:20;display:flex;justify-content:flex-end}.drawer-panel{width:min(850px,100%);height:100%;overflow:auto;background:#0b1526;border-left:1px solid var(--border);padding:24px}.drawer-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}.profile{display:flex;gap:14px;align-items:center}.avatar{width:58px;height:58px;border-radius:50%;object-fit:cover;background:#22334e;display:grid;place-items:center;font-size:22px}.detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:20px 0}.box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:15px}.box h3{margin:0 0 10px;font-size:15px}.box p{margin:4px 0;color:var(--muted)}.activity-list{display:grid;gap:8px}.activity{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px}.dot{width:10px;height:10px;border-radius:50%;background:#687a92}.dot.ok{background:var(--ok)}
 pre{white-space:pre-wrap;background:#07101d;border:1px solid var(--border);padding:12px;border-radius:10px;max-height:250px;overflow:auto;color:#dbe7f8}.notice{background:#241e0d;border:1px solid #594a1d;color:#ffe39a;padding:12px;border-radius:10px;margin-bottom:15px}.answer-section{margin-top:12px}.answer-summary{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}.answer-pill{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800;background:#16243a;border:1px solid var(--border)}.question-card{background:#0d1929;border:1px solid var(--border);border-radius:12px;padding:14px;margin:10px 0}.question-card h4{margin:0 0 8px}.option-line{padding:8px 10px;border-radius:8px;margin:5px 0;border:1px solid transparent}.option-line.selected-correct{background:#123b28;border-color:#26794b;color:#a8f5c8}.option-line.selected-wrong{background:#421a22;border-color:#8d3344;color:#ffb0ba}.option-line.correct-not-selected{background:#3d3210;border-color:#75601f;color:#ffe18a}.option-line.normal{background:#07101d;border-color:#1d2c43;color:#b9c7da}.answer-mark{float:right;font-weight:800}.socratic{border-left:4px solid #a78bfa}.answer-code{margin-top:12px}.answer-empty{color:var(--muted);padding:10px 0}
 .answer-section .section-answer{margin:10px 0;border:1px solid var(--border);border-radius:12px;background:#0d1929;overflow:hidden}
@@ -44,7 +44,7 @@ pre{white-space:pre-wrap;background:#07101d;border:1px solid var(--border);paddi
 <div id="warning" class="notice hidden"></div>
 <section class="top"><div class="stat"><small>Estudiantes</small><b id="nStudents">0</b></div><div class="stat"><small>Promedio</small><b id="avg">—</b></div><div class="stat"><small>Completaron 100%</small><b id="complete">0</b></div><div class="stat"><small>Con actividad</small><b id="active">0</b></div></section>
 <div class="toolbar"><input id="search" placeholder="Buscar por nombre, correo o curso…"><select id="course"><option value="">Todos los cursos</option></select><button id="refresh" class="secondary">↻ Actualizar</button><button id="csv" class="secondary">⬇ Exportar CSV</button></div>
-<div class="table-wrap"><table class="table"><thead><tr><th>Estudiante</th><th>Curso</th><th>Progreso</th><th>Nota</th><th>Salidas</th><th>Último guardado</th><th></th></tr></thead><tbody id="tbody"></tbody></table></div>
+<div class="table-wrap"><table class="table"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>División</th><th>Progreso</th><th>Nota</th><th>Salidas</th><th>Último guardado</th><th></th></tr></thead><tbody id="tbody"></tbody></table></div>
 </main></div>
 <div id="drawer" class="drawer hidden"><aside class="drawer-panel"><div class="drawer-head"><div id="profile"></div><button id="closeDrawer" class="secondary">✕</button></div><div id="detail"></div></aside></div>
 <script type="module">
@@ -87,56 +87,28 @@ auth&&onAuthStateChanged(auth,async user=>{currentUser=user;if(!user){authBox.cl
 });
 
 async function loadStudents(){
-  const tbody=document.getElementById('tbody');tbody.innerHTML='<tr><td colspan="7">Cargando estudiantes…</td></tr>';
+  const tbody=document.getElementById('tbody');tbody.innerHTML='<tr><td colspan="9">Cargando estudiantes…</td></tr>';
   try{const snap=await getDocs(collection(db,'estudiantes'));students=snap.docs.map(d=>normalizeStudent(d.id,d.data()));render();}
-  catch(e){tbody.innerHTML='<tr><td colspan="7">Error al consultar Firestore: '+escapeHtml(e.message)+'</td></tr>'}
+  catch(e){tbody.innerHTML='<tr><td colspan="9">Error al consultar Firestore: '+escapeHtml(e.message)+'</td></tr>'}
 }
 function normalizeStudent(uid,d){
   const finalizadas=d.finalizadas||{};const resultados=d.historialResultados||{};const total=Object.keys(finalizadas).length;const done=Object.values(finalizadas).filter(Boolean).length;
   // La app tiene 19 módulos; si en el futuro cambia, se puede ajustar aquí.
   const totalModules=19;const completed=Math.min(done,totalModules);const progress=Math.round(completed/totalModules*100);
   const notas=Object.values(resultados).map(x=>Number(x?.notaIA)).filter(Number.isFinite);const avg=notas.length?notas.reduce((a,b)=>a+b,0)/notas.length:null;
-  return {...d,uid,finalizadas,resultados,progress,avg,completed,totalModules};
+  const estudiante=d.estudiante||{};
+  return {...d,uid,estudiante,finalizadas,resultados,progress,avg,completed,totalModules, division: estudiante.division||d.division||''};
 }
 function render(){
- const q=document.getElementById('search').value.toLowerCase().trim(),course=document.getElementById('course').value;
+ const q=document.getElementById('search').value.toLowerCase().trim(),course=document.getElementById('course').value,division=document.getElementById('division').value;
  const courses=[...new Set(students.map(s=>s.estudiante?.curso).filter(Boolean))].sort();const sel=document.getElementById('course');const old=sel.value;sel.innerHTML='<option value="">Todos los cursos</option>'+courses.map(c=>`<option>${escapeHtml(c)}</option>`).join('');if(courses.includes(old))sel.value=old;
- const list=students.filter(s=>{const text=[s.nombreGoogle,s.email,s.estudiante?.nombre,s.estudiante?.curso].join(' ').toLowerCase();return(!q||text.includes(q))&&(!course||s.estudiante?.curso===course)});
+ const divisions=[...new Set(students.filter(s=>!course||s.estudiante?.curso===course).map(s=>s.division).filter(Boolean))].sort(); const dsel=document.getElementById('division'); const oldDiv=dsel.value; dsel.innerHTML='<option value="">Todas las divisiones</option>'+divisions.map(v=>`<option>${escapeHtml(v)}</option>`).join(''); if(divisions.includes(oldDiv)) dsel.value=oldDiv;
+  const list=students.filter(s=>{const text=[s.nombreGoogle,s.email,s.estudiante?.nombre,s.estudiante?.curso,s.division].join(' ').toLowerCase();return(!q||text.includes(q))&&(!course||s.estudiante?.curso===course)&&(!division||s.division===division)});
  document.getElementById('nStudents').textContent=students.length;const avgs=students.map(s=>s.avg).filter(x=>x!=null);document.getElementById('avg').textContent=avgs.length?(avgs.reduce((a,b)=>a+b,0)/avgs.length).toFixed(1):'—';document.getElementById('complete').textContent=students.filter(s=>s.progress>=100).length;document.getElementById('active').textContent=students.filter(s=>Object.keys(s.finalizadas).length>0).length;
- document.getElementById('tbody').innerHTML=list.length?list.map(rowHtml).join(''):'<tr><td colspan="7">No hay estudiantes que coincidan.</td></tr>';
+ document.getElementById('tbody').innerHTML=list.length?list.map(rowHtml).join(''):'<tr><td colspan="9">No hay estudiantes que coincidan.</td></tr>';
  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openStudent(b.dataset.open));
 }
-function rowHtml(s){const nota=s.avg==null?'—':s.avg.toFixed(1);const sal=Number(s.salidasPestaña||0);const date=formatDate(s.actualizadoEn);const pill=sal>7?'danger':sal>0?'warn':'ok';return `<tr><td><b>${escapeHtml(s.nombreGoogle||s.estudiante?.nombre||'Sin nombre')}</b><br><small class="muted">${escapeHtml(s.email||'')}</small></td><td>${escapeHtml(s.estudiante?.curso||'—')}</td><td><div style="display:flex;gap:9px;align-items:center"><div class="progress"><i style="width:${s.progress}%"></i></div><b>${s.progress}%</b></div></td><td>${nota}</td><td><span class="pill ${pill}">${sal}</span></td><td>${date}</td><td><button class="secondary" data-open="${escapeAttr(s.uid)}">Ver</button></td></tr>`}
-
-document.getElementById('search').oninput=render;document.getElementById('course').onchange=render;
-function openStudent(uid){const s=students.find(x=>x.uid===uid);if(!s)return;const name=s.nombreGoogle||s.estudiante?.nombre||'Sin nombre';document.getElementById('profile').innerHTML=`<div class="profile"><img class="avatar" src="${escapeAttr(s.fotoGoogle||'')}" onerror="this.style.display='none'" alt=""><div><h2 style="margin:0">${escapeHtml(name)}</h2><div class="muted">${escapeHtml(s.email||'')}</div><div class="muted">${escapeHtml(s.estudiante?.curso||'Curso no indicado')}</div></div></div>`;
- let acts='';for(let i=1;i<=s.totalModules;i++){const id='sec-'+i,done=!!s.finalizadas[id];const r=s.resultados[id]||{};const nota=Number.isFinite(Number(r.notaIA))?Number(r.notaIA).toFixed(1):'—';acts+=`<div class="activity"><span class="dot ${done?'ok':''}"></span><div><b>Actividad ${i}</b><div class="muted">${done?'Finalizada':'Pendiente'} · Nota: ${nota}</div></div><span>${done?'✓':'○'}</span></div>`}
- const answerHtml = buildAnswerHtml(s);
- document.getElementById('detail').innerHTML=`<div class="detail-grid"><div class="box"><h3>Progreso</h3><p><b>${s.progress}%</b> (${s.completed}/${s.totalModules})</p><div class="progress"><i style="width:${s.progress}%"></i></div></div><div class="box"><h3>Rendimiento</h3><p>Promedio: <b>${s.avg==null?'—':s.avg.toFixed(1)}/10</b></p><p>Salidas de pestaña: <b>${Number(s.salidasPestaña||0)}</b></p></div><div class="box"><h3>Cuenta</h3><p>UID: ${escapeHtml(s.uid)}</p><p>Último guardado: ${formatDate(s.actualizadoEn)}</p></div><div class="box"><h3>Sección activa</h3><p>${escapeHtml(s.seccionActiva||'—')}</p></div></div><div class="box"><h3>Actividades</h3><div class="activity-list">${acts}</div></div><div class="box answer-section"><h3>📝 Respuestas del Analista</h3><p class="muted">Las actividades están contraídas. Al abrir una sección se muestran todas sus preguntas y respuestas completas.</p>${answerHtml}</div><div class="box" style="margin-top:12px"><h3>Código guardado</h3>${Object.keys(s.codigos||{}).length?Object.entries(s.codigos).sort(([a],[b])=>Number(String(a).replace('sec-',''))-Number(String(b).replace('sec-',''))).map(([id,code])=>`<details><summary>💻 ${escapeHtml(obtenerNombreSeccion(id))}</summary><pre>${escapeHtml(code||'')}</pre></details>`).join(''):'<p>No hay código guardado.</p>'}</div>`;
- document.getElementById('drawer').classList.remove('hidden')}
-
-
-const sectionTitles = {
-    "sec-1": "1. Introducción a JS",
-    "sec-2": "2. Variables (let, const, var)",
-    "sec-3": "3. Tipos de Datos",
-    "sec-4": "4. Operadores",
-    "sec-5": "5. Condicionales",
-    "sec-6": "6. Funciones",
-    "sec-7": "7. Arrays",
-    "sec-8": "8. Bucles",
-    "sec-9": "9. Objetos Literales",
-    "sec-10": "10. Arrays Avanzados",
-    "sec-11": "11. Métodos de Strings",
-    "sec-12": "12. Scope y Ámbito",
-    "sec-13": "13. DOM (Document Object Model)",
-    "sec-14": "14. Formularios y Eventos",
-    "sec-15": "15. LocalStorage y Persistencia",
-    "sec-16": "16. JSON y Fetch API",
-    "sec-17": "17. Manejo de Errores (try...catch)",
-    "sec-18": "18. Eventos de Avanzada",
-    "sec-19": "19. Proyecto Integrador Final"
-};
+function rowHtml(s){const nota=s.avg==null?'—':s.avg.toFixed(1);const sal=Number(s.salidasPestaña||0);const date=formatDate(s.actualizadoEn);const pill=sal>7?'danger':sal>0?'warn':'ok';const nombre=s.estudiante?.nombre||s.nombreGoogle||'Sin nombre';return `<tr><td><b>${escapeHtml(nombre)}</b></td><td><small class="muted">${escapeHtml(s.email||s.estudiante?.email||'')}</small></td><td>${escapeHtml(s.estudiante?.curso||'—')}</td><td>${escapeHtml(s.division||'—')}</td><td><div style="display:flex;gap:9px;align-items:center"><div class="progress"><i style="width:${s.progress}%"></i></div><b>${s.progress}%</b></div></td><td>${nota}</td><td><span class="pill ${pill}">${sal}</span></td><td>${date}</td><td><button class="secondary" data-open="${escapeAttr(s.uid)}">Ver</button></td></tr>`};
 
 function obtenerNombreSeccion(sectionId) {
     return sectionTitles[sectionId] || `Sección ${String(sectionId).replace(/^sec-/, "")}`;
@@ -242,7 +214,8 @@ function buildAnswerHtml(s){
   }).join('');
 }
 
-document.getElementById('csv').onclick=()=>{const rows=[['uid','nombre','email','curso','progreso','promedio','salidas','actualizado'],...students.map(s=>[s.uid,s.nombreGoogle||'',s.email||'',s.estudiante?.curso||'',s.progress,s.avg==null?'':s.avg.toFixed(2),s.salidasPestaña||0,formatDate(s.actualizadoEn)])];const csv=rows.map(r=>r.map(csvCell).join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='reporte_estudiantes.csv';a.click();URL.revokeObjectURL(a.href)};
+document.getElementById('csv').onclick=()=>{const rows=[['uid','nombre','email','curso','division','progreso','promedio','salidas','actualizado'],...students.map(s=>[s.uid,s.estudiante?.nombre||s.nombreGoogle||'',s.email||s.estudiante?.email||'',s.estudiante?.curso||'',s.division||'',s.progress,s.avg==null?'':s.avg.toFixed(2),s.salidasPestaña||0,formatDate(s.actualizadoEn)])];const csv=rows.map(r=>r.map(csvCell).join(',')).join('
+');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='reporte_estudiantes.csv';a.click();URL.revokeObjectURL(a.href)};
 function csvCell(v){return '"'+String(v??'').replaceAll('"','""')+'"'}function formatDate(v){if(!v)return '—';if(v.seconds)return new Date(v.seconds*1000).toLocaleString('es-AR');const d=new Date(v);return isNaN(d)?'—':d.toLocaleString('es-AR')}
 function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function escapeAttr(v){return escapeHtml(v)}
 </script>
