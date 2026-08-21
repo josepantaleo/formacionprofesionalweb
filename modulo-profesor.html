@@ -356,6 +356,13 @@ td,th{
     max-height:260px!important;
   }
 }
+
+/* Editor Actividad: lista y formulario siempre visibles */
+.editor-layout{display:grid!important;grid-template-columns:300px minmax(0,1fr)!important;gap:18px!important;align-items:start!important}
+.challenge-list{display:grid!important;gap:8px!important;max-height:68vh!important;overflow:auto!important;padding:2px!important;min-height:180px!important}
+.challenge-list button{display:block!important;width:100%!important;min-height:44px!important;visibility:visible!important;opacity:1!important;color:#eef6ff!important;background:rgba(30,49,75,.9)!important;border:1px solid rgba(148,163,184,.18)!important;text-align:left!important;padding:10px 12px!important}
+.challenge-list button.primary{background:linear-gradient(135deg,#2563eb,#0284c7)!important;border-color:rgba(96,165,250,.55)!important}
+@media(max-width:800px){.editor-layout{grid-template-columns:1fr!important}.challenge-list{max-height:280px!important}}
 </style>
 </head>
 <body>
@@ -371,12 +378,18 @@ td,th{
 <div id="challengeEditor" class="editor-modal">
   <div class="editor-box">
     <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap">
-      <div><h2 style="margin:0">🧩 Editor de los 19 Desafíos</h2><p class="muted" style="margin:6px 0 0">Editá desde el Panel Profesor y guardá directamente en Firebase.</p></div>
-      <button id="closeChallengeEditor" class="secondary">✕ Cerrar</button>
+      <div><h2 style="margin:0">🧩 Desafíos de Actividad — Editor del Profesor</h2><p class="muted" style="margin:6px 0 0">Estos son exactamente los 19 desafíos que utiliza Actividad. Modificá y guardá para actualizar Firebase.</p></div>
+      <button id="reloadChallenges" class="secondary">↻ Recargar</button><button id="closeChallengeEditor" class="secondary">✕ Cerrar</button>
     </div>
+    <div style="margin-top:14px;padding:12px 14px;border-radius:12px;border:1px solid rgba(52,211,153,.25);background:rgba(16,185,129,.07);color:#c7f9df;font-size:13px">✅ <strong>Fuente de Actividad:</strong> los desafíos <code>sec-1</code> a <code>sec-19</code>. Al guardar, se escriben en <code>desafios/sec-X</code> de Firebase y Actividad puede cargarlos desde allí.</div>
     <div class="editor-layout" style="margin-top:16px">
       <div><input id="challengeSearch" placeholder="Buscar desafío..." style="width:100%;background:#07101d;color:var(--text);border:1px solid var(--border);border-radius:9px;padding:10px">
         <div id="challengeList" class="challenge-list" style="margin-top:8px"></div></div>
+      <div id="activityPreview" style="margin-bottom:14px;padding:13px 15px;border:1px solid rgba(56,189,248,.22);border-radius:12px;background:linear-gradient(135deg,rgba(14,165,233,.08),rgba(37,99,235,.08));">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#7dd3fc;font-weight:800">Vista de Actividad</div>
+        <div id="activityPreviewTitle" style="font-size:18px;font-weight:800;margin-top:3px"></div>
+        <div id="activityPreviewDesc" style="color:#94a9c2;margin-top:4px;line-height:1.45"></div>
+      </div>
       <div id="challengeForm"></div>
     </div>
     <div id="challengeStatus" class="firebase-status"></div>
@@ -384,79 +397,1088 @@ td,th{
 </div>
 <div id="drawer" class="drawer hidden"><aside class="drawer-panel"><div class="drawer-head"><div id="profile"></div><button id="closeDrawer" class="secondary">✕</button></div><div id="detail"></div></aside></div>
 <script>
-const DESAFIOS_FALLBACK = [
-          {
-              id: "sec-1",
-              icon: "fa-terminal",
-              title: "1. Introducción a JS",
-              theory: "JavaScript es el lenguaje que le da vida a la web interactiva.",
-              exerciseTitle: "Desafío Escolar: Cartelera Digital del IPEM 146",
-              exerciseDesc: "Diseña un script interactivo para la pantalla de bienvenida del IPEM 146. Deberás declarar variables utilizando palabras clave adecuadas para almacenar tu nombre de alumno y una frase motivadora orientada al aprendizaje técnico. Luego, genera la fecha actual mediante el objeto Date() de JavaScript e imprime en la consola un encabezado oficial con formato llamativo mediante múltiples llamadas a console.log().",
-              initialCode: `// 1. Declarar variables para tu nombre y el mensaje motivador\n// 2. Usar console.log()`,
-              aiSolution: `const nombreEstudiante = "Lucas";\nconst frase = "¡El esfuerzo de hoy es el éxito de mañana!";\nconsole.log("=== CARTELERA IPEM 146 ===");\nconsole.log("Alumno: " + nombreEstudiante);\nconsole.log("Mensaje: " + frase);\nconsole.log("Fecha: " + new Date().toLocaleDateString());`
-          },
-          {
-              id: "sec-2",
-              icon: "fa-cube",
-              title: "2. Variables (let, const, var)",
-              theory: "Usa 'const' para valores fijos y 'let' para variables que cambian.",
-              exerciseTitle: "Desafío Escolar: Calculadora de Gastos del Recreo",
-              exerciseDesc: "Desarrolla el módulo de cobro e inventario para la cantina escolar. Debes definir constantes (const) para establecer los precios unitarios e inmutables de las empanadas y gaseosas, y variables modificables (let) para registrar la cantidad exacta de productos comprados en un recreo. Realiza la operación matemática correspondiente para hallar el costo total e imprime un recibo detallado en la consola.",
-              initialCode: `// 1. Define constantes y variables let\n// 2. Calcula el total gastado`,
-              aiSolution: `const PRECIO_EMPANADA = 350;\nconst PRECIO_GASEOSA = 400;\nlet empanadasCompradas = 3;\nlet gaseosasCompradas = 1;\nlet totalGastado = (PRECIO_EMPANADA * empanadasCompradas) + (PRECIO_GASEOSA * gaseosasCompradas);\nconsole.log("Total gastado en cantina: $" + totalGastado);`
-          },
-          {
-              id: "sec-3",
-              icon: "fa-font",
-              title: "3. Tipos de Datos",
-              theory: "String, Number, Boolean, Undefined y Null.",
-              exerciseTitle: "Desafío Escolar: Registro Ficha Médica Educación Física",
-              exerciseDesc: "Crea el sistema de fichas médicas para las clases de educación física. Declara 4 variables con distintos tipos de datos primitivos en JavaScript (un String para el nombre del alumno, un Number para la edad, un Boolean para el apto médico y un valor Null para las observaciones médicas pendientes). Luego, muestra en consola cada valor junto con la verificación explícita de su tipo utilizando el operador typeof.",
-              initialCode: `// 1. Crea las 4 variables\n// 2. Imprime valor y typeof`,
-              aiSolution: `let nombreAlumno = "Sofía";\nlet edad = 16;\nlet aptoMedico = true;\nlet observaciones = null;\nconsole.log(nombreAlumno, typeof nombreAlumno);\nconsole.log(edad, typeof edad);\nconsole.log(aptoMedico, typeof aptoMedico);\nconsole.log(observaciones, typeof observaciones);`
-          },
-          {
-              id: "sec-4",
-              icon: "fa-calculator",
-              title: "4. Operadores",
-              theory: "Aritméticos, comparación y lógicos.",
-              exerciseTitle: "Desafío Escolar: Sistema de Calificaciones y Asistencia",
-              exerciseDesc: "Escribe un algoritmo automatizado de acreditación académica. Declara variables numéricas para representar la calificación final obtenida por un alumno y el porcentaje total de asistencia registrado en el ciclo lectivo. Utiliza operadores de comparación y el operador lógico AND (&&) para evaluar si el estudiante cumple con ambas condiciones mínimas para aprobar (nota >= 6 y asistencia >= 75%), imprimiendo un booleano indicativo en la consola.",
-              initialCode: `// 1. Declara notas y asistencia\n// 2. Usa operador lógico &&`,
-              aiSolution: `let notaFinal = 8;\nlet porcentajeAsistencia = 80;\nlet apruebaMateria = (notaFinal >= 6) && (porcentajeAsistencia >= 75);\nconsole.log("¿Aprueba la materia?: " + apruebaMateria);`
-          },
-          {
-              id: "sec-5",
-              icon: "fa-code-branch",
-              title: "5. Condicionales",
-              theory: "Estructuras if, else if y else.",
-              exerciseTitle: "Desafío Escolar: Clasificador de Beca Estudiantil",
-              exerciseDesc: "Diseña la lógica institucional para la asignación de estímulos y becas educativas. Utilizando estructuras condicionales compuestas (if, else if, else), toma como entrada la variable del promedio académico general de un alumno y clasifícalo automáticamente en una de las cuatro categorías oficiales: 'Beca Excelencia Total' (>= 9), 'Beca Parcial' (>= 7), 'Mención de Honor sin beca' (>= 6) o 'Refuerzo Pedagógico requerido' (< 6).",
-              initialCode: `// 1. Declara promedio\n// 2. Usa if / else if`,
-              aiSolution: `let promedio = 8.5;\nif (promedio >= 9) {\n    console.log("Beca Excelencia Total");\n} else if (promedio >= 7) {\n    console.log("Beca Parcial");\n} else if (promedio >= 6) {\n    console.log("Mención de Honor sin beca");\n} else {\n    console.log("Refuerzo Pedagógico requerido");\n}`
-          },
-          {
-              id: "sec-6",
-              icon: "fa-gears",
-              title: "6. Funciones",
-              theory: "Bloques reutilizables con parámetros y retorno.",
-              exerciseTitle: "Desafío Escolar: Conversor de Moneda para Viaje de Egresados",
-              exerciseDesc: "Crea una función modular reutilizable llamada 'calcularAhorroEgresados' que reciba dos parámetros numéricos: la cantidad de pesos argentinos acumulados en el fondo común y la cotización vigente del dólar. La función debe retornar un mensaje especificando el valor equivalente en dólares y evaluar mediante un condicional interno si se alcanzó la meta requerida de USD 500, o de lo contrario, informar el monto faltante.",
-              initialCode: `// 1. Define la función\n// 2. Retorna dólares y meta`,
-              aiSolution: `function calcularAhorroEgresados(pesosAhorrados, cotizacionDolar) {\n    let dolares = pesosAhorrados / cotizacionDolar;\n    let meta = 500;\n    if (dolares >= meta) {\n        return "¡Meta alcanzada! Tienes USD " + dolares.toFixed(2);\n    } else {\n        return "Faltan USD " + (meta - dolares).toFixed(2) + " para la meta.";\n    }\n}\nconsole.log(calcularAhorroEgresados(600000, 1200));`
-          },
-          {
-              id: "sec-7",
-              icon: "fa-layer-group",
-              title: "7. Arrays",
-              theory: "Colección ordenada indexada desde 0.",
-              exerciseTitle: "Desafío Escolar: Gestión de Libros Prestados",
-              exerciseDesc: "Crea un sistema de control para la Biblioteca Escolar. Inicializa un arreglo (array) con tres títulos de libros disponibles. Utiliza el método .push() para incorporar un nuevo libro al final de la lista de préstamos y el método .shift() para simular la devolución y entrega del primer libro solicitado. Finalmente, imprime el nombre del libro prestado, la longitud del arreglo con .length y la lista actualizada en consola.",
-              initialCode: `// 1. Crea array\n// 2. Usa push y shift`,
-              aiSolution: `let libros = ["Matemática", "Historia", "Literatura"];
-window.DESAFIOS_DATA_FALLBACK=DESAFIOS_FALLBACK;
+/* Archivo maestro de los 19 desafíos + configuración pedagógica de IA */
+window.DESAFIOS_DATA = [
+  {
+    "id": "sec-1",
+    "icon": "fa-terminal",
+    "title": "1. Introducción a JS",
+    "theory": "JavaScript es el lenguaje que le da vida a la web interactiva.",
+    "exerciseTitle": "Desafío Escolar: Cartelera Digital del IPEM 146",
+    "exerciseDesc": "Diseña un script interactivo para la pantalla de bienvenida del IPEM 146. Deberás declarar variables utilizando palabras clave adecuadas para almacenar tu nombre de alumno y una frase motivadora orientada al aprendizaje técnico. Luego, genera la fecha actual mediante el objeto Date() de JavaScript e imprime en la consola un encabezado oficial con formato llamativo mediante múltiples llamadas a console.log().",
+    "initialCode": "// 1. Declarar variables para tu nombre y el mensaje motivador\n// 2. Usar console.log()",
+    "aiSolution": "const nombreEstudiante = \"Lucas\";\nconst frase = \"¡El esfuerzo de hoy es el éxito de mañana!\";\nconsole.log(\"=== CARTELERA IPEM 146 ===\");\nconsole.log(\"Alumno: \" + nombreEstudiante);\nconsole.log(\"Mensaje: \" + frase);\nconsole.log(\"Fecha: \" + new Date().toLocaleDateString());",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 1. Introducción a JS.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "1. Introducción a JS"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-2",
+    "icon": "fa-cube",
+    "title": "2. Variables (let, const, var)",
+    "theory": "Usa 'const' para valores fijos y 'let' para variables que cambian.",
+    "exerciseTitle": "Desafío Escolar: Calculadora de Gastos del Recreo",
+    "exerciseDesc": "Desarrolla el módulo de cobro e inventario para la cantina escolar. Debes definir constantes (const) para establecer los precios unitarios e inmutables de las empanadas y gaseosas, y variables modificables (let) para registrar la cantidad exacta de productos comprados en un recreo. Realiza la operación matemática correspondiente para hallar el costo total e imprime un recibo detallado en la consola.",
+    "initialCode": "// 1. Define constantes y variables let\n// 2. Calcula el total gastado",
+    "aiSolution": "const PRECIO_EMPANADA = 350;\nconst PRECIO_GASEOSA = 400;\nlet empanadasCompradas = 3;\nlet gaseosasCompradas = 1;\nlet totalGastado = (PRECIO_EMPANADA * empanadasCompradas) + (PRECIO_GASEOSA * gaseosasCompradas);\nconsole.log(\"Total gastado en cantina: $\" + totalGastado);",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 2. Variables (let, const, var).",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "const",
+      "let",
+      "var"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-3",
+    "icon": "fa-font",
+    "title": "3. Tipos de Datos",
+    "theory": "String, Number, Boolean, Undefined y Null.",
+    "exerciseTitle": "Desafío Escolar: Registro Ficha Médica Educación Física",
+    "exerciseDesc": "Crea el sistema de fichas médicas para las clases de educación física. Declara 4 variables con distintos tipos de datos primitivos en JavaScript (un String para el nombre del alumno, un Number para la edad, un Boolean para el apto médico y un valor Null para las observaciones médicas pendientes). Luego, muestra en consola cada valor junto con la verificación explícita de su tipo utilizando el operador typeof.",
+    "initialCode": "// 1. Crea las 4 variables\n// 2. Imprime valor y typeof",
+    "aiSolution": "let nombreAlumno = \"Sofía\";\nlet edad = 16;\nlet aptoMedico = true;\nlet observaciones = null;\nconsole.log(nombreAlumno, typeof nombreAlumno);\nconsole.log(edad, typeof edad);\nconsole.log(aptoMedico, typeof aptoMedico);\nconsole.log(observaciones, typeof observaciones);",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 3. Tipos de Datos.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "3. Tipos de Datos"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-4",
+    "icon": "fa-calculator",
+    "title": "4. Operadores",
+    "theory": "Aritméticos, comparación y lógicos.",
+    "exerciseTitle": "Desafío Escolar: Sistema de Calificaciones y Asistencia",
+    "exerciseDesc": "Escribe un algoritmo automatizado de acreditación académica. Declara variables numéricas para representar la calificación final obtenida por un alumno y el porcentaje total de asistencia registrado en el ciclo lectivo. Utiliza operadores de comparación y el operador lógico AND (&&) para evaluar si el estudiante cumple con ambas condiciones mínimas para aprobar (nota >= 6 y asistencia >= 75%), imprimiendo un booleano indicativo en la consola.",
+    "initialCode": "// 1. Declara notas y asistencia\n// 2. Usa operador lógico &&",
+    "aiSolution": "let notaFinal = 8;\nlet porcentajeAsistencia = 80;\nlet apruebaMateria = (notaFinal >= 6) && (porcentajeAsistencia >= 75);\nconsole.log(\"¿Aprueba la materia?: \" + apruebaMateria);",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 4. Operadores.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "4. Operadores"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-5",
+    "icon": "fa-code-branch",
+    "title": "5. Condicionales",
+    "theory": "Estructuras if, else if y else.",
+    "exerciseTitle": "Desafío Escolar: Clasificador de Beca Estudiantil",
+    "exerciseDesc": "Diseña la lógica institucional para la asignación de estímulos y becas educativas. Utilizando estructuras condicionales compuestas (if, else if, else), toma como entrada la variable del promedio académico general de un alumno y clasifícalo automáticamente en una de las cuatro categorías oficiales: 'Beca Excelencia Total' (>= 9), 'Beca Parcial' (>= 7), 'Mención de Honor sin beca' (>= 6) o 'Refuerzo Pedagógico requerido' (< 6).",
+    "initialCode": "// 1. Declara promedio\n// 2. Usa if / else if",
+    "aiSolution": "let promedio = 8.5;\nif (promedio >= 9) {\n    console.log(\"Beca Excelencia Total\");\n} else if (promedio >= 7) {\n    console.log(\"Beca Parcial\");\n} else if (promedio >= 6) {\n    console.log(\"Mención de Honor sin beca\");\n} else {\n    console.log(\"Refuerzo Pedagógico requerido\");\n}",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 5. Condicionales.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "if",
+      "else"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-6",
+    "icon": "fa-gears",
+    "title": "6. Funciones",
+    "theory": "Bloques reutilizables con parámetros y retorno.",
+    "exerciseTitle": "Desafío Escolar: Conversor de Moneda para Viaje de Egresados",
+    "exerciseDesc": "Crea una función modular reutilizable llamada 'calcularAhorroEgresados' que reciba dos parámetros numéricos: la cantidad de pesos argentinos acumulados en el fondo común y la cotización vigente del dólar. La función debe retornar un mensaje especificando el valor equivalente en dólares y evaluar mediante un condicional interno si se alcanzó la meta requerida de USD 500, o de lo contrario, informar el monto faltante.",
+    "initialCode": "// 1. Define la función\n// 2. Retorna dólares y meta",
+    "aiSolution": "function calcularAhorroEgresados(pesosAhorrados, cotizacionDolar) {\n    let dolares = pesosAhorrados / cotizacionDolar;\n    let meta = 500;\n    if (dolares >= meta) {\n        return \"¡Meta alcanzada! Tienes USD \" + dolares.toFixed(2);\n    } else {\n        return \"Faltan USD \" + (meta - dolares).toFixed(2) + \" para la meta.\";\n    }\n}\nconsole.log(calcularAhorroEgresados(600000, 1200));",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 6. Funciones.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "6. Funciones"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-7",
+    "icon": "fa-layer-group",
+    "title": "7. Arrays",
+    "theory": "Colección ordenada indexada desde 0.",
+    "exerciseTitle": "Desafío Escolar: Gestión de Libros Prestados",
+    "exerciseDesc": "Crea un sistema de control para la Biblioteca Escolar. Inicializa un arreglo (array) con tres títulos de libros disponibles. Utiliza el método .push() para incorporar un nuevo libro al final de la lista de préstamos y el método .shift() para simular la devolución y entrega del primer libro solicitado. Finalmente, imprime el nombre del libro prestado, la longitud del arreglo con .length y la lista actualizada en consola.",
+    "initialCode": "// 1. Crea array\n// 2. Usa push y shift",
+    "aiSolution": "let libros = [\"Matemática\", \"Historia\", \"Literatura\"];\nlibros.push(\"Física\");\nlet devuelto = libros.shift();\nconsole.log(\"Libro devuelto: \" + devuelto);\nconsole.log(\"Total libros actuales: \" + libros.length, libros);",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 7. Arrays.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "array"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-8",
+    "icon": "fa-rotate",
+    "title": "8. Bucles",
+    "theory": "Bucles for y while.",
+    "exerciseTitle": "Desafío Escolar: Generador de Fixture",
+    "exerciseDesc": "Construye el organizador del fixture para el Torneo Intercolegial. Almacena en un arreglo los nombres de 4 equipos deportivos del IPEM 146. Utiliza bucles 'for' anidados para iterar sobre la estructura y generar todos los cruces posibles de partidos 'todos contra todos', incluyendo una validación que garantice que ningún equipo sea emparejado a jugar contra sí mismo.",
+    "initialCode": "// 1. Crea array de 4 equipos\n// 2. Cruza con for anidado",
+    "aiSolution": "let equipos = [\"Equipo A\", \"Equipo B\", \"Equipo C\", \"Equipo D\"];\nfor (let i = 0; i < equipos.length; i++) {\n    for (let j = 0; j < equipos.length; j++) {\n        if (i !== j) {\n            console.log(equipos[i] + \" vs \" + equipos[j]);\n        }\n    }\n}",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 8. Bucles.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "for",
+      "while"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-9",
+    "icon": "fa-id-card",
+    "title": "9. Objetos Literales",
+    "theory": "Propiedades clave-valor y métodos.",
+    "exerciseTitle": "Desafío Escolar: Perfil de Estudiante",
+    "exerciseDesc": "Modela la Ficha Digital del Alumno utilizando Objetos Literales en JavaScript. Define un objeto 'alumno' que contenga propiedades para su nombre completo, curso y un arreglo de calificaciones. Agrega un método interno llamado 'obtenerEstado()' que utilice la palabra clave 'this' para iterar/promediar las notas y devolver una cadena con el resumen académico, curso y estado de regularidad.",
+    "initialCode": "// 1. Declara objeto y método",
+    "aiSolution": "let alumno = {\n    nombre: \"Juan Pérez\",\n    curso: \"5to A\",\n    notas: [8, 9, 7],\n    obtenerEstado: function() {\n        let suma = this.notas.reduce((a, b) => a + b, 0);\n        let prom = suma / this.notas.length;\n        return this.nombre + \" (\" + this.curso + \") - Promedio: \" + prom.toFixed(1) + \" [Regular]\";\n    }\n};\nconsole.log(alumno.obtenerEstado());",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 9. Objetos Literales.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "9. Objetos Literales"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-10",
+    "icon": "fa-filter",
+    "title": "10. Arrays Avanzados",
+    "theory": ".map(), .filter(), .reduce()",
+    "exerciseTitle": "Desafío Escolar: Auditoría de Inventario",
+    "exerciseDesc": "Realiza una auditoría técnica del laboratorio de computación. Crea un arreglo con varios objetos que representen computadoras (con ID, memoria RAM en GB y estado). Utiliza el método de orden superior .filter() para obtener una lista exclusiva de las PC en estado 'mantenimiento', y combina los métodos .filter() y .reduce() para calcular la cantidad total de memoria RAM operativa en uso.",
+    "initialCode": "// 1. Array de objetos\n// 2. filter y reduce",
+    "aiSolution": "let comps = [\n    { id: 1, ram: 8, estado: \"operativa\" },\n    { id: 2, ram: 16, estado: \"mantenimiento\" },\n    { id: 3, ram: 8, estado: \"operativa\" }\n];\nlet mantenimiento = comps.filter(c => c.estado === \"mantenimiento\");\nlet ramTotal = comps.filter(c => c.estado === \"operativa\").reduce((acc, c) => acc + c.ram, 0);\nconsole.log(\"En mantenimiento:\", mantenimiento);\nconsole.log(\"RAM Operativa Total:\", ramTotal + \"GB\");",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 10. Arrays Avanzados.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "array",
+      "map",
+      "filter",
+      "reduce"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-11",
+    "icon": "fa-quote-left",
+    "title": "11. Métodos de Strings",
+    "theory": ".trim(), .toLowerCase(), .replace()",
+    "exerciseTitle": "Desafío Escolar: Generador de Mails",
+    "exerciseDesc": "Desarrolla el normalizador de correos institucionales de la escuela. Diseña la función 'generarCorreo' que reciba como parámetro una cadena de texto con el nombre y apellido del estudiante (la cual puede contener espacios vacíos indeseados o mayúsculas). Aplica la combinación de .trim(), .toLowerCase() y expresiones regulares con .replace() para formatear el texto en 'nombre.apellido' y concatenar el dominio '@ipem146.edu.ar'.",
+    "initialCode": "// 1. Función mail institucional",
+    "aiSolution": "function generarCorreo(nombreCompleto) {\n    let limpio = nombreCompleto.trim().toLowerCase().replace(/\\s+/g, '.');\n    return limpio + \"@ipem146.edu.ar\";\n}\nconsole.log(generarCorreo(\"  Lucas Emanuel González  \"));",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 11. Métodos de Strings.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "11. Métodos de Strings"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-12",
+    "icon": "fa-bullseye",
+    "title": "12. Scope y Ámbito",
+    "theory": "Global, función y bloque (let/const).",
+    "exerciseTitle": "Desafío Escolar: Sistema de Contraseña",
+    "exerciseDesc": "Crea una demostración práctica sobre la visibilidad de variables (Scope) en el sistema de seguridad directivo. Declara una variable de ámbito global para indicar el usuario activo y crea una función de validación que defina internamente variables de bloque (dentro de un bloque 'if/else') usando 'let'. Muestra en consola la diferencia entre acceder a variables globales y el comportamiento del scope restringido de bloque.",
+    "initialCode": "// 1. Variable global y de bloque",
+    "aiSolution": "let usuarioActivo = \"Profesor\";\nfunction validarPin(pin) {\n    if (pin === 1234) {\n        let accesoConcedido = true;\n        console.log(usuarioActivo + \": Acceso Autorizado =\", accesoConcedido);\n    } else {\n        let accesoConcedido = false;\n        console.log(\"Acceso Denegado\");\n    }\n}\nvalidarPin(1234);",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 12. Scope y Ámbito.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "const",
+      "let"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-13",
+    "icon": "fa-laptop-code",
+    "title": "13. DOM (Document Object Model)",
+    "theory": "Árbol de objetos HTML.",
+    "exerciseTitle": "Desafío Escolar: Dynamic DOM Banner",
+    "exerciseDesc": "Simula la manipulación de la interfaz web institucional mediante el DOM. Crea una función 'actualizarAnuncio' que altere las propiedades de un objeto simulación 'mockElement' (modificando las propiedades 'innerText', 'style.color' y 'style.backgroundColor'). La función debe recibir el mensaje del anuncio y un booleano de urgencia para colorear el cartel dinámicamente según la prioridad del aviso.",
+    "initialCode": "// Objeto DOM simulado\nconst mockElement = { innerText: \"\", style: { color: \"\", backgroundColor: \"\" } };\n// 1. Función actualizar",
+    "aiSolution": "const mockElement = { innerText: \"\", style: { color: \"\", backgroundColor: \"\" } };\nfunction actualizarAnuncio(mensaje, urgente) {\n    mockElement.innerText = mensaje;\n    if (urgente) {\n        mockElement.style.color = \"white\";\n        mockElement.style.backgroundColor = \"red\";\n    } else {\n        mockElement.style.color = \"black\";\n        mockElement.style.backgroundColor = \"yellow\";\n    }\n}\nactualizarAnuncio(\"Suspensión de clases por mantenimiento\", true);\nconsole.log(mockElement);",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 13. DOM (Document Object Model).",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "object",
+      "DOM"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-14",
+    "icon": "fa-wpforms",
+    "title": "14. Formularios y Eventos",
+    "theory": "Captura de interacciones y validaciones.",
+    "exerciseTitle": "Desafío Escolar: Validador de Inscripción",
+    "exerciseDesc": "Desarrolla el motor de validación para los formularios de inscripción a los talleres extracurriculares. Escribe la función 'validarInscripcion(nombre, edad)' que verifique si el nombre ingresado tiene al menos 3 caracteres de longitud y si la edad es igual o mayor a 12 años. La función debe almacenar los mensajes de falla en un array de errores o devolver una confirmación exitosa si la información es válida.",
+    "initialCode": "// 1. Validar nombre y edad",
+    "aiSolution": "function validarInscripcion(nombre, edad) {\n    let errores = [];\n    if (nombre.length < 3) errores.push(\"Nombre muy corto.\");\n    if (edad < 12) errores.push(\"Debe ser mayor de 12 años.\");\n    if (errores.length > 0) return \"Errores: \" + errores.join(\" \");\n    return \"¡Inscripción exitosa!\";\n}\nconsole.log(validarInscripcion(\"Ana\", 14));",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 14. Formularios y Eventos.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "for",
+      "event"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-15",
+    "icon": "fa-database",
+    "title": "15. LocalStorage y Persistencia",
+    "theory": "Almacenamiento clave-valor local.",
+    "exerciseTitle": "Desafío Escolar: Guardado de Tema",
+    "exerciseDesc": "Simula el sistema de almacenamiento persistente en el navegador para recordar las preferencias del estudiante. Implementa un objeto que simule el comportamiento de 'LocalStorage' junto a las funciones 'guardarPref(clave, valor)' y 'obtenerPref(clave)'. Guarda la configuración del tema de la interfaz (por ejemplo, 'tema': 'oscuro') y recupera la información posteriormente demostrando la persistenia de datos.",
+    "initialCode": "const mockLocalStorage = {};\n// 1. Funciones de storage",
+    "aiSolution": "const mockLocalStorage = {};\nfunction guardarPref(clave, valor) {\n    mockLocalStorage[clave] = valor;\n}\nfunction obtenerPref(clave) {\n    return mockLocalStorage[clave];\n}\nguardarPref(\"tema\", \"oscuro\");\nconsole.log(\"Tema recuperado:\", obtenerPref(\"tema\"));",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 15. LocalStorage y Persistencia.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "15. LocalStorage y Persistencia"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-16",
+    "icon": "fa-code",
+    "title": "16. JSON y Fetch API",
+    "theory": "JSON.parse y consumo de datos.",
+    "exerciseTitle": "Desafío Escolar: Petición de Clima",
+    "exerciseDesc": "Procesa la respuesta enviada por un servicio meteorológico remoto para planificar una salida de campo del IPEM 146. Convierte una cadena de texto en formato JSON simulada mediante el método 'JSON.parse()'. Examina el objeto de JavaScript resultante evaluando la probabilidad de lluvia y muestra un reporte determinando si la excursión educativa se confirma o se suspende.",
+    "initialCode": "const jsonRespuestaServidor = '...';\n// 1. JSON.parse",
+    "aiSolution": "const jsonRespuestaServidor = '{\"ciudad\": \"Córdoba\", \"temperatura\": 24, \"clima\": \"Soleado\", \"lluviaProbabilidad\": 5}';\nlet datos = JSON.parse(jsonRespuestaServidor);\nif (datos.lluviaProbabilidad < 20) {\n    console.log(\"Clima \" + datos.clima + \". ¡Excursión confirmada!\");\n} else {\n    console.log(\"Se suspende por lluvia.\");\n}",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 16. JSON y Fetch API.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "JSON.parse",
+      "fetch"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-17",
+    "icon": "fa-triangle-exclamation",
+    "title": "17. Manejo de Errores (try...catch)",
+    "theory": "try, catch y throw new Error.",
+    "exerciseTitle": "Desafío Escolar: Validador de Notas",
+    "exerciseDesc": "Construye un sistema robusto de carga de calificaciones a prueba de fallos. Crea la función 'registrarNota(nota)' envuelta en un bloque 'try...catch...finally'. Si el usuario ingresa un número fuera del rango permitido de notas (1 al 10), genera un error intencional utilizando 'throw new Error()', captura la excepción para informar al usuario de manera segura y ejecuta la cláusula 'finally' indicando el fin del proceso.",
+    "initialCode": "// 1. try...catch con throw",
+    "aiSolution": "function registrarNota(nota) {\n    try {\n        if (nota < 1 || nota > 10) {\n            throw new Error(\"Nota fuera de rango válido (1-10).\");\n        }\n        console.log(\"Nota registrada correctamente: \" + nota);\n    } catch (err) {\n        console.log(\"[ERROR CAPTURADO]: \" + err.message);\n    } finally {\n        console.log(\"Proceso de registro finalizado.\");\n    }\n}\nregistrarNota(12);",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 17. Manejo de Errores (try...catch).",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "try",
+      "catch",
+      "throw"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-18",
+    "icon": "fa-bolt",
+    "title": "18. Eventos de Avanzada",
+    "theory": "Despachadores y gestión concurrente.",
+    "exerciseTitle": "Desafío Escolar: Teclado de Turnos",
+    "exerciseDesc": "Crea un administrador concurrente para la reserva de turnos en el laboratorio informático. Utiliza una clase orientada a objetos llamada 'SalaInformatica' que contenga un método 'reservarCompu(alumno, pc)'. Cada vez que un alumno reserve un equipo, captura la hora del sistema en tiempo real utilizando 'toLocaleTimeString()' y guarda la solicitud en un arreglo cronológico imprimiendo el detalle en la consola.",
+    "initialCode": "// 1. Simulación de turnos con timestamp",
+    "aiSolution": "class SalaInformatica {\n    constructor() { this.reservas = []; }\n    reservarCompu(alumno, pc) {\n        let timestamp = new Date().toLocaleTimeString();\n        this.reservas.push({ alumno, pc, timestamp });\n        console.log(\"PC \" + pc + \" reservada por \" + alumno + \" a las \" + timestamp);\n    }\n}\nlet sala = new SalaInformatica();\nsala.reservarCompu(\"Lucas\", 5);",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 18. Eventos de Avanzada.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "event"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  },
+  {
+    "id": "sec-19",
+    "icon": "fa-flag-checkered",
+    "title": "19. Proyecto Integrador Final",
+    "theory": "Integración completa de conceptos.",
+    "exerciseTitle": "PROYECTO FINAL: Centro de Estudiantes",
+    "exerciseDesc": "Desarrolla el sistema de gestión integral para la administración del Centro de Estudiantes del IPEM 146. Construye un objeto 'centroEstudiantes' que contenga una colección de proyectos institucionales (cada uno con su nombre, presupuesto solicitado y estado de aprobación). Incorpora el método 'generarReporte()' que combine métodos modernos de arreglos (.filter() y .reduce()) para computar el presupuesto total requerido de las iniciativas aprobadas e imprimir la liquidación oficial.",
+    "initialCode": "// PROYECTO FINAL\n// 1. centroEstudiantes",
+    "aiSolution": "let centroEstudiantes = {\n    proyectos: [\n        { nombre: \"Torneo Ajedrez\", presupuesto: 15000, aprobado: true },\n        { nombre: \"Pintar mural\", presupuesto: 25000, aprobado: true },\n        { nombre: \"Comprar red voley\", presupuesto: 40000, aprobado: false }\n    ],\n    generarReporte: function() {\n        let aprobados = this.proyectos.filter(p => p.aprobado);\n        let totalPresupuesto = aprobados.reduce((acc, p) => acc + p.presupuesto, 0);\n        console.log(\"Proyectos Aprobados:\", aprobados.length);\n        console.log(\"Presupuesto Total Requerido: $\" + totalPresupuesto);\n    }\n};\ncentroEstudiantes.generarReporte();",
+    "objetivosPedagogicos": [
+      "Aplicar correctamente los conceptos de 19. Proyecto Integrador Final.",
+      "Explicar las decisiones tomadas en el código y justificar su funcionamiento.",
+      "Resolver el desafío con código propio, claro y verificable."
+    ],
+    "conceptosDetectar": [
+      "let"
+    ],
+    "preguntasSocraticas": [
+      "¿Qué parte de tu código resuelve el objetivo principal y por qué?",
+      "¿Qué ocurriría si cambias una de las decisiones principales de tu solución?",
+      "¿Cómo comprobarías que tu solución funciona también con otros datos o casos límite?"
+    ],
+    "criteriosEvaluacion": [
+      {
+        "criterio": "Comprensión del problema",
+        "peso": 25,
+        "indicador": "El código responde a la consigna y utiliza datos coherentes."
+      },
+      {
+        "criterio": "Uso de conceptos",
+        "peso": 35,
+        "indicador": "Aparecen y se utilizan correctamente los conceptos clave del desafío."
+      },
+      {
+        "criterio": "Lógica y funcionamiento",
+        "peso": 25,
+        "indicador": "Las estructuras producen un resultado razonable y evitan errores evidentes."
+      },
+      {
+        "criterio": "Claridad y explicación",
+        "peso": 15,
+        "indicador": "La solución es legible y el estudiante puede justificar sus decisiones."
+      }
+    ],
+    "erroresFrecuentes": [
+      "Copiar la solución de referencia sin comprenderla.",
+      "Usar una estructura distinta a la requerida sin justificarla.",
+      "No contemplar datos inválidos o casos límite cuando la consigna los exige."
+    ],
+    "noRevelarIA": [
+      "No mostrar la solución completa antes de que el estudiante finalice.",
+      "No entregar código listo para copiar.",
+      "No revelar directamente la respuesta correcta de las preguntas socráticas.",
+      "Dar pistas y preguntas de orientación en lugar de resolver el desafío."
+    ]
+  }
+];
+
 </script>
-<script src="desafios_ia.js"></script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
@@ -511,13 +1533,11 @@ const challengeStatusEl=document.getElementById('challengeStatus');
 
 document.getElementById('editChallenges').onclick=abrirEditorDesafios;
 document.getElementById('closeChallengeEditor').onclick=cerrarEditorDesafios;
+document.getElementById('reloadChallenges').onclick=()=>{desafiosFirebase=baseDesafios();desafioActual=0;renderListaDesafios();renderFormularioDesafio();iniciarSincronizacionDesafios();};
 document.getElementById('challengeSearch').oninput=renderListaDesafios;
 
 function baseDesafios(){
-  const fuente=(Array.isArray(window.DESAFIOS_DATA)&&window.DESAFIOS_DATA.length===19)
-    ? window.DESAFIOS_DATA
-    : (Array.isArray(window.DESAFIOS_DATA_FALLBACK)&&window.DESAFIOS_DATA_FALLBACK.length===19
-      ? window.DESAFIOS_DATA_FALLBACK : []);
+  const fuente=Array.isArray(window.DESAFIOS_DATA)?window.DESAFIOS_DATA:[];
   return JSON.parse(JSON.stringify(fuente));
 }
 function abrirEditorDesafios(){
@@ -590,6 +1610,10 @@ function renderFormularioDesafio(){
     <button class="secondary" onclick="guardarTodosLosDesafios()">☁️ Guardar los 19</button>
   </div>`;
   criterios.forEach(agregarFilaCriterio);
+  const pt=document.getElementById('activityPreviewTitle');
+  const pd=document.getElementById('activityPreviewDesc');
+  if(pt)pt.textContent=d.exerciseTitle||d.title||'Desafío';
+  if(pd)pd.textContent=d.exerciseDesc||'Sin consigna cargada.';
 }
 function agregarFilaCriterio(c={criterio:'',peso:0,indicador:''}){
   const tr=document.createElement('tr');
@@ -608,18 +1632,19 @@ function guardarFormularioLocal(mostrar=true){
   Object.entries(map).forEach(([k,id])=>d[k]=document.getElementById(id)?.value||'');
   d.objetivosPedagogicos=lines('ed_objetivos');d.conceptosDetectar=lines('ed_conceptos');d.preguntasSocraticas=lines('ed_preguntas');d.erroresFrecuentes=lines('ed_errores');d.noRevelarIA=lines('ed_noRevelar');d.criteriosEvaluacion=leerCriterios();
   if(mostrar)challengeStatusEl.textContent='Cambios preparados. Guardá para enviarlos a Firebase.';
+  const pt=document.getElementById('activityPreviewTitle'),pd=document.getElementById('activityPreviewDesc');if(pt)pt.textContent=d.exerciseTitle||d.title||'Desafío';if(pd)pd.textContent=d.exerciseDesc||'Sin consigna cargada.';
   return d;
 }
 async function guardarDesafioActual(){
   const d=guardarFormularioLocal(false);if(!d)return;
   const suma=(d.criteriosEvaluacion||[]).reduce((a,c)=>a+(Number(c.peso)||0),0);
-  if(Math.round(suma)!==100){alert('La rúbrica de '+d.id+' suma '+suma+'%. Debe sumar 100%.');return}
+  if((d.criteriosEvaluacion||[]).length && Math.round(suma)!==100){alert('La rúbrica de '+d.id+' suma '+suma+'%. Debe sumar 100%.');return}
   try{await setDoc(doc(db,'desafios',d.id),{...d,id:d.id,actualizadoEn:serverTimestamp(),actualizadoPor:currentUser?.email||''},{merge:true});challengeStatusEl.textContent='✅ '+d.id+' guardado correctamente en Firebase.'}
   catch(e){challengeStatusEl.textContent='❌ Error al guardar: '+e.message}
 }
 async function guardarTodosLosDesafios(){
   guardarFormularioLocal(false);
-  const invalid=desafiosFirebase.find(d=>Math.round((d.criteriosEvaluacion||[]).reduce((a,c)=>a+(Number(c.peso)||0),0))!==100);
+  const invalid=desafiosFirebase.find(d=>{const c=d.criteriosEvaluacion||[];return c.length && Math.round(c.reduce((a,x)=>a+(Number(x.peso)||0),0))!==100;});
   if(invalid){alert('La rúbrica de '+invalid.id+' no suma 100%.');return}
   try{for(const d of desafiosFirebase)await setDoc(doc(db,'desafios',d.id),{...d,id:d.id,actualizadoEn:serverTimestamp(),actualizadoPor:currentUser?.email||''},{merge:true});challengeStatusEl.textContent='✅ Los 19 desafíos fueron guardados en Firebase.'}
   catch(e){challengeStatusEl.textContent='❌ Error al guardar: '+e.message}
