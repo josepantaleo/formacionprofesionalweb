@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panel del Profesor — JS Escuela</title>
+<style>
+:root{--bg:#08111f;--card:#111c2e;--card2:#16243a;--text:#eef4ff;--muted:#9fb0c7;--accent:#37b7ff;--ok:#35d07f;--warn:#ffc857;--danger:#ff6577;--border:#263957}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(135deg,#050a12,#0b1526);color:var(--text)}
+header{position:sticky;top:0;z-index:10;background:#0a1322ee;backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;gap:16px;align-items:center;justify-content:space-between}.brand{font-size:20px;font-weight:800}.brand span{color:var(--accent)}
+button,input,select{font:inherit}button{border:0;border-radius:10px;padding:10px 14px;cursor:pointer;font-weight:700}button.primary{background:var(--accent);color:#03111c}button.secondary{background:var(--card2);color:var(--text);border:1px solid var(--border)}button.danger{background:var(--danger);color:#21050a}
+main{max-width:1400px;margin:0 auto;padding:24px}.hidden{display:none!important}.auth{min-height:100vh;display:grid;place-items:center;padding:20px}.auth-card{width:min(440px,100%);background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;text-align:center;box-shadow:0 20px 70px #0007}.auth-card h1{margin:0 0 8px}.muted{color:var(--muted)}
+.top{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}.stat{background:var(--card);border:1px solid var(--border);border-radius:15px;padding:18px}.stat b{display:block;font-size:30px;margin-top:4px}.stat small{color:var(--muted)}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.toolbar input{flex:1;min-width:220px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px}.toolbar select{background:var(--card);border:1px solid var(--border);color:var(--text);padding:11px;border-radius:10px}
+.table-wrap{overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:15px}.table{width:100%;border-collapse:collapse;min-width:900px}.table th,.table td{padding:13px 12px;border-bottom:1px solid var(--border);text-align:left}.table th{color:var(--muted);font-size:13px}.table tr:hover{background:#ffffff05}.pill{display:inline-block;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:800}.pill.ok{background:#123b28;color:#70f0a5}.pill.warn{background:#423511;color:#ffd66c}.pill.danger{background:#421a22;color:#ff91a0}.progress{height:8px;background:#24334b;border-radius:999px;overflow:hidden;min-width:100px}.progress i{display:block;height:100%;background:var(--accent)}
+.drawer{position:fixed;inset:0;background:#0009;z-index:20;display:flex;justify-content:flex-end}.drawer-panel{width:min(850px,100%);height:100%;overflow:auto;background:#0b1526;border-left:1px solid var(--border);padding:24px}.drawer-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}.profile{display:flex;gap:14px;align-items:center}.avatar{width:58px;height:58px;border-radius:50%;object-fit:cover;background:#22334e;display:grid;place-items:center;font-size:22px}.detail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:20px 0}.box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:15px}.box h3{margin:0 0 10px;font-size:15px}.box p{margin:4px 0;color:var(--muted)}.activity-list{display:grid;gap:8px}.activity{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px}.dot{width:10px;height:10px;border-radius:50%;background:#687a92}.dot.ok{background:var(--ok)}
+pre{white-space:pre-wrap;background:#07101d;border:1px solid var(--border);padding:12px;border-radius:10px;max-height:250px;overflow:auto;color:#dbe7f8}.notice{background:#241e0d;border:1px solid #594a1d;color:#ffe39a;padding:12px;border-radius:10px;margin-bottom:15px}
+@media(max-width:850px){.top{grid-template-columns:repeat(2,1fr)}.detail-grid{grid-template-columns:1fr}}
+@media(max-width:500px){.top{grid-template-columns:1fr}.main{padding:12px}}
+</style>
+</head>
+<body>
+<div id="auth" class="auth"><div class="auth-card"><div style="font-size:48px">👨‍🏫</div><h1>Panel del Profesor</h1><p class="muted">Ingresá con la cuenta autorizada para consultar los avances de los estudiantes.</p><button id="login" class="primary">Continuar con Google</button><p id="authMsg" class="muted"></p></div></div>
+<div id="app" class="hidden">
+<header><div class="brand">JS Escuela <span>· Panel docente</span></div><div><span id="teacherName" class="muted" style="margin-right:10px"></span><button id="logout" class="secondary">Cerrar sesión</button></div></header>
+<main>
+<div id="warning" class="notice hidden"></div>
+<section class="top"><div class="stat"><small>Estudiantes</small><b id="nStudents">0</b></div><div class="stat"><small>Promedio</small><b id="avg">—</b></div><div class="stat"><small>Completaron 100%</small><b id="complete">0</b></div><div class="stat"><small>Con actividad</small><b id="active">0</b></div></section>
+<div class="toolbar"><input id="search" placeholder="Buscar por nombre, correo o curso…"><select id="course"><option value="">Todos los cursos</option></select><button id="refresh" class="secondary">↻ Actualizar</button><button id="csv" class="secondary">⬇ Exportar CSV</button></div>
+<div class="table-wrap"><table class="table"><thead><tr><th>Estudiante</th><th>Curso</th><th>Progreso</th><th>Nota</th><th>Salidas</th><th>Último guardado</th><th></th></tr></thead><tbody id="tbody"></tbody></table></div>
+</main></div>
+<div id="drawer" class="drawer hidden"><aside class="drawer-panel"><div class="drawer-head"><div id="profile"></div><button id="closeDrawer" class="secondary">✕</button></div><div id="detail"></div></aside></div>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+import { getFirestore, collection, getDocs, doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
+
+// ============================================================
+// PEGÁ AQUÍ EXACTAMENTE EL MISMO firebaseConfig QUE YA FUNCIONA
+// EN TU actividad.html
+// ============================================================
+ const firebaseConfig = {
+    apiKey: "AIzaSyA9Xvz6_NoyWIcl2gU2rLYsNzj_6uwB3hA",
+    authDomain: "ipem146js.firebaseapp.com",
+    projectId: "ipem146js",
+    storageBucket: "ipem146js.firebasestorage.app",
+    messagingSenderId: "572464024232",
+    appId: "1:572464024232:web:a30ef451228ac9109d509d",
+    measurementId: "G-WBDVFLQD73"
+  };
+
+// Opcional: agrega aquí el/los correos de docentes como segunda barrera visual.
+// La seguridad REAL debe estar en firestore.rules.
+const TEACHER_EMAILS=[];
+
+const configured=!Object.values(firebaseConfig).some(v=>String(v).startsWith('REEMPLAZAR_'));
+const authBox=document.getElementById('auth'),appBox=document.getElementById('app'),msg=document.getElementById('authMsg');
+let auth,db,currentUser=null,students=[];
+if(configured){const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app)}else{msg.textContent='Falta pegar la configuración de Firebase.'}
+
+document.getElementById('login').onclick=async()=>{if(!configured)return;try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){msg.textContent='No se pudo iniciar sesión: '+e.code}};
+document.getElementById('logout').onclick=()=>signOut(auth);
+document.getElementById('refresh').onclick=loadStudents;
+document.getElementById('closeDrawer').onclick=()=>document.getElementById('drawer').classList.add('hidden');
+
+auth&&onAuthStateChanged(auth,async user=>{currentUser=user;if(!user){authBox.classList.remove('hidden');appBox.classList.add('hidden');return}
+  // La regla de Firestore es la que autoriza realmente. Esta lista solo evita mostrar el panel si se configuró.
+  if(TEACHER_EMAILS.length && !TEACHER_EMAILS.map(x=>x.toLowerCase()).includes((user.email||'').toLowerCase())){await signOut(auth);msg.textContent='Esta cuenta no está autorizada como docente.';return}
+  authBox.classList.add('hidden');appBox.classList.remove('hidden');document.getElementById('teacherName').textContent=user.displayName||user.email||'';await loadStudents();
+});
+
+async function loadStudents(){
+  const tbody=document.getElementById('tbody');tbody.innerHTML='<tr><td colspan="7">Cargando estudiantes…</td></tr>';
+  try{const snap=await getDocs(collection(db,'estudiantes'));students=snap.docs.map(d=>normalizeStudent(d.id,d.data()));render();}
+  catch(e){tbody.innerHTML='<tr><td colspan="7">Error al consultar Firestore: '+escapeHtml(e.message)+'</td></tr>'}
+}
+function normalizeStudent(uid,d){
+  const finalizadas=d.finalizadas||{};const resultados=d.historialResultados||{};const total=Object.keys(finalizadas).length;const done=Object.values(finalizadas).filter(Boolean).length;
+  // La app tiene 19 módulos; si en el futuro cambia, se puede ajustar aquí.
+  const totalModules=19;const completed=Math.min(done,totalModules);const progress=Math.round(completed/totalModules*100);
+  const notas=Object.values(resultados).map(x=>Number(x?.notaIA)).filter(Number.isFinite);const avg=notas.length?notas.reduce((a,b)=>a+b,0)/notas.length:null;
+  return {...d,uid,finalizadas,resultados,progress,avg,completed,totalModules};
+}
+function render(){
+ const q=document.getElementById('search').value.toLowerCase().trim(),course=document.getElementById('course').value;
+ const courses=[...new Set(students.map(s=>s.estudiante?.curso).filter(Boolean))].sort();const sel=document.getElementById('course');const old=sel.value;sel.innerHTML='<option value="">Todos los cursos</option>'+courses.map(c=>`<option>${escapeHtml(c)}</option>`).join('');if(courses.includes(old))sel.value=old;
+ const list=students.filter(s=>{const text=[s.nombreGoogle,s.email,s.estudiante?.nombre,s.estudiante?.curso].join(' ').toLowerCase();return(!q||text.includes(q))&&(!course||s.estudiante?.curso===course)});
+ document.getElementById('nStudents').textContent=students.length;const avgs=students.map(s=>s.avg).filter(x=>x!=null);document.getElementById('avg').textContent=avgs.length?(avgs.reduce((a,b)=>a+b,0)/avgs.length).toFixed(1):'—';document.getElementById('complete').textContent=students.filter(s=>s.progress>=100).length;document.getElementById('active').textContent=students.filter(s=>Object.keys(s.finalizadas).length>0).length;
+ document.getElementById('tbody').innerHTML=list.length?list.map(rowHtml).join(''):'<tr><td colspan="7">No hay estudiantes que coincidan.</td></tr>';
+ document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openStudent(b.dataset.open));
+}
+function rowHtml(s){const nota=s.avg==null?'—':s.avg.toFixed(1);const sal=Number(s.salidasPestaña||0);const date=formatDate(s.actualizadoEn);const pill=sal>7?'danger':sal>0?'warn':'ok';return `<tr><td><b>${escapeHtml(s.nombreGoogle||s.estudiante?.nombre||'Sin nombre')}</b><br><small class="muted">${escapeHtml(s.email||'')}</small></td><td>${escapeHtml(s.estudiante?.curso||'—')}</td><td><div style="display:flex;gap:9px;align-items:center"><div class="progress"><i style="width:${s.progress}%"></i></div><b>${s.progress}%</b></div></td><td>${nota}</td><td><span class="pill ${pill}">${sal}</span></td><td>${date}</td><td><button class="secondary" data-open="${escapeAttr(s.uid)}">Ver</button></td></tr>`}
+
+document.getElementById('search').oninput=render;document.getElementById('course').onchange=render;
+function openStudent(uid){const s=students.find(x=>x.uid===uid);if(!s)return;const name=s.nombreGoogle||s.estudiante?.nombre||'Sin nombre';document.getElementById('profile').innerHTML=`<div class="profile"><img class="avatar" src="${escapeAttr(s.fotoGoogle||'')}" onerror="this.style.display='none'" alt=""><div><h2 style="margin:0">${escapeHtml(name)}</h2><div class="muted">${escapeHtml(s.email||'')}</div><div class="muted">${escapeHtml(s.estudiante?.curso||'Curso no indicado')}</div></div></div>`;
+ let acts='';for(let i=1;i<=s.totalModules;i++){const id='sec-'+i,done=!!s.finalizadas[id];const r=s.resultados[id]||{};const nota=Number.isFinite(Number(r.notaIA))?Number(r.notaIA).toFixed(1):'—';acts+=`<div class="activity"><span class="dot ${done?'ok':''}"></span><div><b>Actividad ${i}</b><div class="muted">${done?'Finalizada':'Pendiente'} · Nota: ${nota}</div></div><span>${done?'✓':'○'}</span></div>`}
+ document.getElementById('detail').innerHTML=`<div class="detail-grid"><div class="box"><h3>Progreso</h3><p><b>${s.progress}%</b> (${s.completed}/${s.totalModules})</p><div class="progress"><i style="width:${s.progress}%"></i></div></div><div class="box"><h3>Rendimiento</h3><p>Promedio: <b>${s.avg==null?'—':s.avg.toFixed(1)}/10</b></p><p>Salidas de pestaña: <b>${Number(s.salidasPestaña||0)}</b></p></div><div class="box"><h3>Cuenta</h3><p>UID: ${escapeHtml(s.uid)}</p><p>Último guardado: ${formatDate(s.actualizadoEn)}</p></div><div class="box"><h3>Sección activa</h3><p>${escapeHtml(s.seccionActiva||'—')}</p></div></div><div class="box"><h3>Actividades</h3><div class="activity-list">${acts}</div></div><div class="box" style="margin-top:12px"><h3>Código guardado</h3>${Object.keys(s.codigos||{}).length?Object.entries(s.codigos).map(([id,code])=>`<details><summary>${escapeHtml(id)}</summary><pre>${escapeHtml(code||'')}</pre></details>`).join(''):'<p>No hay código guardado.</p>'}</div>`;
+ document.getElementById('drawer').classList.remove('hidden')}
+
+document.getElementById('csv').onclick=()=>{const rows=[['uid','nombre','email','curso','progreso','promedio','salidas','actualizado'],...students.map(s=>[s.uid,s.nombreGoogle||'',s.email||'',s.estudiante?.curso||'',s.progress,s.avg==null?'':s.avg.toFixed(2),s.salidasPestaña||0,formatDate(s.actualizadoEn)])];const csv=rows.map(r=>r.map(csvCell).join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='reporte_estudiantes.csv';a.click();URL.revokeObjectURL(a.href)};
+function csvCell(v){return '"'+String(v??'').replaceAll('"','""')+'"'}function formatDate(v){if(!v)return '—';if(v.seconds)return new Date(v.seconds*1000).toLocaleString('es-AR');const d=new Date(v);return isNaN(d)?'—':d.toLocaleString('es-AR')}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function escapeAttr(v){return escapeHtml(v)}
+</script>
+</body></html>
