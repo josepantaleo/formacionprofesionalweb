@@ -306,6 +306,56 @@ td,th{
   .editor-box{padding:14px;border-radius:16px!important}
   .editor-box>div:first-child{top:-14px}
 }
+
+/* FIX DEFINITIVO: lista y formulario siempre visibles */
+.editor-layout{
+  display:grid!important;
+  grid-template-columns:280px minmax(0,1fr)!important;
+  gap:18px!important;
+  align-items:start!important;
+}
+.editor-layout>div:first-child{
+  min-width:0!important;
+}
+.challenge-list{
+  display:grid!important;
+  gap:8px!important;
+  max-height:66vh!important;
+  overflow-y:auto!important;
+  padding:2px!important;
+  min-height:120px!important;
+}
+.challenge-list button{
+  display:block!important;
+  width:100%!important;
+  min-height:44px!important;
+  visibility:visible!important;
+  opacity:1!important;
+  color:#eaf4ff!important;
+  background:rgba(30,49,75,.88)!important;
+  border:1px solid rgba(148,163,184,.18)!important;
+  text-align:left!important;
+  padding:10px 12px!important;
+}
+.challenge-list button.primary{
+  background:linear-gradient(135deg,#2563eb,#0284c7)!important;
+  border-color:rgba(96,165,250,.55)!important;
+}
+#challengeForm{
+  min-width:0!important;
+  display:block!important;
+}
+#challengeForm .editor-grid{
+  display:grid!important;
+}
+@media(max-width:800px){
+  .editor-layout{
+    grid-template-columns:1fr!important;
+  }
+  .challenge-list{
+    max-height:260px!important;
+  }
+}
 </style>
 </head>
 <body>
@@ -485,13 +535,28 @@ function abrirEditorDesafios(){
 }
 function cerrarEditorDesafios(){editorEl.classList.remove('active');if(desafiosUnsubscribe){desafiosUnsubscribe();desafiosUnsubscribe=null}}
 function renderListaDesafios(){
-  const q=(document.getElementById('challengeSearch').value||'').toLowerCase().trim();
+  const q=(document.getElementById('challengeSearch')?.value||'').toLowerCase().trim();
+  const visibles=desafiosFirebase.map((d,i)=>({d,i})).filter(({d})=>{
+    return !q || JSON.stringify(d).toLowerCase().includes(q);
+  });
+
   challengeListEl.innerHTML='';
-  desafiosFirebase.forEach((d,i)=>{
-    if(q&&!JSON.stringify(d).toLowerCase().includes(q))return;
-    const b=document.createElement('button');b.className=i===desafioActual?'primary':'secondary';
-    b.textContent=(d.id||('sec-'+(i+1)))+' — '+(d.title||'Sin título');
-    b.onclick=()=>{guardarFormularioLocal(false);desafioActual=i;renderListaDesafios();renderFormularioDesafio()};
+  if(!visibles.length){
+    challengeListEl.innerHTML='<div style="padding:14px;border:1px solid var(--mp-border);border-radius:10px;color:var(--mp-muted)">No hay desafíos para mostrar.</div>';
+    return;
+  }
+
+  visibles.forEach(({d,i})=>{
+    const b=document.createElement('button');
+    b.type='button';
+    b.className=i===desafioActual?'primary':'secondary';
+    b.textContent=(d.id||('sec-'+(i+1)))+' — '+(d.title||d.exerciseTitle||'Sin título');
+    b.addEventListener('click',()=>{
+      try{guardarFormularioLocal(false)}catch(e){console.warn('Cambios locales:',e)}
+      desafioActual=i;
+      renderListaDesafios();
+      renderFormularioDesafio();
+    });
     challengeListEl.appendChild(b);
   });
 }
@@ -574,7 +639,7 @@ async function iniciarSincronizacionDesafios(){
       renderFormularioDesafio();
       challengeStatusEl.textContent='☁️ 19 desafíos sincronizados con Firebase.';
     }else if(snap.empty){
-      challengeStatusEl.textContent='📚 Firebase está vacío: se muestran los 19 desafíos locales. Guardalos para crearlos en Firebase.';
+      challengeStatusEl.textContent='📚 Firebase está vacío: se muestran los 19 desafíos locales. Guardalos para crearlos en Firebase.';renderListaDesafios();renderFormularioDesafio();
     }else{
       challengeStatusEl.textContent='📚 Firebase tiene '+remotos.length+' desafíos. Se mantienen los 19 locales hasta completar la colección.';
     }
