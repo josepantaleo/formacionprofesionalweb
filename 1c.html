@@ -1050,6 +1050,24 @@
           return false;
         }
       };
+
+      window.guardarEstadoEstudianteFirebase = async function(uid, estadoData) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db || !uid || !estadoData) return false;
+        try {
+          await setDoc(doc(db, "estudiantes", uid), {
+            estadoCuenta: estadoData.estadoCuenta,
+            bajaMotivo: estadoData.bajaMotivo || "",
+            bajaFecha: estadoData.bajaFecha || null,
+            bajaPor: estadoData.bajaPor || "",
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error guardando estado de estudiante:", error);
+          return false;
+        }
+      };
     
       window.__abrirPanelProfesorFirestore = function() {
         if (!db) return;
@@ -1253,7 +1271,7 @@
           Las actividades pendientes no se incluyen.
         </div>
         <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
-        <div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;min-width:980px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Última actualización</th><th>Detalle</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
+        <div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;min-width:1040px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Última actualización</th><th>Detalle</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
         <p id="estadoPanelProfesor" style="margin-top:1rem;color:var(--text-muted);font-size:.8rem;"></p>
       </div>
     </div>
@@ -1820,6 +1838,14 @@
           }
 
           const datosFirebase = await window.cargarProgresoFirebase();
+          if (datosFirebase?.estadoCuenta === 'inactivo') {
+              overlay.classList.remove('hidden');
+              document.getElementById('firebaseAuthMessage').innerHTML =
+                  '<strong>Cuenta inactiva.</strong><br>Tu acceso fue dado de baja por la institución. Conservamos tu historial académico. Consultá con el equipo docente si necesitás reactivar la cuenta.';
+              const loginButton = overlay.querySelector('.btn-google');
+              if (loginButton) loginButton.disabled = true;
+              return;
+          }
           if (datosFirebase) await restaurarDesdeFirebase(datosFirebase);
 
           const photo = document.getElementById('firebaseUserPhoto');
@@ -3381,6 +3407,54 @@
           abrirDetalleEstudianteProfesor(indice);
           alert('Revisión docente guardada.');
       }
+      async function cambiarEstadoCuentaEstudiante(indice, nuevoEstado) {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) {
+              alert('No se encontró el identificador Firebase del estudiante.');
+              return;
+          }
+          if (nuevoEstado === 'inactivo') {
+              const motivo = prompt('Motivo de la baja (obligatorio):', 'Baja institucional');
+              if (!motivo || !motivo.trim()) return;
+              if (!confirm('La cuenta no podrá ingresar, pero se conservará todo el historial. ¿Confirmás la baja?')) return;
+              const payload = {
+                  estadoCuenta: 'inactivo',
+                  bajaMotivo: motivo.trim(),
+                  bajaFecha: new Date().toISOString(),
+                  bajaPor: window.firebaseCurrentUser?.email || window.firebaseCurrentUser?.displayName || ''
+              };
+              const ok = await window.guardarEstadoEstudianteFirebase?.(d.uid, payload);
+              if (!ok) {
+                  alert('No se pudo dar de baja la cuenta. Verificá las reglas de Firestore.');
+                  return;
+              }
+              d.estadoCuenta = payload.estadoCuenta;
+              d.bajaMotivo = payload.bajaMotivo;
+              d.bajaFecha = payload.bajaFecha;
+              d.bajaPor = payload.bajaPor;
+              renderPanelProfesor();
+              abrirDetalleEstudianteProfesor(indice);
+              return;
+          }
+          if (!confirm('¿Reactivar esta cuenta para permitirle ingresar nuevamente?')) return;
+          const payload = {
+              estadoCuenta: 'activo',
+              bajaMotivo: '',
+              bajaFecha: null,
+              bajaPor: window.firebaseCurrentUser?.email || window.firebaseCurrentUser?.displayName || ''
+          };
+          const ok = await window.guardarEstadoEstudianteFirebase?.(d.uid, payload);
+          if (!ok) {
+              alert('No se pudo reactivar la cuenta. Verificá las reglas de Firestore.');
+              return;
+          }
+          d.estadoCuenta = payload.estadoCuenta;
+          d.bajaMotivo = '';
+          d.bajaFecha = null;
+          d.bajaPor = payload.bajaPor;
+          renderPanelProfesor();
+          abrirDetalleEstudianteProfesor(indice);
+      }
       function renderPreguntaProfesor(p, indice) {
           const seleccionadas = Array.isArray(p?.seleccionadas) ? p.seleccionadas : [];
           const opciones = Array.isArray(p?.opciones) ? p.opciones : [];
@@ -3422,6 +3496,7 @@
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
           const eventos = Array.isArray(d.eventosSalidasPestaña) ? d.eventosSalidasPestaña : [];
           const revision = d.revisionSalidas || {};
+          const cuentaInactiva = d.estadoCuenta === 'inactivo';
           const fecha = d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : 'Sin fecha';
           document.getElementById('detalleEstudianteProfesorTitle').innerHTML =
               `<i class="fa-solid fa-user-graduate"></i> ${escapeHtml(e.nombre || d.nombreGoogle || 'Estudiante sin nombre')}`;
@@ -3497,8 +3572,19 @@
                   <div class="teacher-detail-stat"><small>Progreso</small><strong>${progreso}%</strong></div>
                   <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === '—' ? 'Pendiente' : `${notaDefinitiva}/10`}</strong></div>
+                  <div class="teacher-detail-stat"><small>Estado de cuenta</small><strong style="color:${cuentaInactiva ? '#fca5a5' : '#6ee7b7'}">${cuentaInactiva ? 'Inactiva' : 'Activa'}</strong></div>
                   <div class="teacher-detail-stat"><small>Salidas de pestaña</small><strong>${Number(d.salidasPestaña || 0)}</strong></div>
                   <div class="teacher-detail-stat"><small>Última actualización</small><strong>${escapeHtml(fecha)}</strong></div>
+              </div>
+              <div style="padding:1rem;border:1px solid ${cuentaInactiva ? 'rgba(239,68,68,.35)' : 'rgba(16,185,129,.35)'};border-radius:8px;background:${cuentaInactiva ? 'rgba(239,68,68,.06)' : 'rgba(16,185,129,.06)'};margin-bottom:1rem">
+                  <strong>Estado institucional: ${cuentaInactiva ? 'INACTIVA' : 'ACTIVA'}</strong>
+                  ${cuentaInactiva ? `<div style="margin-top:.35rem">Motivo: ${escapeHtml(d.bajaMotivo || 'Sin motivo')}<br>Fecha: ${escapeHtml(d.bajaFecha ? new Date(d.bajaFecha).toLocaleString() : 'Sin fecha')}<br>Responsable: ${escapeHtml(d.bajaPor || 'Sin registrar')}</div>` : '<div style="margin-top:.35rem;color:var(--text-muted)">La cuenta puede iniciar sesión normalmente.</div>'}
+                  <div style="margin-top:.7rem">
+                      <button class="btn ${cuentaInactiva ? 'btn-success' : 'btn-danger'}" onclick="cambiarEstadoCuentaEstudiante(${indice}, '${cuentaInactiva ? 'activo' : 'inactivo'}')">
+                          <i class="fa-solid ${cuentaInactiva ? 'fa-user-check' : 'fa-user-slash'}"></i>
+                          ${cuentaInactiva ? 'Reactivar cuenta' : 'Dar de baja'}
+                      </button>
+                  </div>
               </div>
               <details class="teacher-activity" open>
                   <summary>Cómo se calculó el promedio final</summary>
@@ -3579,8 +3665,9 @@
               const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
               const fecha=d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : '—';
               const indice=estudiantesProfesor.indexOf(d);
-              return `<tr><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button></td></tr>`;
-          }).join('') || '<tr><td colspan="10" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
+              const inactiva = d.estadoCuenta === 'inactivo';
+              return `<tr><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button></td></tr>`;
+          }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
       }
       function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
       async function iniciarPanelProfesorTiempoReal() {
