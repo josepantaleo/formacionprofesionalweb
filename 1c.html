@@ -852,6 +852,19 @@
         background: rgba(2, 6, 23, 0.96); backdrop-filter: blur(8px);
       }
       #firebaseAuthOverlay.hidden { display: none; }
+      #classStartOverlay {
+        position: fixed; inset: 0; z-index: 4500;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(2, 6, 23, 0.96); backdrop-filter: blur(8px);
+      }
+      #classStartOverlay.hidden { display: none; }
+      .class-waiting-card {
+        width: min(520px, calc(100vw - 32px)); padding: 2rem;
+        background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 12px; box-shadow: 0 25px 60px rgba(0,0,0,.45); text-align: center;
+      }
+      .class-waiting-card h2 { color: var(--primary); margin-bottom: .7rem; }
+      .class-waiting-card p { color: var(--text-muted); line-height: 1.5; }
       .firebase-auth-card {
         width: min(460px, calc(100vw - 32px)); padding: 2rem;
         background: var(--bg-card); border: 1px solid var(--border);
@@ -936,12 +949,14 @@
       .teacher-answer.wrong { border-left: 3px solid var(--danger); }
       .teacher-only { display: none !important; }
       body.teacher-authorized .teacher-only { display: inline-flex !important; }
+      body.teacher-authorized .teacher-only.teacher-session-only { display: none !important; }
+      body.teacher-temporary .teacher-only.teacher-session-only { display: inline-flex !important; }
 </style>
 
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
-      import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+      import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
       import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
       // ============================================================
@@ -960,6 +975,8 @@
 
       const firebaseConfigured = !Object.values(firebaseConfig).some(v => String(v).includes("REEMPLAZAR_"));
       let auth = null, db = null, googleProvider = null;
+      let teacherAuth = null, teacherDb = null, teacherProvider = null;
+      let teacherPersistenceReady = Promise.resolve();
 
       if (firebaseConfigured) {
         const app = initializeApp(firebaseConfig);
@@ -967,6 +984,16 @@
         db = getFirestore(app);
         googleProvider = new GoogleAuthProvider();
         googleProvider.setCustomParameters({ prompt: "select_account" });
+        const teacherApp = initializeApp(firebaseConfig, "teacherAuthorization");
+        teacherAuth = getAuth(teacherApp);
+        teacherDb = getFirestore(teacherApp);
+        teacherProvider = new GoogleAuthProvider();
+        teacherProvider.setCustomParameters({ prompt: "select_account" });
+        teacherPersistenceReady = setPersistence(teacherAuth, inMemoryPersistence);
+        onAuthStateChanged(teacherAuth, user => {
+          window.firebaseTeacherUser = user || null;
+          window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: user || null }));
+        });
       }
 
       window.firebaseAuthReady = new Promise(resolve => {
@@ -981,9 +1008,9 @@
 
       window.firebaseConfigured = firebaseConfigured;
       window.firebaseCurrentUser = null;
+      window.firebaseTeacherUser = null;
 
-      window.esDocenteAutorizadoFirebase = async function() {
-        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+      async function verificarUsuarioDocente(user) {
         if (!user) return false;
         try {
           const token = await user.getIdTokenResult();
@@ -992,6 +1019,143 @@
           return claimTeacher || emailTeacher;
         } catch (error) {
           console.warn("No se pudo verificar la autorización docente:", error);
+          return false;
+        }
+      }
+
+      window.esDocenteAutorizadoFirebase = async function() {
+        if (await verificarUsuarioDocente(window.firebaseTeacherUser)) return true;
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        return verificarUsuarioDocente(user);
+      };
+
+      window.autorizarDocenteFirebase = async function() {
+        if (await window.esDocenteAutorizadoFirebase()) return true;
+        if (!teacherAuth || !teacherProvider) return false;
+        try {
+          await teacherPersistenceReady;
+          const credential = await signInWithPopup(teacherAuth, teacherProvider);
+          const autorizado = await verificarUsuarioDocente(credential.user);
+          if (!autorizado) {
+            await signOut(teacherAuth);
+            alert("La cuenta seleccionada no está autorizada como docente.");
+            return false;
+          }
+          window.firebaseTeacherUser = credential.user;
+          window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: credential.user }));
+          return true;
+        } catch (error) {
+          console.error("Error de autorización docente:", error);
+          if (error?.code !== "auth/popup-closed-by-user") {
+            alert("No se pudo completar la autorización docente.\n\n" + (error.code || error.message));
+          }
+          return false;
+        }
+      };
+
+      window.cerrarAutorizacionDocenteFirebase = async function() {
+        if (!teacherAuth?.currentUser) {
+          alert("No hay una autorización docente temporal activa.");
+          return false;
+        }
+        try {
+          if (window.__profesorUnsubscribe) {
+            window.__profesorUnsubscribe();
+            window.__profesorUnsubscribe = null;
+          }
+          if (window.__desafiosProfesorUnsubscribe) {
+            window.__desafiosProfesorUnsubscribe();
+            window.__desafiosProfesorUnsubscribe = null;
+          }
+          await signOut(teacherAuth);
+          window.firebaseTeacherUser = null;
+          window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: null }));
+          return true;
+        } catch (error) {
+          console.error("Error cerrando la autorización docente:", error);
+          alert("No se pudo cerrar la autorización docente temporal.");
+          return false;
+        }
+      };
+
+      function contextoDocenteFirebase() {
+        if (window.firebaseTeacherUser && teacherDb) {
+          return { user: window.firebaseTeacherUser, database: teacherDb };
+        }
+        return { user: window.firebaseCurrentUser, database: db };
+      }
+
+      function idClaseActual() {
+        const partes = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/Argentina/Buenos_Aires",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).formatToParts(new Date());
+        const valores = Object.fromEntries(partes.map(parte => [parte.type, parte.value]));
+        return `${valores.year}-${valores.month}-${valores.day}`;
+      }
+
+      window.escucharInicioClaseFirebase = function() {
+        if (!db || !window.firebaseCurrentUser) return;
+        if (window.__inicioClaseUnsubscribe) window.__inicioClaseUnsubscribe();
+        const referencia = doc(db, "controlClase", idClaseActual());
+        window.__inicioClaseUnsubscribe = onSnapshot(referencia, snapshot => {
+          const datos = snapshot.exists() ? snapshot.data() : {};
+          window.dispatchEvent(new CustomEvent("estado-inicio-clase", {
+            detail: {
+              iniciada: datos.iniciada === true,
+              iniciadaEn: datos.iniciadaEn || null,
+              iniciadaPor: datos.iniciadaPor || "",
+              finalizadaEn: datos.finalizadaEn || null,
+              finalizadaPor: datos.finalizadaPor || ""
+            }
+          }));
+        }, error => {
+          console.error("Error escuchando el inicio de clase:", error);
+          window.dispatchEvent(new CustomEvent("estado-inicio-clase-error", { detail: error.message }));
+        });
+      };
+
+      window.iniciarClaseFirebase = async function() {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return false;
+        const { user, database } = contextoDocenteFirebase();
+        if (!user || !database) return false;
+        try {
+          await setDoc(doc(database, "controlClase", idClaseActual()), {
+            iniciada: true,
+            iniciadaEn: serverTimestamp(),
+            iniciadaPor: user.email || user.displayName || user.uid,
+            zonaHoraria: "America/Argentina/Buenos_Aires"
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error iniciando la clase:", error);
+          alert("No se pudo iniciar la clase. Verificá las reglas de Firestore.");
+          return false;
+        }
+      };
+
+      window.finalizarClaseFirebase = async function() {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return false;
+        if (!confirm("Se bloquearán las actividades y se detendrán los cronómetros de todos los estudiantes conectados. ¿Finalizar la clase?")) {
+          return false;
+        }
+        const { user, database } = contextoDocenteFirebase();
+        if (!user || !database) return false;
+        try {
+          await setDoc(doc(database, "controlClase", idClaseActual()), {
+            iniciada: false,
+            finalizadaEn: serverTimestamp(),
+            finalizadaPor: user.email || user.displayName || user.uid,
+            zonaHoraria: "America/Argentina/Buenos_Aires"
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error finalizando la clase:", error);
+          alert("No se pudo finalizar la clase. Verificá las reglas de Firestore.");
           return false;
         }
       };
@@ -1049,10 +1213,12 @@
       };
 
       window.guardarRevisionDocenteFirebase = async function(uid, revision) {
-        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
-        if (!user || !db || !uid || !revision) return false;
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !revision) return false;
         try {
-          await setDoc(doc(db, "estudiantes", uid), {
+          await setDoc(doc(database, "estudiantes", uid), {
             revisionSalidas: {
               ...revision,
               revisadoPor: user.email || user.displayName || user.uid,
@@ -1068,10 +1234,12 @@
       };
 
       window.guardarEstadoEstudianteFirebase = async function(uid, estadoData) {
-        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
-        if (!user || !db || !uid || !estadoData) return false;
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !estadoData) return false;
         try {
-          await setDoc(doc(db, "estudiantes", uid), {
+          await setDoc(doc(database, "estudiantes", uid), {
             estadoCuenta: estadoData.estadoCuenta,
             bajaMotivo: estadoData.bajaMotivo || "",
             bajaFecha: estadoData.bajaFecha || null,
@@ -1086,9 +1254,10 @@
       };
     
       window.__abrirPanelProfesorFirestore = function() {
-        if (!db) return;
+        const { database } = contextoDocenteFirebase();
+        if (!database) return;
         if (window.__profesorUnsubscribe) window.__profesorUnsubscribe();
-        window.__profesorUnsubscribe = onSnapshot(collection(db, 'estudiantes'), snap => {
+        window.__profesorUnsubscribe = onSnapshot(collection(database, 'estudiantes'), snap => {
           window.dispatchEvent(new CustomEvent('profesor-data', { detail: snap.docs.map(x => x.data()) }));
         }, err => window.dispatchEvent(new CustomEvent('profesor-data-error', { detail: err.message })));
       };
@@ -1111,13 +1280,14 @@
       };
 
       window.guardarDesafioFirebase = async function(desafio) {
-        if (!db || !desafio?.id) return false;
+        const { user, database } = contextoDocenteFirebase();
+        if (!database || !user || !desafio?.id) return false;
         try {
-          await setDoc(doc(db,'desafios',desafio.id), {
+          await setDoc(doc(database,'desafios',desafio.id), {
             ...desafio,
             id:desafio.id,
             actualizadoEn:serverTimestamp(),
-            actualizadoPor:window.firebaseCurrentUser?.email || ''
+            actualizadoPor:user.email || ''
           }, {merge:true});
           return true;
         } catch(error) {
@@ -1128,15 +1298,16 @@
       };
 
       window.guardarTodosDesafiosFirebase = async function(desafios) {
-        if (!db || !Array.isArray(desafios)) return false;
+        const { user, database } = contextoDocenteFirebase();
+        if (!database || !user || !Array.isArray(desafios)) return false;
         try {
           for (const desafio of desafios) {
             if (!desafio?.id) continue;
-            await setDoc(doc(db,'desafios',desafio.id), {
+            await setDoc(doc(database,'desafios',desafio.id), {
               ...desafio,
               id:desafio.id,
               actualizadoEn:serverTimestamp(),
-              actualizadoPor:window.firebaseCurrentUser?.email || ''
+              actualizadoPor:user.email || ''
             }, {merge:true});
           }
           return true;
@@ -1147,9 +1318,10 @@
       };
 
       window.__abrirDesafiosProfesorRealtime = function() {
-        if (!db) return;
+        const { database } = contextoDocenteFirebase();
+        if (!database) return;
         if (window.__desafiosProfesorUnsubscribe) window.__desafiosProfesorUnsubscribe();
-        window.__desafiosProfesorUnsubscribe = onSnapshot(collection(db,'desafios'), snap => {
+        window.__desafiosProfesorUnsubscribe = onSnapshot(collection(database,'desafios'), snap => {
           const remotos=snap.docs.map(d=>({id:d.id,...d.data()}));
           if(remotos.length===19) window.dispatchEvent(new CustomEvent('desafios-profesor-data',{detail:remotos}));
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
@@ -1212,7 +1384,7 @@
             style="font-size: 0.75rem; padding: 0.4rem 0.8rem"
             onclick="solicitarAccionProfesor('reset_contador_salidas')"
           >
-            <i class="fa-solid fa-rotate-right"></i> Reiniciar Salidas
+            <i class="fa-solid fa-rotate-right"></i> Reiniciar contador
           </button>
           <div class="progress-wrapper">
             <span class="progress-label" id="progressText">Progreso: 0%</span>
@@ -1235,6 +1407,7 @@
             <button class="btn btn-success" onclick="guardarAhoraFirebase()"><i class="fa-solid fa-cloud-arrow-up"></i> Guardar ahora</button>
             <button class="btn btn-primary teacher-only" onclick="solicitarAccionProfesor('editor_desafios')"><i class="fa-solid fa-puzzle-piece"></i> Editor de desafíos</button>
             <button class="btn btn-primary teacher-only" onclick="solicitarAccionProfesor('panel_profesor')"><i class="fa-solid fa-chalkboard-user"></i> Panel Profesor</button>
+            <button class="btn btn-warning teacher-only teacher-session-only" onclick="cerrarAccesoDocenteTemporal()"><i class="fa-solid fa-user-lock"></i> Cerrar acceso docente</button>
             <button class="btn btn-danger" onclick="cerrarSesionGoogle()"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
           </div>
         </div>
@@ -1289,6 +1462,17 @@
         <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
         <div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;min-width:1040px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Última actualización</th><th>Detalle</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
         <p id="estadoPanelProfesor" style="margin-top:1rem;color:var(--text-muted);font-size:.8rem;"></p>
+      </div>
+    </div>
+
+    <div id="classStartOverlay" role="status" aria-live="polite" aria-labelledby="classStartTitle">
+      <div class="class-waiting-card">
+        <div style="font-size:3rem;margin-bottom:.6rem;"><i class="fa-solid fa-hourglass-start"></i></div>
+        <h2 id="classStartTitle">Esperando el inicio de la clase</h2>
+        <p id="classStartMessage">El docente habilitará las actividades. Mantené esta pestaña abierta.</p>
+        <div style="margin-top:1rem;color:#fbbf24;font-size:.85rem;">
+          <i class="fa-solid fa-wifi"></i> Conectado al control de clase
+        </div>
       </div>
     </div>
 
@@ -1602,13 +1786,48 @@
       let firebaseSaveTimer = null;
       let firebaseSaveInProgress = false;
       let firebaseInitialized = false;
+      let claseHabilitada = false;
+
+      function aplicarEstadoInicioClase(iniciada, datos = {}) {
+          claseHabilitada = Boolean(iniciada);
+          const overlay = document.getElementById('classStartOverlay');
+          const mensaje = document.getElementById('classStartMessage');
+          if (claseHabilitada) {
+              overlay?.classList.add('hidden');
+              if (mensaje) mensaje.textContent = datos.iniciadaPor
+                  ? `Clase iniciada por ${datos.iniciadaPor}. Ya podés comenzar.`
+                  : "La clase fue habilitada. Ya podés comenzar.";
+          } else {
+              overlay?.classList.remove('hidden');
+              if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+              if (mensaje) mensaje.textContent = datos.finalizadaPor
+                  ? `La clase fue finalizada por ${datos.finalizadaPor}. Las actividades están bloqueadas.`
+                  : "El docente habilitará las actividades con Ctrl + Alt + C. Mantené esta pestaña abierta.";
+              Object.keys(cronometrosActivos).forEach(id => {
+                  if (cronometrosActivos[id]) clearInterval(cronometrosActivos[id]);
+                  cronometrosActivos[id] = null;
+              });
+          }
+      }
+
+      window.addEventListener('estado-inicio-clase', event => {
+          aplicarEstadoInicioClase(Boolean(event.detail?.iniciada), event.detail || {});
+      });
+      window.addEventListener('estado-inicio-clase-error', event => {
+          aplicarEstadoInicioClase(false);
+          const mensaje = document.getElementById('classStartMessage');
+          if (mensaje) mensaje.textContent = `No se pudo consultar el inicio de clase: ${event.detail}.`;
+      });
 
       async function actualizarVisibilidadDocente() {
           const autorizado = Boolean(await window.esDocenteAutorizadoFirebase?.());
+          const autorizacionTemporal = Boolean(window.firebaseTeacherUser);
           document.body.classList.toggle('teacher-authorized', autorizado);
+          document.body.classList.toggle('teacher-temporary', autorizado && autorizacionTemporal);
           document.querySelectorAll('.teacher-only').forEach(control => {
-              control.setAttribute('aria-hidden', autorizado ? 'false' : 'true');
-              control.tabIndex = autorizado ? 0 : -1;
+              const visible = autorizado && (!control.classList.contains('teacher-session-only') || autorizacionTemporal);
+              control.setAttribute('aria-hidden', visible ? 'false' : 'true');
+              control.tabIndex = visible ? 0 : -1;
           });
           if (!autorizado) {
               document.getElementById('passwordModal')?.classList.remove('active');
@@ -1617,7 +1836,26 @@
           }
       }
 
+      async function cerrarAccesoDocenteTemporal() {
+          if (!window.firebaseTeacherUser) {
+              alert("No hay una autorización docente temporal activa.");
+              return;
+          }
+          if (!confirm("Se cerrarán el panel y las herramientas docentes. La cuenta del estudiante continuará abierta. ¿Continuar?")) {
+              return;
+          }
+          cerrarPanelProfesor();
+          cerrarEditorDesafiosFirebase();
+          document.getElementById('detalleEstudianteProfesorModal')?.classList.remove('active');
+          const cerrado = await window.cerrarAutorizacionDocenteFirebase?.();
+          if (cerrado) {
+              await actualizarVisibilidadDocente();
+              alert("Autorización docente temporal cerrada. La sesión del estudiante continúa activa.");
+          }
+      }
+
       window.addEventListener('firebase-auth-changed', actualizarVisibilidadDocente);
+      window.addEventListener('firebase-teacher-auth-changed', actualizarVisibilidadDocente);
       window.addEventListener('profesor-data', e => { estudiantesProfesor = e.detail || []; document.getElementById('estadoPanelProfesor').textContent = `Actualizado en tiempo real: ${new Date().toLocaleTimeString()}`; renderPanelProfesor(); });
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
       window.addEventListener('load', () => {
@@ -1852,6 +2090,8 @@
 
           firebaseInitialized = true;
           overlay.classList.add('hidden');
+          aplicarEstadoInicioClase(false);
+          window.escucharInicioClaseFirebase?.();
 
           // La configuración docente de desafíos tiene prioridad sobre la copia local.
           if (typeof window.cargarDesafiosFirebase === 'function') {
@@ -1945,7 +2185,7 @@
               setLocalStorage('app_blur_count', totalSalidasPestaña);
               salidaActivaPestaña = {
                   id: `${ahora}-${totalSalidasPestaña}`,
-                  numero: totalSalidasPestaña,
+                  numero: eventosSalidasPestaña.length + 1,
                   salidaEn: new Date(ahora).toISOString(),
                   regresoEn: null,
                   duracionSegundos: null,
@@ -2211,7 +2451,7 @@
       }
 
       function iniciarCronometro(sectionId) {
-          if (cronometrosActivos[sectionId] || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
+          if (!claseHabilitada || cronometrosActivos[sectionId] || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
           cronometrosActivos[sectionId] = setInterval(() => {
               if (modulosPausados[sectionId] || actividadesFinalizadas[sectionId]) {
@@ -2290,7 +2530,7 @@
           } else if (accion === 'editor_desafios') {
               desc.innerHTML = `Autorizar <b>acceso al editor de desafíos</b>:`;
           } else if (accion === 'reset_contador_salidas') {
-              desc.innerHTML = `Autorizar el reinicio del contador de salidas de pestaña:`;
+              desc.innerHTML = `Autorizar el reinicio del <b>contador visible</b>. El historial permanecerá disponible para revisión:`;
           } else if (accion === 'pausar_modulo') {
               desc.innerHTML = `Autorizar pausa/reanudación del módulo <b>${seccionPendientePausa}</b>:`;
           } else if (accion === 'pausar_global') {
@@ -2311,7 +2551,7 @@
       }
 
       async function confirmarAccionProfesor() {
-          const autorizado = await window.esDocenteAutorizadoFirebase?.();
+          const autorizado = await window.autorizarDocenteFirebase?.();
           if (autorizado) {
               const accionConfirmada = tipoAccionModal;
               const sectionIdConfirmada = seccionPendientePausa;
@@ -2342,6 +2582,34 @@
       }
 
       window.addEventListener('keydown', event => {
+          const atajoFinClase = event.ctrlKey && event.altKey && !event.shiftKey && event.key.toLowerCase() === 'f';
+          if (atajoFinClase) {
+              event.preventDefault();
+              if (event.repeat) return;
+              window.finalizarClaseFirebase?.().then(finalizada => {
+                  if (finalizada) {
+                      aplicarEstadoInicioClase(false, {
+                          finalizadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || "docente autorizado"
+                      });
+                      alert("Clase finalizada. Todos los estudiantes volvieron al estado de espera.");
+                  }
+              });
+              return;
+          }
+          const atajoInicioClase = event.ctrlKey && event.altKey && !event.shiftKey && event.key.toLowerCase() === 'c';
+          if (atajoInicioClase) {
+              event.preventDefault();
+              if (event.repeat) return;
+              window.iniciarClaseFirebase?.().then(iniciada => {
+                  if (iniciada) {
+                      aplicarEstadoInicioClase(true, {
+                          iniciadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || "docente autorizado"
+                      });
+                      alert("Clase iniciada. Los estudiantes conectados ya pueden comenzar.");
+                  }
+              });
+              return;
+          }
           const modal = document.getElementById('passwordModal');
           if (event.key === 'Escape' && modal?.classList.contains('active')) {
               event.preventDefault();
@@ -2349,21 +2617,33 @@
               return;
           }
           const atajoDocente = event.ctrlKey && event.altKey && event.shiftKey && event.key.toLowerCase() === 'p';
-          if (!atajoDocente || !modal?.classList.contains('active')) return;
+          if (!atajoDocente) return;
           event.preventDefault();
+          if (!modal?.classList.contains('active')) {
+              solicitarAccionProfesor('panel_profesor');
+          }
           confirmarAccionProfesor();
       });
 
-      function reiniciarContadorSalidasProfesor() {
+      async function reiniciarContadorSalidasProfesor() {
+          const autorizado = await window.esDocenteAutorizadoFirebase?.();
+          if (!autorizado) {
+              alert("Solo una cuenta docente autorizada puede reiniciar el contador.");
+              return;
+          }
+          if (!confirm("El contador visible volverá a cero. El historial de cambios de pestaña, las justificaciones y la revisión docente se conservarán. ¿Continuar?")) {
+              return;
+          }
+          const cantidadAnterior = totalSalidasPestaña;
           totalSalidasPestaña = 0;
-          eventosSalidasPestaña = [];
           salidaActivaPestaña = null;
-          revisionSalidasActual = { estado: "pendiente", penalizacion: 0, motivo: "" };
           setLocalStorage('app_blur_count', totalSalidasPestaña);
-          setLocalStorage('app_tab_events', '[]');
+          setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
           document.getElementById('blurCount').innerText = totalSalidasPestaña;
-          document.getElementById('btnJustificarSalida').style.display = 'none';
-          alert("El registro de cambios de pestaña fue reiniciado.");
+          const hayPendientes = eventosSalidasPestaña.some(evento => !evento.justificacion);
+          document.getElementById('btnJustificarSalida').style.display = hayPendientes ? 'inline-flex' : 'none';
+          await guardarAhoraFirebase();
+          alert(`Contador reiniciado: ${cantidadAnterior} cambio(s) pasaron a 0. El historial anterior continúa disponible para el profesor.`);
       }
 
       function desbloquearEjercicioActual() {
@@ -2611,6 +2891,7 @@
       }
 
       function restablecerCodigo(sectionId) {
+          if (!claseHabilitada) return;
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
           if (confirm("¿Estás seguro de restablecer este ejercicio?")) {
@@ -2667,6 +2948,7 @@
       }
 
       async function ejecutarCodigo(sectionId) {
+          if (!claseHabilitada) return;
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
           const editor = document.getElementById(`editor-${sectionId}`);
@@ -2883,6 +3165,7 @@
       }
 
       function previsualizarNotaIA(sectionId) {
+          if (!claseHabilitada) return;
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
           let usos = contadorPrevisualizaciones[sectionId] || 0;
@@ -3312,6 +3595,7 @@
       }
 
       function resolverYCompararIA(sectionId) {
+          if (!claseHabilitada) return;
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
           if (!confirm("ATENCIÓN: esta acción mostrará una solución de referencia, realizará una evaluación automática orientativa y bloqueará la actividad. ¿Deseas continuar?")) {
@@ -3558,7 +3842,7 @@
           }
           d.revisionSalidas = {
               ...revision,
-              revisadoPor: window.firebaseCurrentUser?.email || window.firebaseCurrentUser?.displayName || ''
+              revisadoPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || window.firebaseTeacherUser?.displayName || window.firebaseCurrentUser?.displayName || ''
           };
           renderPanelProfesor();
           abrirDetalleEstudianteProfesor(indice);
@@ -3578,7 +3862,7 @@
                   estadoCuenta: 'inactivo',
                   bajaMotivo: motivo.trim(),
                   bajaFecha: new Date().toISOString(),
-                  bajaPor: window.firebaseCurrentUser?.email || window.firebaseCurrentUser?.displayName || ''
+                  bajaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || window.firebaseTeacherUser?.displayName || window.firebaseCurrentUser?.displayName || ''
               };
               const ok = await window.guardarEstadoEstudianteFirebase?.(d.uid, payload);
               if (!ok) {
@@ -3598,7 +3882,7 @@
               estadoCuenta: 'activo',
               bajaMotivo: '',
               bajaFecha: null,
-              bajaPor: window.firebaseCurrentUser?.email || window.firebaseCurrentUser?.displayName || ''
+              bajaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || window.firebaseTeacherUser?.displayName || window.firebaseCurrentUser?.displayName || ''
           };
           const ok = await window.guardarEstadoEstudianteFirebase?.(d.uid, payload);
           if (!ok) {
@@ -3834,7 +4118,7 @@
               const { getFirestore, collection, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
               // Usamos la instancia Firestore ya inicializada dentro del módulo Firebase.
               if (!window.__firestorePanel) { document.getElementById('estadoPanelProfesor').textContent='Panel disponible cuando las reglas de Firestore permitan consultar la colección estudiantes.'; }
-              const u=window.firebaseCurrentUser;
+              const u=window.firebaseTeacherUser || window.firebaseCurrentUser;
               if (!u) return;
               // Solicita la colección mediante un evento al módulo Firebase.
               window.__abrirPanelProfesorFirestore?.();
