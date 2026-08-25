@@ -2718,21 +2718,130 @@
           historialResultados[sectionId].salida = logs.join("\n");
           historialResultados[sectionId].fecha = new Date().toLocaleString();
           historialResultados[sectionId].exito = esExitoso;
+          const sec = seccionesData.find(s => s.id === sectionId);
+          if (sec) {
+              historialResultados[sectionId].evaluacionCodigo = evaluarCodigoPorEvidencias(
+                  code,
+                  sec,
+                  { ok: esExitoso, logs, salida: logs.join("\n"), error: resultado.error || "" }
+              );
+              historialResultados[sectionId].notaCodigo = historialResultados[sectionId].evaluacionCodigo.nota;
+          }
           programarGuardadoFirebase();
       }
 
-      function calcularNotaEstricta(code, sec) {
-          const esPlantilla = code === sec.initialCode.trim() || code.length < 15;
-          if (esPlantilla) return 1;
+      function normalizarEvaluacion(v) {
+          return String(v || "")
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/\s+/g, " ")
+              .trim();
+      }
 
-          let proporcionLongitud = code.length / sec.aiSolution.length;
-          let tieneEstructuraMinima = code.includes("console.log") || code.includes("function") || code.includes("let") || code.includes("const");
+      function evaluarCodigoPorEvidencias(code, sec, resultadoEjecucion) {
+          const fuente = String(code || "");
+          const limpia = normalizarEvaluacion(fuente);
+          const salida = normalizarEvaluacion(
+              resultadoEjecucion?.salida ||
+              (Array.isArray(resultadoEjecucion?.logs) ? resultadoEjecucion.logs.join(" ") : "")
+          );
+          const error = resultadoEjecucion?.error || (!resultadoEjecucion?.ok && resultadoEjecucion ? "Error de ejecución" : "");
+          const esPlantilla = !fuente.trim() || (sec?.initialCode && fuente.trim() === String(sec.initialCode).trim());
+          const conceptos = Array.isArray(sec?.conceptosDetectar) ? sec.conceptosDetectar : [];
+          const criteriosDefinidos = Array.isArray(sec?.criteriosEvaluacion) ? sec.criteriosEvaluacion.filter(c => c && (c.criterio || c.indicador)) : [];
+          const criteriosBase = criteriosDefinidos.length ? criteriosDefinidos : [
+              { criterio: "Ejecución segura", peso: 25, indicador: "El código se ejecuta sin errores y termina." },
+              { criterio: "Conceptos del desafío", peso: 30, indicador: "Usa los conceptos solicitados en la consigna." },
+              { criterio: "Lógica y estructura", peso: 25, indicador: "Presenta una solución coherente, legible y organizada." },
+              { criterio: "Resultado observable", peso: 20, indicador: "La salida demuestra el objetivo del ejercicio." }
+          ];
+          const patrones = {
+              "variable": /\b(let|const|var)\b/,
+              "variables": /\b(let|const|var)\b/,
+              "constante": /\bconst\b/,
+              "constantes": /\bconst\b/,
+              "funcion": /\bfunction\b|=>/,
+              "funciones": /\bfunction\b|=>/,
+              "condicion": /\bif\b|\bswitch\b|\?[^:]+:/,
+              "condicional": /\bif\b|\bswitch\b|\?[^:]+:/,
+              "bucle": /\b(for|while|do)\b|\.forEach\s*\(/,
+              "ciclo": /\b(for|while|do)\b|\.forEach\s*\(/,
+              "array": /\[[\s\S]*\]|\.map\s*\(|\.filter\s*\(|\.reduce\s*\(/,
+              "arreglo": /\[[\s\S]*\]|\.map\s*\(|\.filter\s*\(|\.reduce\s*\(/,
+              "objeto": /\{[\s\S]*\}|Object\./,
+              "console": /console\.(log|info|warn|error)\s*\(/,
+              "salida": /console\.(log|info|warn|error)\s*\(/,
+              "metodo": /\.[a-zA-Z_$][\w$]*\s*\(/,
+              "parametro": /function\s*\w*\s*\([^)]*\)|\([^)]*\)\s*=>/
+          };
+          const evidenciasConceptos = conceptos.map(concepto => {
+              const nombre = String(concepto);
+              const clave = normalizarEvaluacion(nombre);
+              const palabras = clave.split(/[^a-z0-9]+/).filter(Boolean);
+              const patron = patrones[clave] || new RegExp(palabras.map(p => p.length > 3 ? `\\b${p}\\b` : p).join("|"), "i");
+              const cumple = patron.test(limpia);
+              return { nombre, cumple, evidencia: cumple ? "Detectado en el código." : "No se detectó evidencia suficiente." };
+          });
+          const conceptosCumplidos = evidenciasConceptos.filter(x => x.cumple).length;
+          const porcentajeConceptos = evidenciasConceptos.length ? conceptosCumplidos / evidenciasConceptos.length : (/\b(let|const|function|if|for|while|console\.log)\b/.test(limpia) ? 1 : 0.4);
+          const ejecucion = esPlantilla ? 0 : (resultadoEjecucion ? (resultadoEjecucion.ok ? 1 : 0) : (/\b(console\.log|function|let|const)\b/.test(limpia) ? 0.6 : 0));
+          const estructura = esPlantilla ? 0 : Math.min(1, (
+              (/\b(let|const|var)\b/.test(limpia) ? 0.2 : 0) +
+              (/\bfunction\b|=>/.test(limpia) ? 0.2 : 0) +
+              (/\b(if|switch|for|while|forEach|map|filter|reduce)\b/.test(limpia) ? 0.25 : 0) +
+              (/\breturn\b/.test(limpia) ? 0.15 : 0) +
+              (/\bconsole\.(log|info|warn|error)\b/.test(limpia) ? 0.1 : 0) +
+              (fuente.split("\n").filter(l => l.trim()).length >= 2 ? 0.1 : 0)
+          ));
+          const tokensSalida = String(sec?.aiSolution || "").match(/console\.(?:log|info|warn|error)\s*\(([^)]*)\)/gi) || [];
+          const salidaEsperada = tokensSalida.map(x => normalizarEvaluacion(x.replace(/^.*?\(/, "").replace(/\)$/, ""))).filter(Boolean);
+          const salidaCoincide = salidaEsperada.length ? salidaEsperada.some(t => t && salida.includes(t.replace(/['"`]/g, ""))) : salida.length > 0;
+          const resultado = esPlantilla ? 0 : (salidaCoincide ? 1 : (salida.length ? 0.55 : 0));
+          const claridad = esPlantilla ? 0 : Math.min(1, (/\b(const|let)\b/.test(limpia) ? 0.35 : 0) + (/\breturn\b/.test(limpia) ? 0.25 : 0) + (!/\/\/.*TODO|alert\(/i.test(fuente) ? 0.2 : 0) + (fuente.split("\n").length > 2 ? 0.2 : 0));
+          const obtenerPuntajeCriterio = criterio => {
+              const texto = normalizarEvaluacion(`${criterio.criterio} ${criterio.indicador}`);
+              if (/ejec|error|compil|funciona/.test(texto)) return ejecucion;
+              if (/concept|consigna|requis|estructura solicit/.test(texto)) return porcentajeConceptos;
+              if (/salida|resultado|objetivo|evidencia/.test(texto)) return resultado;
+              if (/clar|legib|orden|estructura|calidad/.test(texto)) return Math.max(estructura, claridad);
+              return Math.max(ejecucion, porcentajeConceptos, estructura, resultado);
+          };
+          const totalPeso = criteriosBase.reduce((s, c) => s + (Number(c.peso) || 0), 0) || 100;
+          const criterios = criteriosBase.map((c, i) => {
+              const peso = (Number(c.peso) || 0) * 100 / totalPeso;
+              const proporcion = Math.max(0, Math.min(1, obtenerPuntajeCriterio(c)));
+              const puntos = Number((peso * proporcion).toFixed(1));
+              return {
+                  id: c.id || `criterio-${i + 1}`,
+                  nombre: c.criterio || `Criterio ${i + 1}`,
+                  peso: Number(peso.toFixed(1)),
+                  puntos,
+                  estado: proporcion >= 0.8 ? "cumplido" : (proporcion >= 0.45 ? "parcial" : "pendiente"),
+                  evidencia: c.indicador || (proporcion >= 0.8 ? "Evidencia suficiente." : "Revisar la consigna y la salida.")
+              };
+          });
+          const porcentaje = Math.max(0, Math.min(100, criterios.reduce((s, c) => s + c.puntos, 0)));
+          const nota = Number((porcentaje / 10).toFixed(1));
+          const fortalezas = [];
+          const mejoras = [];
+          if (ejecucion >= 0.8) fortalezas.push("El código se ejecuta sin errores.");
+          else mejoras.push(error ? `Corregir el error de ejecución: ${error}` : "Ejecutar y verificar el código antes de entregar.");
+          if (conceptosCumplidos) fortalezas.push(`Se detectaron ${conceptosCumplidos}/${evidenciasConceptos.length || conceptos.length || 1} conceptos esperados.`);
+          if (evidenciasConceptos.some(x => !x.cumple)) mejoras.push("Completar los conceptos o estructuras indicados en la consigna.");
+          if (resultado >= 0.8) fortalezas.push("La salida aporta evidencia del resultado solicitado.");
+          else mejoras.push("Verificar que la salida de consola demuestre el objetivo.");
+          if (claridad < 0.6) mejoras.push("Mejorar nombres, organización y legibilidad del código.");
+          return {
+              nota, porcentaje, criterios, fortalezas, mejoras,
+              advertencias: ["Evaluación automática orientativa: debe ser revisada por el docente.", ...(esPlantilla ? ["El código coincide con la plantilla inicial."] : [])],
+              ejecucion: { ok: Boolean(resultadoEjecucion?.ok), salida: resultadoEjecucion?.salida || "", error: error || "" },
+              conceptos: evidenciasConceptos
+          };
+      }
 
-          if (!tieneEstructuraMinima) return 4;
-          if (proporcionLongitud >= 0.9) return 10;
-          if (proporcionLongitud >= 0.7) return 7;
-          if (proporcionLongitud >= 0.4) return 5;
-          return 3;
+      function calcularNotaEstricta(code, sec, resultadoEjecucion) {
+          return evaluarCodigoPorEvidencias(code, sec, resultadoEjecucion).nota;
       }
 
       function calcularNotaCombinada(notaCodigo, porcentajePreguntas) {
@@ -2768,7 +2877,13 @@
           studentCodeDisplay.innerText = code;
           document.getElementById(`ai-ideal-code-${sectionId}`).innerText = "// (Oculto en previsualización parcial)";
 
-          let notaEstimada = calcularNotaEstricta(code, sec);
+          const evaluacion = evaluarCodigoPorEvidencias(code, sec, historialResultados[sectionId]?.exito === undefined ? null : {
+              ok: Boolean(historialResultados[sectionId]?.exito),
+              salida: historialResultados[sectionId]?.salida || "",
+              error: historialResultados[sectionId]?.exito ? "" : "La ejecución todavía no fue validada."
+          });
+          const filas = evaluacion.criterios.map(c => `<li><strong>${escaparTextoAnalista(c.nombre)}</strong> (${c.peso}%): ${c.estado} · ${c.puntos}/${c.peso} puntos</li>`).join("");
+          let notaEstimada = evaluacion.nota;
           feedbackText.innerHTML = `<strong>Estimación del código (${usos}/3):</strong> El indicador orientativo del código es <strong>${notaEstimada}/10</strong>. Representará el 70% de la nota final; las preguntas representarán el 30% restante.`;
       }
 
@@ -3187,7 +3302,12 @@
           feedbackText.innerHTML = "<i>Realizando una evaluación automática orientativa...</i>";
 
           setTimeout(() => {
-              const puntaje = calcularNotaEstricta(code, sec);
+              const evaluacion = evaluarCodigoPorEvidencias(code, sec, historialResultados[sectionId] ? {
+                  ok: Boolean(historialResultados[sectionId].exito),
+                  salida: historialResultados[sectionId].salida || "",
+                  error: historialResultados[sectionId].exito ? "" : "La ejecución no fue validada correctamente."
+              } : null);
+              const puntaje = evaluacion.nota;
               let analisis = "";
 
               if (puntaje === 1) analisis = "❌ <strong>Evaluación Estricta (1/10):</strong> Plantilla inicial sin resolver.";
@@ -3197,6 +3317,10 @@
               else if (puntaje === 3) analisis = "⚠️ <strong>Evaluación Estricta (3/10):</strong> Código demasiado escueto.";
               else if (puntaje === 10) analisis = "✅ <strong>¡Excelente Trabajo! (10/10):</strong> Cumple rigurosamente con los parámetros ideales.";
 
+              analisis = `<strong>Evaluación automática orientativa (${puntaje}/10):</strong> ${evaluacion.advertencias.join(" ")}` +
+                  `<br><strong>Fortalezas:</strong> ${evaluacion.fortalezas.length ? evaluacion.fortalezas.map(escaparTextoAnalista).join(" · ") : "Todavía no se observan evidencias suficientes."}` +
+                  `<br><strong>Mejoras:</strong> ${evaluacion.mejoras.length ? evaluacion.mejoras.map(escaparTextoAnalista).join(" · ") : "No se detectaron mejoras prioritarias."}` +
+                  `<hr><strong>Desglose:</strong><ul>${evaluacion.criterios.map(c => `<li>${escaparTextoAnalista(c.nombre)}: ${c.puntos}/${c.peso} puntos (${c.estado})</li>`).join("")}</ul>`;
               const objetivos = Array.isArray(sec.objetivosPedagogicos) ? sec.objetivosPedagogicos : [];
               const conceptos = Array.isArray(sec.conceptosDetectar) ? sec.conceptosDetectar : [];
               const errores = Array.isArray(sec.erroresFrecuentes) ? sec.erroresFrecuentes : [];
@@ -3228,6 +3352,7 @@
               historialResultados[sectionId].codigo = code;
               historialResultados[sectionId].solucionIA = sec.aiSolution;
               historialResultados[sectionId].notaCodigo = puntaje;
+              historialResultados[sectionId].evaluacionCodigo = evaluacion;
               delete historialResultados[sectionId].notaPreguntas;
               delete historialResultados[sectionId].notaFinal;
               delete historialResultados[sectionId].notaIA;
@@ -3509,6 +3634,7 @@
               const codigo = r.codigo || codigos[sec.id] || '// Sin código guardado';
               const salida = r.salida || '// Sin salida de ejecución guardada';
               const notaFinal = r.notaFinal ?? r.notaIA;
+              const evaluacionCodigo = r.evaluacionCodigo || null;
               const estado = finalizadas[sec.id] ? 'Finalizada' : (r.notaCodigo !== undefined ? 'Preguntas pendientes' : 'En curso');
               const formulaActividad = r.notaCodigo !== undefined && r.notaPreguntas !== undefined
                   ? `(${r.notaCodigo} × 0,70) + (${r.notaPreguntas} × 0,30) = ${notaFinal}`
@@ -3959,6 +4085,18 @@
                       doc.text(formulaModulo, 14, yPos);
                       yPos += 5;
                   }
+              }
+
+              if (res.evaluacionCodigo?.criterios?.length) {
+                  doc.setFontSize(8);
+                  doc.setFont("helvetica", "normal");
+                  const criteriosPDF = res.evaluacionCodigo.criterios
+                      .map(c => `${c.nombre}: ${c.puntos}/${c.peso} (${c.estado})`)
+                      .join(" | ");
+                  const lineasEvaluacion = doc.splitTextToSize(`Evaluación automática orientativa: ${res.evaluacionCodigo.nota}/10\n${criteriosPDF}`, 180);
+                  asegurarEspacioPDF(lineasEvaluacion.length * 4 + 2);
+                  doc.text(lineasEvaluacion, 14, yPos);
+                  yPos += lineasEvaluacion.length * 4 + 2;
               }
 
               doc.setFontSize(9);
