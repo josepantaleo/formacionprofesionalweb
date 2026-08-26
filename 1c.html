@@ -2321,6 +2321,7 @@
               tiemposRestantes: { ...tiemposRestantes },
               finalizadas: { ...actividadesFinalizadas },
               historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
+              chatIA: JSON.parse(JSON.stringify(historialChatIA || {})),
               contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
               seccionActiva: seccionActivaActual,
               versionApp: '8.0-desafios-externos-editables-ia'
@@ -2446,6 +2447,12 @@
           if (datos.contadorPrevisualizaciones) Object.entries(datos.contadorPrevisualizaciones).forEach(([id,v]) => setLocalStorage(`preview_count_${id}`, Number(v)));
           if (datos.codigos) Object.entries(datos.codigos).forEach(([id,v]) => { if (typeof v === 'string') setLocalStorage(`draft_editor-${id}`, v); });
           historialResultados = datos.historialResultados || {};
+          Object.keys(historialChatIA).forEach(id => delete historialChatIA[id]);
+          if (datos.chatIA && typeof datos.chatIA === 'object') {
+              Object.entries(datos.chatIA).forEach(([id, mensajes]) => {
+                  historialChatIA[id] = Array.isArray(mensajes) ? mensajes.slice(-20) : [];
+              });
+          }
           actividadesFinalizadas = datos.finalizadas || {};
           contadorPrevisualizaciones = datos.contadorPrevisualizaciones || {};
           tiemposRestantes = datos.tiemposRestantes || {};
@@ -3939,6 +3946,7 @@
           historialChatIA[sectionId].push({ rol, texto: String(texto || "").trim() });
           guardarChatIA(sectionId);
           renderizarChatIA(sectionId);
+          programarGuardadoFirebase();
       }
 
       function generarRespuestaChatIA(sectionId, pregunta, modo = "consulta") {
@@ -4461,6 +4469,7 @@
       }
       function obtenerDetallePromedioEstudiante(d) {
           const historial = d.historialResultados || {};
+          const chatIA = d.chatIA || {};
           const actividades = seccionesData.map(sec => {
               const resultado = historial[sec.id] || {};
               const valor = Number(resultado.notaFinal ?? resultado.notaIA);
@@ -4669,6 +4678,7 @@
 
           const actividadesHtml = seccionesData.map((sec, numero) => {
               const r = historial[sec.id] || {};
+              const mensajesChat = Array.isArray(chatIA[sec.id]) ? chatIA[sec.id] : [];
               const preguntas = Array.isArray(r.analista?.preguntas) ? r.analista.preguntas : [];
               const codigo = r.codigo || codigos[sec.id] || '// Sin código guardado';
               const salida = r.salida || '// Sin salida de ejecución guardada';
@@ -4697,6 +4707,16 @@
                       <h4 style="margin-top:.8rem">Salida de ejecución</h4>
                       <pre class="teacher-code" style="color:#7dd3fc">${escapeHtml(salida)}</pre>
                       ${r.analisisIA ? `<div style="margin-top:.8rem"><strong>Análisis automático:</strong><div style="margin-top:.35rem;color:#cbd5e1">${escapeHtml(r.analisisIA)}</div></div>` : ''}
+                      <div style="margin-top:.8rem">
+                          <h4>Chat guiado con IA (${mensajesChat.length} mensajes)</h4>
+                          ${mensajesChat.length
+                              ? `<div style="display:flex;flex-direction:column;gap:.45rem;margin-top:.4rem;">${mensajesChat.map(m => `
+                                  <div style="padding:.55rem .65rem;border-radius:6px;background:${m.rol === 'student' ? 'rgba(139,92,246,.14)' : 'rgba(56,189,248,.08)'};border:1px solid rgba(148,163,184,.18);">
+                                      <small style="color:var(--text-muted)">${m.rol === 'student' ? 'Alumno' : 'IA'}</small>
+                                      <div style="margin-top:.2rem;white-space:pre-wrap;">${escapeHtml(m.texto || '')}</div>
+                                  </div>`).join('')}</div>`
+                              : '<div style="color:var(--text-muted);margin-top:.35rem;">No hay consultas guardadas para este módulo.</div>'}
+                      </div>
                       <div style="margin-top:1rem">
                           <h4>Preguntas y respuestas (${preguntas.length})</h4>
                           ${preguntas.length ? preguntas.map(renderPreguntaProfesor).join('') : '<p style="color:var(--text-muted);margin-top:.5rem;">El estudiante todavía no entregó las preguntas de esta actividad.</p>'}
