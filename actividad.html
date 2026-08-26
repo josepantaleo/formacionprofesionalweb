@@ -1202,7 +1202,6 @@
       const firebaseConfigured = !Object.values(firebaseConfig).some(v => String(v).includes("REEMPLAZAR_"));
       const TEACHER_EMAILS = Object.freeze([
         "ipem146centenario@gmail.com",
-        "josepantaleo90@gmail.com",
         "josepantaleo@gmail.com"
       ]);
       // La lista se usa también desde los scripts no modulares del panel docente.
@@ -1226,7 +1225,13 @@
           console.warn("No se pudo activar la persistencia temporal docente:", error);
           return null;
         });
-        onAuthStateChanged(teacherAuth, user => {
+        onAuthStateChanged(teacherAuth, async user => {
+          if (user && !(await verificarUsuarioDocente(user, true))) {
+            await signOut(teacherAuth).catch(() => null);
+            window.firebaseTeacherUser = null;
+            window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: null }));
+            return;
+          }
           window.firebaseTeacherUser = user || null;
           window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: user || null }));
         });
@@ -1268,15 +1273,29 @@
         return `No se pudo ${contexto}.\n\n${detalle}${ayudaLocal}`;
       }
 
-      async function verificarUsuarioDocente(user) {
+      async function verificarUsuarioDocente(user, forzarActualizacion = false) {
         if (!user) return false;
         try {
-          const token = await user.getIdTokenResult();
+          const token = await user.getIdTokenResult(forzarActualizacion);
+          const correoVerificado = user.emailVerified === true || token?.claims?.email_verified === true;
           const claimTeacher = token?.claims?.teacher === true || token?.claims?.docente === true;
           const emailTeacher = TEACHER_EMAILS.includes(correoNormalizado(user));
-          return claimTeacher || emailTeacher;
+          const autorizado = correoVerificado && (claimTeacher || emailTeacher);
+          window.estadoAutorizacionDocente = {
+            autorizado,
+            correo: correoNormalizado(user),
+            correoVerificado,
+            metodo: claimTeacher ? 'claim' : (emailTeacher ? 'lista' : 'ninguno')
+          };
+          return autorizado;
         } catch (error) {
           console.warn("No se pudo verificar la autorización docente:", error);
+          window.estadoAutorizacionDocente = {
+            autorizado: false,
+            correo: correoNormalizado(user),
+            correoVerificado: false,
+            metodo: 'error'
+          };
           return false;
         }
       }
@@ -1300,10 +1319,13 @@
         try {
           await teacherPersistenceReady;
           const credential = await signInWithPopup(teacherAuth, teacherProvider);
-          const autorizado = await verificarUsuarioDocente(credential.user);
+          const autorizado = await verificarUsuarioDocente(credential.user, true);
           if (!autorizado) {
             await signOut(teacherAuth);
-            alert("La cuenta seleccionada no está autorizada como docente.");
+            const estado = window.estadoAutorizacionDocente || {};
+            alert(estado.correoVerificado === false
+              ? "La cuenta seleccionada no tiene el correo verificado y no puede autorizarse como docente."
+              : `La cuenta ${estado.correo || 'seleccionada'} no está autorizada como docente.`);
             return false;
           }
           window.firebaseTeacherUser = credential.user;
@@ -4847,7 +4869,7 @@
                   <i class="fa-solid ${actual ? 'fa-circle-check' : 'fa-envelope'}" style="color:${actual ? '#6ee7b7' : '#7dd3fc'}"></i>
                   <div style="min-width:0">
                       <strong style="display:block;overflow-wrap:anywhere">${escapeHtml(email)}</strong>
-                      <small style="color:${actual ? '#a7f3d0' : 'var(--text-muted)'}">${actual ? 'Sesión docente actual' : `Docente autorizado ${indice + 1}`}</small>
+                      <small style="color:${actual ? '#a7f3d0' : 'var(--text-muted)'}">${actual ? 'Sesión docente verificada y activa' : `Docente autorizado ${indice + 1} · requiere correo verificado`}</small>
                   </div>
               </div>`;
           }).join('');
