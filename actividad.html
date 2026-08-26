@@ -1068,13 +1068,17 @@
          border-bottom:1px solid rgba(148,163,184,.15);
        }
        #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons{
-         display:flex;
+         display:flex !important;
          width:100%;
-         justify-content:space-between;
+         justify-content:flex-start;
          align-items:center;
+         flex-wrap:nowrap !important;
        }
-       #panelProfesorModal table td:last-child .teacher-action-buttons{
-         display:none !important;
+       #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons .btn:nth-child(4){
+         margin-left:auto;
+       }
+       #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons .btn{
+         display:inline-flex !important;
        }
       .teacher-detail-summary {
         display: grid;
@@ -5481,7 +5485,8 @@
                   else if (texto.includes('pausar') || texto.includes('reanudar')) boton.title = 'Pausar o reanudar el cronómetro del estudiante';
               });
               const fila = contenedor.closest('tr');
-              if (fila && !fila.nextElementSibling?.classList.contains('teacher-actions-row')) {
+              if (fila) {
+                  fila.nextElementSibling?.classList.contains('teacher-actions-row') && fila.nextElementSibling.remove();
                   const filaAcciones = document.createElement('tr');
                   filaAcciones.className = 'teacher-actions-row';
                   filaAcciones.innerHTML = '<td colspan="11"></td>';
