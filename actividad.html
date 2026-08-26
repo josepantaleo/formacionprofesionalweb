@@ -1427,7 +1427,7 @@
               detail: {
                 id: reinicio.id,
                 solicitadoEn: reinicio.solicitadoEn || null,
-                salidasPestaña: Number(datos.salidasPestaña || 0)
+                salidasPestana: Number(datos.salidasPestana ?? datos["salidasPesta\u00f1a"] ?? 0)
               }
             }));
           }
@@ -1666,7 +1666,7 @@
         if (!user || !database || !uid) return false;
         try {
           await setDoc(doc(database, "estudiantes", uid), {
-            salidasPestaña: 0,
+            salidasPestana: 0,
             reinicioSalidas: {
               id: `${Date.now()}-${uid}`,
               solicitadoPor: user.email || user.displayName || user.uid,
@@ -2547,7 +2547,7 @@
               ? datos.solicitadoEn.toMillis()
               : Number(datos.solicitadoEn?.seconds || 0) * 1000;
           const reinicioReciente = fechaReinicio > 0 && Date.now() - fechaReinicio < 10 * 60 * 1000;
-          if (Number(datos.salidasPestaña) !== 0 && !reinicioReciente) return;
+          if (Number(datos.salidasPestana ?? datos.salidasPestaña) !== 0 && !reinicioReciente) return;
           totalSalidasPestaña = 0;
           salidaActivaPestaña = null;
           setLocalStorage('app_blur_count', 0);
@@ -2647,8 +2647,8 @@
           });
           return {
               estudiante: { nombre, curso, division, turno },
-              salidasPestaña: totalSalidasPestaña,
-              eventosSalidasPestaña: JSON.parse(JSON.stringify(eventosSalidasPestaña || [])),
+              salidasPestana: totalSalidasPestaña,
+              eventosSalidasPestana: JSON.parse(JSON.stringify(eventosSalidasPestaña || [])),
               codigos,
               tiemposRestantes: { ...tiemposRestantes },
               finalizadas: { ...actividadesFinalizadas },
@@ -2803,12 +2803,14 @@
               document.getElementById('studentTurno').value = estudiante.turno || '';
               setLocalStorage('app_student_turno', estudiante.turno || '');
           }
-          if (datos.salidasPestaña !== undefined) {
-              totalSalidasPestaña = Number(datos.salidasPestaña) || 0;
+          const salidasGuardadas = datos.salidasPestana ?? datos["salidasPesta\u00f1a"];
+          if (salidasGuardadas !== undefined) {
+              totalSalidasPestaña = Number(salidasGuardadas) || 0;
               setLocalStorage('app_blur_count', totalSalidasPestaña);
           }
-          if (Array.isArray(datos.eventosSalidasPestaña)) {
-              eventosSalidasPestaña = datos.eventosSalidasPestaña;
+          const eventosGuardados = datos.eventosSalidasPestana ?? datos["eventosSalidasPesta\u00f1a"];
+          if (Array.isArray(eventosGuardados)) {
+              eventosSalidasPestaña = eventosGuardados;
               setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
           }
           if (datos.revisionSalidas && typeof datos.revisionSalidas === 'object') {
@@ -5058,7 +5060,7 @@
                   : `No se pudo reiniciar el contador${error?.message ? `: ${error.message}` : '.'}`);
               return;
           }
-          d.salidasPestaña = 0;
+          d.salidasPestana = 0;
           renderPanelProfesor();
           abrirDetalleEstudianteProfesor(indice);
           alert('Contador de cambios de pestaña reiniciado correctamente.');
@@ -5378,7 +5380,9 @@
           const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
           const resumenConsultasIA = resumirConsultasIAEstudiante(d);
-          const eventos = Array.isArray(d.eventosSalidasPestaña) ? d.eventosSalidasPestaña : [];
+          const eventos = Array.isArray(d.eventosSalidasPestana)
+              ? d.eventosSalidasPestana
+              : (Array.isArray(d.eventosSalidasPestaña) ? d.eventosSalidasPestaña : []);
           const revision = d.revisionSalidas || {};
           const cronometroIndividualPausado = d.controlCronometroIndividual?.pausado === true;
           const cuentaInactiva = d.estadoCuenta === 'inactivo';
@@ -5505,7 +5509,7 @@
                   <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === '—' ? 'Pendiente' : `${notaDefinitiva}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Estado de cuenta</small><strong style="color:${cuentaInactiva ? '#fca5a5' : '#6ee7b7'}">${cuentaInactiva ? 'Inactiva' : 'Activa'}</strong></div>
-                  <div class="teacher-detail-stat"><small>Salidas de pestaña</small><strong>${Number(d.salidasPestaña || 0)}</strong></div>
+                  <div class="teacher-detail-stat"><small>Salidas de pestaña</small><strong>${Number(d.salidasPestana ?? d.salidasPestaña ?? 0)}</strong></div>
                   <div class="teacher-detail-stat"><small>Última actualización</small><strong>${escapeHtml(fecha)}</strong></div>
               </div>
               <div style="position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;padding:.7rem;margin-bottom:1rem;border:1px solid rgba(56,189,248,.35);border-radius:8px;background:rgba(15,23,42,.96);box-shadow:0 8px 18px rgba(0,0,0,.22)">
@@ -5627,8 +5631,8 @@
               const cuentaInactiva = d.estadoCuenta === 'inactivo';
               const cronometroPausado = d.controlCronometroIndividual?.pausado === true
                   || d.controlCronometros?.pausado === true;
-              const tieneCambios = Number(d.salidasPestaña || 0) > 0;
-              const salidas = Number(d.salidasPestaña || 0);
+              const salidas = Number(d.salidasPestana ?? d.salidasPestaña ?? 0);
+              const tieneCambios = salidas > 0;
               const cumpleProgreso = !progresoFiltro || (
                   progresoFiltro === '0' ? progreso === 0 :
                   progresoFiltro === '100' ? progreso === 100 :
@@ -5725,7 +5729,7 @@
                       <i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(alertaIA.texto)}<br>${escapeHtml(alertaIA.detalle)}
                     </div>`
                   : '';
-              return `<tr style="${alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
+              return `<tr style="${alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestaña ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
               }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           document.querySelectorAll('#tablaProfesorBody td:last-child > div').forEach(contenedor => {
               contenedor.classList.add('teacher-action-buttons');
