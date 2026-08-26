@@ -1083,6 +1083,12 @@
        #panelProfesorModal .teacher-icon-legend strong{color:#bae6fd}
        #panelProfesorModal .teacher-icon-legend span{display:inline-flex;align-items:center;gap:.3rem}
        #panelProfesorModal .teacher-icon-legend i{color:var(--primary);width:1rem;text-align:center}
+       #editorDesafiosFirebaseModal .modal-box{max-width:1250px;width:96vw;max-height:92vh;overflow:auto}
+       #editorDesafiosFirebaseModal .editor-desafios-layout{display:grid;grid-template-columns:250px minmax(0,1fr);gap:1rem;margin-top:1rem}
+       #editorDesafiosFirebaseModal .editor-desafios-sidebar{position:sticky;top:0;align-self:start}
+       #editorDesafiosFirebaseModal textarea{width:100%;resize:vertical;line-height:1.4}
+       #editorDesafiosFirebaseModal .editor-save-status{display:inline-flex;align-items:center;gap:.35rem;font-size:.78rem;color:var(--text-muted)}
+       @media(max-width:800px){#editorDesafiosFirebaseModal .editor-desafios-layout{grid-template-columns:1fr}#editorDesafiosFirebaseModal .editor-desafios-sidebar{position:static}}
        #panelProfesorModal .teacher-action-buttons{
          margin-top:.4rem;
          justify-content:flex-start;
@@ -1098,9 +1104,12 @@
          align-items:center;
          flex-wrap:nowrap !important;
        }
-       #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons .btn:nth-child(4){
-         margin-left:auto;
-       }
+        #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons .btn:nth-child(4){
+          margin-left:auto;
+        }
+        #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons .btn:nth-child(6){
+          margin-left:.25rem;
+        }
        #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons .btn{
          display:inline-flex !important;
        }
@@ -1174,7 +1183,7 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
       // ============================================================
       // PEGA AQUÍ LA CONFIGURACIÓN DE TU PROYECTO FIREBASE
@@ -1610,6 +1619,20 @@
         }
       };
 
+      window.eliminarEstudianteFirebase = async function(uid) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        if (!user || !contexto.database || !uid) return false;
+        try {
+          if (!(await verificarUsuarioDocente(user))) return false;
+          await deleteDoc(doc(contexto.database, "estudiantes", uid));
+          return true;
+        } catch (error) {
+          console.error("Error eliminando estudiante:", error);
+          return false;
+        }
+      };
+
       window.reiniciarSalidasEstudianteFirebase = async function(uid) {
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
@@ -1917,6 +1940,7 @@
           <span><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Reiniciar a 40:00</span>
           <span><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reiniciar pestañas</span>
           <span><i class="fa-solid fa-comments" aria-hidden="true"></i> Borrar IA</span>
+          <span><i class="fa-solid fa-trash-can" aria-hidden="true"></i> Eliminar estudiante</span>
         </div>
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
           <input id="filtroProfesor" placeholder="Buscar estudiante o email" style="flex:1;min-width:220px;">
@@ -2028,14 +2052,14 @@
           <div><h3>🧩 Editor de los 19 Desafíos en Firebase</h3><p style="color:var(--text-muted);margin:.3rem 0;">Editá contenido, rúbrica y reglas de IA sin modificar el HTML.</p></div>
           <button class="btn btn-secondary" onclick="cerrarEditorDesafiosFirebase()">Cerrar</button>
         </div>
-        <div style="display:grid;grid-template-columns:250px 1fr;gap:1rem;margin-top:1rem;">
-          <div>
+        <div class="editor-desafios-layout">
+          <div class="editor-desafios-sidebar">
             <input id="buscarDesafioFirebase" placeholder="Buscar..." style="width:100%;padding:.7rem;border-radius:8px;">
             <div id="listaDesafiosFirebase" style="margin-top:.6rem;max-height:65vh;overflow:auto;"></div>
           </div>
           <div id="formDesafioFirebase"></div>
         </div>
-        <div id="estadoEditorDesafiosFirebase" style="margin-top:1rem;color:var(--text-muted);"></div>
+        <div class="editor-save-status" style="margin-top:1rem;"><i class="fa-solid fa-circle-info"></i><span id="estadoEditorDesafiosFirebase">Cambios sin guardar</span></div>
       </div>
     </div>
 
@@ -2537,7 +2561,10 @@
           const division = document.getElementById('studentDivision')?.value.trim().toUpperCase() || '';
           const turno = document.getElementById('studentTurno')?.value.trim() || '';
 
-          if (!nombre || !curso || !division || !turno) return false;
+          if (!nombre || !curso || !division || !turno) {
+              validarDatosEstudiante(false);
+              return false;
+          }
 
           try {
               const ok = await window.guardarProgresoFirebase({
@@ -2585,6 +2612,27 @@
           }
           clearTimeout(firebaseSaveTimer);
           firebaseSaveTimer = setTimeout(() => guardarAhoraFirebase(), 1200);
+      }
+
+      function validarDatosEstudiante(mostrarAviso = true) {
+          const campos = [
+              ['studentName', 'nombre y apellido'],
+              ['studentCourse', 'curso'],
+              ['studentDivision', 'división'],
+              ['studentTurno', 'turno']
+          ];
+          const faltantes = campos.filter(([id]) => !String(document.getElementById(id)?.value || '').trim());
+          campos.forEach(([id]) => {
+              const campo = document.getElementById(id);
+              if (campo) campo.setCustomValidity(faltantes.some(([faltante]) => faltante === id) ? 'Campo obligatorio' : '');
+          });
+          if (!faltantes.length) return true;
+          if (mostrarAviso) {
+              const nombres = faltantes.map(([, nombre]) => nombre).join(', ');
+              alert(`Completá los siguientes datos antes de continuar: ${nombres}.`);
+              document.getElementById(faltantes[0][0])?.focus();
+          }
+          return false;
       }
 
       async function guardarAhoraFirebase() {
@@ -2840,6 +2888,11 @@
               setLocalStorage('app_student_course', e.target.value);
               programarGuardadoFirebase();
           });
+          document.getElementById('studentCourse').addEventListener('change', (e) => {
+              setLocalStorage('app_student_course', e.target.value);
+              validarDatosEstudiante(false);
+              guardarIdentificacionFirebase();
+          });
           document.getElementById('studentDivision').addEventListener('input', (e) => {
               const valor = e.target.value.trim().toUpperCase();
               e.target.value = valor;
@@ -2848,8 +2901,16 @@
               clearTimeout(window.__guardarIdentificacionTimer);
               window.__guardarIdentificacionTimer = setTimeout(() => guardarIdentificacionFirebase(), 500);
           });
+          document.getElementById('studentDivision').addEventListener('change', (e) => {
+              const valor = e.target.value.trim().toUpperCase();
+              e.target.value = valor;
+              setLocalStorage('app_student_division', valor);
+              validarDatosEstudiante(false);
+              guardarIdentificacionFirebase();
+          });
           document.getElementById('studentTurno').addEventListener('change', (e) => {
               setLocalStorage('app_student_turno', e.target.value);
+              validarDatosEstudiante(false);
               programarGuardadoFirebase();
               guardarIdentificacionFirebase();
           });
@@ -5552,7 +5613,7 @@
                     </div>`
                   : '';
               return `<tr style="${alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
-          }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
+              }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           document.querySelectorAll('#tablaProfesorBody td:last-child > div').forEach(contenedor => {
               contenedor.classList.add('teacher-action-buttons');
               contenedor.querySelectorAll('.btn').forEach(boton => {
@@ -5561,6 +5622,18 @@
                   if (texto.includes('ver todo')) boton.title = 'Ver progreso y detalle completo del estudiante';
                   else if (texto.includes('pausar') || texto.includes('reanudar')) boton.title = 'Pausar o reanudar el cronómetro del estudiante';
               });
+              if (!contenedor.querySelector('.btn-eliminar-estudiante')) {
+                  const botonEliminar = document.createElement('button');
+                  botonEliminar.className = 'btn btn-danger btn-eliminar-estudiante';
+                  botonEliminar.type = 'button';
+                  botonEliminar.title = 'Eliminar al estudiante y todo su historial';
+                  botonEliminar.setAttribute('aria-label', 'Eliminar estudiante y su historial');
+                  botonEliminar.innerHTML = '<i class="fa-solid fa-trash-can" aria-hidden="true"></i>';
+                  const filaActual = contenedor.closest('tr');
+                  const registro = filaActual ? rows.find(r => String(r.email || '') === String(filaActual.querySelector('td:nth-child(2)')?.textContent || '')) : null;
+                  botonEliminar.onclick = () => eliminarEstudianteProfesor(registro);
+                  contenedor.appendChild(botonEliminar);
+              }
               const fila = contenedor.closest('tr');
               if (fila) {
                   fila.nextElementSibling?.classList.contains('teacher-actions-row') && fila.nextElementSibling.remove();
@@ -5573,6 +5646,27 @@
           });
       }
       function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+      async function eliminarEstudianteProfesor(estudiante) {
+          if (!estudiante?.uid) {
+              alert('No se pudo identificar al estudiante.');
+              return;
+          }
+          const nombre = estudiante.estudiante?.nombre || estudiante.nombreGoogle || estudiante.email || estudiante.uid;
+          if (!confirm(`Se eliminará definitivamente a ${nombre} junto con su progreso, respuestas, calificaciones, historial y consultas IA. Esta acción no se puede deshacer.\n\n¿Continuar?`)) return;
+          const verificacion = prompt('Escribí ELIMINAR para confirmar la eliminación definitiva.');
+          if (verificacion !== 'ELIMINAR') {
+              alert('Eliminación cancelada.');
+              return;
+          }
+          const ok = await window.eliminarEstudianteFirebase?.(estudiante.uid);
+          if (!ok) {
+              alert('No se pudo eliminar el estudiante. Verificá que tu cuenta tenga autorización docente.');
+              return;
+          }
+          estudiantesProfesor = estudiantesProfesor.filter(item => item.uid !== estudiante.uid);
+          renderPanelProfesor();
+          alert('Estudiante e historial eliminados correctamente.');
+      }
       async function iniciarPanelProfesorTiempoReal() {
           if (profesorUnsubscribe) profesorUnsubscribe();
           try {
@@ -5649,6 +5743,12 @@
             <button class="btn btn-secondary" onclick="guardarLos19Firebase()">☁️ Guardar los 19</button>
           </div>`;
         criterios.forEach(c=>agregarFilaCriterioFirebase(c));
+        document.querySelectorAll('#formDesafioFirebase input,#formDesafioFirebase textarea').forEach(el => {
+          el.addEventListener('input', () => {
+            const estado = document.getElementById('estadoEditorDesafiosFirebase');
+            if (estado) estado.textContent = 'Cambios sin guardar';
+          });
+        });
       }
 
       function agregarFilaCriterioFirebase(c={criterio:'',peso:0,indicador:''}){
@@ -5681,7 +5781,7 @@
         const ok=await window.guardarDesafioFirebase(d);
         if(ok){
           seccionesData=seccionesData.map(x=>x.id===d.id?({...x,...d}):x);
-          document.getElementById('estadoEditorDesafiosFirebase').textContent='✅ '+d.id+' guardado en Firebase. Los próximos ingresos usarán esta versión.';
+          document.getElementById('estadoEditorDesafiosFirebase').textContent='Guardado: '+d.id+' · '+new Date().toLocaleTimeString();
         }else document.getElementById('estadoEditorDesafiosFirebase').textContent='❌ No se pudo guardar. Revisá las reglas de Firestore.';
       }
       async function guardarLos19Firebase(){
@@ -5691,10 +5791,16 @@
         const ok=await window.guardarTodosDesafiosFirebase(desafiosEditorFirebase);
         if(ok){
           seccionesData=JSON.parse(JSON.stringify(desafiosEditorFirebase));
-          document.getElementById('estadoEditorDesafiosFirebase').textContent='✅ Los 19 desafíos fueron guardados en Firebase.';
+          document.getElementById('estadoEditorDesafiosFirebase').textContent='Los 19 desafíos fueron guardados · '+new Date().toLocaleTimeString();
         }else document.getElementById('estadoEditorDesafiosFirebase').textContent='❌ No se pudieron guardar los desafíos.';
       }
       document.getElementById('buscarDesafioFirebase')?.addEventListener('input',renderListaDesafiosFirebase);
+      document.addEventListener('keydown', event => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's' && document.getElementById('editorDesafiosFirebaseModal')?.classList.contains('active')) {
+          event.preventDefault();
+          guardarDesafioActualFirebase();
+        }
+      });
 
       async function exportarResultadosPDF() {
           if (!window.jspdf?.jsPDF) {
