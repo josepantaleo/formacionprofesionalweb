@@ -5602,16 +5602,23 @@
       }
       function renderPanelProfesor() {
           const q = (document.getElementById('filtroProfesor').value || '').toLowerCase().trim();
+          const emailFiltro = (document.getElementById('filtroEmailProfesor')?.value || '').toLowerCase().trim();
           const curso = document.getElementById('filtroCursoProfesor').value;
+          const division = document.getElementById('filtroDivisionProfesor')?.value || '';
           const turno = document.getElementById('filtroTurnoProfesor').value;
           const estadoFiltro = document.getElementById('filtroEstadoProfesor')?.value || '';
           const progresoFiltro = document.getElementById('filtroProgresoProfesor')?.value || '';
           const salidasFiltro = document.getElementById('filtroSalidasProfesor')?.value || '';
-          const orden = document.getElementById('ordenProfesor')?.value || 'actividad';
+          const notaFiltro = document.getElementById('filtroNotaProfesor')?.value || '';
+          const actualizacionFiltro = document.getElementById('filtroActualizacionProfesor')?.value || '';
+          const orden = document.getElementById('ordenProfesor')?.value || 'actualizacion-desc';
           const rows = estudiantesProfesor.filter(d => {
               const e=d.estudiante||{};
-              const text=`${e.nombre||''} ${d.email||''}`.toLowerCase();
+              const nombre = String(e.nombre||d.nombreGoogle||'').toLowerCase();
+              const email = String(d.email||'').toLowerCase();
               const progreso = calcularProgresoEstudiante(d);
+              const notaTexto = calcularNotaDefinitivaEstudiante(d);
+              const nota = notaTexto === '—' ? NaN : Number(notaTexto);
               const alerta = obtenerAlertaConsultasIA(d);
               const actualizado = d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().getTime() : 0;
               const conectado = actualizado > 0 && Date.now() - actualizado < 5 * 60 * 1000;
@@ -5633,6 +5640,23 @@
               const cumpleSalidas = !salidasFiltro || (
                   salidasFiltro === '0' ? salidas === 0 : salidas >= Number(salidasFiltro)
               );
+              const cumpleNota = !notaFiltro
+                  || (notaFiltro === 'sin-nota' && !Number.isFinite(nota))
+                  || (notaFiltro !== 'sin-nota' && (() => {
+                      if (!Number.isFinite(nota)) return false;
+                      const [min, max] = notaFiltro.split('-').map(Number);
+                      return nota >= min && nota <= max;
+                  })());
+              const antiguedad = actualizado ? Date.now() - actualizado : Infinity;
+              const inicioHoy = new Date();
+              inicioHoy.setHours(0,0,0,0);
+              const cumpleActualizacion = !actualizacionFiltro
+                  || (actualizacionFiltro === 'sin-fecha' && !actualizado)
+                  || (actualizacionFiltro === '5m' && antiguedad <= 5 * 60 * 1000)
+                  || (actualizacionFiltro === '15m' && antiguedad <= 15 * 60 * 1000)
+                  || (actualizacionFiltro === '1h' && antiguedad <= 60 * 60 * 1000)
+                  || (actualizacionFiltro === 'hoy' && actualizado >= inicioHoy.getTime())
+                  || (actualizacionFiltro === '7d' && antiguedad <= 7 * 24 * 60 * 60 * 1000);
               const cumpleEstado = !estadoFiltro
                 || (estadoFiltro === 'activa' && !cuentaInactiva)
                 || (estadoFiltro === 'inactiva' && cuentaInactiva)
@@ -5644,18 +5668,43 @@
                 || (estadoFiltro === 'pendientes' && !finalizado)
                 || (estadoFiltro === 'alertas' && alerta.activa)
                 || (estadoFiltro === 'cambios' && tieneCambios);
-              d.__panelMeta = { progreso, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cronometroPausado, tieneCambios };
-              return (!q || text.includes(q)) && (!curso || e.curso===curso) && (!turno || e.turno===turno) && cumpleEstado && cumpleProgreso && cumpleSalidas;
+              d.__panelMeta = { progreso, nota, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cronometroPausado, tieneCambios, salidas };
+              return (!q || nombre.includes(q))
+                  && (!emailFiltro || email.includes(emailFiltro))
+                  && (!curso || e.curso===curso)
+                  && (!division || e.division===division)
+                  && (!turno || e.turno===turno)
+                  && cumpleEstado && cumpleProgreso && cumpleSalidas && cumpleNota && cumpleActualizacion;
           }).sort((a,b) => {
               const am=a.__panelMeta||{}, bm=b.__panelMeta||{};
-              if (orden === 'nombre') return String(a.estudiante?.nombre||a.nombreGoogle||'').localeCompare(String(b.estudiante?.nombre||b.nombreGoogle||''));
-              if (orden === 'progreso') return (am.progreso||0) - (bm.progreso||0);
-              if (orden === 'alertas') return Number(bm.alerta)-Number(am.alerta) || (bm.actualizado||0)-(am.actualizado||0);
-              return (bm.actualizado||0)-(am.actualizado||0);
+              const texto = (valorA, valorB, direccion='asc') => {
+                  const resultado = String(valorA||'').localeCompare(String(valorB||''), 'es', { numeric:true, sensitivity:'base' });
+                  return direccion === 'desc' ? -resultado : resultado;
+              };
+              const numero = (valorA, valorB, direccion='asc') => {
+                  const aNumero = Number.isFinite(Number(valorA)) ? Number(valorA) : (direccion === 'asc' ? Infinity : -Infinity);
+                  const bNumero = Number.isFinite(Number(valorB)) ? Number(valorB) : (direccion === 'asc' ? Infinity : -Infinity);
+                  return direccion === 'desc' ? bNumero-aNumero : aNumero-bNumero;
+              };
+              const [campo, direccion='asc'] = orden.split('-');
+              if (campo === 'nombre') return texto(a.estudiante?.nombre||a.nombreGoogle, b.estudiante?.nombre||b.nombreGoogle, direccion);
+              if (campo === 'email') return texto(a.email, b.email, direccion);
+              if (campo === 'curso') return texto(a.estudiante?.curso, b.estudiante?.curso, direccion);
+              if (campo === 'division') return texto(a.estudiante?.division, b.estudiante?.division, direccion);
+              if (campo === 'turno') return texto(a.estudiante?.turno, b.estudiante?.turno, direccion);
+              if (campo === 'estado') return numero(Number(am.cuentaInactiva), Number(bm.cuentaInactiva), direccion);
+              if (campo === 'progreso') return numero(am.progreso, bm.progreso, direccion);
+              if (campo === 'nota') return numero(am.nota, bm.nota, direccion);
+              if (campo === 'salidas') return numero(am.salidas, bm.salidas, direccion);
+              if (campo === 'alertas') return Number(bm.alerta)-Number(am.alerta) || (bm.actualizado||0)-(am.actualizado||0);
+              return numero(am.actualizado, bm.actualizado, direccion);
           });
           const cursos=[...new Set(estudiantesProfesor.map(d=>d.estudiante?.curso).filter(Boolean))].sort();
           const sel=document.getElementById('filtroCursoProfesor');
           const old=sel.value; sel.innerHTML='<option value="">Todos los cursos</option>'+cursos.map(c=>`<option>${c}</option>`).join(''); if(cursos.includes(old)) sel.value=old;
+          const divisiones=[...new Set(estudiantesProfesor.map(d=>d.estudiante?.division).filter(Boolean))].sort();
+          const selDivision=document.getElementById('filtroDivisionProfesor');
+          if(selDivision){const anterior=selDivision.value;selDivision.innerHTML='<option value="">Todas las divisiones</option>'+divisiones.map(d=>`<option>${escapeHtml(d)}</option>`).join('');if(divisiones.includes(anterior))selDivision.value=anterior;}
           const total=rows.length, completos=rows.filter(d=>calcularProgresoEstudiante(d)>=100).length;
           const conectados=rows.filter(d=>d.__panelMeta?.conectado).length;
           const trabajando=rows.filter(d=>d.__panelMeta?.conectado && d.__panelMeta?.progreso<100).length;
