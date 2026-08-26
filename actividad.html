@@ -1000,7 +1000,8 @@
       #panelProfesorModal table th{color:var(--primary);position:sticky;top:0;background:var(--surface,#0f172a)}
        #panelProfesorModal input,#panelProfesorModal select{width:100%;padding:.65rem;border-radius:8px;border:1px solid rgba(148,163,184,.25);background:rgba(15,23,42,.65);color:inherit}
        #panelProfesorModal table td:last-child > div{flex-wrap:nowrap !important;align-items:center;white-space:nowrap}
-       #panelProfesorModal table td:last-child .btn{flex:0 0 auto;white-space:nowrap}
+       #panelProfesorModal table td:last-child .btn{flex:0 0 auto;white-space:nowrap;font-size:.7rem;padding:.3rem .42rem;line-height:1.15}
+       #panelProfesorModal .teacher-action-buttons{gap:.25rem !important}
       .teacher-detail-summary {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -5362,6 +5363,15 @@
                   : '';
               return `<tr style="${alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
           }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
+          document.querySelectorAll('#tablaProfesorBody td:last-child > div').forEach(contenedor => {
+              contenedor.classList.add('teacher-action-buttons');
+              contenedor.querySelectorAll('.btn').forEach(boton => {
+                  if (boton.title) return;
+                  const texto = boton.textContent.trim().toLowerCase();
+                  if (texto.includes('ver todo')) boton.title = 'Ver progreso y detalle completo del estudiante';
+                  else if (texto.includes('pausar') || texto.includes('reanudar')) boton.title = 'Pausar o reanudar el cronómetro del estudiante';
+              });
+          });
       }
       function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
       async function iniciarPanelProfesorTiempoReal() {
