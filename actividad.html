@@ -996,16 +996,38 @@
       .btn-google { background:#fff; color:#1f2937; }
       .btn-google:hover { background:#f3f4f6; }
     
-      #panelProfesorModal table th,#panelProfesorModal table td{padding:.55rem;border-bottom:1px solid rgba(148,163,184,.15);text-align:left;font-size:.78rem}
-      #panelProfesorModal table th{color:var(--primary);position:sticky;top:0;background:var(--surface,#0f172a)}
-       #panelProfesorModal input,#panelProfesorModal select{width:100%;padding:.65rem;border-radius:8px;border:1px solid rgba(148,163,184,.25);background:rgba(15,23,42,.65);color:inherit}
+       #panelProfesorModal .modal-box{
+         width:99vw !important;
+         max-width:none !important;
+         padding:1rem !important;
+       }
+       #panelProfesorModal table{table-layout:fixed}
+       #panelProfesorModal table th,#panelProfesorModal table td{padding:.36rem .3rem;border-bottom:1px solid rgba(148,163,184,.15);text-align:left;font-size:.68rem;line-height:1.25;overflow-wrap:anywhere}
+       #panelProfesorModal table th{color:var(--primary);position:sticky;top:0;background:var(--surface,#0f172a)}
+       #panelProfesorModal table th:nth-child(1){width:11%}
+       #panelProfesorModal table th:nth-child(2){width:20%}
+       #panelProfesorModal table th:nth-child(3){width:8%}
+       #panelProfesorModal table th:nth-child(4){width:5%}
+       #panelProfesorModal table th:nth-child(5){width:7%}
+       #panelProfesorModal table th:nth-child(6){width:7%}
+       #panelProfesorModal table th:nth-child(7){width:7%}
+       #panelProfesorModal table th:nth-child(8){width:8%}
+       #panelProfesorModal table th:nth-child(9){width:9%}
+       #panelProfesorModal table th:nth-child(10){width:18%}
+       #panelProfesorModal table thead th:last-child,
+       #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child{display:none}
+       #panelProfesorModal #tablaProfesorBody > tr.teacher-actions-row > td:last-child{display:table-cell}
+       #panelProfesorModal input,#panelProfesorModal select{width:100%;padding:.45rem .5rem;border-radius:6px;border:1px solid rgba(148,163,184,.25);background:rgba(15,23,42,.65);color:inherit;font-size:.72rem}
+       #panelProfesorModal #resumenProfesor{grid-template-columns:repeat(6,minmax(100px,1fr)) !important;gap:.4rem !important;margin-bottom:.55rem !important}
+       #panelProfesorModal #resumenProfesor > div{padding:.45rem .55rem !important;border-radius:6px !important}
+       #panelProfesorModal #resumenProfesor strong{font-size:1rem !important;margin-top:.1rem !important}
        #panelProfesorModal table td:last-child > div{flex-wrap:nowrap !important;align-items:center;white-space:nowrap}
        #panelProfesorModal table td:last-child .btn{flex:0 0 auto;white-space:nowrap;font-size:.7rem;padding:.3rem .42rem;line-height:1.15}
        #panelProfesorModal .teacher-action-buttons{gap:.25rem !important}
        #panelProfesorModal .teacher-action-buttons .btn{
-         width:2rem;
-         min-width:2rem;
-         height:2rem;
+         width:1.8rem;
+         min-width:1.8rem;
+         height:1.8rem;
          padding:.25rem !important;
          justify-content:center;
          font-size:0 !important;
@@ -1032,6 +1054,7 @@
          scrollbar-width:auto;
          scrollbar-color:#38bdf8 #0f172a;
        }
+       #panelProfesorModal .teacher-table-scroll table{min-width:0 !important;width:100% !important}
        #panelProfesorModal .modal-box > div[style*="overflow:auto"]{
          max-width:100%;
          max-height:52vh;
@@ -1040,21 +1063,22 @@
          scrollbar-width:auto;
          scrollbar-color:#38bdf8 #0f172a;
        }
+       #panelProfesorModal .modal-box > div[style*="overflow:auto"] table{min-width:0 !important;width:100% !important;table-layout:fixed}
        #panelProfesorModal .teacher-icon-legend{
          position:sticky;
          top:0;
          z-index:4;
          display:flex;
          align-items:center;
-         gap:.65rem;
+         gap:.45rem;
          flex-wrap:wrap;
-         padding:.55rem .7rem;
-         margin:.8rem 0;
+         padding:.4rem .55rem;
+         margin:.5rem 0;
          border:1px solid rgba(56,189,248,.3);
          border-radius:7px;
          background:rgba(15,23,42,.96);
          color:var(--text-muted);
-         font-size:.74rem;
+         font-size:.68rem;
        }
        #panelProfesorModal .teacher-icon-legend strong{color:#bae6fd}
        #panelProfesorModal .teacher-icon-legend span{display:inline-flex;align-items:center;gap:.3rem}
