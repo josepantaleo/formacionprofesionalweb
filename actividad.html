@@ -1660,6 +1660,14 @@
       };
 
       window.reiniciarSalidasEstudianteFirebase = async function(uid) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) {
+          window.ultimoErrorReinicioSalidas = {
+            code: "teacher-not-authorized",
+            message: "No hay una sesión docente autorizada activa."
+          };
+          return false;
+        }
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
         const database = contexto.database;
@@ -1679,7 +1687,9 @@
           console.error("Error reiniciando el contador de cambios de pestaña:", error);
           window.ultimoErrorReinicioSalidas = {
             code: error?.code || '',
-            message: error?.message || ''
+            message: error?.message || '',
+            email: user?.email || '',
+            emailVerified: user?.emailVerified === true
           };
           return false;
         }
@@ -5055,9 +5065,18 @@
           const ok = await window.reiniciarSalidasEstudianteFirebase?.(d.uid);
           if (!ok) {
               const error = window.ultimoErrorReinicioSalidas;
-              alert(error?.code === 'permission-denied'
-                  ? 'Firestore rechazó el reinicio por permisos. Publicá la versión actualizada de firestore.rules y volvé a iniciar la sesión docente.'
-                  : `No se pudo reiniciar el contador${error?.message ? `: ${error.message}` : '.'}`);
+              if (error?.code === 'teacher-not-authorized') {
+                  alert('No hay una sesión docente autorizada activa. Ingresá nuevamente con una cuenta docente.');
+              } else if (error?.code === 'permission-denied') {
+                  alert(
+                      'Firestore rechazó el reinicio por permisos.\n\n' +
+                      `Cuenta utilizada: ${error.email || 'sin identificar'}\n` +
+                      `Correo verificado: ${error.emailVerified ? 'sí' : 'no'}\n\n` +
+                      'Confirmá que esta cuenta figure en firestore.rules y que las reglas estén publicadas.'
+                  );
+              } else {
+                  alert(`No se pudo reiniciar el contador${error?.message ? `: ${error.message}` : '.'}`);
+              }
               return;
           }
           d.salidasPestana = 0;
