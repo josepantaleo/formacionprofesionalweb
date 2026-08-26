@@ -1169,6 +1169,12 @@
         window.__reinicioSalidasUnsubscribe = onSnapshot(referencia, snapshot => {
           if (!snapshot.exists()) return;
           const datos = snapshot.data();
+          window.dispatchEvent(new CustomEvent("estado-cuenta-estudiante", {
+            detail: {
+              estadoCuenta: datos.estadoCuenta || "activo",
+              bajaMotivo: datos.bajaMotivo || ""
+            }
+          }));
           const reinicio = datos.reinicioSalidas || null;
           if (reinicio?.id) {
             window.dispatchEvent(new CustomEvent("reinicio-salidas-estudiante", {
@@ -1505,6 +1511,9 @@
         </div>
         <button class="btn btn-warning" style="width:100%;justify-content:center;font-size:1rem;padding:.8rem 1rem;" onclick="ingresarComoDocente(this)">
           <i class="fa-solid fa-chalkboard-user"></i> Ingresar como docente
+        </button>
+        <button class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:.75rem;" onclick="cerrarSesionGoogle()">
+          <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión / cambiar cuenta
         </button>
         <div id="firebaseConfigWarning" style="display:none; margin-top:1rem; color:#fca5a5; font-size:.8rem;">Firebase no está configurado todavía.</div>
       </div>
@@ -1974,6 +1983,7 @@
       let firebaseSaveInProgress = false;
       let firebaseInitialized = false;
       let claseHabilitada = false;
+      let cuentaEstudianteActiva = false;
 
       function aplicarEstadoInicioClase(iniciada, datos = {}) {
           claseHabilitada = Boolean(iniciada);
@@ -2152,6 +2162,15 @@
       window.addEventListener('control-cronometro-individual', event => {
           ultimoControlCronometroIndividual = event.detail || {};
           aplicarControlCronometroIndividual(ultimoControlCronometroIndividual);
+      });
+      window.addEventListener('estado-cuenta-estudiante', event => {
+          if (event.detail?.estadoCuenta === 'inactivo') {
+              bloquearCuentaEstudiante(event.detail?.bajaMotivo || '');
+              return;
+          }
+          if (!cuentaEstudianteActiva && window.firebaseCurrentUser) {
+              window.location.reload();
+          }
       });
       window.addEventListener('profesor-data', e => { estudiantesProfesor = e.detail || []; document.getElementById('estadoPanelProfesor').textContent = `Actualizado en tiempo real: ${new Date().toLocaleTimeString()}`; renderPanelProfesor(); });
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
@@ -2360,6 +2379,33 @@
         });
       }
 
+      function bloquearCuentaEstudiante(motivo = '') {
+          cuentaEstudianteActiva = false;
+          firebaseInitialized = false;
+          claseHabilitada = false;
+          clearTimeout(firebaseSaveTimer);
+          clearInterval(window.__firebaseAutoSaveInterval);
+          Object.keys(cronometrosActivos).forEach(id => {
+              if (cronometrosActivos[id]) clearInterval(cronometrosActivos[id]);
+              cronometrosActivos[id] = null;
+          });
+          if (window.__inicioClaseUnsubscribe) {
+              window.__inicioClaseUnsubscribe();
+              window.__inicioClaseUnsubscribe = null;
+          }
+          const overlay = document.getElementById('firebaseAuthOverlay');
+          overlay?.classList.remove('hidden');
+          const mensaje = document.getElementById('firebaseAuthMessage');
+          if (mensaje) {
+              mensaje.innerHTML =
+                  '<strong>Cuenta inactiva.</strong><br>Tu acceso fue dado de baja por la institución. ' +
+                  (motivo ? `Motivo: ${escapeHtml(motivo)}.<br>` : '') +
+                  'Conservamos tu historial académico. Consultá con el equipo docente para reactivar la cuenta.';
+          }
+          const loginButton = overlay?.querySelector('.btn-google');
+          if (loginButton) loginButton.disabled = true;
+      }
+
       async function initApp() {
           const navList = document.getElementById('navList');
           const sectionsContainer = document.getElementById('sectionsContainer');
@@ -2385,12 +2431,6 @@
           firebaseStorageUid = user.uid;
           localStorage.setItem('firebase_active_uid', user.uid);
 
-          firebaseInitialized = true;
-          overlay.classList.add('hidden');
-          aplicarEstadoInicioClase(false);
-          window.escucharInicioClaseFirebase?.();
-          window.escucharReinicioSalidasFirebase?.();
-
           // La configuración docente de desafíos tiene prioridad sobre la copia local.
           if (typeof window.cargarDesafiosFirebase === 'function') {
               const remotos = await window.cargarDesafiosFirebase();
@@ -2402,13 +2442,15 @@
 
           const datosFirebase = await window.cargarProgresoFirebase();
           if (datosFirebase?.estadoCuenta === 'inactivo') {
-              overlay.classList.remove('hidden');
-              document.getElementById('firebaseAuthMessage').innerHTML =
-                  '<strong>Cuenta inactiva.</strong><br>Tu acceso fue dado de baja por la institución. Conservamos tu historial académico. Consultá con el equipo docente si necesitás reactivar la cuenta.';
-              const loginButton = overlay.querySelector('.btn-google');
-              if (loginButton) loginButton.disabled = true;
+              bloquearCuentaEstudiante(datosFirebase.bajaMotivo || '');
               return;
           }
+          cuentaEstudianteActiva = true;
+          firebaseInitialized = true;
+          overlay.classList.add('hidden');
+          aplicarEstadoInicioClase(false);
+          window.escucharInicioClaseFirebase?.();
+          window.escucharReinicioSalidasFirebase?.();
           if (datosFirebase) await restaurarDesdeFirebase(datosFirebase);
 
           const photo = document.getElementById('firebaseUserPhoto');
@@ -2751,10 +2793,10 @@
       }
 
       function iniciarCronometro(sectionId) {
-          if (!claseHabilitada || cronometrosActivos[sectionId] || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
+          if (!cuentaEstudianteActiva || !claseHabilitada || cronometrosActivos[sectionId] || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
           cronometrosActivos[sectionId] = setInterval(() => {
-              if (modulosPausados[sectionId] || actividadesFinalizadas[sectionId]) {
+              if (!cuentaEstudianteActiva || !claseHabilitada || modulosPausados[sectionId] || actividadesFinalizadas[sectionId]) {
                   clearInterval(cronometrosActivos[sectionId]);
                   cronometrosActivos[sectionId] = null;
                   return;
@@ -2773,7 +2815,7 @@
       }
 
       function expirarTiempoModulo(sectionId) {
-          if (actividadesFinalizadas[sectionId]) return;
+          if (!cuentaEstudianteActiva || !claseHabilitada || actividadesFinalizadas[sectionId]) return;
 
           alert(`⏰ ¡Tiempo agotado (40 minutos) para este módulo! Se registrará nota 1 por tiempo expirado.`);
 
