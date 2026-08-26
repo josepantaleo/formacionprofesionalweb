@@ -1921,7 +1921,19 @@
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
           <input id="filtroProfesor" placeholder="Buscar estudiante o email" style="flex:1;min-width:220px;">
           <select id="filtroCursoProfesor"><option value="">Todos los cursos</option></select>
-          <select id="filtroEstadoProfesor" aria-label="Filtrar por estado"><option value="">Todos los estados</option><option value="conectados">Conectados</option><option value="trabajando">Trabajando</option><option value="finalizados">Finalizaron</option><option value="alertas">Con alertas</option></select>
+          <select id="filtroEstadoProfesor" aria-label="Filtrar por estado">
+            <option value="">Todos los estados</option>
+            <option value="activa">Cuenta activa</option>
+            <option value="inactiva">Cuenta inactiva</option>
+            <option value="conectados">Conectados recientemente</option>
+            <option value="desconectados">Sin actividad reciente</option>
+            <option value="trabajando">Trabajando ahora</option>
+            <option value="pausados">Cronómetro pausado</option>
+            <option value="finalizados">Actividades finalizadas</option>
+            <option value="pendientes">Actividades pendientes</option>
+            <option value="alertas">Con alertas IA</option>
+            <option value="cambios">Con cambios de pestaña</option>
+          </select>
           <select id="ordenProfesor" aria-label="Ordenar estudiantes"><option value="actividad">Última actividad</option><option value="alertas">Alertas primero</option><option value="progreso">Menor progreso</option><option value="nombre">Nombre A-Z</option></select>
           <select id="filtroTurnoProfesor"><option value="">Todos los turnos</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select>
         </div>
@@ -5461,12 +5473,22 @@
               const conectado = actualizado > 0 && Date.now() - actualizado < 5 * 60 * 1000;
               const trabajando = conectado && progreso < 100;
               const finalizado = progreso >= 100;
+              const cuentaInactiva = d.estadoCuenta === 'inactivo';
+              const cronometroPausado = d.controlCronometroIndividual?.pausado === true
+                  || d.controlCronometros?.pausado === true;
+              const tieneCambios = Number(d.salidasPestaña || 0) > 0;
               const cumpleEstado = !estadoFiltro
+                || (estadoFiltro === 'activa' && !cuentaInactiva)
+                || (estadoFiltro === 'inactiva' && cuentaInactiva)
                 || (estadoFiltro === 'conectados' && conectado)
+                || (estadoFiltro === 'desconectados' && !conectado)
                 || (estadoFiltro === 'trabajando' && trabajando)
+                || (estadoFiltro === 'pausados' && cronometroPausado)
                 || (estadoFiltro === 'finalizados' && finalizado)
-                || (estadoFiltro === 'alertas' && alerta.activa);
-              d.__panelMeta = { progreso, alerta: alerta.activa, actualizado, conectado };
+                || (estadoFiltro === 'pendientes' && !finalizado)
+                || (estadoFiltro === 'alertas' && alerta.activa)
+                || (estadoFiltro === 'cambios' && tieneCambios);
+              d.__panelMeta = { progreso, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cronometroPausado, tieneCambios };
               return (!q || text.includes(q)) && (!curso || e.curso===curso) && (!turno || e.turno===turno) && cumpleEstado;
           }).sort((a,b) => {
               const am=a.__panelMeta||{}, bm=b.__panelMeta||{};
