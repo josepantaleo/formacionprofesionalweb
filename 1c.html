@@ -858,6 +858,12 @@
         background: rgba(2, 6, 23, 0.96); backdrop-filter: blur(8px);
       }
       #classStartOverlay.hidden { display: none; }
+      #passwordModal,
+      #panelProfesorModal,
+      #editorDesafiosFirebaseModal,
+      #detalleEstudianteProfesorModal {
+        z-index: 6000;
+      }
       .class-waiting-card {
         width: min(520px, calc(100vw - 32px)); padding: 2rem;
         background: var(--bg-card); border: 1px solid var(--border);
@@ -956,7 +962,7 @@
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
-      import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+      import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
       import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
       // ============================================================
@@ -992,7 +998,7 @@
         teacherDb = getFirestore(teacherApp);
         teacherProvider = new GoogleAuthProvider();
         teacherProvider.setCustomParameters({ prompt: "select_account" });
-        teacherPersistenceReady = setPersistence(teacherAuth, inMemoryPersistence).catch(error => {
+        teacherPersistenceReady = setPersistence(teacherAuth, browserSessionPersistence).catch(error => {
           console.warn("No se pudo activar la persistencia temporal docente:", error);
           return null;
         });
@@ -1132,9 +1138,10 @@
       }
 
       window.escucharInicioClaseFirebase = function() {
-        if (!db || !window.firebaseCurrentUser) return;
+        const { user, database } = contextoDocenteFirebase();
+        if (!database || !user) return;
         if (window.__inicioClaseUnsubscribe) window.__inicioClaseUnsubscribe();
-        const referencia = doc(db, "controlClase", idClaseActual());
+        const referencia = doc(database, "controlClase", idClaseActual());
         window.__inicioClaseUnsubscribe = onSnapshot(referencia, snapshot => {
           const datos = snapshot.exists() ? snapshot.data() : {};
           window.dispatchEvent(new CustomEvent("estado-inicio-clase", {
@@ -1860,6 +1867,12 @@
           const autorizacionTemporal = Boolean(window.firebaseTeacherUser);
           document.body.classList.toggle('teacher-authorized', autorizado);
           document.body.classList.toggle('teacher-temporary', autorizado && autorizacionTemporal);
+          const classStartOverlay = document.getElementById('classStartOverlay');
+          if (autorizado) {
+              classStartOverlay?.classList.add('hidden');
+          } else {
+              aplicarEstadoInicioClase(claseHabilitada);
+          }
           const btnIngresoDocente = document.getElementById('btnIngresoDocente');
           if (btnIngresoDocente) {
               btnIngresoDocente.style.display = autorizado ? 'none' : 'inline-flex';
@@ -1912,7 +1925,10 @@
       }
 
       window.addEventListener('firebase-auth-changed', actualizarVisibilidadDocente);
-      window.addEventListener('firebase-teacher-auth-changed', actualizarVisibilidadDocente);
+      window.addEventListener('firebase-teacher-auth-changed', async event => {
+        await actualizarVisibilidadDocente();
+        if (event.detail) window.escucharInicioClaseFirebase?.();
+      });
       window.addEventListener('profesor-data', e => { estudiantesProfesor = e.detail || []; document.getElementById('estadoPanelProfesor').textContent = `Actualizado en tiempo real: ${new Date().toLocaleTimeString()}`; renderPanelProfesor(); });
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
       window.addEventListener('load', () => {
