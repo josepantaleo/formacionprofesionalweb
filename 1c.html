@@ -3583,6 +3583,53 @@
           };
       }
 
+      function generarDiagnosticoIA(evaluacion, sec, resultadoEjecucion = null) {
+          const ejecucion = resultadoEjecucion && typeof resultadoEjecucion === "object"
+              ? {
+                  ok: resultadoEjecucion.ok !== undefined
+                      ? Boolean(resultadoEjecucion.ok)
+                      : Boolean(resultadoEjecucion.exito),
+                  error: resultadoEjecucion.error || "",
+                  salida: resultadoEjecucion.salida || ""
+              }
+              : null;
+          const criteriosPendientes = (evaluacion?.criterios || [])
+              .filter(c => c.estado !== "cumplido")
+              .map(c => `${c.nombre}: ${c.evidencia || "revisar este criterio"}`)
+              .slice(0, 4);
+          const conceptosPendientes = (evaluacion?.conceptos || [])
+              .filter(c => !c.cumple)
+              .map(c => c.nombre)
+              .slice(0, 4);
+          const pasos = [];
+          if (!ejecucion) {
+              pasos.push("Ejecutá el código con distintos datos y observá la consola.");
+          } else if (!ejecucion.ok) {
+              pasos.push(`Revisá el error de ejecución: ${ejecucion.error || "la consola indicó un problema"}.`);
+          } else {
+              pasos.push("La ejecución no muestra errores; ahora comprobá casos normales y casos límite.");
+          }
+          if (conceptosPendientes.length) {
+              pasos.push(`Revisá la consigna para incorporar: ${conceptosPendientes.join(", ")}.`);
+          }
+          if (criteriosPendientes.length) {
+              pasos.push(...criteriosPendientes);
+          }
+          if (!pasos.length) {
+              pasos.push("La solución presenta evidencias suficientes. Justificá tus decisiones antes de entregar.");
+          }
+          return {
+              resumen: evaluacion?.nota >= 8
+                  ? "La solución muestra un avance sólido."
+                  : evaluacion?.nota >= 5
+                      ? "La solución es parcial y necesita una revisión dirigida."
+                      : "Todavía faltan evidencias importantes para considerar resuelto el desafío.",
+              pasos: pasos.slice(0, 5),
+              preguntaGuia: sec?.preguntasSocraticas?.[0] ||
+                  "¿Qué parte del código cambiarías primero para acercarte al objetivo y por qué?"
+          };
+      }
+
       function calcularNotaEstricta(code, sec, resultadoEjecucion) {
           return evaluarCodigoPorEvidencias(code, sec, resultadoEjecucion).nota;
       }
@@ -3626,9 +3673,14 @@
               salida: historialResultados[sectionId]?.salida || "",
               error: historialResultados[sectionId]?.exito ? "" : "La ejecución todavía no fue validada."
           });
-          const filas = evaluacion.criterios.map(c => `<li><strong>${escaparTextoAnalista(c.nombre)}</strong> (${c.peso}%): ${c.estado} · ${c.puntos}/${c.peso} puntos</li>`).join("");
           let notaEstimada = evaluacion.nota;
-          feedbackText.innerHTML = `<strong>Estimación del código (${usos}/3):</strong> El indicador orientativo del código es <strong>${notaEstimada}/10</strong>. Representará el 70% de la nota final; las preguntas representarán el 30% restante.`;
+          const diagnostico = generarDiagnosticoIA(evaluacion, sec, historialResultados[sectionId]);
+          feedbackText.innerHTML =
+              `<strong>Estimación orientativa (${usos}/3): ${notaEstimada}/10</strong>` +
+              `<br>${escaparTextoAnalista(diagnostico.resumen)}` +
+              `<br><strong>Próximos pasos:</strong><ol>${diagnostico.pasos.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ol>` +
+              `<br><strong>Pregunta guía:</strong> ${escaparTextoAnalista(diagnostico.preguntaGuia)}` +
+              `<br><small>La nota previa orienta tu revisión; no reemplaza la entrega ni la corrección docente.</small>`;
       }
 
       const preguntasSocraticas = [
@@ -4041,7 +4093,7 @@
 
           if (!editor || !sec || !feedbackBox || !feedbackText) return;
 
-          if (idealDisplay) idealDisplay.innerText = sec.aiSolution;
+          if (idealDisplay) idealDisplay.innerText = "// La solución de referencia se habilita después de entregar el análisis.";
           feedbackBox.classList.add('active');
           if (studentCodeDisplay) studentCodeDisplay.innerText = code;
           feedbackText.innerHTML = "<i>Realizando una evaluación automática orientativa...</i>";
@@ -4052,6 +4104,7 @@
                   salida: historialResultados[sectionId].salida || "",
                   error: historialResultados[sectionId].exito ? "" : "La ejecución no fue validada correctamente."
               } : null);
+              const diagnostico = generarDiagnosticoIA(evaluacion, sec, historialResultados[sectionId]);
               const puntaje = evaluacion.nota;
               let analisis = "";
 
@@ -4062,7 +4115,8 @@
               else if (puntaje === 3) analisis = "⚠️ <strong>Evaluación Estricta (3/10):</strong> Código demasiado escueto.";
               else if (puntaje === 10) analisis = "✅ <strong>¡Excelente Trabajo! (10/10):</strong> Cumple rigurosamente con los parámetros ideales.";
 
-              analisis = `<strong>Evaluación automática orientativa (${puntaje}/10):</strong> ${evaluacion.advertencias.join(" ")}` +
+              analisis = `<strong>Evaluación automática orientativa (${puntaje}/10):</strong> ${diagnostico.resumen}` +
+                  `<br><strong>Guía de mejora:</strong><ol>${diagnostico.pasos.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ol>` +
                   `<br><strong>Fortalezas:</strong> ${evaluacion.fortalezas.length ? evaluacion.fortalezas.map(escaparTextoAnalista).join(" · ") : "Todavía no se observan evidencias suficientes."}` +
                   `<br><strong>Mejoras:</strong> ${evaluacion.mejoras.length ? evaluacion.mejoras.map(escaparTextoAnalista).join(" · ") : "No se detectaron mejoras prioritarias."}` +
                   `<hr><strong>Desglose:</strong><ul>${evaluacion.criterios.map(c => `<li>${escaparTextoAnalista(c.nombre)}: ${c.puntos}/${c.peso} puntos (${c.estado})</li>`).join("")}</ul>`;
@@ -4076,6 +4130,9 @@
                 `<div style="margin-top:.6rem;color:#a5b4fc"><strong>🚫 Protección IA:</strong> no se entrega código listo para copiar ni se revelan directamente las respuestas.</div>`;
 
               construirAnalista(sectionId, code);
+              if (idealDisplay) {
+                  idealDisplay.innerText = `${sec.aiSolution}\n\n// Usá esta referencia para comparar decisiones, no para copiarla.`;
+              }
 
               const analystBox = document.getElementById(`analyst-${sectionId}`);
               if (analystBox) {
