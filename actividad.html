@@ -457,6 +457,112 @@
         line-height: 1.4;
       }
 
+      .ai-chat-box {
+        margin-top: 1rem;
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.72);
+        overflow: hidden;
+      }
+      .ai-chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        padding: .75rem .9rem;
+        background: rgba(56, 189, 248, 0.08);
+        border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+      }
+      .ai-chat-title {
+        color: #7dd3fc;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+      }
+      .ai-chat-note {
+        color: var(--text-muted);
+        font-size: .72rem;
+      }
+      .ai-chat-sync {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        color: var(--text-muted);
+        font-size: .7rem;
+      }
+      .ai-chat-sync.saved { color: #86efac; }
+      .ai-chat-sync.saving { color: #fde68a; }
+      .ai-chat-sync.error { color: #fca5a5; }
+      .ai-chat-messages {
+        max-height: 260px;
+        overflow-y: auto;
+        padding: .8rem;
+        display: flex;
+        flex-direction: column;
+        gap: .6rem;
+      }
+      .ai-chat-message {
+        max-width: 92%;
+        padding: .65rem .75rem;
+        border-radius: 8px;
+        line-height: 1.45;
+        font-size: .82rem;
+        white-space: pre-wrap;
+      }
+      .ai-chat-message.assistant {
+        align-self: flex-start;
+        background: rgba(56, 189, 248, 0.1);
+        border: 1px solid rgba(56, 189, 248, 0.22);
+      }
+      .ai-chat-message.student {
+        align-self: flex-end;
+        background: rgba(139, 92, 246, 0.16);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+      }
+      .ai-chat-composer {
+        display: flex;
+        gap: .5rem;
+        padding: .75rem;
+        border-top: 1px solid rgba(148, 163, 184, .16);
+      }
+      .ai-chat-input {
+        flex: 1;
+        min-width: 0;
+        border: 1px solid rgba(148, 163, 184, .3);
+        border-radius: 6px;
+        background: rgba(15, 23, 42, .9);
+        color: var(--text-main);
+        padding: .65rem .7rem;
+        font: inherit;
+      }
+      .ai-chat-quick-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .45rem;
+        padding: 0 .75rem .75rem;
+      }
+      .ai-chat-quick-actions .btn {
+        font-size: .74rem;
+        padding: .45rem .6rem;
+      }
+      .ai-chat-quick-actions .btn-chat-primary {
+        background: rgba(56, 189, 248, .16);
+        border-color: rgba(56, 189, 248, .35);
+        color: #bae6fd;
+      }
+      .ai-chat-quick-actions .btn-chat-danger {
+        background: rgba(239, 68, 68, .12);
+        border-color: rgba(239, 68, 68, .35);
+        color: #fecaca;
+        margin-left: auto;
+      }
+      @media (max-width: 620px) {
+        .ai-chat-quick-actions .btn-chat-danger {
+          margin-left: 0;
+        }
+      }
+
       /* Analista de Viabilidad y Excelencia — RESPONDE AHORA */
       .analyst-box {
         display: none;
@@ -852,6 +958,25 @@
         background: rgba(2, 6, 23, 0.96); backdrop-filter: blur(8px);
       }
       #firebaseAuthOverlay.hidden { display: none; }
+      #classStartOverlay {
+        position: fixed; inset: 0; z-index: 4500;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(2, 6, 23, 0.96); backdrop-filter: blur(8px);
+      }
+      #classStartOverlay.hidden { display: none; }
+      #passwordModal,
+      #panelProfesorModal,
+      #editorDesafiosFirebaseModal,
+      #detalleEstudianteProfesorModal {
+        z-index: 6000;
+      }
+      .class-waiting-card {
+        width: min(520px, calc(100vw - 32px)); padding: 2rem;
+        background: var(--bg-card); border: 1px solid var(--border);
+        border-radius: 12px; box-shadow: 0 25px 60px rgba(0,0,0,.45); text-align: center;
+      }
+      .class-waiting-card h2 { color: var(--primary); margin-bottom: .7rem; }
+      .class-waiting-card p { color: var(--text-muted); line-height: 1.5; }
       .firebase-auth-card {
         width: min(460px, calc(100vw - 32px)); padding: 2rem;
         background: var(--bg-card); border: 1px solid var(--border);
@@ -934,12 +1059,16 @@
       .teacher-answer.selected { background: rgba(56,189,248,.13); }
       .teacher-answer.correct { border-left: 3px solid var(--success); }
       .teacher-answer.wrong { border-left: 3px solid var(--danger); }
+      .teacher-only { display: none !important; }
+      body.teacher-authorized .teacher-only { display: inline-flex !important; }
+      body.teacher-authorized .teacher-only.teacher-session-only { display: none !important; }
+      body.teacher-temporary .teacher-only.teacher-session-only { display: inline-flex !important; }
 </style>
 
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
-      import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+      import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
       import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
       // ============================================================
@@ -957,7 +1086,12 @@
   };
 
       const firebaseConfigured = !Object.values(firebaseConfig).some(v => String(v).includes("REEMPLAZAR_"));
+      const TEACHER_EMAILS = Object.freeze([
+        "ipem146centenario@gmail.com"
+      ]);
       let auth = null, db = null, googleProvider = null;
+      let teacherAuth = null, teacherDb = null, teacherProvider = null;
+      let teacherPersistenceReady = Promise.resolve();
 
       if (firebaseConfigured) {
         const app = initializeApp(firebaseConfig);
@@ -965,6 +1099,19 @@
         db = getFirestore(app);
         googleProvider = new GoogleAuthProvider();
         googleProvider.setCustomParameters({ prompt: "select_account" });
+        const teacherApp = initializeApp(firebaseConfig, "teacherAuthorization");
+        teacherAuth = getAuth(teacherApp);
+        teacherDb = getFirestore(teacherApp);
+        teacherProvider = new GoogleAuthProvider();
+        teacherProvider.setCustomParameters({ prompt: "select_account" });
+        teacherPersistenceReady = setPersistence(teacherAuth, browserSessionPersistence).catch(error => {
+          console.warn("No se pudo activar la persistencia temporal docente:", error);
+          return null;
+        });
+        onAuthStateChanged(teacherAuth, user => {
+          window.firebaseTeacherUser = user || null;
+          window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: user || null }));
+        });
       }
 
       window.firebaseAuthReady = new Promise(resolve => {
@@ -979,6 +1126,259 @@
 
       window.firebaseConfigured = firebaseConfigured;
       window.firebaseCurrentUser = null;
+      window.firebaseTeacherUser = null;
+
+      function correoNormalizado(user) {
+        return String(user?.email || "").trim().toLowerCase();
+      }
+
+      function mensajeErrorAutenticacion(error, contexto = "iniciar sesion") {
+        const codigo = String(error?.code || "");
+        const mensajes = {
+          "auth/unauthorized-domain": "Este dominio no esta autorizado en Firebase Authentication. Agregalo en Authentication > Settings > Authorized domains.",
+          "auth/operation-not-allowed": "El proveedor Google no esta habilitado. Activalo en Firebase Authentication > Sign-in method.",
+          "auth/popup-blocked": "El navegador bloqueo la ventana de Google. Habilita las ventanas emergentes para este sitio e intenta nuevamente.",
+          "auth/popup-closed-by-user": "La ventana de Google se cerro antes de completar el ingreso.",
+          "auth/cancelled-popup-request": "Ya habia una ventana de ingreso abierta. Cerrala e intenta nuevamente.",
+          "auth/network-request-failed": "No se pudo conectar con Firebase. Revisa la conexion a Internet.",
+          "auth/operation-not-supported-in-this-environment": "Firebase no admite el ingreso desde este entorno. Abri la pagina desde un sitio http:// o https://, no directamente como archivo local."
+        };
+        const detalle = mensajes[codigo] || error?.message || codigo || "Error desconocido.";
+        const ayudaLocal = window.location.protocol === "file:"
+          ? "\n\nLa pagina esta abierta como archivo local. Publicala o servila mediante http://localhost para usar Google."
+          : "";
+        return `No se pudo ${contexto}.\n\n${detalle}${ayudaLocal}`;
+      }
+
+      async function verificarUsuarioDocente(user) {
+        if (!user) return false;
+        try {
+          const token = await user.getIdTokenResult();
+          const claimTeacher = token?.claims?.teacher === true || token?.claims?.docente === true;
+          const emailTeacher = TEACHER_EMAILS.includes(correoNormalizado(user));
+          return claimTeacher || emailTeacher;
+        } catch (error) {
+          console.warn("No se pudo verificar la autorización docente:", error);
+          return false;
+        }
+      }
+
+      window.esDocenteAutorizadoFirebase = async function() {
+        if (await verificarUsuarioDocente(window.firebaseTeacherUser)) return true;
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        return verificarUsuarioDocente(user);
+      };
+
+      window.autorizarDocenteFirebase = async function() {
+        if (await window.esDocenteAutorizadoFirebase()) return true;
+        if (!teacherAuth || !teacherProvider) return false;
+        if (window.location.protocol === "file:") {
+          alert(mensajeErrorAutenticacion(
+            { code: "auth/operation-not-supported-in-this-environment" },
+            "autorizar la cuenta docente"
+          ));
+          return false;
+        }
+        try {
+          await teacherPersistenceReady;
+          const credential = await signInWithPopup(teacherAuth, teacherProvider);
+          const autorizado = await verificarUsuarioDocente(credential.user);
+          if (!autorizado) {
+            await signOut(teacherAuth);
+            alert("La cuenta seleccionada no está autorizada como docente.");
+            return false;
+          }
+          window.firebaseTeacherUser = credential.user;
+          window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: credential.user }));
+          return true;
+        } catch (error) {
+          console.error("Error de autorización docente:", error);
+          if (error?.code !== "auth/popup-closed-by-user") {
+            alert(mensajeErrorAutenticacion(error, "autorizar la cuenta docente"));
+          }
+          return false;
+        }
+      };
+
+      window.cerrarAutorizacionDocenteFirebase = async function() {
+        if (!teacherAuth?.currentUser) {
+          alert("No hay una autorización docente temporal activa.");
+          return false;
+        }
+        try {
+          if (window.__profesorUnsubscribe) {
+            window.__profesorUnsubscribe();
+            window.__profesorUnsubscribe = null;
+          }
+          if (window.__desafiosProfesorUnsubscribe) {
+            window.__desafiosProfesorUnsubscribe();
+            window.__desafiosProfesorUnsubscribe = null;
+          }
+          await signOut(teacherAuth);
+          window.firebaseTeacherUser = null;
+          window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: null }));
+          return true;
+        } catch (error) {
+          console.error("Error cerrando la autorización docente:", error);
+          alert("No se pudo cerrar la autorización docente temporal.");
+          return false;
+        }
+      };
+
+      function contextoDocenteFirebase() {
+        if (window.firebaseTeacherUser && teacherDb) {
+          return { user: window.firebaseTeacherUser, database: teacherDb };
+        }
+        return { user: window.firebaseCurrentUser, database: db };
+      }
+
+      function idClaseActual() {
+        const partes = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/Argentina/Buenos_Aires",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).formatToParts(new Date());
+        const valores = Object.fromEntries(partes.map(parte => [parte.type, parte.value]));
+        return `${valores.year}-${valores.month}-${valores.day}`;
+      }
+
+      window.escucharInicioClaseFirebase = function() {
+        const { user, database } = contextoDocenteFirebase();
+        if (!database || !user) return;
+        if (window.__inicioClaseUnsubscribe) window.__inicioClaseUnsubscribe();
+        const referencia = doc(database, "controlClase", idClaseActual());
+        window.__inicioClaseUnsubscribe = onSnapshot(referencia, snapshot => {
+          const datos = snapshot.exists() ? snapshot.data() : {};
+          window.dispatchEvent(new CustomEvent("estado-inicio-clase", {
+            detail: {
+              iniciada: datos.iniciada === true,
+              iniciadaEn: datos.iniciadaEn || null,
+              iniciadaPor: datos.iniciadaPor || "",
+              finalizadaEn: datos.finalizadaEn || null,
+              finalizadaPor: datos.finalizadaPor || "",
+              cronometrosPausados: datos.cronometrosPausados === true,
+              cronometrosReinicioId: datos.cronometrosReinicioId || "",
+              cronometrosActualizadosPor: datos.cronometrosActualizadosPor || ""
+            }
+          }));
+        }, error => {
+          console.error("Error escuchando el inicio de clase:", error);
+          window.dispatchEvent(new CustomEvent("estado-inicio-clase-error", { detail: error.message }));
+        });
+      };
+
+      window.escucharReinicioSalidasFirebase = function() {
+        if (!db || !window.firebaseCurrentUser) return;
+        if (window.__reinicioSalidasUnsubscribe) window.__reinicioSalidasUnsubscribe();
+        const referencia = doc(db, "estudiantes", window.firebaseCurrentUser.uid);
+        window.__reinicioSalidasUnsubscribe = onSnapshot(referencia, snapshot => {
+          if (!snapshot.exists()) return;
+          const datos = snapshot.data();
+          window.dispatchEvent(new CustomEvent("estado-cuenta-estudiante", {
+            detail: {
+              estadoCuenta: datos.estadoCuenta || "activo",
+              bajaMotivo: datos.bajaMotivo || ""
+            }
+          }));
+          const reinicio = datos.reinicioSalidas || null;
+          if (reinicio?.id) {
+            window.dispatchEvent(new CustomEvent("reinicio-salidas-estudiante", {
+              detail: {
+                id: reinicio.id,
+                solicitadoEn: reinicio.solicitadoEn || null,
+                salidasPestaña: Number(datos.salidasPestaña || 0)
+              }
+            }));
+          }
+          const controlCronometro = datos.controlCronometroIndividual || {};
+          window.dispatchEvent(new CustomEvent("control-cronometro-individual", {
+            detail: {
+              pausado: controlCronometro.pausado === true,
+              reinicioId: controlCronometro.reinicioId || "",
+              actualizadoPor: controlCronometro.actualizadoPor || ""
+            }
+          }));
+        }, error => {
+          console.error("Error escuchando reinicio de cambios de pestaña:", error);
+        });
+      };
+
+      window.iniciarClaseFirebase = async function() {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return false;
+        const { user, database } = contextoDocenteFirebase();
+        if (!user || !database) return false;
+        try {
+          await setDoc(doc(database, "controlClase", idClaseActual()), {
+            iniciada: true,
+            iniciadaEn: serverTimestamp(),
+            iniciadaPor: user.email || user.displayName || user.uid,
+            zonaHoraria: "America/Argentina/Buenos_Aires"
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error iniciando la clase:", error);
+          alert("No se pudo iniciar la clase. Verificá las reglas de Firestore.");
+          return false;
+        }
+      };
+
+      window.finalizarClaseFirebase = async function() {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return false;
+        if (!confirm("Se bloquearán las actividades y se detendrán los cronómetros de todos los estudiantes conectados. ¿Finalizar la clase?")) {
+          return false;
+        }
+        const { user, database } = contextoDocenteFirebase();
+        if (!user || !database) return false;
+        try {
+          await setDoc(doc(database, "controlClase", idClaseActual()), {
+            iniciada: false,
+            finalizadaEn: serverTimestamp(),
+            finalizadaPor: user.email || user.displayName || user.uid,
+            zonaHoraria: "America/Argentina/Buenos_Aires"
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error finalizando la clase:", error);
+          alert("No se pudo finalizar la clase. Verificá las reglas de Firestore.");
+          return false;
+        }
+      };
+
+      window.controlarCronometrosFirebase = async function(accion) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return false;
+        const { user, database } = contextoDocenteFirebase();
+        if (!user || !database) return false;
+        try {
+          const referencia = doc(database, "controlClase", idClaseActual());
+          const estadoActual = await getDoc(referencia);
+          if (!estadoActual.exists()) {
+            alert("Primero iniciá la clase. Después podrás pausar o reiniciar los cronómetros.");
+            return false;
+          }
+          const payload = {
+            cronometrosActualizadosEn: serverTimestamp(),
+            cronometrosActualizadosPor: user.email || user.displayName || user.uid,
+            zonaHoraria: "America/Argentina/Buenos_Aires"
+          };
+          if (accion === "pausar" || accion === "reanudar") {
+            payload.cronometrosPausados = accion === "pausar";
+          } else if (accion === "reiniciar") {
+            payload.cronometrosReinicioId = `${Date.now()}-${user.uid}`;
+          } else {
+            return false;
+          }
+          await setDoc(referencia, payload, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error controlando los cronómetros:", error);
+          alert("No se pudo actualizar el cronómetro. Verificá las reglas de Firestore.");
+          return false;
+        }
+      };
 
       window.iniciarSesionGoogle = async function() {
         if (!firebaseConfigured) {
@@ -990,7 +1390,7 @@
           window.location.reload();
         } catch (error) {
           console.error(error);
-          alert("No se pudo iniciar sesión con Google. Revisa la configuración de Firebase y los dominios autorizados.\n\n" + (error.code || error.message));
+          alert(mensajeErrorAutenticacion(error, "iniciar sesion con Google"));
         }
       };
 
@@ -1033,10 +1433,12 @@
       };
 
       window.guardarRevisionDocenteFirebase = async function(uid, revision) {
-        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
-        if (!user || !db || !uid || !revision) return false;
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !revision) return false;
         try {
-          await setDoc(doc(db, "estudiantes", uid), {
+          await setDoc(doc(database, "estudiantes", uid), {
             revisionSalidas: {
               ...revision,
               revisadoPor: user.email || user.displayName || user.uid,
@@ -1050,11 +1452,85 @@
           return false;
         }
       };
+
+      window.guardarEstadoEstudianteFirebase = async function(uid, estadoData) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !estadoData) return false;
+        try {
+          await setDoc(doc(database, "estudiantes", uid), {
+            estadoCuenta: estadoData.estadoCuenta,
+            bajaMotivo: estadoData.bajaMotivo || "",
+            bajaFecha: estadoData.bajaFecha || null,
+            bajaPor: estadoData.bajaPor || "",
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error guardando estado de estudiante:", error);
+          return false;
+        }
+      };
+
+      window.reiniciarSalidasEstudianteFirebase = async function(uid) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid) return false;
+        try {
+          await setDoc(doc(database, "estudiantes", uid), {
+            salidasPestaña: 0,
+            reinicioSalidas: {
+              id: `${Date.now()}-${uid}`,
+              solicitadoPor: user.email || user.displayName || user.uid,
+              solicitadoEn: serverTimestamp()
+            },
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error reiniciando el contador de cambios de pestaña:", error);
+          return false;
+        }
+      };
+
+      window.controlarCronometroEstudianteFirebase = async function(uid, accion) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid) return false;
+        try {
+          const referencia = doc(database, "estudiantes", uid);
+          const snapshot = await getDoc(referencia);
+          const controlActual = snapshot.exists() ? (snapshot.data().controlCronometroIndividual || {}) : {};
+          let pausado = controlActual.pausado === true;
+          let reinicioId = String(controlActual.reinicioId || "");
+          if (accion === "pausar") pausado = true;
+          else if (accion === "reanudar") pausado = false;
+          else if (accion === "reiniciar") reinicioId = `${Date.now()}-${uid}`;
+          else return false;
+          await setDoc(referencia, {
+            controlCronometroIndividual: {
+              pausado,
+              reinicioId,
+              actualizadoPor: user.email || user.displayName || user.uid,
+              actualizadoEn: serverTimestamp()
+            },
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error controlando el cronómetro individual:", error);
+          return false;
+        }
+      };
     
       window.__abrirPanelProfesorFirestore = function() {
-        if (!db) return;
+        const { database } = contextoDocenteFirebase();
+        if (!database) return;
         if (window.__profesorUnsubscribe) window.__profesorUnsubscribe();
-        window.__profesorUnsubscribe = onSnapshot(collection(db, 'estudiantes'), snap => {
+        window.__profesorUnsubscribe = onSnapshot(collection(database, 'estudiantes'), snap => {
           window.dispatchEvent(new CustomEvent('profesor-data', { detail: snap.docs.map(x => x.data()) }));
         }, err => window.dispatchEvent(new CustomEvent('profesor-data-error', { detail: err.message })));
       };
@@ -1077,13 +1553,14 @@
       };
 
       window.guardarDesafioFirebase = async function(desafio) {
-        if (!db || !desafio?.id) return false;
+        const { user, database } = contextoDocenteFirebase();
+        if (!database || !user || !desafio?.id) return false;
         try {
-          await setDoc(doc(db,'desafios',desafio.id), {
+          await setDoc(doc(database,'desafios',desafio.id), {
             ...desafio,
             id:desafio.id,
             actualizadoEn:serverTimestamp(),
-            actualizadoPor:window.firebaseCurrentUser?.email || ''
+            actualizadoPor:user.email || ''
           }, {merge:true});
           return true;
         } catch(error) {
@@ -1094,15 +1571,16 @@
       };
 
       window.guardarTodosDesafiosFirebase = async function(desafios) {
-        if (!db || !Array.isArray(desafios)) return false;
+        const { user, database } = contextoDocenteFirebase();
+        if (!database || !user || !Array.isArray(desafios)) return false;
         try {
           for (const desafio of desafios) {
             if (!desafio?.id) continue;
-            await setDoc(doc(db,'desafios',desafio.id), {
+            await setDoc(doc(database,'desafios',desafio.id), {
               ...desafio,
               id:desafio.id,
               actualizadoEn:serverTimestamp(),
-              actualizadoPor:window.firebaseCurrentUser?.email || ''
+              actualizadoPor:user.email || ''
             }, {merge:true});
           }
           return true;
@@ -1113,9 +1591,10 @@
       };
 
       window.__abrirDesafiosProfesorRealtime = function() {
-        if (!db) return;
+        const { database } = contextoDocenteFirebase();
+        if (!database) return;
         if (window.__desafiosProfesorUnsubscribe) window.__desafiosProfesorUnsubscribe();
-        window.__desafiosProfesorUnsubscribe = onSnapshot(collection(db,'desafios'), snap => {
+        window.__desafiosProfesorUnsubscribe = onSnapshot(collection(database,'desafios'), snap => {
           const remotos=snap.docs.map(d=>({id:d.id,...d.data()}));
           if(remotos.length===19) window.dispatchEvent(new CustomEvent('desafios-profesor-data',{detail:remotos}));
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
@@ -1126,10 +1605,21 @@
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
       <div class="firebase-auth-card">
         <div style="font-size:3rem; margin-bottom:.5rem;">🔐</div>
-        <h2 id="firebaseAuthTitle">Acceso de Estudiantes</h2>
-        <p id="firebaseAuthMessage">Inicia sesión con tu cuenta institucional de Google para guardar y recuperar automáticamente tu avance.</p>
+        <h2 id="firebaseAuthTitle">Elegí cómo ingresar</h2>
+        <p id="firebaseAuthMessage"><strong>Alumnos:</strong> ingresen con su propia cuenta de Google para guardar y recuperar el avance.</p>
         <button class="btn btn-google" style="width:100%; justify-content:center; font-size:1rem; padding:.8rem 1rem;" onclick="iniciarSesionGoogle()">
-          <i class="fa-brands fa-google"></i> Iniciar sesión con Google
+          <i class="fa-brands fa-google"></i> Ingresar como alumno
+        </button>
+        <div style="display:flex;align-items:center;gap:.7rem;margin:1rem 0;color:var(--text-muted);font-size:.8rem;">
+          <span style="height:1px;background:var(--border);flex:1;"></span>
+          <span>DOCENTES</span>
+          <span style="height:1px;background:var(--border);flex:1;"></span>
+        </div>
+        <button class="btn btn-warning" style="width:100%;justify-content:center;font-size:1rem;padding:.8rem 1rem;" onclick="ingresarComoDocente(this)">
+          <i class="fa-solid fa-chalkboard-user"></i> Ingresar como docente
+        </button>
+        <button class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:.75rem;" onclick="cerrarSesionGoogle()">
+          <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión / cambiar cuenta
         </button>
         <div id="firebaseConfigWarning" style="display:none; margin-top:1rem; color:#fca5a5; font-size:.8rem;">Firebase no está configurado todavía.</div>
       </div>
@@ -1167,18 +1657,18 @@
 
           <!-- Botones protegidos del profesor -->
           <button
-            class="btn btn-warning"
+            class="btn btn-warning teacher-only"
             style="font-size: 0.75rem; padding: 0.4rem 0.8rem"
             onclick="solicitarAccionProfesor('pausar_global')"
           >
             <i class="fa-solid fa-pause"></i> Pausa Global Profe
           </button>
           <button
-            class="btn btn-danger"
+            class="btn btn-danger teacher-only"
             style="font-size: 0.75rem; padding: 0.4rem 0.8rem"
             onclick="solicitarAccionProfesor('reset_contador_salidas')"
           >
-            <i class="fa-solid fa-rotate-right"></i> Reiniciar Salidas
+            <i class="fa-solid fa-rotate-right"></i> Reiniciar contador
           </button>
           <div class="progress-wrapper">
             <span class="progress-label" id="progressText">Progreso: 0%</span>
@@ -1199,8 +1689,10 @@
           </div>
           <div class="btn-group">
             <button class="btn btn-success" onclick="guardarAhoraFirebase()"><i class="fa-solid fa-cloud-arrow-up"></i> Guardar ahora</button>
-            <button class="btn btn-primary" onclick="solicitarAccionProfesor('editor_desafios')"><i class="fa-solid fa-puzzle-piece"></i> Editor de desafíos</button>
-            <button class="btn btn-primary" onclick="solicitarAccionProfesor('panel_profesor')"><i class="fa-solid fa-chalkboard-user"></i> Panel Profesor</button>
+            <button class="btn btn-warning" id="btnIngresoDocente" onclick="ingresarComoDocente(this)"><i class="fa-solid fa-chalkboard-user"></i> Ingresar como docente</button>
+            <button class="btn btn-primary teacher-only" onclick="solicitarAccionProfesor('editor_desafios')"><i class="fa-solid fa-puzzle-piece"></i> Editor de desafíos</button>
+            <button class="btn btn-primary teacher-only" onclick="solicitarAccionProfesor('panel_profesor')"><i class="fa-solid fa-chalkboard-user"></i> Panel Profesor</button>
+            <button class="btn btn-warning teacher-only teacher-session-only" onclick="cerrarAccesoDocenteTemporal()"><i class="fa-solid fa-user-lock"></i> Cerrar acceso docente</button>
             <button class="btn btn-danger" onclick="cerrarSesionGoogle()"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
           </div>
         </div>
@@ -1239,7 +1731,17 @@
       <div class="modal-box" style="max-width:1100px;width:95vw;max-height:90vh;overflow:auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
           <div><h3 id="panelProfesorTitle"><i class="fa-solid fa-chalkboard-user"></i> Panel del Profesor</h3><p>Estudiantes y progreso sincronizados en tiempo real.</p></div>
-          <div style="display:flex;gap:.5rem;flex-wrap:wrap;"><button class="btn btn-primary" onclick="abrirEditorDesafiosFirebase()">🧩 Editar 19 desafíos</button><button class="btn btn-secondary" onclick="cerrarPanelProfesor()">Cerrar</button></div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <button class="btn btn-success" onclick="iniciarClaseDesdeInterfaz(this)"><i class="fa-solid fa-play"></i> Iniciar clase</button>
+            <button class="btn btn-danger" onclick="finalizarClaseDesdeInterfaz(this)"><i class="fa-solid fa-stop"></i> Finalizar clase</button>
+            <button class="btn btn-warning" id="btnPausarCronometrosProfesor" onclick="pausarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-pause"></i> Pausar cronómetros</button>
+            <button class="btn btn-secondary" onclick="reiniciarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00</button>
+            <button class="btn btn-primary" onclick="abrirEditorDesafiosFirebase()"><i class="fa-solid fa-puzzle-piece"></i> Editar desafíos</button>
+            <button class="btn btn-secondary" onclick="cerrarPanelProfesor()">Cerrar panel</button>
+          </div>
+        </div>
+        <div id="estadoClaseProfesor" style="margin-top:1rem;padding:.75rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06);color:#bae6fd;font-size:.85rem;">
+          Usá “Iniciar clase” para habilitar las actividades de todos los alumnos conectados.
         </div>
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
           <input id="filtroProfesor" placeholder="Buscar estudiante o email" style="flex:1;min-width:220px;">
@@ -1253,8 +1755,23 @@
           Las actividades pendientes no se incluyen.
         </div>
         <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
-        <div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;min-width:980px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Última actualización</th><th>Detalle</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
+        <div id="resumenConsultasIAProfesor" style="margin-bottom:1rem;"></div>
+        <div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;min-width:1040px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Última actualización</th><th>Detalle</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
         <p id="estadoPanelProfesor" style="margin-top:1rem;color:var(--text-muted);font-size:.8rem;"></p>
+      </div>
+    </div>
+
+    <div id="classStartOverlay" role="status" aria-live="polite" aria-labelledby="classStartTitle">
+      <div class="class-waiting-card">
+        <div style="font-size:3rem;margin-bottom:.6rem;"><i class="fa-solid fa-hourglass-start"></i></div>
+        <h2 id="classStartTitle">Esperando el inicio de la clase</h2>
+        <p id="classStartMessage">El docente habilitará las actividades. Mantené esta pestaña abierta.</p>
+        <button class="btn btn-warning" style="margin-top:1rem;" onclick="ingresarComoDocente(this)">
+          <i class="fa-solid fa-chalkboard-user"></i> Soy docente
+        </button>
+        <div style="margin-top:1rem;color:#fbbf24;font-size:.85rem;">
+          <i class="fa-solid fa-wifi"></i> Conectado al control de clase
+        </div>
       </div>
     </div>
 
@@ -1316,26 +1833,19 @@
       </div>
     </div>
 
-    <!-- Modal Oculto para Contraseña con asteriscos (****) y opciones flexibles de profesor -->
+    <!-- Autorización docente mediante atajo y sesión Firebase verificada -->
     <div class="modal-overlay" id="passwordModal" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
       <div class="modal-box">
         <h3 id="passwordModalTitle"><i class="fa-solid fa-lock"></i> Panel de Control Docente</h3>
         <p id="modalDescription">
-          Ingrese la contraseña del profesor para autorizar la acción:
+          Usá la combinación de teclas docente para autorizar la acción:
         </p>
-        <label class="sr-only" for="modalPasswordInput">Clave docente</label>
-        <input
-          type="password"
-          id="modalPasswordInput"
-          placeholder="••••••••"
-          onkeydown="handleModalKeydown(event)"
-        />
+        <div id="teacherShortcutHint" style="padding:.8rem;border:1px solid rgba(245,158,11,.35);border-radius:8px;background:rgba(245,158,11,.08);font-family:'Fira Code',monospace;text-align:center;font-size:1.05rem;">
+          Ctrl + Alt + Shift + P
+        </div>
         <div class="modal-actions">
           <button class="btn btn-secondary" onclick="cerrarModalPassword()">
             Cancelar
-          </button>
-          <button class="btn btn-primary" onclick="confirmarAccionProfesor()">
-            Autorizar
           </button>
         </div>
       </div>
@@ -1569,16 +2079,213 @@
       let tiemposRestantes = {};
       let cronometrosActivos = {};
       let modulosPausados = {};
+      let cronometrosPausadosPorDocente = false;
+      let cronometrosPausadosIndividualmente = false;
+      let ultimoControlCronometros = {};
+      let ultimoControlCronometroIndividual = {};
+      let moduloCronometroEnCurso = null;
       let seccionPendientePausa = null;
       let tipoAccionModal = '';
 
       let firebaseSaveTimer = null;
       let firebaseSaveInProgress = false;
+      let firebaseSavePending = false;
       let firebaseInitialized = false;
+      let claseHabilitada = false;
+      let cuentaEstudianteActiva = false;
 
+      function aplicarEstadoInicioClase(iniciada, datos = {}) {
+          claseHabilitada = Boolean(iniciada);
+          const overlay = document.getElementById('classStartOverlay');
+          const mensaje = document.getElementById('classStartMessage');
+          if (claseHabilitada) {
+              overlay?.classList.add('hidden');
+              if (mensaje) mensaje.textContent = datos.iniciadaPor
+                  ? `Clase iniciada por ${datos.iniciadaPor}. Ya podés comenzar.`
+                  : "La clase fue habilitada. Ya podés comenzar.";
+          } else {
+              overlay?.classList.remove('hidden');
+              if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+              if (mensaje) mensaje.textContent = datos.finalizadaPor
+                  ? `La clase fue finalizada por ${datos.finalizadaPor}. Las actividades están bloqueadas.`
+                  : "El docente habilitará las actividades con Ctrl + Alt + C. Mantené esta pestaña abierta.";
+              Object.keys(cronometrosActivos).forEach(id => {
+                  if (cronometrosActivos[id]) clearInterval(cronometrosActivos[id]);
+                  cronometrosActivos[id] = null;
+              });
+              moduloCronometroEnCurso = null;
+          }
+      }
+
+      window.addEventListener('estado-inicio-clase', event => {
+          const datos = event.detail || {};
+          ultimoControlCronometros = datos;
+          aplicarEstadoInicioClase(Boolean(datos.iniciada), datos);
+          aplicarControlCronometrosDocente(datos);
+      });
+      window.addEventListener('estado-inicio-clase-error', event => {
+          aplicarEstadoInicioClase(false);
+          const mensaje = document.getElementById('classStartMessage');
+          if (mensaje) mensaje.textContent = `No se pudo consultar el inicio de clase: ${event.detail}.`;
+      });
+
+      async function actualizarVisibilidadDocente() {
+          const autorizado = Boolean(await window.esDocenteAutorizadoFirebase?.());
+          const autorizacionTemporal = Boolean(window.firebaseTeacherUser);
+          document.body.classList.toggle('teacher-authorized', autorizado);
+          document.body.classList.toggle('teacher-temporary', autorizado && autorizacionTemporal);
+          const classStartOverlay = document.getElementById('classStartOverlay');
+          if (autorizado) {
+              classStartOverlay?.classList.add('hidden');
+          } else {
+              aplicarEstadoInicioClase(claseHabilitada);
+          }
+          const btnIngresoDocente = document.getElementById('btnIngresoDocente');
+          if (btnIngresoDocente) {
+              btnIngresoDocente.style.display = autorizado ? 'none' : 'inline-flex';
+              btnIngresoDocente.disabled = false;
+          }
+          document.querySelectorAll('.teacher-only').forEach(control => {
+              const visible = autorizado && (!control.classList.contains('teacher-session-only') || autorizacionTemporal);
+              control.setAttribute('aria-hidden', visible ? 'false' : 'true');
+              control.tabIndex = visible ? 0 : -1;
+          });
+          if (!autorizado) {
+              document.getElementById('passwordModal')?.classList.remove('active');
+              document.getElementById('panelProfesorModal')?.classList.remove('active');
+              document.getElementById('editorDesafiosFirebaseModal')?.classList.remove('active');
+          }
+      }
+
+      async function ingresarComoDocente(botonOrigen = null) {
+          const boton = botonOrigen || document.getElementById('btnIngresoDocente');
+          const contenidoOriginal = boton?.innerHTML || '<i class="fa-solid fa-chalkboard-user"></i> Ingresar como docente';
+          if (boton) {
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando cuenta...';
+          }
+          const autorizado = await window.autorizarDocenteFirebase?.();
+          await actualizarVisibilidadDocente();
+          if (boton) {
+              boton.disabled = false;
+              boton.innerHTML = contenidoOriginal;
+          }
+          if (!autorizado) return;
+          abrirPanelProfesor();
+      }
+
+      async function iniciarClaseDesdeInterfaz(boton = null) {
+          if (boton) boton.disabled = true;
+          const estado = document.getElementById('estadoClaseProfesor');
+          if (estado) estado.textContent = 'Iniciando la clase...';
+          const iniciada = await window.iniciarClaseFirebase?.();
+          if (boton) boton.disabled = false;
+          if (!iniciada) {
+              if (estado) estado.textContent = 'No se pudo iniciar. Verificá que las reglas de Firestore estén publicadas.';
+              return;
+          }
+          aplicarEstadoInicioClase(true, {
+              iniciadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || 'docente autorizado'
+          });
+          if (estado) estado.textContent = 'Clase iniciada. Los alumnos conectados ya pueden trabajar.';
+          alert('Clase iniciada. Los alumnos conectados ya pueden comenzar.');
+      }
+
+      async function finalizarClaseDesdeInterfaz(boton = null) {
+          if (boton) boton.disabled = true;
+          const estado = document.getElementById('estadoClaseProfesor');
+          const finalizada = await window.finalizarClaseFirebase?.();
+          if (boton) boton.disabled = false;
+          if (!finalizada) return;
+          aplicarEstadoInicioClase(false, {
+              finalizadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || 'docente autorizado'
+          });
+          if (estado) estado.textContent = 'Clase finalizada. Las actividades de los alumnos están bloqueadas.';
+          alert('Clase finalizada. Todos los estudiantes volvieron al estado de espera.');
+      }
+
+      async function pausarCronometrosDesdeInterfaz(boton = null) {
+          const accion = cronometrosPausadosPorDocente ? 'reanudar' : 'pausar';
+          if (boton) boton.disabled = true;
+          const ok = await window.controlarCronometrosFirebase?.(accion);
+          if (boton) boton.disabled = false;
+          if (!ok) return;
+          establecerPausaGlobal(accion === 'pausar', false);
+          actualizarBotonPausaCronometros();
+          alert(accion === 'pausar'
+              ? 'Cronómetros pausados para todos los alumnos.'
+              : 'Cronómetros reanudados para todos los alumnos.');
+      }
+
+      async function reiniciarCronometrosDesdeInterfaz(boton = null) {
+          if (!confirm('¿Reiniciar a 40:00 los cronómetros de los módulos activos para todos los alumnos?\n\nNo se borrarán códigos, respuestas ni calificaciones.')) {
+              return;
+          }
+          if (boton) boton.disabled = true;
+          const ok = await window.controlarCronometrosFirebase?.('reiniciar');
+          if (boton) boton.disabled = false;
+          if (!ok) return;
+          reiniciarCronometrosLocales();
+          alert('Cronómetros reiniciados a 40:00 para todos los alumnos.');
+      }
+
+      async function cerrarAccesoDocenteTemporal() {
+          if (!window.firebaseTeacherUser) {
+              alert("No hay una autorización docente temporal activa.");
+              return;
+          }
+          if (!confirm("Se cerrarán el panel y las herramientas docentes. La cuenta del estudiante continuará abierta. ¿Continuar?")) {
+              return;
+          }
+          cerrarPanelProfesor();
+          cerrarEditorDesafiosFirebase();
+          document.getElementById('detalleEstudianteProfesorModal')?.classList.remove('active');
+          const cerrado = await window.cerrarAutorizacionDocenteFirebase?.();
+          if (cerrado) {
+              await actualizarVisibilidadDocente();
+              alert("Autorización docente temporal cerrada. La sesión del estudiante continúa activa.");
+          }
+      }
+
+      window.addEventListener('firebase-auth-changed', actualizarVisibilidadDocente);
+      window.addEventListener('firebase-teacher-auth-changed', async event => {
+        await actualizarVisibilidadDocente();
+        if (event.detail) window.escucharInicioClaseFirebase?.();
+      });
+      window.addEventListener('reinicio-salidas-estudiante', event => {
+          const datos = event.detail || {};
+          const ultimoReinicio = getLocalStorage('app_last_tab_reset') || '';
+          if (!datos.id || datos.id === ultimoReinicio) return;
+          const fechaReinicio = datos.solicitadoEn?.toMillis
+              ? datos.solicitadoEn.toMillis()
+              : Number(datos.solicitadoEn?.seconds || 0) * 1000;
+          const reinicioReciente = fechaReinicio > 0 && Date.now() - fechaReinicio < 10 * 60 * 1000;
+          if (Number(datos.salidasPestaña) !== 0 && !reinicioReciente) return;
+          totalSalidasPestaña = 0;
+          salidaActivaPestaña = null;
+          setLocalStorage('app_blur_count', 0);
+          setLocalStorage('app_last_tab_reset', datos.id);
+          const contador = document.getElementById('blurCount');
+          if (contador) contador.innerText = '0';
+          alert('El docente reinició el contador de cambios de pestaña. El historial detallado permanece registrado.');
+      });
+      window.addEventListener('control-cronometro-individual', event => {
+          ultimoControlCronometroIndividual = event.detail || {};
+          aplicarControlCronometroIndividual(ultimoControlCronometroIndividual);
+      });
+      window.addEventListener('estado-cuenta-estudiante', event => {
+          if (event.detail?.estadoCuenta === 'inactivo') {
+              bloquearCuentaEstudiante(event.detail?.bajaMotivo || '');
+              return;
+          }
+          if (!cuentaEstudianteActiva && window.firebaseCurrentUser) {
+              window.location.reload();
+          }
+      });
       window.addEventListener('profesor-data', e => { estudiantesProfesor = e.detail || []; document.getElementById('estadoPanelProfesor').textContent = `Actualizado en tiempo real: ${new Date().toLocaleTimeString()}`; renderPanelProfesor(); });
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
       window.addEventListener('load', () => {
+        actualizarVisibilidadDocente();
         ['filtroProfesor','filtroCursoProfesor','filtroTurnoProfesor'].forEach(id => document.getElementById(id)?.addEventListener('input', renderPanelProfesor));
         document.getElementById('filtroTurnoProfesor')?.addEventListener('change', renderPanelProfesor);
       });
@@ -1642,6 +2349,7 @@
               tiemposRestantes: { ...tiemposRestantes },
               finalizadas: { ...actividadesFinalizadas },
               historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
+              chatIA: JSON.parse(JSON.stringify(historialChatIA || {})),
               contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
               seccionActiva: seccionActivaActual,
               versionApp: '8.0-desafios-externos-editables-ia'
@@ -1650,22 +2358,42 @@
 
       function programarGuardadoFirebase() {
           if (!firebaseInitialized || !window.firebaseCurrentUser) return;
+          if (firebaseSaveInProgress) {
+              firebaseSavePending = true;
+              mostrarEstadoFirebase('saving', 'Cambios pendientes de sincronización...');
+              return;
+          }
           clearTimeout(firebaseSaveTimer);
           firebaseSaveTimer = setTimeout(() => guardarAhoraFirebase(), 1200);
       }
 
       async function guardarAhoraFirebase() {
-          if (!firebaseInitialized || !window.firebaseCurrentUser || firebaseSaveInProgress) return;
+          if (!firebaseInitialized || !window.firebaseCurrentUser) return false;
+          if (firebaseSaveInProgress) {
+              firebaseSavePending = true;
+              return false;
+          }
           firebaseSaveInProgress = true;
+          firebaseSavePending = false;
           mostrarEstadoFirebase('saving', 'Guardando...');
+          actualizarTodosEstadosChatIA('saving', 'Guardando en Firebase...');
           try {
               const ok = await window.guardarProgresoFirebase(construirPaqueteAvanceFirebase());
               mostrarEstadoFirebase(ok ? 'online' : 'offline', ok ? 'Guardado en Firebase' : 'Error al guardar');
+              actualizarTodosEstadosChatIA(ok ? 'saved' : 'error', ok ? 'Guardado en Firebase' : 'Error de guardado');
+              return ok;
           } catch (e) {
               console.error(e);
               mostrarEstadoFirebase('offline', 'Error de conexión');
+              actualizarTodosEstadosChatIA('error', 'Error de conexión');
+              return false;
           } finally {
               firebaseSaveInProgress = false;
+              if (firebaseSavePending) {
+                  firebaseSavePending = false;
+                  clearTimeout(firebaseSaveTimer);
+                  firebaseSaveTimer = setTimeout(() => guardarAhoraFirebase(), 150);
+              }
           }
       }
 
@@ -1767,6 +2495,12 @@
           if (datos.contadorPrevisualizaciones) Object.entries(datos.contadorPrevisualizaciones).forEach(([id,v]) => setLocalStorage(`preview_count_${id}`, Number(v)));
           if (datos.codigos) Object.entries(datos.codigos).forEach(([id,v]) => { if (typeof v === 'string') setLocalStorage(`draft_editor-${id}`, v); });
           historialResultados = datos.historialResultados || {};
+          Object.keys(historialChatIA).forEach(id => delete historialChatIA[id]);
+          if (datos.chatIA && typeof datos.chatIA === 'object') {
+              Object.entries(datos.chatIA).forEach(([id, mensajes]) => {
+                  historialChatIA[id] = Array.isArray(mensajes) ? mensajes.slice(-20) : [];
+              });
+          }
           actividadesFinalizadas = datos.finalizadas || {};
           contadorPrevisualizaciones = datos.contadorPrevisualizaciones || {};
           tiemposRestantes = datos.tiemposRestantes || {};
@@ -1780,6 +2514,34 @@
           document.body.appendChild(modal); const n=modal.querySelector('#nuevoNombre'); n.value=window.firebaseCurrentUser?.displayName||''; n.focus();
           modal.querySelector('#confirmarNuevo').onclick=async()=>{const nombre=n.value.trim(),curso=modal.querySelector('#nuevoCurso').value.trim(),division=modal.querySelector('#nuevoDivision').value.trim().toUpperCase(),turno=modal.querySelector('#nuevoTurno').value;if(!nombre||!curso||!division||!turno){modal.querySelector('#nuevoError').style.display='block';return;}document.getElementById('studentName').value=nombre;document.getElementById('studentCourse').value=curso;document.getElementById('studentDivision').value=division;document.getElementById('studentTurno').value=turno;setLocalStorage('app_student_name',nombre);setLocalStorage('app_student_course',curso);setLocalStorage('app_student_division',division);setLocalStorage('app_student_turno',turno);modal.remove();await guardarIdentificacionFirebase();resolve();};
         });
+      }
+
+      function bloquearCuentaEstudiante(motivo = '') {
+          cuentaEstudianteActiva = false;
+          firebaseInitialized = false;
+          claseHabilitada = false;
+          clearTimeout(firebaseSaveTimer);
+          clearInterval(window.__firebaseAutoSaveInterval);
+          Object.keys(cronometrosActivos).forEach(id => {
+              if (cronometrosActivos[id]) clearInterval(cronometrosActivos[id]);
+              cronometrosActivos[id] = null;
+          });
+          moduloCronometroEnCurso = null;
+          if (window.__inicioClaseUnsubscribe) {
+              window.__inicioClaseUnsubscribe();
+              window.__inicioClaseUnsubscribe = null;
+          }
+          const overlay = document.getElementById('firebaseAuthOverlay');
+          overlay?.classList.remove('hidden');
+          const mensaje = document.getElementById('firebaseAuthMessage');
+          if (mensaje) {
+              mensaje.innerHTML =
+                  '<strong>Cuenta inactiva.</strong><br>Tu acceso fue dado de baja por la institución. ' +
+                  (motivo ? `Motivo: ${escapeHtml(motivo)}.<br>` : '') +
+                  'Conservamos tu historial académico. Consultá con el equipo docente para reactivar la cuenta.';
+          }
+          const loginButton = overlay?.querySelector('.btn-google');
+          if (loginButton) loginButton.disabled = true;
       }
 
       async function initApp() {
@@ -1807,9 +2569,6 @@
           firebaseStorageUid = user.uid;
           localStorage.setItem('firebase_active_uid', user.uid);
 
-          firebaseInitialized = true;
-          overlay.classList.add('hidden');
-
           // La configuración docente de desafíos tiene prioridad sobre la copia local.
           if (typeof window.cargarDesafiosFirebase === 'function') {
               const remotos = await window.cargarDesafiosFirebase();
@@ -1820,6 +2579,16 @@
           }
 
           const datosFirebase = await window.cargarProgresoFirebase();
+          if (datosFirebase?.estadoCuenta === 'inactivo') {
+              bloquearCuentaEstudiante(datosFirebase.bajaMotivo || '');
+              return;
+          }
+          cuentaEstudianteActiva = true;
+          firebaseInitialized = true;
+          overlay.classList.add('hidden');
+          aplicarEstadoInicioClase(false);
+          window.escucharInicioClaseFirebase?.();
+          window.escucharReinicioSalidasFirebase?.();
           if (datosFirebase) await restaurarDesdeFirebase(datosFirebase);
 
           const photo = document.getElementById('firebaseUserPhoto');
@@ -1894,7 +2663,7 @@
               setLocalStorage('app_blur_count', totalSalidasPestaña);
               salidaActivaPestaña = {
                   id: `${ahora}-${totalSalidasPestaña}`,
-                  numero: totalSalidasPestaña,
+                  numero: eventosSalidasPestaña.length + 1,
                   salidaEn: new Date(ahora).toISOString(),
                   regresoEn: null,
                   duracionSegundos: null,
@@ -1981,7 +2750,7 @@
 
               let savedTime = getLocalStorage(`timer_${sec.id}`);
               tiemposRestantes[sec.id] = savedTime !== null ? parseInt(savedTime) : TIEMPO_MAXIMO_SEGUNDOS;
-              modulosPausados[sec.id] = false;
+              modulosPausados[sec.id] = cronometrosPausadosPorDocente;
 
               const card = document.createElement('div');
               card.className = `section-card ${idx === 0 ? 'active' : ''}`;
@@ -1995,13 +2764,14 @@
                       </div>
                       <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
                           <span class="timer-display" id="timer-display-${sec.id}">40:00</span>
-                          <button class="btn btn-warning" id="btn-pause-${sec.id}" onclick="solicitarPausaModulo('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
+                          <small style="color:var(--text-muted)">Comienza al hacer clic en el editor</small>
+                          <button class="btn btn-warning teacher-only" id="btn-pause-${sec.id}" onclick="solicitarPausaModulo('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
                               <i class="fa-solid fa-pause"></i> Pausar (Profe)
                           </button>
-                          <button class="btn btn-danger" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;" onclick="solicitarAccionProfesor('unlock_current')">
+                          <button class="btn btn-danger teacher-only" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;" onclick="solicitarAccionProfesor('unlock_current')">
                               <i class="fa-solid fa-unlock"></i> Desbloquear Este
                           </button>
-                          <button class="btn btn-danger" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;" onclick="solicitarAccionProfesor('unlock_all')">
+                          <button class="btn btn-danger teacher-only" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;" onclick="solicitarAccionProfesor('unlock_all')">
                               <i class="fa-solid fa-unlock-keyhole"></i> Desbloquear Todos
                           </button>
                       </div>
@@ -2047,6 +2817,30 @@
 
                           <div class="console-output" id="console-${sec.id}" role="status" aria-live="polite">${isFinalized ? '// Actividad finalizada y bloqueada.' : '// Pulsa "Ejecutar y Probar" para ver la consola...'}</div>
 
+                          <div class="ai-chat-box" id="ai-chat-${sec.id}">
+                              <div class="ai-chat-header">
+                                  <div class="ai-chat-title"><i class="fa-solid fa-comments"></i> Chat de pistas por módulo</div>
+                                  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.2rem">
+                                      <span class="ai-chat-note">No entrega la solución completa</span>
+                                      <span class="ai-chat-sync saved" id="ai-chat-sync-${sec.id}"><i class="fa-solid fa-cloud"></i> Sincronizado</span>
+                                  </div>
+                              </div>
+                              <div class="ai-chat-messages" id="ai-chat-messages-${sec.id}" aria-live="polite"></div>
+                              <div class="ai-chat-quick-actions">
+                                  <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'consigna')"><i class="fa-solid fa-list-check"></i> Entender consigna</button>
+                                  <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'revisar')"><i class="fa-solid fa-code"></i> Revisar mi código</button>
+                                  <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'pista')"><i class="fa-solid fa-lightbulb"></i> Dame una pista</button>
+                                  <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'error')"><i class="fa-solid fa-bug"></i> Ayúdame con el error</button>
+                                  <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'siguiente')"><i class="fa-solid fa-forward"></i> ¿Qué reviso ahora?</button>
+                                  <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'ejemplo')"><i class="fa-solid fa-flask"></i> Proponer prueba</button>
+                                  <button class="btn btn-chat-danger" type="button" onclick="limpiarChatIA('${sec.id}')"><i class="fa-solid fa-trash-can"></i> Limpiar chat</button>
+                              </div>
+                              <form class="ai-chat-composer" onsubmit="enviarMensajeIA(event, '${sec.id}')">
+                                  <input class="ai-chat-input" id="ai-chat-input-${sec.id}" maxlength="240" autocomplete="off" placeholder="Escribí tu duda sobre este módulo..." aria-label="Pregunta a la IA sobre ${sec.title}" ${isFinalized ? 'disabled' : ''}>
+                                  <button class="btn btn-ai" type="submit" ${isFinalized ? 'disabled' : ''}><i class="fa-solid fa-paper-plane"></i> Enviar</button>
+                              </form>
+                          </div>
+
                           <div class="ai-feedback-box ${isFinalized ? 'active' : ''}" id="ai-feedback-${sec.id}">
                               <div class="ai-header"><i class="fa-solid fa-wand-magic-sparkles"></i> Evaluación automática orientativa</div>
                               <div class="ai-comparison-grid">
@@ -2086,6 +2880,19 @@
                   </div>
               `;
               sectionsContainer.appendChild(card);
+              try {
+                  const guardadoChat = JSON.parse(getLocalStorage(`ai_chat_${sec.id}`) || "[]");
+                  const chatFirebase = historialChatIA[sec.id];
+                  if (!Array.isArray(chatFirebase)) {
+                      historialChatIA[sec.id] = Array.isArray(guardadoChat) ? guardadoChat.slice(-20) : [];
+                  } else {
+                      historialChatIA[sec.id] = chatFirebase.slice(-20);
+                      setLocalStorage(`ai_chat_${sec.id}`, JSON.stringify(historialChatIA[sec.id]));
+                  }
+              } catch (_) {
+                  if (!Array.isArray(historialChatIA[sec.id])) historialChatIA[sec.id] = [];
+              }
+              renderizarChatIA(sec.id);
               actualizarDisplayTiempo(sec.id);
 
               if (isFinalized) {
@@ -2109,6 +2916,8 @@
           });
 
           guardarAhoraFirebase();
+          aplicarControlCronometrosDocente(ultimoControlCronometros);
+          aplicarControlCronometroIndividual(ultimoControlCronometroIndividual);
       }
 
       function abrirJustificacionUltimaSalida() {
@@ -2160,10 +2969,24 @@
       }
 
       function iniciarCronometro(sectionId) {
-          if (cronometrosActivos[sectionId] || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
+          if (
+              sectionId !== seccionActivaActual ||
+              !cuentaEstudianteActiva ||
+              !claseHabilitada ||
+              cronometrosActivos[sectionId] ||
+              actividadesFinalizadas[sectionId] ||
+              modulosPausados[sectionId]
+          ) return;
+
+          Object.keys(cronometrosActivos).forEach(id => {
+              if (id === sectionId || !cronometrosActivos[id]) return;
+              clearInterval(cronometrosActivos[id]);
+              cronometrosActivos[id] = null;
+          });
+          moduloCronometroEnCurso = sectionId;
 
           cronometrosActivos[sectionId] = setInterval(() => {
-              if (modulosPausados[sectionId] || actividadesFinalizadas[sectionId]) {
+              if (!cuentaEstudianteActiva || !claseHabilitada || modulosPausados[sectionId] || actividadesFinalizadas[sectionId]) {
                   clearInterval(cronometrosActivos[sectionId]);
                   cronometrosActivos[sectionId] = null;
                   return;
@@ -2176,13 +2999,14 @@
               } else {
                   clearInterval(cronometrosActivos[sectionId]);
                   cronometrosActivos[sectionId] = null;
+                  if (moduloCronometroEnCurso === sectionId) moduloCronometroEnCurso = null;
                   expirarTiempoModulo(sectionId);
               }
           }, 1000);
       }
 
       function expirarTiempoModulo(sectionId) {
-          if (actividadesFinalizadas[sectionId]) return;
+          if (!cuentaEstudianteActiva || !claseHabilitada || actividadesFinalizadas[sectionId]) return;
 
           alert(`⏰ ¡Tiempo agotado (40 minutos) para este módulo! Se registrará nota 1 por tiempo expirado.`);
 
@@ -2228,7 +3052,6 @@
       function solicitarAccionProfesor(accion) {
           tipoAccionModal = accion;
           const modal = document.getElementById('passwordModal');
-          const input = document.getElementById('modalPasswordInput');
           const desc = document.getElementById('modalDescription');
 
           if (accion === 'unlock_current') {
@@ -2240,18 +3063,16 @@
           } else if (accion === 'editor_desafios') {
               desc.innerHTML = `Autorizar <b>acceso al editor de desafíos</b>:`;
           } else if (accion === 'reset_contador_salidas') {
-              desc.innerHTML = `Autorizar el reinicio del contador de salidas de pestaña:`;
+              desc.innerHTML = `Autorizar el reinicio del <b>contador visible</b>. El historial permanecerá disponible para revisión:`;
           } else if (accion === 'pausar_modulo') {
               desc.innerHTML = `Autorizar pausa/reanudación del módulo <b>${seccionPendientePausa}</b>:`;
           } else if (accion === 'pausar_global') {
               desc.innerHTML = `Autorizar <b>pausa/reanudación GLOBAL</b> para todos los módulos de la clase:`;
           } else {
-              desc.innerHTML = `Ingrese la contraseña de profesor para el reseteo completo:`;
+              desc.innerHTML = `Autorizar el <b>reseteo completo</b> con la cuenta docente:`;
           }
 
-          input.value = '';
           modal.classList.add('active');
-          input.focus();
       }
 
       function cerrarModalPassword() {
@@ -2259,13 +3080,12 @@
       }
 
       function handleModalKeydown(e) {
-          if (e.key === 'Enter') confirmarAccionProfesor();
-          else if (e.key === 'Escape') cerrarModalPassword();
+          if (e.key === 'Escape') cerrarModalPassword();
       }
 
-      function confirmarAccionProfesor() {
-          const input = document.getElementById('modalPasswordInput');
-          if (input.value === "aRNET$") {
+      async function confirmarAccionProfesor() {
+          const autorizado = await window.autorizarDocenteFirebase?.();
+          if (autorizado) {
               const accionConfirmada = tipoAccionModal;
               const sectionIdConfirmada = seccionPendientePausa;
 
@@ -2290,22 +3110,73 @@
               }
               seccionPendientePausa = null;
           } else {
-              alert("❌ Contraseña incorrecta.");
-              input.value = '';
-              input.focus();
+              alert("No hay una cuenta docente autorizada. Iniciá sesión con la cuenta institucional o verificá los permisos de Firebase.");
           }
       }
 
-      function reiniciarContadorSalidasProfesor() {
+      window.addEventListener('keydown', event => {
+          const atajoFinClase = event.ctrlKey && event.altKey && !event.shiftKey && event.key.toLowerCase() === 'f';
+          if (atajoFinClase) {
+              event.preventDefault();
+              if (event.repeat) return;
+              window.finalizarClaseFirebase?.().then(finalizada => {
+                  if (finalizada) {
+                      aplicarEstadoInicioClase(false, {
+                          finalizadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || "docente autorizado"
+                      });
+                      alert("Clase finalizada. Todos los estudiantes volvieron al estado de espera.");
+                  }
+              });
+              return;
+          }
+          const atajoInicioClase = event.ctrlKey && event.altKey && !event.shiftKey && event.key.toLowerCase() === 'c';
+          if (atajoInicioClase) {
+              event.preventDefault();
+              if (event.repeat) return;
+              window.iniciarClaseFirebase?.().then(iniciada => {
+                  if (iniciada) {
+                      aplicarEstadoInicioClase(true, {
+                          iniciadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || "docente autorizado"
+                      });
+                      alert("Clase iniciada. Los estudiantes conectados ya pueden comenzar.");
+                  }
+              });
+              return;
+          }
+          const modal = document.getElementById('passwordModal');
+          if (event.key === 'Escape' && modal?.classList.contains('active')) {
+              event.preventDefault();
+              cerrarModalPassword();
+              return;
+          }
+          const atajoDocente = event.ctrlKey && event.altKey && event.shiftKey && event.key.toLowerCase() === 'p';
+          if (!atajoDocente) return;
+          event.preventDefault();
+          if (!modal?.classList.contains('active')) {
+              solicitarAccionProfesor('panel_profesor');
+          }
+          confirmarAccionProfesor();
+      });
+
+      async function reiniciarContadorSalidasProfesor() {
+          const autorizado = await window.esDocenteAutorizadoFirebase?.();
+          if (!autorizado) {
+              alert("Solo una cuenta docente autorizada puede reiniciar el contador.");
+              return;
+          }
+          if (!confirm("El contador visible volverá a cero. El historial de cambios de pestaña, las justificaciones y la revisión docente se conservarán. ¿Continuar?")) {
+              return;
+          }
+          const cantidadAnterior = totalSalidasPestaña;
           totalSalidasPestaña = 0;
-          eventosSalidasPestaña = [];
           salidaActivaPestaña = null;
-          revisionSalidasActual = { estado: "pendiente", penalizacion: 0, motivo: "" };
           setLocalStorage('app_blur_count', totalSalidasPestaña);
-          setLocalStorage('app_tab_events', '[]');
+          setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
           document.getElementById('blurCount').innerText = totalSalidasPestaña;
-          document.getElementById('btnJustificarSalida').style.display = 'none';
-          alert("El registro de cambios de pestaña fue reiniciado.");
+          const hayPendientes = eventosSalidasPestaña.some(evento => !evento.justificacion);
+          document.getElementById('btnJustificarSalida').style.display = hayPendientes ? 'inline-flex' : 'none';
+          await guardarAhoraFirebase();
+          alert(`Contador reiniciado: ${cantidadAnterior} cambio(s) pasaron a 0. El historial anterior continúa disponible para el profesor.`);
       }
 
       function desbloquearEjercicioActual() {
@@ -2429,24 +3300,28 @@
                       const el = document.getElementById(`btn-${btn}-${sectionId}`);
                       if (el) el.disabled = false;
                   });
-                  iniciarCronometro(sectionId);
+                  if (
+                      moduloCronometroEnCurso === sectionId &&
+                      seccionActivaActual === sectionId
+                  ) {
+                      iniciarCronometro(sectionId);
+                  }
               }
 
               alert(`▶️ Cronómetro y edición reanudados para el módulo ${sectionId}.`);
           }
       }
 
-      function togglePausaGlobal() {
-          const algunPausado = Object.values(modulosPausados).some(val => val === true);
-          const nuevoEstadoPausa = !algunPausado;
-
+      function establecerPausaGlobal(nuevoEstadoPausa, mostrarAviso = true) {
+          cronometrosPausadosPorDocente = Boolean(nuevoEstadoPausa);
+          const pausaEfectiva = cronometrosPausadosPorDocente || cronometrosPausadosIndividualmente;
           seccionesData.forEach(sec => {
-              modulosPausados[sec.id] = nuevoEstadoPausa;
+              modulosPausados[sec.id] = pausaEfectiva;
               const btnPause = document.getElementById(`btn-pause-${sec.id}`);
               const banner = document.getElementById(`pause-banner-${sec.id}`);
               const editor = document.getElementById(`editor-${sec.id}`);
 
-              if (nuevoEstadoPausa) {
+              if (pausaEfectiva) {
                   if (cronometrosActivos[sec.id]) {
                       clearInterval(cronometrosActivos[sec.id]);
                       cronometrosActivos[sec.id] = null;
@@ -2473,16 +3348,74 @@
                           const el = document.getElementById(`btn-${btn}-${sec.id}`);
                           if (el) el.disabled = false;
                       });
-                      iniciarCronometro(sec.id);
                   }
               }
           });
-
-          if (nuevoEstadoPausa) {
-              alert("⏸️ Pausa Global Activada: Se han congelado los cronómetros y editores de todos los módulos.");
-          } else {
-              alert("▶️ Pausa Global Desactivada: Se han reanudado todos los módulos activos.");
+          if (
+              !pausaEfectiva &&
+              moduloCronometroEnCurso &&
+              moduloCronometroEnCurso === seccionActivaActual
+          ) {
+              iniciarCronometro(moduloCronometroEnCurso);
           }
+          actualizarBotonPausaCronometros();
+          if (mostrarAviso) {
+              alert(cronometrosPausadosPorDocente
+                  ? "⏸️ Pausa Global Activada: Se han congelado los cronómetros y editores de todos los módulos."
+                  : "▶️ Pausa Global Desactivada: Se han reanudado todos los módulos activos.");
+          }
+      }
+
+      function togglePausaGlobal() {
+          establecerPausaGlobal(!cronometrosPausadosPorDocente, true);
+      }
+
+      function actualizarBotonPausaCronometros() {
+          const boton = document.getElementById('btnPausarCronometrosProfesor');
+          if (!boton) return;
+          boton.innerHTML = cronometrosPausadosPorDocente
+              ? '<i class="fa-solid fa-play"></i> Reanudar cronómetros'
+              : '<i class="fa-solid fa-pause"></i> Pausar cronómetros';
+          boton.className = cronometrosPausadosPorDocente ? 'btn btn-success' : 'btn btn-warning';
+      }
+
+      function reiniciarCronometrosLocales() {
+          seccionesData.forEach(sec => {
+              if (actividadesFinalizadas[sec.id]) return;
+              if (cronometrosActivos[sec.id]) {
+                  clearInterval(cronometrosActivos[sec.id]);
+                  cronometrosActivos[sec.id] = null;
+              }
+              tiemposRestantes[sec.id] = TIEMPO_MAXIMO_SEGUNDOS;
+              setLocalStorage(`timer_${sec.id}`, TIEMPO_MAXIMO_SEGUNDOS);
+              actualizarDisplayTiempo(sec.id);
+          });
+          moduloCronometroEnCurso = null;
+      }
+
+      function aplicarControlCronometrosDocente(datos = {}) {
+          establecerPausaGlobal(Boolean(datos.cronometrosPausados), false);
+          const reinicioId = String(datos.cronometrosReinicioId || '');
+          const ultimoReinicio = getLocalStorage('app_last_timer_reset') || '';
+          if (!reinicioId || reinicioId === ultimoReinicio) return;
+          reiniciarCronometrosLocales();
+          setLocalStorage('app_last_timer_reset', reinicioId);
+          const responsable = datos.cronometrosActualizadosPor
+              ? ` por ${datos.cronometrosActualizadosPor}`
+              : '';
+          alert(`El docente reinició los cronómetros a 40:00${responsable}.`);
+      }
+
+      function aplicarControlCronometroIndividual(datos = {}) {
+          cronometrosPausadosIndividualmente = Boolean(datos.pausado);
+          establecerPausaGlobal(cronometrosPausadosPorDocente, false);
+          const reinicioId = String(datos.reinicioId || '');
+          const ultimoReinicio = getLocalStorage('app_last_individual_timer_reset') || '';
+          if (!reinicioId || reinicioId === ultimoReinicio) return;
+          reiniciarCronometrosLocales();
+          setLocalStorage('app_last_individual_timer_reset', reinicioId);
+          const responsable = datos.actualizadoPor ? ` por ${datos.actualizadoPor}` : '';
+          alert(`Tu cronómetro fue reiniciado a 40:00${responsable}.`);
       }
 
       function resetearSistemaCompleto() {
@@ -2553,6 +3486,7 @@
       }
 
       function restablecerCodigo(sectionId) {
+          if (!claseHabilitada) return;
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
           if (confirm("¿Estás seguro de restablecer este ejercicio?")) {
@@ -2582,6 +3516,12 @@
       }
 
       function switchSection(sectionId) {
+          Object.keys(cronometrosActivos).forEach(id => {
+              if (!cronometrosActivos[id]) return;
+              clearInterval(cronometrosActivos[id]);
+              cronometrosActivos[id] = null;
+          });
+          moduloCronometroEnCurso = null;
           seccionActivaActual = sectionId;
           document.querySelectorAll('.section-card').forEach(card => card.classList.remove('active'));
           document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
@@ -2609,6 +3549,7 @@
       }
 
       async function ejecutarCodigo(sectionId) {
+          if (!claseHabilitada) return;
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
           const editor = document.getElementById(`editor-${sectionId}`);
@@ -2692,21 +3633,177 @@
           historialResultados[sectionId].salida = logs.join("\n");
           historialResultados[sectionId].fecha = new Date().toLocaleString();
           historialResultados[sectionId].exito = esExitoso;
+          const sec = seccionesData.find(s => s.id === sectionId);
+          if (sec) {
+              historialResultados[sectionId].evaluacionCodigo = evaluarCodigoPorEvidencias(
+                  code,
+                  sec,
+                  { ok: esExitoso, logs, salida: logs.join("\n"), error: resultado.error || "" }
+              );
+              historialResultados[sectionId].notaCodigo = historialResultados[sectionId].evaluacionCodigo.nota;
+          }
           programarGuardadoFirebase();
       }
 
-      function calcularNotaEstricta(code, sec) {
-          const esPlantilla = code === sec.initialCode.trim() || code.length < 15;
-          if (esPlantilla) return 1;
+      function normalizarEvaluacion(v) {
+          return String(v || "")
+              .toLowerCase()
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .replace(/\s+/g, " ")
+              .trim();
+      }
 
-          let proporcionLongitud = code.length / sec.aiSolution.length;
-          let tieneEstructuraMinima = code.includes("console.log") || code.includes("function") || code.includes("let") || code.includes("const");
+      function evaluarCodigoPorEvidencias(code, sec, resultadoEjecucion) {
+          const fuente = String(code || "");
+          const limpia = normalizarEvaluacion(fuente);
+          const salida = normalizarEvaluacion(
+              resultadoEjecucion?.salida ||
+              (Array.isArray(resultadoEjecucion?.logs) ? resultadoEjecucion.logs.join(" ") : "")
+          );
+          const error = resultadoEjecucion?.error || (!resultadoEjecucion?.ok && resultadoEjecucion ? "Error de ejecución" : "");
+          const esPlantilla = !fuente.trim() || (sec?.initialCode && fuente.trim() === String(sec.initialCode).trim());
+          const conceptos = Array.isArray(sec?.conceptosDetectar) ? sec.conceptosDetectar : [];
+          const criteriosDefinidos = Array.isArray(sec?.criteriosEvaluacion) ? sec.criteriosEvaluacion.filter(c => c && (c.criterio || c.indicador)) : [];
+          const criteriosBase = criteriosDefinidos.length ? criteriosDefinidos : [
+              { criterio: "Ejecución segura", peso: 25, indicador: "El código se ejecuta sin errores y termina." },
+              { criterio: "Conceptos del desafío", peso: 30, indicador: "Usa los conceptos solicitados en la consigna." },
+              { criterio: "Lógica y estructura", peso: 25, indicador: "Presenta una solución coherente, legible y organizada." },
+              { criterio: "Resultado observable", peso: 20, indicador: "La salida demuestra el objetivo del ejercicio." }
+          ];
+          const patrones = {
+              "variable": /\b(let|const|var)\b/,
+              "variables": /\b(let|const|var)\b/,
+              "constante": /\bconst\b/,
+              "constantes": /\bconst\b/,
+              "funcion": /\bfunction\b|=>/,
+              "funciones": /\bfunction\b|=>/,
+              "condicion": /\bif\b|\bswitch\b|\?[^:]+:/,
+              "condicional": /\bif\b|\bswitch\b|\?[^:]+:/,
+              "bucle": /\b(for|while|do)\b|\.forEach\s*\(/,
+              "ciclo": /\b(for|while|do)\b|\.forEach\s*\(/,
+              "array": /\[[\s\S]*\]|\.map\s*\(|\.filter\s*\(|\.reduce\s*\(/,
+              "arreglo": /\[[\s\S]*\]|\.map\s*\(|\.filter\s*\(|\.reduce\s*\(/,
+              "objeto": /\{[\s\S]*\}|Object\./,
+              "console": /console\.(log|info|warn|error)\s*\(/,
+              "salida": /console\.(log|info|warn|error)\s*\(/,
+              "metodo": /\.[a-zA-Z_$][\w$]*\s*\(/,
+              "parametro": /function\s*\w*\s*\([^)]*\)|\([^)]*\)\s*=>/
+          };
+          const evidenciasConceptos = conceptos.map(concepto => {
+              const nombre = String(concepto);
+              const clave = normalizarEvaluacion(nombre);
+              const palabras = clave.split(/[^a-z0-9]+/).filter(Boolean);
+              const patron = patrones[clave] || new RegExp(palabras.map(p => p.length > 3 ? `\\b${p}\\b` : p).join("|"), "i");
+              const cumple = patron.test(limpia);
+              return { nombre, cumple, evidencia: cumple ? "Detectado en el código." : "No se detectó evidencia suficiente." };
+          });
+          const conceptosCumplidos = evidenciasConceptos.filter(x => x.cumple).length;
+          const porcentajeConceptos = evidenciasConceptos.length ? conceptosCumplidos / evidenciasConceptos.length : (/\b(let|const|function|if|for|while|console\.log)\b/.test(limpia) ? 1 : 0.4);
+          const ejecucion = esPlantilla ? 0 : (resultadoEjecucion ? (resultadoEjecucion.ok ? 1 : 0) : (/\b(console\.log|function|let|const)\b/.test(limpia) ? 0.6 : 0));
+          const estructura = esPlantilla ? 0 : Math.min(1, (
+              (/\b(let|const|var)\b/.test(limpia) ? 0.2 : 0) +
+              (/\bfunction\b|=>/.test(limpia) ? 0.2 : 0) +
+              (/\b(if|switch|for|while|forEach|map|filter|reduce)\b/.test(limpia) ? 0.25 : 0) +
+              (/\breturn\b/.test(limpia) ? 0.15 : 0) +
+              (/\bconsole\.(log|info|warn|error)\b/.test(limpia) ? 0.1 : 0) +
+              (fuente.split("\n").filter(l => l.trim()).length >= 2 ? 0.1 : 0)
+          ));
+          const tokensSalida = String(sec?.aiSolution || "").match(/console\.(?:log|info|warn|error)\s*\(([^)]*)\)/gi) || [];
+          const salidaEsperada = tokensSalida.map(x => normalizarEvaluacion(x.replace(/^.*?\(/, "").replace(/\)$/, ""))).filter(Boolean);
+          const salidaCoincide = salidaEsperada.length ? salidaEsperada.some(t => t && salida.includes(t.replace(/['"`]/g, ""))) : salida.length > 0;
+          const resultado = esPlantilla ? 0 : (salidaCoincide ? 1 : (salida.length ? 0.55 : 0));
+          const claridad = esPlantilla ? 0 : Math.min(1, (/\b(const|let)\b/.test(limpia) ? 0.35 : 0) + (/\breturn\b/.test(limpia) ? 0.25 : 0) + (!/\/\/.*TODO|alert\(/i.test(fuente) ? 0.2 : 0) + (fuente.split("\n").length > 2 ? 0.2 : 0));
+          const obtenerPuntajeCriterio = criterio => {
+              const texto = normalizarEvaluacion(`${criterio.criterio} ${criterio.indicador}`);
+              if (/ejec|error|compil|funciona/.test(texto)) return ejecucion;
+              if (/concept|consigna|requis|estructura solicit/.test(texto)) return porcentajeConceptos;
+              if (/salida|resultado|objetivo|evidencia/.test(texto)) return resultado;
+              if (/clar|legib|orden|estructura|calidad/.test(texto)) return Math.max(estructura, claridad);
+              return Math.max(ejecucion, porcentajeConceptos, estructura, resultado);
+          };
+          const totalPeso = criteriosBase.reduce((s, c) => s + (Number(c.peso) || 0), 0) || 100;
+          const criterios = criteriosBase.map((c, i) => {
+              const peso = (Number(c.peso) || 0) * 100 / totalPeso;
+              const proporcion = Math.max(0, Math.min(1, obtenerPuntajeCriterio(c)));
+              const puntos = Number((peso * proporcion).toFixed(1));
+              return {
+                  id: c.id || `criterio-${i + 1}`,
+                  nombre: c.criterio || `Criterio ${i + 1}`,
+                  peso: Number(peso.toFixed(1)),
+                  puntos,
+                  estado: proporcion >= 0.8 ? "cumplido" : (proporcion >= 0.45 ? "parcial" : "pendiente"),
+                  evidencia: c.indicador || (proporcion >= 0.8 ? "Evidencia suficiente." : "Revisar la consigna y la salida.")
+              };
+          });
+          const porcentaje = Math.max(0, Math.min(100, criterios.reduce((s, c) => s + c.puntos, 0)));
+          const nota = Number((porcentaje / 10).toFixed(1));
+          const fortalezas = [];
+          const mejoras = [];
+          if (ejecucion >= 0.8) fortalezas.push("El código se ejecuta sin errores.");
+          else mejoras.push(error ? `Corregir el error de ejecución: ${error}` : "Ejecutar y verificar el código antes de entregar.");
+          if (conceptosCumplidos) fortalezas.push(`Se detectaron ${conceptosCumplidos}/${evidenciasConceptos.length || conceptos.length || 1} conceptos esperados.`);
+          if (evidenciasConceptos.some(x => !x.cumple)) mejoras.push("Completar los conceptos o estructuras indicados en la consigna.");
+          if (resultado >= 0.8) fortalezas.push("La salida aporta evidencia del resultado solicitado.");
+          else mejoras.push("Verificar que la salida de consola demuestre el objetivo.");
+          if (claridad < 0.6) mejoras.push("Mejorar nombres, organización y legibilidad del código.");
+          return {
+              nota, porcentaje, criterios, fortalezas, mejoras,
+              advertencias: ["Evaluación automática orientativa: debe ser revisada por el docente.", ...(esPlantilla ? ["El código coincide con la plantilla inicial."] : [])],
+              ejecucion: { ok: Boolean(resultadoEjecucion?.ok), salida: resultadoEjecucion?.salida || "", error: error || "" },
+              conceptos: evidenciasConceptos
+          };
+      }
 
-          if (!tieneEstructuraMinima) return 4;
-          if (proporcionLongitud >= 0.9) return 10;
-          if (proporcionLongitud >= 0.7) return 7;
-          if (proporcionLongitud >= 0.4) return 5;
-          return 3;
+      function generarDiagnosticoIA(evaluacion, sec, resultadoEjecucion = null) {
+          const ejecucion = resultadoEjecucion && typeof resultadoEjecucion === "object"
+              ? {
+                  ok: resultadoEjecucion.ok !== undefined
+                      ? Boolean(resultadoEjecucion.ok)
+                      : Boolean(resultadoEjecucion.exito),
+                  error: resultadoEjecucion.error || "",
+                  salida: resultadoEjecucion.salida || ""
+              }
+              : null;
+          const criteriosPendientes = (evaluacion?.criterios || [])
+              .filter(c => c.estado !== "cumplido")
+              .map(c => `${c.nombre}: ${c.evidencia || "revisar este criterio"}`)
+              .slice(0, 4);
+          const conceptosPendientes = (evaluacion?.conceptos || [])
+              .filter(c => !c.cumple)
+              .map(c => c.nombre)
+              .slice(0, 4);
+          const pasos = [];
+          if (!ejecucion) {
+              pasos.push("Ejecutá el código con distintos datos y observá la consola.");
+          } else if (!ejecucion.ok) {
+              pasos.push(`Revisá el error de ejecución: ${ejecucion.error || "la consola indicó un problema"}.`);
+          } else {
+              pasos.push("La ejecución no muestra errores; ahora comprobá casos normales y casos límite.");
+          }
+          if (conceptosPendientes.length) {
+              pasos.push(`Revisá la consigna para incorporar: ${conceptosPendientes.join(", ")}.`);
+          }
+          if (criteriosPendientes.length) {
+              pasos.push(...criteriosPendientes);
+          }
+          if (!pasos.length) {
+              pasos.push("La solución presenta evidencias suficientes. Justificá tus decisiones antes de entregar.");
+          }
+          return {
+              resumen: evaluacion?.nota >= 8
+                  ? "La solución muestra un avance sólido."
+                  : evaluacion?.nota >= 5
+                      ? "La solución es parcial y necesita una revisión dirigida."
+                      : "Todavía faltan evidencias importantes para considerar resuelto el desafío.",
+              pasos: pasos.slice(0, 5),
+              preguntaGuia: sec?.preguntasSocraticas?.[0] ||
+                  "¿Qué parte del código cambiarías primero para acercarte al objetivo y por qué?"
+          };
+      }
+
+      function calcularNotaEstricta(code, sec, resultadoEjecucion) {
+          return evaluarCodigoPorEvidencias(code, sec, resultadoEjecucion).nota;
       }
 
       function calcularNotaCombinada(notaCodigo, porcentajePreguntas) {
@@ -2716,6 +3813,7 @@
       }
 
       function previsualizarNotaIA(sectionId) {
+          if (!claseHabilitada) return;
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
           let usos = contadorPrevisualizaciones[sectionId] || 0;
@@ -2742,8 +3840,19 @@
           studentCodeDisplay.innerText = code;
           document.getElementById(`ai-ideal-code-${sectionId}`).innerText = "// (Oculto en previsualización parcial)";
 
-          let notaEstimada = calcularNotaEstricta(code, sec);
-          feedbackText.innerHTML = `<strong>Estimación del código (${usos}/3):</strong> El indicador orientativo del código es <strong>${notaEstimada}/10</strong>. Representará el 70% de la nota final; las preguntas representarán el 30% restante.`;
+          const evaluacion = evaluarCodigoPorEvidencias(code, sec, historialResultados[sectionId]?.exito === undefined ? null : {
+              ok: Boolean(historialResultados[sectionId]?.exito),
+              salida: historialResultados[sectionId]?.salida || "",
+              error: historialResultados[sectionId]?.exito ? "" : "La ejecución todavía no fue validada."
+          });
+          let notaEstimada = evaluacion.nota;
+          const diagnostico = generarDiagnosticoIA(evaluacion, sec, historialResultados[sectionId]);
+          feedbackText.innerHTML =
+              `<strong>Estimación orientativa (${usos}/3): ${notaEstimada}/10</strong>` +
+              `<br>${escaparTextoAnalista(diagnostico.resumen)}` +
+              `<br><strong>Próximos pasos:</strong><ol>${diagnostico.pasos.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ol>` +
+              `<br><strong>Pregunta guía:</strong> ${escaparTextoAnalista(diagnostico.preguntaGuia)}` +
+              `<br><small>La nota previa orienta tu revisión; no reemplaza la entrega ni la corrección docente.</small>`;
       }
 
       const preguntasSocraticas = [
@@ -2874,6 +3983,126 @@
           return String(s || "")
               .replace(/&/g,"&amp;").replace(/</g,"&lt;")
               .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+      }
+
+      const historialChatIA = {};
+
+      function guardarChatIA(sectionId) {
+          const mensajes = historialChatIA[sectionId] || [];
+          setLocalStorage(`ai_chat_${sectionId}`, JSON.stringify(mensajes.slice(-20)));
+      }
+
+      function actualizarEstadoChatIA(sectionId, estado, texto) {
+          const indicador = document.getElementById(`ai-chat-sync-${sectionId}`);
+          if (!indicador) return;
+          indicador.className = `ai-chat-sync ${estado || ""}`.trim();
+          indicador.innerHTML = `<i class="fa-solid ${estado === "error" ? "fa-triangle-exclamation" : estado === "saving" ? "fa-cloud-arrow-up" : "fa-cloud"}"></i> ${escaparTextoAnalista(texto)}`;
+      }
+
+      function actualizarTodosEstadosChatIA(estado, texto) {
+          seccionesData.forEach(sec => actualizarEstadoChatIA(sec.id, estado, texto));
+      }
+
+      function renderizarChatIA(sectionId) {
+          const contenedor = document.getElementById(`ai-chat-messages-${sectionId}`);
+          if (!contenedor) return;
+          const mensajes = historialChatIA[sectionId] || [];
+          contenedor.innerHTML = mensajes.length
+              ? mensajes.map(m => `<div class="ai-chat-message ${m.rol === "student" ? "student" : "assistant"}">${escaparTextoAnalista(m.texto)}</div>`).join("")
+              : `<div class="ai-chat-message assistant">Soy tu guía de este módulo. Puedo darte pistas, ayudarte a interpretar un error o proponerte qué revisar, pero no voy a entregar la solución completa.</div>`;
+          contenedor.scrollTop = contenedor.scrollHeight;
+      }
+
+      function agregarMensajeChatIA(sectionId, rol, texto) {
+          if (!historialChatIA[sectionId]) historialChatIA[sectionId] = [];
+          historialChatIA[sectionId].push({ rol, texto: String(texto || "").trim() });
+          guardarChatIA(sectionId);
+          renderizarChatIA(sectionId);
+          actualizarEstadoChatIA(sectionId, "saving", "Pendiente de guardar");
+          programarGuardadoFirebase();
+      }
+
+      function generarRespuestaChatIA(sectionId, pregunta, modo = "consulta") {
+          const sec = seccionesData.find(s => s.id === sectionId) || {};
+          const editor = document.getElementById(`editor-${sectionId}`);
+          const code = editor?.value || "";
+          const historial = historialResultados[sectionId] || {};
+          const evaluacion = evaluarCodigoPorEvidencias(code, sec, historial.exito === undefined ? null : {
+              ok: Boolean(historial.exito),
+              salida: historial.salida || "",
+              error: historial.exito ? "" : "La ejecución no fue validada correctamente."
+          });
+          const texto = normalizarEvaluacion(`${pregunta} ${modo}`);
+          const pendientes = (evaluacion.conceptos || []).filter(x => !x.cumple).map(x => x.nombre).slice(0, 3);
+          const error = historial.exito === false || historial.error;
+
+          if (modo === "consigna" || /consigna|que pide|objetivo|entender/.test(texto)) {
+              return `La consigna pide: ${sec.exerciseDesc || "resolver el desafío del módulo"}. Separala en tres partes: qué datos entran, qué transformación debe hacer tu programa y qué resultado debe mostrar. No empieces por copiar código; primero escribí esas tres respuestas.`;
+          }
+          if (modo === "revisar" || /revisar mi codigo|revisar|esta bien|calidad/.test(texto)) {
+              if (!code.trim() || (sec.initialCode && code.trim() === String(sec.initialCode).trim())) {
+                  return "Todavía veo la plantilla inicial. Escribí al menos un primer intento y luego puedo ayudarte a revisar su estructura.";
+              }
+              const fortalezas = (evaluacion.fortalezas || []).slice(0, 2);
+              const mejoras = (evaluacion.mejoras || []).slice(0, 2);
+              return `${fortalezas.length ? `Detecto como avance: ${fortalezas.join(" · ")}. ` : ""}${mejoras.length ? `Para revisar ahora: ${mejoras.join(" · ")}.` : "La estructura general parece encaminada; probá casos distintos antes de entregar."}`;
+          }
+          if (modo === "ejemplo" || /prueba|caso|ejemplo|dato/.test(texto)) {
+              return "Proponé un caso normal y uno límite. Para cada uno, anotá el resultado esperado antes de ejecutar. Si ambos coinciden, agregá un tercer caso que pueda revelar una condición faltante.";
+          }
+          if (/solucion|codigo completo|respuesta completa|hacelo por mi|dame el codigo/.test(texto)) {
+              return "Puedo orientarte, pero no voy a escribir la solución completa. Decime qué parte te cuesta: datos de entrada, condición, repetición, función o salida.";
+          }
+          if (modo === "error" || /error|no funciona|falla|undefined|syntax/.test(texto)) {
+              if (error) return `Primero revisá el mensaje de la consola: ${historial.error || "hay un error de ejecución"}. Ubicá la línea señalada y comprobá nombres de variables, paréntesis y llaves. ¿Qué valor esperabas obtener allí?`;
+              return "Ejecutá el código y copiá mentalmente el primer resultado inesperado. Después revisá la línea que construye ese valor, sin cambiar varias cosas a la vez.";
+          }
+          if (modo === "siguiente" || /ahora|sigo|continuo|reviso/.test(texto)) {
+              if (pendientes.length) return `El próximo foco de revisión puede ser: ${pendientes.join(", ")}. Elegí uno y explicá qué debería hacer en tu solución.`;
+              return "Probá al menos un caso normal y un caso límite. Luego explicá qué parte del código demuestra que cumplís la consigna.";
+          }
+          if (/condicion|if|decidir/.test(texto)) return "Escribí primero la regla en palabras: «si ocurre..., entonces...; de lo contrario...». Después buscá cómo traducir esa regla a una condición.";
+          if (/bucle|repet|for|while|recorrer/.test(texto)) return "Identificá qué dato se repite, desde dónde empieza el recorrido y cuándo debe detenerse. No programes el bucle hasta poder responder esas tres preguntas.";
+          if (/funcion|parametro|return/.test(texto)) return "Pensá qué tarea única debería resolver la función, qué información necesita recibir y qué resultado debe devolver. Probá la función con un ejemplo pequeño.";
+          if (/salida|console|mostrar|resultado/.test(texto)) return "Compará la salida real con la salida que pide la consigna. Revisá qué variable estás mostrando y en qué momento se calcula.";
+          if (pendientes.length) return `Pista: todavía no encuentro evidencia clara de ${pendientes.join(", ")}. Volvé a la consigna y buscá una instrucción que puedas convertir en una pequeña prueba.`;
+          return "Pista inicial: explicá con tus palabras qué debe entrar, qué debe procesarse y qué debe salir. Esa explicación te va a indicar cuál es el próximo bloque de código.";
+      }
+
+      function pedirPistaIA(sectionId, modo = "pista") {
+          if (!claseHabilitada || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
+          const textos = {
+              consigna: "Ayudame a entender la consigna.",
+              revisar: "Revisá mi código sin darme la solución.",
+              pista: "Dame una pista para avanzar.",
+              error: "Ayúdame a revisar un posible error.",
+              siguiente: "¿Qué debería revisar ahora?",
+              ejemplo: "Proponeme una prueba para verificar mi solución."
+          };
+          const pregunta = textos[modo] || textos.pista;
+          agregarMensajeChatIA(sectionId, "student", pregunta);
+          agregarMensajeChatIA(sectionId, "assistant", generarRespuestaChatIA(sectionId, pregunta, modo));
+      }
+
+      function limpiarChatIA(sectionId) {
+          if (!claseHabilitada || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
+          if (!confirm("¿Limpiar las consultas de IA de este módulo? El docente dejará de ver este historial después de sincronizarse.")) return;
+          historialChatIA[sectionId] = [];
+          guardarChatIA(sectionId);
+          renderizarChatIA(sectionId);
+          programarGuardadoFirebase();
+      }
+
+      function enviarMensajeIA(event, sectionId) {
+          event.preventDefault();
+          if (!claseHabilitada || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
+          const input = document.getElementById(`ai-chat-input-${sectionId}`);
+          const pregunta = input?.value.trim() || "";
+          if (!pregunta) return;
+          agregarMensajeChatIA(sectionId, "student", pregunta);
+          agregarMensajeChatIA(sectionId, "assistant", generarRespuestaChatIA(sectionId, pregunta));
+          input.value = "";
+          input.focus();
       }
 
       function extraerEvidencias(code) {
@@ -3139,6 +4368,7 @@
       }
 
       function resolverYCompararIA(sectionId) {
+          if (!claseHabilitada) return;
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
           if (!confirm("ATENCIÓN: esta acción mostrará una solución de referencia, realizará una evaluación automática orientativa y bloqueará la actividad. ¿Deseas continuar?")) {
@@ -3155,13 +4385,19 @@
 
           if (!editor || !sec || !feedbackBox || !feedbackText) return;
 
-          if (idealDisplay) idealDisplay.innerText = sec.aiSolution;
+          if (idealDisplay) idealDisplay.innerText = "// La solución de referencia se habilita después de entregar el análisis.";
           feedbackBox.classList.add('active');
           if (studentCodeDisplay) studentCodeDisplay.innerText = code;
           feedbackText.innerHTML = "<i>Realizando una evaluación automática orientativa...</i>";
 
           setTimeout(() => {
-              const puntaje = calcularNotaEstricta(code, sec);
+              const evaluacion = evaluarCodigoPorEvidencias(code, sec, historialResultados[sectionId] ? {
+                  ok: Boolean(historialResultados[sectionId].exito),
+                  salida: historialResultados[sectionId].salida || "",
+                  error: historialResultados[sectionId].exito ? "" : "La ejecución no fue validada correctamente."
+              } : null);
+              const diagnostico = generarDiagnosticoIA(evaluacion, sec, historialResultados[sectionId]);
+              const puntaje = evaluacion.nota;
               let analisis = "";
 
               if (puntaje === 1) analisis = "❌ <strong>Evaluación Estricta (1/10):</strong> Plantilla inicial sin resolver.";
@@ -3171,6 +4407,11 @@
               else if (puntaje === 3) analisis = "⚠️ <strong>Evaluación Estricta (3/10):</strong> Código demasiado escueto.";
               else if (puntaje === 10) analisis = "✅ <strong>¡Excelente Trabajo! (10/10):</strong> Cumple rigurosamente con los parámetros ideales.";
 
+              analisis = `<strong>Evaluación automática orientativa (${puntaje}/10):</strong> ${diagnostico.resumen}` +
+                  `<br><strong>Guía de mejora:</strong><ol>${diagnostico.pasos.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ol>` +
+                  `<br><strong>Fortalezas:</strong> ${evaluacion.fortalezas.length ? evaluacion.fortalezas.map(escaparTextoAnalista).join(" · ") : "Todavía no se observan evidencias suficientes."}` +
+                  `<br><strong>Mejoras:</strong> ${evaluacion.mejoras.length ? evaluacion.mejoras.map(escaparTextoAnalista).join(" · ") : "No se detectaron mejoras prioritarias."}` +
+                  `<hr><strong>Desglose:</strong><ul>${evaluacion.criterios.map(c => `<li>${escaparTextoAnalista(c.nombre)}: ${c.puntos}/${c.peso} puntos (${c.estado})</li>`).join("")}</ul>`;
               const objetivos = Array.isArray(sec.objetivosPedagogicos) ? sec.objetivosPedagogicos : [];
               const conceptos = Array.isArray(sec.conceptosDetectar) ? sec.conceptosDetectar : [];
               const errores = Array.isArray(sec.erroresFrecuentes) ? sec.erroresFrecuentes : [];
@@ -3181,6 +4422,9 @@
                 `<div style="margin-top:.6rem;color:#a5b4fc"><strong>🚫 Protección IA:</strong> no se entrega código listo para copiar ni se revelan directamente las respuestas.</div>`;
 
               construirAnalista(sectionId, code);
+              if (idealDisplay) {
+                  idealDisplay.innerText = `${sec.aiSolution}\n\n// Usá esta referencia para comparar decisiones, no para copiarla.`;
+              }
 
               const analystBox = document.getElementById(`analyst-${sectionId}`);
               if (analystBox) {
@@ -3202,6 +4446,7 @@
               historialResultados[sectionId].codigo = code;
               historialResultados[sectionId].solucionIA = sec.aiSolution;
               historialResultados[sectionId].notaCodigo = puntaje;
+              historialResultados[sectionId].evaluacionCodigo = evaluacion;
               delete historialResultados[sectionId].notaPreguntas;
               delete historialResultados[sectionId].notaFinal;
               delete historialResultados[sectionId].notaIA;
@@ -3253,10 +4498,6 @@
       function configurarEditores() {
           document.querySelectorAll('.code-editor').forEach(textarea => {
               textarea.addEventListener('click', (e) => {
-                  const secId = e.target.id.replace('editor-', '');
-                  iniciarCronometro(secId);
-              });
-              textarea.addEventListener('focus', (e) => {
                   const secId = e.target.id.replace('editor-', '');
                   iniciarCronometro(secId);
               });
@@ -3375,12 +4616,115 @@
           }
           d.revisionSalidas = {
               ...revision,
-              revisadoPor: window.firebaseCurrentUser?.email || window.firebaseCurrentUser?.displayName || ''
+              revisadoPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || window.firebaseTeacherUser?.displayName || window.firebaseCurrentUser?.displayName || ''
           };
           renderPanelProfesor();
           abrirDetalleEstudianteProfesor(indice);
           alert('Revisión docente guardada.');
       }
+      async function cambiarEstadoCuentaEstudiante(indice, nuevoEstado) {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) {
+              alert('No se encontró el identificador Firebase del estudiante.');
+              return;
+          }
+          if (nuevoEstado === 'inactivo') {
+              const motivo = prompt('Motivo de la baja (obligatorio):', 'Baja institucional');
+              if (!motivo || !motivo.trim()) return;
+              if (!confirm('La cuenta no podrá ingresar, pero se conservará todo el historial. ¿Confirmás la baja?')) return;
+              const payload = {
+                  estadoCuenta: 'inactivo',
+                  bajaMotivo: motivo.trim(),
+                  bajaFecha: new Date().toISOString(),
+                  bajaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || window.firebaseTeacherUser?.displayName || window.firebaseCurrentUser?.displayName || ''
+              };
+              const ok = await window.guardarEstadoEstudianteFirebase?.(d.uid, payload);
+              if (!ok) {
+                  alert('No se pudo dar de baja la cuenta. Verificá las reglas de Firestore.');
+                  return;
+              }
+              d.estadoCuenta = payload.estadoCuenta;
+              d.bajaMotivo = payload.bajaMotivo;
+              d.bajaFecha = payload.bajaFecha;
+              d.bajaPor = payload.bajaPor;
+              renderPanelProfesor();
+              abrirDetalleEstudianteProfesor(indice);
+              return;
+          }
+          if (!confirm('¿Reactivar esta cuenta para permitirle ingresar nuevamente?')) return;
+          const payload = {
+              estadoCuenta: 'activo',
+              bajaMotivo: '',
+              bajaFecha: null,
+              bajaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || window.firebaseTeacherUser?.displayName || window.firebaseCurrentUser?.displayName || ''
+          };
+          const ok = await window.guardarEstadoEstudianteFirebase?.(d.uid, payload);
+          if (!ok) {
+              alert('No se pudo reactivar la cuenta. Verificá las reglas de Firestore.');
+              return;
+          }
+          d.estadoCuenta = payload.estadoCuenta;
+          d.bajaMotivo = '';
+          d.bajaFecha = null;
+          d.bajaPor = payload.bajaPor;
+          renderPanelProfesor();
+          abrirDetalleEstudianteProfesor(indice);
+      }
+
+      async function reiniciarSalidasEstudianteProfesor(indice) {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) {
+              alert('No se encontró el identificador Firebase del estudiante.');
+              return;
+          }
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'este estudiante';
+          if (!confirm(`¿Reiniciar a cero el contador visible de cambios de pestaña de ${nombre}?\n\nEl historial detallado y las justificaciones se conservarán.`)) {
+              return;
+          }
+          const ok = await window.reiniciarSalidasEstudianteFirebase?.(d.uid);
+          if (!ok) {
+              alert('No se pudo reiniciar el contador. Verificá que las reglas de Firestore estén publicadas.');
+              return;
+          }
+          d.salidasPestaña = 0;
+          renderPanelProfesor();
+          abrirDetalleEstudianteProfesor(indice);
+          alert('Contador de cambios de pestaña reiniciado correctamente.');
+      }
+
+      async function controlarCronometroEstudianteProfesor(indice, accion) {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) {
+              alert('No se encontró el identificador Firebase del estudiante.');
+              return;
+          }
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'el estudiante';
+          const mensajes = {
+              pausar: `¿Pausar el cronómetro y la edición de ${nombre}?`,
+              reanudar: `¿Reanudar el cronómetro y la edición de ${nombre}?`,
+              reiniciar: `¿Reiniciar a 40:00 los módulos activos de ${nombre}?\n\nNo se borrarán códigos, respuestas ni calificaciones.`
+          };
+          if (!confirm(mensajes[accion] || '¿Confirmar la operación?')) return;
+          const ok = await window.controlarCronometroEstudianteFirebase?.(d.uid, accion);
+          if (!ok) {
+              alert('No se pudo actualizar el cronómetro individual. Verificá las reglas de Firestore.');
+              return;
+          }
+          const control = d.controlCronometroIndividual || {};
+          if (accion === 'pausar') control.pausado = true;
+          if (accion === 'reanudar') control.pausado = false;
+          if (accion === 'reiniciar') control.reinicioId = `${Date.now()}-${d.uid}`;
+          d.controlCronometroIndividual = control;
+          renderPanelProfesor();
+          abrirDetalleEstudianteProfesor(indice);
+          const resultado = accion === 'pausar'
+              ? 'Cronómetro individual pausado.'
+              : accion === 'reanudar'
+                  ? 'Cronómetro individual reanudado.'
+                  : 'Cronómetro individual reiniciado a 40:00.';
+          alert(resultado);
+      }
+
       function renderPreguntaProfesor(p, indice) {
           const seleccionadas = Array.isArray(p?.seleccionadas) ? p.seleccionadas : [];
           const opciones = Array.isArray(p?.opciones) ? p.opciones : [];
@@ -3407,11 +4751,166 @@
               ${p?.respuestaTexto ? `<div style="margin-top:.5rem"><strong>Respuesta escrita:</strong> ${escapeHtml(p.respuestaTexto)}</div>` : ''}
           </div>`;
       }
+
+      function resumirConsultasIAEstudiante(d) {
+          const chat = d?.chatIA && typeof d.chatIA === "object" ? d.chatIA : {};
+          const categorias = {
+              "Errores y depuración": 0,
+              "Comprensión de consigna": 0,
+              "Revisión de código": 0,
+              "Pistas para avanzar": 0,
+              "Pruebas y resultados": 0,
+              "Conceptos de programación": 0,
+              "Otras consultas": 0
+          };
+          const modulos = [];
+          const preguntas = new Map();
+          let total = 0;
+
+          Object.entries(chat).forEach(([sectionId, mensajes]) => {
+              const consultas = (Array.isArray(mensajes) ? mensajes : [])
+                  .filter(m => m?.rol === "student" && String(m?.texto || "").trim());
+              if (!consultas.length) return;
+              const sec = seccionesData.find(s => s.id === sectionId);
+              modulos.push({
+                  id: sectionId,
+                  titulo: sec?.title || sectionId,
+                  cantidad: consultas.length
+              });
+              consultas.forEach(m => {
+                  const original = String(m.texto || "").trim();
+                  const texto = normalizarEvaluacion(original);
+                  total++;
+                  let categoria = "Otras consultas";
+                  if (/error|falla|no funciona|bug|syntax|undefined|consola/.test(texto)) categoria = "Errores y depuración";
+                  else if (/consigna|entender|que pide|objetivo/.test(texto)) categoria = "Comprensión de consigna";
+                  else if (/revisa|revisar|codigo|esta bien|calidad/.test(texto)) categoria = "Revisión de código";
+                  else if (/pista|avanzar|siguiente|continuar|ahora/.test(texto)) categoria = "Pistas para avanzar";
+                  else if (/prueba|caso|ejemplo|resultado|salida/.test(texto)) categoria = "Pruebas y resultados";
+                  else if (/variable|condicion|if|bucle|for|while|funcion|parametro|return|array|objeto/.test(texto)) categoria = "Conceptos de programación";
+                  categorias[categoria]++;
+
+                  const clave = texto.replace(/[¿?¡!.,;:]+/g, "").trim().slice(0, 120);
+                  if (clave) {
+                      const actual = preguntas.get(clave) || { texto: original.slice(0, 160), cantidad: 0 };
+                      actual.cantidad++;
+                      preguntas.set(clave, actual);
+                  }
+              });
+          });
+
+          return {
+              total,
+              categorias: Object.entries(categorias)
+                  .filter(([, cantidad]) => cantidad > 0)
+                  .sort((a, b) => b[1] - a[1]),
+              modulos: modulos.sort((a, b) => b.cantidad - a.cantidad),
+              frecuentes: [...preguntas.values()]
+                  .sort((a, b) => b.cantidad - a.cantidad)
+                  .slice(0, 5)
+          };
+      }
+
+      function obtenerAlertaConsultasIA(d) {
+          const resumen = resumirConsultasIAEstudiante(d);
+          const categoriaRepetida = resumen.categorias.find(([, cantidad]) => cantidad >= 4);
+          const preguntaRepetida = resumen.frecuentes.find(p => p.cantidad >= 3);
+          if (!categoriaRepetida && !preguntaRepetida) {
+              return { activa: false, nivel: "", texto: "", detalle: "" };
+          }
+          if (preguntaRepetida) {
+              return {
+                  activa: true,
+                  nivel: preguntaRepetida.cantidad >= 5 ? "alta" : "media",
+                  texto: "Consulta repetida",
+                  detalle: `${preguntaRepetida.texto} (${preguntaRepetida.cantidad} veces)`
+              };
+          }
+          return {
+              activa: true,
+              nivel: categoriaRepetida[1] >= 7 ? "alta" : "media",
+              texto: "Necesita seguimiento",
+              detalle: `${categoriaRepetida[0]} (${categoriaRepetida[1]} consultas)`
+          };
+      }
+
+      function resumirConsultasIAGeneral(estudiantes) {
+          const categorias = new Map();
+          const modulos = new Map();
+          const preguntas = new Map();
+          let totalConsultas = 0;
+          let alumnosConConsultas = 0;
+          let alumnosConAlerta = 0;
+
+          (Array.isArray(estudiantes) ? estudiantes : []).forEach(d => {
+              const resumen = resumirConsultasIAEstudiante(d);
+              if (resumen.total > 0) alumnosConConsultas++;
+              if (obtenerAlertaConsultasIA(d).activa) alumnosConAlerta++;
+              totalConsultas += resumen.total;
+              resumen.categorias.forEach(([nombre, cantidad]) => {
+                  categorias.set(nombre, (categorias.get(nombre) || 0) + cantidad);
+              });
+              resumen.modulos.forEach(m => {
+                  const actual = modulos.get(m.id) || { titulo: m.titulo, cantidad: 0 };
+                  actual.cantidad += m.cantidad;
+                  modulos.set(m.id, actual);
+              });
+              resumen.frecuentes.forEach(p => {
+                  const clave = normalizarEvaluacion(p.texto).replace(/[¿?¡!.,;:]+/g, "").trim();
+                  if (!clave) return;
+                  const actual = preguntas.get(clave) || { texto: p.texto, cantidad: 0 };
+                  actual.cantidad += p.cantidad;
+                  preguntas.set(clave, actual);
+              });
+          });
+
+          return {
+              totalConsultas,
+              alumnosConConsultas,
+              alumnosConAlerta,
+              categorias: [...categorias.entries()].sort((a, b) => b[1] - a[1]),
+              modulos: [...modulos.values()].sort((a, b) => b.cantidad - a.cantidad),
+              preguntas: [...preguntas.values()].sort((a, b) => b.cantidad - a.cantidad).slice(0, 5)
+          };
+      }
+
+      function renderResumenConsultasIAGeneral(estudiantes) {
+          const contenedor = document.getElementById("resumenConsultasIAProfesor");
+          if (!contenedor) return;
+          const resumen = resumirConsultasIAGeneral(estudiantes);
+          if (!resumen.totalConsultas) {
+              contenedor.innerHTML = `<div style="padding:1rem;border:1px solid rgba(139,92,246,.28);border-radius:8px;background:rgba(139,92,246,.05);color:var(--text-muted)">
+                  <strong>Consultas generales al chat IA:</strong> todavía no hay consultas guardadas entre los alumnos mostrados.
+              </div>`;
+              return;
+          }
+          contenedor.innerHTML = `<div style="padding:1rem;border:1px solid rgba(139,92,246,.38);border-radius:8px;background:rgba(139,92,246,.07)">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:.8rem">
+                  <h3 style="margin:0;color:#d8b4fe"><i class="fa-solid fa-chart-line"></i> Consultas generales al chat IA</h3>
+                  <span style="padding:.35rem .55rem;border-radius:6px;background:${resumen.alumnosConAlerta ? "rgba(239,68,68,.16)" : "rgba(16,185,129,.13)"};color:${resumen.alumnosConAlerta ? "#fecaca" : "#a7f3d0"}">
+                      ${resumen.alumnosConAlerta} alumno(s) con alerta
+                  </span>
+              </div>
+              <div class="teacher-detail-summary" style="margin:.4rem 0 .9rem">
+                  <div class="teacher-detail-stat"><small>Consultas totales</small><strong>${resumen.totalConsultas}</strong></div>
+                  <div class="teacher-detail-stat"><small>Alumnos que consultaron</small><strong>${resumen.alumnosConConsultas}</strong></div>
+                  <div class="teacher-detail-stat"><small>Tema principal</small><strong>${escapeHtml(resumen.categorias[0]?.[0] || "Sin clasificar")}</strong></div>
+                  <div class="teacher-detail-stat"><small>Módulo principal</small><strong>${escapeHtml(resumen.modulos[0]?.titulo || "Sin módulo")}</strong></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.9rem">
+                  <div><h4>Temas más consultados</h4><div style="margin-top:.4rem;line-height:1.65">${resumen.categorias.slice(0, 6).map(([nombre, cantidad]) => `<div>${escapeHtml(nombre)}: <strong>${cantidad}</strong></div>`).join("")}</div></div>
+                  <div><h4>Módulos con más consultas</h4><div style="margin-top:.4rem;line-height:1.65">${resumen.modulos.slice(0, 6).map(m => `<div>${escapeHtml(m.titulo)}: <strong>${m.cantidad}</strong></div>`).join("")}</div></div>
+                  <div><h4>Preguntas más repetidas</h4><ol style="margin:.4rem 0 0 1.2rem;line-height:1.6">${resumen.preguntas.map(p => `<li>${escapeHtml(p.texto)}${p.cantidad > 1 ? ` <strong>(${p.cantidad})</strong>` : ""}</li>`).join("") || "<li>Sin repeticiones.</li>"}</ol></div>
+              </div>
+          </div>`;
+      }
+
       function abrirDetalleEstudianteProfesor(indice) {
           const d = estudiantesProfesor[indice];
           if (!d) return;
           const e = d.estudiante || {};
           const historial = d.historialResultados || {};
+          const chatIA = d.chatIA || {};
           const codigos = d.codigos || {};
           const tiempos = d.tiemposRestantes || {};
           const finalizadas = d.finalizadas || {};
@@ -3420,8 +4919,11 @@
           const promedio = calcularNotaEstudiante(d);
           const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
+          const resumenConsultasIA = resumirConsultasIAEstudiante(d);
           const eventos = Array.isArray(d.eventosSalidasPestaña) ? d.eventosSalidasPestaña : [];
           const revision = d.revisionSalidas || {};
+          const cronometroIndividualPausado = d.controlCronometroIndividual?.pausado === true;
+          const cuentaInactiva = d.estadoCuenta === 'inactivo';
           const fecha = d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : 'Sin fecha';
           document.getElementById('detalleEstudianteProfesorTitle').innerHTML =
               `<i class="fa-solid fa-user-graduate"></i> ${escapeHtml(e.nombre || d.nombreGoogle || 'Estudiante sin nombre')}`;
@@ -3430,10 +4932,12 @@
 
           const actividadesHtml = seccionesData.map((sec, numero) => {
               const r = historial[sec.id] || {};
+              const mensajesChat = Array.isArray(chatIA[sec.id]) ? chatIA[sec.id] : [];
               const preguntas = Array.isArray(r.analista?.preguntas) ? r.analista.preguntas : [];
               const codigo = r.codigo || codigos[sec.id] || '// Sin código guardado';
               const salida = r.salida || '// Sin salida de ejecución guardada';
               const notaFinal = r.notaFinal ?? r.notaIA;
+              const evaluacionCodigo = r.evaluacionCodigo || null;
               const estado = finalizadas[sec.id] ? 'Finalizada' : (r.notaCodigo !== undefined ? 'Preguntas pendientes' : 'En curso');
               const formulaActividad = r.notaCodigo !== undefined && r.notaPreguntas !== undefined
                   ? `(${r.notaCodigo} × 0,70) + (${r.notaPreguntas} × 0,30) = ${notaFinal}`
@@ -3457,6 +4961,16 @@
                       <h4 style="margin-top:.8rem">Salida de ejecución</h4>
                       <pre class="teacher-code" style="color:#7dd3fc">${escapeHtml(salida)}</pre>
                       ${r.analisisIA ? `<div style="margin-top:.8rem"><strong>Análisis automático:</strong><div style="margin-top:.35rem;color:#cbd5e1">${escapeHtml(r.analisisIA)}</div></div>` : ''}
+                      <div style="margin-top:.8rem">
+                          <h4>Chat guiado con IA (${mensajesChat.length} mensajes)</h4>
+                          ${mensajesChat.length
+                              ? `<div style="display:flex;flex-direction:column;gap:.45rem;margin-top:.4rem;">${mensajesChat.map(m => `
+                                  <div style="padding:.55rem .65rem;border-radius:6px;background:${m.rol === 'student' ? 'rgba(139,92,246,.14)' : 'rgba(56,189,248,.08)'};border:1px solid rgba(148,163,184,.18);">
+                                      <small style="color:var(--text-muted)">${m.rol === 'student' ? 'Alumno' : 'IA'}</small>
+                                      <div style="margin-top:.2rem;white-space:pre-wrap;">${escapeHtml(m.texto || '')}</div>
+                                  </div>`).join('')}</div>`
+                              : '<div style="color:var(--text-muted);margin-top:.35rem;">No hay consultas guardadas para este módulo.</div>'}
+                      </div>
                       <div style="margin-top:1rem">
                           <h4>Preguntas y respuestas (${preguntas.length})</h4>
                           ${preguntas.length ? preguntas.map(renderPreguntaProfesor).join('') : '<p style="color:var(--text-muted);margin-top:.5rem;">El estudiante todavía no entregó las preguntas de esta actividad.</p>'}
@@ -3488,6 +5002,36 @@
               </div>`;
           }).join('') : '<p style="color:var(--text-muted)">No hay cambios de pestaña registrados.</p>';
 
+          const resumenConsultasHtml = resumenConsultasIA.total
+              ? `<div style="padding:1rem;border:1px solid rgba(139,92,246,.38);border-radius:8px;background:rgba(139,92,246,.07);margin-bottom:1rem">
+                  <h3 style="color:#d8b4fe;margin-bottom:.7rem"><i class="fa-solid fa-chart-column"></i> Resumen de consultas al chat IA</h3>
+                  <div class="teacher-detail-summary" style="margin:.4rem 0 .9rem">
+                      <div class="teacher-detail-stat"><small>Consultas del alumno</small><strong>${resumenConsultasIA.total}</strong></div>
+                      <div class="teacher-detail-stat"><small>Tema más consultado</small><strong>${escapeHtml(resumenConsultasIA.categorias[0]?.[0] || "Sin clasificar")}</strong></div>
+                      <div class="teacher-detail-stat"><small>Módulo con más consultas</small><strong>${escapeHtml(resumenConsultasIA.modulos[0]?.titulo || "Sin módulo")}</strong></div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem">
+                      <div>
+                          <h4>Temas frecuentes</h4>
+                          <div style="margin-top:.4rem;line-height:1.65">${resumenConsultasIA.categorias.map(([nombre, cantidad]) =>
+                              `<div>${escapeHtml(nombre)}: <strong>${cantidad}</strong></div>`).join("")}</div>
+                      </div>
+                      <div>
+                          <h4>Consultas por módulo</h4>
+                          <div style="margin-top:.4rem;line-height:1.65">${resumenConsultasIA.modulos.slice(0, 6).map(m =>
+                              `<div>${escapeHtml(m.titulo)}: <strong>${m.cantidad}</strong></div>`).join("")}</div>
+                      </div>
+                  </div>
+                  <div style="margin-top:.8rem">
+                      <h4>Preguntas más repetidas</h4>
+                      <ol style="margin:.45rem 0 0 1.2rem;line-height:1.6">${resumenConsultasIA.frecuentes.map(p =>
+                          `<li>${escapeHtml(p.texto)}${p.cantidad > 1 ? ` <strong>(${p.cantidad} veces)</strong>` : ""}</li>`).join("")}</ol>
+                  </div>
+              </div>`
+              : `<div style="padding:1rem;border:1px solid rgba(139,92,246,.3);border-radius:8px;background:rgba(139,92,246,.05);margin-bottom:1rem;color:var(--text-muted)">
+                  <strong>Resumen de consultas al chat IA:</strong> este alumno todavía no realizó consultas guardadas.
+              </div>`;
+
           document.getElementById('detalleEstudianteProfesorContenido').innerHTML = `
               <div class="teacher-detail-summary">
                   <div class="teacher-detail-stat"><small>Nombre</small><strong>${escapeHtml(e.nombre || d.nombreGoogle || 'Sin nombre')}</strong></div>
@@ -3497,9 +5041,44 @@
                   <div class="teacher-detail-stat"><small>Progreso</small><strong>${progreso}%</strong></div>
                   <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === '—' ? 'Pendiente' : `${notaDefinitiva}/10`}</strong></div>
+                  <div class="teacher-detail-stat"><small>Estado de cuenta</small><strong style="color:${cuentaInactiva ? '#fca5a5' : '#6ee7b7'}">${cuentaInactiva ? 'Inactiva' : 'Activa'}</strong></div>
                   <div class="teacher-detail-stat"><small>Salidas de pestaña</small><strong>${Number(d.salidasPestaña || 0)}</strong></div>
                   <div class="teacher-detail-stat"><small>Última actualización</small><strong>${escapeHtml(fecha)}</strong></div>
               </div>
+              <div style="position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;padding:.7rem;margin-bottom:1rem;border:1px solid rgba(56,189,248,.35);border-radius:8px;background:rgba(15,23,42,.96);box-shadow:0 8px 18px rgba(0,0,0,.22)">
+                  <strong style="color:var(--primary)"><i class="fa-solid fa-layer-group"></i> Secciones del informe</strong>
+                  <div class="btn-group">
+                      <button class="btn btn-primary" onclick="document.querySelectorAll('#detalleEstudianteProfesorContenido .teacher-activity').forEach(x=>x.open=true)">
+                          <i class="fa-solid fa-angles-down"></i> Expandir todo
+                      </button>
+                      <button class="btn btn-secondary" onclick="document.querySelectorAll('#detalleEstudianteProfesorContenido .teacher-activity').forEach(x=>x.open=false)">
+                          <i class="fa-solid fa-angles-up"></i> Contraer todo
+                      </button>
+                  </div>
+              </div>
+              <div style="padding:1rem;border:1px solid ${cuentaInactiva ? 'rgba(239,68,68,.35)' : 'rgba(16,185,129,.35)'};border-radius:8px;background:${cuentaInactiva ? 'rgba(239,68,68,.06)' : 'rgba(16,185,129,.06)'};margin-bottom:1rem">
+                  <strong>Estado institucional: ${cuentaInactiva ? 'INACTIVA' : 'ACTIVA'}</strong>
+                  ${cuentaInactiva ? `<div style="margin-top:.35rem">Motivo: ${escapeHtml(d.bajaMotivo || 'Sin motivo')}<br>Fecha: ${escapeHtml(d.bajaFecha ? new Date(d.bajaFecha).toLocaleString() : 'Sin fecha')}<br>Responsable: ${escapeHtml(d.bajaPor || 'Sin registrar')}</div>` : '<div style="margin-top:.35rem;color:var(--text-muted)">La cuenta puede iniciar sesión normalmente.</div>'}
+                  <div style="margin-top:.7rem">
+                      <button class="btn ${cuentaInactiva ? 'btn-success' : 'btn-danger'}" onclick="cambiarEstadoCuentaEstudiante(${indice}, '${cuentaInactiva ? 'activo' : 'inactivo'}')">
+                          <i class="fa-solid ${cuentaInactiva ? 'fa-user-check' : 'fa-user-slash'}"></i>
+                          ${cuentaInactiva ? 'Reactivar cuenta' : 'Dar de baja'}
+                      </button>
+                  </div>
+              </div>
+              <div style="padding:1rem;border:1px solid rgba(56,189,248,.35);border-radius:8px;background:rgba(56,189,248,.06);margin-bottom:1rem">
+                  <strong>Control individual del cronómetro: ${cronometroIndividualPausado ? 'PAUSADO' : 'ACTIVO'}</strong>
+                  <div class="btn-group" style="margin-top:.7rem">
+                      <button class="btn ${cronometroIndividualPausado ? 'btn-success' : 'btn-warning'}" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroIndividualPausado ? 'reanudar' : 'pausar'}')">
+                          <i class="fa-solid ${cronometroIndividualPausado ? 'fa-play' : 'fa-pause'}"></i>
+                          ${cronometroIndividualPausado ? 'Reanudar cronómetro' : 'Pausar cronómetro'}
+                      </button>
+                      <button class="btn btn-secondary" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')">
+                          <i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00
+                      </button>
+                  </div>
+              </div>
+              ${resumenConsultasHtml}
               <details class="teacher-activity" open>
                   <summary>Cómo se calculó el promedio final</summary>
                   <div class="teacher-activity-content">
@@ -3514,6 +5093,9 @@
                   <summary>Registro de cambios de pestaña y revisión docente</summary>
                   <div class="teacher-activity-content">
                       <p style="color:var(--text-muted);margin-bottom:.7rem;">Estos eventos son indicadores para revisión; no constituyen por sí solos una prueba de fraude.</p>
+                      <button class="btn btn-danger" style="margin-bottom:.8rem" onclick="reiniciarSalidasEstudianteProfesor(${indice})">
+                          <i class="fa-solid fa-rotate-left"></i> Reiniciar contador de cambios de pestaña
+                      </button>
                       ${eventosHtml}
                       <div style="margin-top:1rem;padding:1rem;border:1px solid rgba(245,158,11,.35);border-radius:8px;background:rgba(245,158,11,.06)">
                           <h4>Decisión docente</h4>
@@ -3551,10 +5133,6 @@
               </details>
               <div style="display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;margin:1rem 0 .7rem;">
                   <h3 style="margin:0;color:var(--primary)">Actividades</h3>
-                  <div class="btn-group">
-                      <button class="btn btn-secondary" onclick="document.querySelectorAll('#detalleEstudianteProfesorContenido .teacher-activity').forEach(x=>x.open=true)">Expandir todas</button>
-                      <button class="btn btn-secondary" onclick="document.querySelectorAll('#detalleEstudianteProfesorContenido .teacher-activity').forEach(x=>x.open=false)">Contraer todas</button>
-                  </div>
               </div>
               ${actividadesHtml}`;
           document.getElementById('detalleEstudianteProfesorModal').classList.add('active');
@@ -3575,12 +5153,21 @@
           const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='—').map(Number);
           const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'—';
           document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Completaron',completos],['Promedio definitivo',promedio],['Sin datos',''+(total-completos)]].map(x=>`<div style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
+          renderResumenConsultasIAGeneral(rows);
           document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
               const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
               const fecha=d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : '—';
               const indice=estudiantesProfesor.indexOf(d);
-              return `<tr><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button></td></tr>`;
-          }).join('') || '<tr><td colspan="10" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
+              const inactiva = d.estadoCuenta === 'inactivo';
+              const cronometroPausado = d.controlCronometroIndividual?.pausado === true;
+              const alertaIA = obtenerAlertaConsultasIA(d);
+              const alertaHtml = alertaIA.activa
+                  ? `<div title="${escapeHtml(alertaIA.detalle)}" style="margin-top:.35rem;padding:.3rem .45rem;border-radius:5px;background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.18)' : 'rgba(245,158,11,.16)'};color:${alertaIA.nivel === 'alta' ? '#fecaca' : '#fde68a'};font-size:.7rem;line-height:1.3">
+                      <i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(alertaIA.texto)}<br>${escapeHtml(alertaIA.detalle)}
+                    </div>`
+                  : '';
+              return `<tr style="${alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button></div></td></tr>`;
+          }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
       }
       function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
       async function iniciarPanelProfesorTiempoReal() {
@@ -3589,7 +5176,7 @@
               const { getFirestore, collection, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
               // Usamos la instancia Firestore ya inicializada dentro del módulo Firebase.
               if (!window.__firestorePanel) { document.getElementById('estadoPanelProfesor').textContent='Panel disponible cuando las reglas de Firestore permitan consultar la colección estudiantes.'; }
-              const u=window.firebaseCurrentUser;
+              const u=window.firebaseTeacherUser || window.firebaseCurrentUser;
               if (!u) return;
               // Solicita la colección mediante un evento al módulo Firebase.
               window.__abrirPanelProfesorFirestore?.();
@@ -3872,6 +5459,18 @@
                       doc.text(formulaModulo, 14, yPos);
                       yPos += 5;
                   }
+              }
+
+              if (res.evaluacionCodigo?.criterios?.length) {
+                  doc.setFontSize(8);
+                  doc.setFont("helvetica", "normal");
+                  const criteriosPDF = res.evaluacionCodigo.criterios
+                      .map(c => `${c.nombre}: ${c.puntos}/${c.peso} (${c.estado})`)
+                      .join(" | ");
+                  const lineasEvaluacion = doc.splitTextToSize(`Evaluación automática orientativa: ${res.evaluacionCodigo.nota}/10\n${criteriosPDF}`, 180);
+                  asegurarEspacioPDF(lineasEvaluacion.length * 4 + 2);
+                  doc.text(lineasEvaluacion, 14, yPos);
+                  yPos += lineasEvaluacion.length * 4 + 2;
               }
 
               doc.setFontSize(9);
