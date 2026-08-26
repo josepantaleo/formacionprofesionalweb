@@ -974,6 +974,9 @@
   };
 
       const firebaseConfigured = !Object.values(firebaseConfig).some(v => String(v).includes("REEMPLAZAR_"));
+      const TEACHER_EMAILS = Object.freeze([
+        "ipem146centenario@gmail.com"
+      ]);
       let auth = null, db = null, googleProvider = null;
       let teacherAuth = null, teacherDb = null, teacherProvider = null;
       let teacherPersistenceReady = Promise.resolve();
@@ -989,7 +992,10 @@
         teacherDb = getFirestore(teacherApp);
         teacherProvider = new GoogleAuthProvider();
         teacherProvider.setCustomParameters({ prompt: "select_account" });
-        teacherPersistenceReady = setPersistence(teacherAuth, inMemoryPersistence);
+        teacherPersistenceReady = setPersistence(teacherAuth, inMemoryPersistence).catch(error => {
+          console.warn("No se pudo activar la persistencia temporal docente:", error);
+          return null;
+        });
         onAuthStateChanged(teacherAuth, user => {
           window.firebaseTeacherUser = user || null;
           window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: user || null }));
@@ -1010,12 +1016,34 @@
       window.firebaseCurrentUser = null;
       window.firebaseTeacherUser = null;
 
+      function correoNormalizado(user) {
+        return String(user?.email || "").trim().toLowerCase();
+      }
+
+      function mensajeErrorAutenticacion(error, contexto = "iniciar sesion") {
+        const codigo = String(error?.code || "");
+        const mensajes = {
+          "auth/unauthorized-domain": "Este dominio no esta autorizado en Firebase Authentication. Agregalo en Authentication > Settings > Authorized domains.",
+          "auth/operation-not-allowed": "El proveedor Google no esta habilitado. Activalo en Firebase Authentication > Sign-in method.",
+          "auth/popup-blocked": "El navegador bloqueo la ventana de Google. Habilita las ventanas emergentes para este sitio e intenta nuevamente.",
+          "auth/popup-closed-by-user": "La ventana de Google se cerro antes de completar el ingreso.",
+          "auth/cancelled-popup-request": "Ya habia una ventana de ingreso abierta. Cerrala e intenta nuevamente.",
+          "auth/network-request-failed": "No se pudo conectar con Firebase. Revisa la conexion a Internet.",
+          "auth/operation-not-supported-in-this-environment": "Firebase no admite el ingreso desde este entorno. Abri la pagina desde un sitio http:// o https://, no directamente como archivo local."
+        };
+        const detalle = mensajes[codigo] || error?.message || codigo || "Error desconocido.";
+        const ayudaLocal = window.location.protocol === "file:"
+          ? "\n\nLa pagina esta abierta como archivo local. Publicala o servila mediante http://localhost para usar Google."
+          : "";
+        return `No se pudo ${contexto}.\n\n${detalle}${ayudaLocal}`;
+      }
+
       async function verificarUsuarioDocente(user) {
         if (!user) return false;
         try {
           const token = await user.getIdTokenResult();
           const claimTeacher = token?.claims?.teacher === true || token?.claims?.docente === true;
-          const emailTeacher = ["ipem146centenario@gmail.com"].includes(String(user.email || "").toLowerCase());
+          const emailTeacher = TEACHER_EMAILS.includes(correoNormalizado(user));
           return claimTeacher || emailTeacher;
         } catch (error) {
           console.warn("No se pudo verificar la autorización docente:", error);
@@ -1032,6 +1060,13 @@
       window.autorizarDocenteFirebase = async function() {
         if (await window.esDocenteAutorizadoFirebase()) return true;
         if (!teacherAuth || !teacherProvider) return false;
+        if (window.location.protocol === "file:") {
+          alert(mensajeErrorAutenticacion(
+            { code: "auth/operation-not-supported-in-this-environment" },
+            "autorizar la cuenta docente"
+          ));
+          return false;
+        }
         try {
           await teacherPersistenceReady;
           const credential = await signInWithPopup(teacherAuth, teacherProvider);
@@ -1047,7 +1082,7 @@
         } catch (error) {
           console.error("Error de autorización docente:", error);
           if (error?.code !== "auth/popup-closed-by-user") {
-            alert("No se pudo completar la autorización docente.\n\n" + (error.code || error.message));
+            alert(mensajeErrorAutenticacion(error, "autorizar la cuenta docente"));
           }
           return false;
         }
@@ -1170,7 +1205,7 @@
           window.location.reload();
         } catch (error) {
           console.error(error);
-          alert("No se pudo iniciar sesión con Google. Revisa la configuración de Firebase y los dominios autorizados.\n\n" + (error.code || error.message));
+          alert(mensajeErrorAutenticacion(error, "iniciar sesion con Google"));
         }
       };
 
@@ -1405,6 +1440,7 @@
           </div>
           <div class="btn-group">
             <button class="btn btn-success" onclick="guardarAhoraFirebase()"><i class="fa-solid fa-cloud-arrow-up"></i> Guardar ahora</button>
+            <button class="btn btn-warning" id="btnIngresoDocente" onclick="ingresarComoDocente()"><i class="fa-solid fa-chalkboard-user"></i> Ingresar como docente</button>
             <button class="btn btn-primary teacher-only" onclick="solicitarAccionProfesor('editor_desafios')"><i class="fa-solid fa-puzzle-piece"></i> Editor de desafíos</button>
             <button class="btn btn-primary teacher-only" onclick="solicitarAccionProfesor('panel_profesor')"><i class="fa-solid fa-chalkboard-user"></i> Panel Profesor</button>
             <button class="btn btn-warning teacher-only teacher-session-only" onclick="cerrarAccesoDocenteTemporal()"><i class="fa-solid fa-user-lock"></i> Cerrar acceso docente</button>
@@ -1824,6 +1860,11 @@
           const autorizacionTemporal = Boolean(window.firebaseTeacherUser);
           document.body.classList.toggle('teacher-authorized', autorizado);
           document.body.classList.toggle('teacher-temporary', autorizado && autorizacionTemporal);
+          const btnIngresoDocente = document.getElementById('btnIngresoDocente');
+          if (btnIngresoDocente) {
+              btnIngresoDocente.style.display = autorizado ? 'none' : 'inline-flex';
+              btnIngresoDocente.disabled = false;
+          }
           document.querySelectorAll('.teacher-only').forEach(control => {
               const visible = autorizado && (!control.classList.contains('teacher-session-only') || autorizacionTemporal);
               control.setAttribute('aria-hidden', visible ? 'false' : 'true');
@@ -1834,6 +1875,22 @@
               document.getElementById('panelProfesorModal')?.classList.remove('active');
               document.getElementById('editorDesafiosFirebaseModal')?.classList.remove('active');
           }
+      }
+
+      async function ingresarComoDocente() {
+          const boton = document.getElementById('btnIngresoDocente');
+          if (boton) {
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando cuenta...';
+          }
+          const autorizado = await window.autorizarDocenteFirebase?.();
+          await actualizarVisibilidadDocente();
+          if (boton) {
+              boton.disabled = false;
+              boton.innerHTML = '<i class="fa-solid fa-chalkboard-user"></i> Ingresar como docente';
+          }
+          if (!autorizado) return;
+          abrirPanelProfesor();
       }
 
       async function cerrarAccesoDocenteTemporal() {
