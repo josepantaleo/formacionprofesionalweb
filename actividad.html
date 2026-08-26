@@ -1574,6 +1574,10 @@
           return true;
         } catch (error) {
           console.error("Firebase save error:", error);
+          window.ultimoErrorGuardadoFirebase = {
+            code: error?.code || '',
+            message: error?.message || 'Error desconocido'
+          };
           return false;
         }
       };
@@ -2647,7 +2651,11 @@
           actualizarTodosEstadosChatIA('saving', 'Guardando en Firebase...');
           try {
               const ok = await window.guardarProgresoFirebase(construirPaqueteAvanceFirebase());
-              mostrarEstadoFirebase(ok ? 'online' : 'offline', ok ? 'Guardado en Firebase' : 'Error al guardar');
+              const errorGuardado = window.ultimoErrorGuardadoFirebase;
+              const textoError = errorGuardado?.code === 'permission-denied'
+                  ? 'Permiso denegado: publicá las reglas de Firestore'
+                  : 'Error al guardar';
+              mostrarEstadoFirebase(ok ? 'online' : 'offline', ok ? 'Guardado en Firebase' : textoError);
               actualizarTodosEstadosChatIA(ok ? 'saved' : 'error', ok ? 'Guardado en Firebase' : 'Error de guardado');
               return ok;
           } catch (e) {
