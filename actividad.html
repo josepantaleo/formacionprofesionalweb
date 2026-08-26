@@ -1886,6 +1886,8 @@
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
           <input id="filtroProfesor" placeholder="Buscar estudiante o email" style="flex:1;min-width:220px;">
           <select id="filtroCursoProfesor"><option value="">Todos los cursos</option></select>
+          <select id="filtroEstadoProfesor" aria-label="Filtrar por estado"><option value="">Todos los estados</option><option value="conectados">Conectados</option><option value="trabajando">Trabajando</option><option value="finalizados">Finalizaron</option><option value="alertas">Con alertas</option></select>
+          <select id="ordenProfesor" aria-label="Ordenar estudiantes"><option value="actividad">Última actividad</option><option value="alertas">Alertas primero</option><option value="progreso">Menor progreso</option><option value="nombre">Nombre A-Z</option></select>
           <select id="filtroTurnoProfesor"><option value="">Todos los turnos</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select>
         </div>
         <div style="padding:.75rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06);margin-bottom:1rem;font-size:.82rem;line-height:1.5;">
@@ -2438,8 +2440,10 @@
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
       window.addEventListener('load', () => {
         actualizarVisibilidadDocente();
-        ['filtroProfesor','filtroCursoProfesor','filtroTurnoProfesor'].forEach(id => document.getElementById(id)?.addEventListener('input', renderPanelProfesor));
-        document.getElementById('filtroTurnoProfesor')?.addEventListener('change', renderPanelProfesor);
+          ['filtroProfesor','filtroCursoProfesor','filtroTurnoProfesor','filtroEstadoProfesor','ordenProfesor'].forEach(id => {
+              document.getElementById(id)?.addEventListener('input', renderPanelProfesor);
+              document.getElementById(id)?.addEventListener('change', renderPanelProfesor);
+          });
       });
 
       function mostrarEstadoFirebase(tipo, texto) {
@@ -5411,18 +5415,41 @@
           const q = (document.getElementById('filtroProfesor').value || '').toLowerCase().trim();
           const curso = document.getElementById('filtroCursoProfesor').value;
           const turno = document.getElementById('filtroTurnoProfesor').value;
+          const estadoFiltro = document.getElementById('filtroEstadoProfesor')?.value || '';
+          const orden = document.getElementById('ordenProfesor')?.value || 'actividad';
           const rows = estudiantesProfesor.filter(d => {
               const e=d.estudiante||{};
               const text=`${e.nombre||''} ${d.email||''}`.toLowerCase();
-              return (!q || text.includes(q)) && (!curso || e.curso===curso) && (!turno || e.turno===turno);
+              const progreso = calcularProgresoEstudiante(d);
+              const alerta = obtenerAlertaConsultasIA(d);
+              const actualizado = d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().getTime() : 0;
+              const conectado = actualizado > 0 && Date.now() - actualizado < 5 * 60 * 1000;
+              const trabajando = conectado && progreso < 100;
+              const finalizado = progreso >= 100;
+              const cumpleEstado = !estadoFiltro
+                || (estadoFiltro === 'conectados' && conectado)
+                || (estadoFiltro === 'trabajando' && trabajando)
+                || (estadoFiltro === 'finalizados' && finalizado)
+                || (estadoFiltro === 'alertas' && alerta.activa);
+              d.__panelMeta = { progreso, alerta: alerta.activa, actualizado, conectado };
+              return (!q || text.includes(q)) && (!curso || e.curso===curso) && (!turno || e.turno===turno) && cumpleEstado;
+          }).sort((a,b) => {
+              const am=a.__panelMeta||{}, bm=b.__panelMeta||{};
+              if (orden === 'nombre') return String(a.estudiante?.nombre||a.nombreGoogle||'').localeCompare(String(b.estudiante?.nombre||b.nombreGoogle||''));
+              if (orden === 'progreso') return (am.progreso||0) - (bm.progreso||0);
+              if (orden === 'alertas') return Number(bm.alerta)-Number(am.alerta) || (bm.actualizado||0)-(am.actualizado||0);
+              return (bm.actualizado||0)-(am.actualizado||0);
           });
           const cursos=[...new Set(estudiantesProfesor.map(d=>d.estudiante?.curso).filter(Boolean))].sort();
           const sel=document.getElementById('filtroCursoProfesor');
           const old=sel.value; sel.innerHTML='<option value="">Todos los cursos</option>'+cursos.map(c=>`<option>${c}</option>`).join(''); if(cursos.includes(old)) sel.value=old;
           const total=rows.length, completos=rows.filter(d=>calcularProgresoEstudiante(d)>=100).length;
+          const conectados=rows.filter(d=>d.__panelMeta?.conectado).length;
+          const trabajando=rows.filter(d=>d.__panelMeta?.conectado && d.__panelMeta?.progreso<100).length;
+          const conAlertas=rows.filter(d=>d.__panelMeta?.alerta).length;
           const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='—').map(Number);
           const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'—';
-          document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Completaron',completos],['Promedio definitivo',promedio],['Sin datos',''+(total-completos)]].map(x=>`<div style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
+          document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Conectados',conectados],['Trabajando',trabajando],['Con alertas',conAlertas],['Completaron',completos],['Promedio definitivo',promedio]].map(x=>`<div style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
           renderResumenConsultasIAGeneral(rows);
           document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
               const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
