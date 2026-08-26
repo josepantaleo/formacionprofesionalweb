@@ -484,6 +484,16 @@
         color: var(--text-muted);
         font-size: .72rem;
       }
+      .ai-chat-sync {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        color: var(--text-muted);
+        font-size: .7rem;
+      }
+      .ai-chat-sync.saved { color: #86efac; }
+      .ai-chat-sync.saving { color: #fde68a; }
+      .ai-chat-sync.error { color: #fca5a5; }
       .ai-chat-messages {
         max-height: 260px;
         overflow-y: auto;
@@ -1745,6 +1755,7 @@
           Las actividades pendientes no se incluyen.
         </div>
         <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
+        <div id="resumenConsultasIAProfesor" style="margin-bottom:1rem;"></div>
         <div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;min-width:1040px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Última actualización</th><th>Detalle</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
         <p id="estadoPanelProfesor" style="margin-top:1rem;color:var(--text-muted);font-size:.8rem;"></p>
       </div>
@@ -2078,6 +2089,7 @@
 
       let firebaseSaveTimer = null;
       let firebaseSaveInProgress = false;
+      let firebaseSavePending = false;
       let firebaseInitialized = false;
       let claseHabilitada = false;
       let cuentaEstudianteActiva = false;
@@ -2346,22 +2358,42 @@
 
       function programarGuardadoFirebase() {
           if (!firebaseInitialized || !window.firebaseCurrentUser) return;
+          if (firebaseSaveInProgress) {
+              firebaseSavePending = true;
+              mostrarEstadoFirebase('saving', 'Cambios pendientes de sincronización...');
+              return;
+          }
           clearTimeout(firebaseSaveTimer);
           firebaseSaveTimer = setTimeout(() => guardarAhoraFirebase(), 1200);
       }
 
       async function guardarAhoraFirebase() {
-          if (!firebaseInitialized || !window.firebaseCurrentUser || firebaseSaveInProgress) return;
+          if (!firebaseInitialized || !window.firebaseCurrentUser) return false;
+          if (firebaseSaveInProgress) {
+              firebaseSavePending = true;
+              return false;
+          }
           firebaseSaveInProgress = true;
+          firebaseSavePending = false;
           mostrarEstadoFirebase('saving', 'Guardando...');
+          actualizarTodosEstadosChatIA('saving', 'Guardando en Firebase...');
           try {
               const ok = await window.guardarProgresoFirebase(construirPaqueteAvanceFirebase());
               mostrarEstadoFirebase(ok ? 'online' : 'offline', ok ? 'Guardado en Firebase' : 'Error al guardar');
+              actualizarTodosEstadosChatIA(ok ? 'saved' : 'error', ok ? 'Guardado en Firebase' : 'Error de guardado');
+              return ok;
           } catch (e) {
               console.error(e);
               mostrarEstadoFirebase('offline', 'Error de conexión');
+              actualizarTodosEstadosChatIA('error', 'Error de conexión');
+              return false;
           } finally {
               firebaseSaveInProgress = false;
+              if (firebaseSavePending) {
+                  firebaseSavePending = false;
+                  clearTimeout(firebaseSaveTimer);
+                  firebaseSaveTimer = setTimeout(() => guardarAhoraFirebase(), 150);
+              }
           }
       }
 
@@ -2788,7 +2820,10 @@
                           <div class="ai-chat-box" id="ai-chat-${sec.id}">
                               <div class="ai-chat-header">
                                   <div class="ai-chat-title"><i class="fa-solid fa-comments"></i> Chat de pistas por módulo</div>
-                                  <span class="ai-chat-note">No entrega la solución completa</span>
+                                  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.2rem">
+                                      <span class="ai-chat-note">No entrega la solución completa</span>
+                                      <span class="ai-chat-sync saved" id="ai-chat-sync-${sec.id}"><i class="fa-solid fa-cloud"></i> Sincronizado</span>
+                                  </div>
                               </div>
                               <div class="ai-chat-messages" id="ai-chat-messages-${sec.id}" aria-live="polite"></div>
                               <div class="ai-chat-quick-actions">
@@ -2847,9 +2882,15 @@
               sectionsContainer.appendChild(card);
               try {
                   const guardadoChat = JSON.parse(getLocalStorage(`ai_chat_${sec.id}`) || "[]");
-                  historialChatIA[sec.id] = Array.isArray(guardadoChat) ? guardadoChat.slice(-20) : [];
+                  const chatFirebase = historialChatIA[sec.id];
+                  if (!Array.isArray(chatFirebase)) {
+                      historialChatIA[sec.id] = Array.isArray(guardadoChat) ? guardadoChat.slice(-20) : [];
+                  } else {
+                      historialChatIA[sec.id] = chatFirebase.slice(-20);
+                      setLocalStorage(`ai_chat_${sec.id}`, JSON.stringify(historialChatIA[sec.id]));
+                  }
               } catch (_) {
-                  historialChatIA[sec.id] = [];
+                  if (!Array.isArray(historialChatIA[sec.id])) historialChatIA[sec.id] = [];
               }
               renderizarChatIA(sec.id);
               actualizarDisplayTiempo(sec.id);
@@ -3951,6 +3992,17 @@
           setLocalStorage(`ai_chat_${sectionId}`, JSON.stringify(mensajes.slice(-20)));
       }
 
+      function actualizarEstadoChatIA(sectionId, estado, texto) {
+          const indicador = document.getElementById(`ai-chat-sync-${sectionId}`);
+          if (!indicador) return;
+          indicador.className = `ai-chat-sync ${estado || ""}`.trim();
+          indicador.innerHTML = `<i class="fa-solid ${estado === "error" ? "fa-triangle-exclamation" : estado === "saving" ? "fa-cloud-arrow-up" : "fa-cloud"}"></i> ${escaparTextoAnalista(texto)}`;
+      }
+
+      function actualizarTodosEstadosChatIA(estado, texto) {
+          seccionesData.forEach(sec => actualizarEstadoChatIA(sec.id, estado, texto));
+      }
+
       function renderizarChatIA(sectionId) {
           const contenedor = document.getElementById(`ai-chat-messages-${sectionId}`);
           if (!contenedor) return;
@@ -3966,6 +4018,7 @@
           historialChatIA[sectionId].push({ rol, texto: String(texto || "").trim() });
           guardarChatIA(sectionId);
           renderizarChatIA(sectionId);
+          actualizarEstadoChatIA(sectionId, "saving", "Pendiente de guardar");
           programarGuardadoFirebase();
       }
 
@@ -4758,6 +4811,100 @@
           };
       }
 
+      function obtenerAlertaConsultasIA(d) {
+          const resumen = resumirConsultasIAEstudiante(d);
+          const categoriaRepetida = resumen.categorias.find(([, cantidad]) => cantidad >= 4);
+          const preguntaRepetida = resumen.frecuentes.find(p => p.cantidad >= 3);
+          if (!categoriaRepetida && !preguntaRepetida) {
+              return { activa: false, nivel: "", texto: "", detalle: "" };
+          }
+          if (preguntaRepetida) {
+              return {
+                  activa: true,
+                  nivel: preguntaRepetida.cantidad >= 5 ? "alta" : "media",
+                  texto: "Consulta repetida",
+                  detalle: `${preguntaRepetida.texto} (${preguntaRepetida.cantidad} veces)`
+              };
+          }
+          return {
+              activa: true,
+              nivel: categoriaRepetida[1] >= 7 ? "alta" : "media",
+              texto: "Necesita seguimiento",
+              detalle: `${categoriaRepetida[0]} (${categoriaRepetida[1]} consultas)`
+          };
+      }
+
+      function resumirConsultasIAGeneral(estudiantes) {
+          const categorias = new Map();
+          const modulos = new Map();
+          const preguntas = new Map();
+          let totalConsultas = 0;
+          let alumnosConConsultas = 0;
+          let alumnosConAlerta = 0;
+
+          (Array.isArray(estudiantes) ? estudiantes : []).forEach(d => {
+              const resumen = resumirConsultasIAEstudiante(d);
+              if (resumen.total > 0) alumnosConConsultas++;
+              if (obtenerAlertaConsultasIA(d).activa) alumnosConAlerta++;
+              totalConsultas += resumen.total;
+              resumen.categorias.forEach(([nombre, cantidad]) => {
+                  categorias.set(nombre, (categorias.get(nombre) || 0) + cantidad);
+              });
+              resumen.modulos.forEach(m => {
+                  const actual = modulos.get(m.id) || { titulo: m.titulo, cantidad: 0 };
+                  actual.cantidad += m.cantidad;
+                  modulos.set(m.id, actual);
+              });
+              resumen.frecuentes.forEach(p => {
+                  const clave = normalizarEvaluacion(p.texto).replace(/[¿?¡!.,;:]+/g, "").trim();
+                  if (!clave) return;
+                  const actual = preguntas.get(clave) || { texto: p.texto, cantidad: 0 };
+                  actual.cantidad += p.cantidad;
+                  preguntas.set(clave, actual);
+              });
+          });
+
+          return {
+              totalConsultas,
+              alumnosConConsultas,
+              alumnosConAlerta,
+              categorias: [...categorias.entries()].sort((a, b) => b[1] - a[1]),
+              modulos: [...modulos.values()].sort((a, b) => b.cantidad - a.cantidad),
+              preguntas: [...preguntas.values()].sort((a, b) => b.cantidad - a.cantidad).slice(0, 5)
+          };
+      }
+
+      function renderResumenConsultasIAGeneral(estudiantes) {
+          const contenedor = document.getElementById("resumenConsultasIAProfesor");
+          if (!contenedor) return;
+          const resumen = resumirConsultasIAGeneral(estudiantes);
+          if (!resumen.totalConsultas) {
+              contenedor.innerHTML = `<div style="padding:1rem;border:1px solid rgba(139,92,246,.28);border-radius:8px;background:rgba(139,92,246,.05);color:var(--text-muted)">
+                  <strong>Consultas generales al chat IA:</strong> todavía no hay consultas guardadas entre los alumnos mostrados.
+              </div>`;
+              return;
+          }
+          contenedor.innerHTML = `<div style="padding:1rem;border:1px solid rgba(139,92,246,.38);border-radius:8px;background:rgba(139,92,246,.07)">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:.8rem">
+                  <h3 style="margin:0;color:#d8b4fe"><i class="fa-solid fa-chart-line"></i> Consultas generales al chat IA</h3>
+                  <span style="padding:.35rem .55rem;border-radius:6px;background:${resumen.alumnosConAlerta ? "rgba(239,68,68,.16)" : "rgba(16,185,129,.13)"};color:${resumen.alumnosConAlerta ? "#fecaca" : "#a7f3d0"}">
+                      ${resumen.alumnosConAlerta} alumno(s) con alerta
+                  </span>
+              </div>
+              <div class="teacher-detail-summary" style="margin:.4rem 0 .9rem">
+                  <div class="teacher-detail-stat"><small>Consultas totales</small><strong>${resumen.totalConsultas}</strong></div>
+                  <div class="teacher-detail-stat"><small>Alumnos que consultaron</small><strong>${resumen.alumnosConConsultas}</strong></div>
+                  <div class="teacher-detail-stat"><small>Tema principal</small><strong>${escapeHtml(resumen.categorias[0]?.[0] || "Sin clasificar")}</strong></div>
+                  <div class="teacher-detail-stat"><small>Módulo principal</small><strong>${escapeHtml(resumen.modulos[0]?.titulo || "Sin módulo")}</strong></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.9rem">
+                  <div><h4>Temas más consultados</h4><div style="margin-top:.4rem;line-height:1.65">${resumen.categorias.slice(0, 6).map(([nombre, cantidad]) => `<div>${escapeHtml(nombre)}: <strong>${cantidad}</strong></div>`).join("")}</div></div>
+                  <div><h4>Módulos con más consultas</h4><div style="margin-top:.4rem;line-height:1.65">${resumen.modulos.slice(0, 6).map(m => `<div>${escapeHtml(m.titulo)}: <strong>${m.cantidad}</strong></div>`).join("")}</div></div>
+                  <div><h4>Preguntas más repetidas</h4><ol style="margin:.4rem 0 0 1.2rem;line-height:1.6">${resumen.preguntas.map(p => `<li>${escapeHtml(p.texto)}${p.cantidad > 1 ? ` <strong>(${p.cantidad})</strong>` : ""}</li>`).join("") || "<li>Sin repeticiones.</li>"}</ol></div>
+              </div>
+          </div>`;
+      }
+
       function abrirDetalleEstudianteProfesor(indice) {
           const d = estudiantesProfesor[indice];
           if (!d) return;
@@ -4999,13 +5146,20 @@
           const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='—').map(Number);
           const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'—';
           document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Completaron',completos],['Promedio definitivo',promedio],['Sin datos',''+(total-completos)]].map(x=>`<div style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
+          renderResumenConsultasIAGeneral(rows);
           document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
               const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
               const fecha=d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : '—';
               const indice=estudiantesProfesor.indexOf(d);
               const inactiva = d.estadoCuenta === 'inactivo';
               const cronometroPausado = d.controlCronometroIndividual?.pausado === true;
-              return `<tr><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button></div></td></tr>`;
+              const alertaIA = obtenerAlertaConsultasIA(d);
+              const alertaHtml = alertaIA.activa
+                  ? `<div title="${escapeHtml(alertaIA.detalle)}" style="margin-top:.35rem;padding:.3rem .45rem;border-radius:5px;background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.18)' : 'rgba(245,158,11,.16)'};color:${alertaIA.nivel === 'alta' ? '#fecaca' : '#fde68a'};font-size:.7rem;line-height:1.3">
+                      <i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(alertaIA.texto)}<br>${escapeHtml(alertaIA.detalle)}
+                    </div>`
+                  : '';
+              return `<tr style="${alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button></div></td></tr>`;
           }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
       }
       function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
