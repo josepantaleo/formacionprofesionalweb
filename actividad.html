@@ -1063,8 +1063,15 @@
          margin-top:.4rem;
          justify-content:flex-start;
        }
-       #panelProfesorModal table td:first-child .teacher-action-buttons{
+       #panelProfesorModal table tr.teacher-actions-row td{
+         padding:.35rem .55rem .55rem;
+         border-bottom:1px solid rgba(148,163,184,.15);
+       }
+       #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons{
          display:flex;
+         width:100%;
+         justify-content:space-between;
+         align-items:center;
        }
        #panelProfesorModal table td:last-child .teacher-action-buttons{
          display:none !important;
@@ -5474,9 +5481,12 @@
                   else if (texto.includes('pausar') || texto.includes('reanudar')) boton.title = 'Pausar o reanudar el cronómetro del estudiante';
               });
               const fila = contenedor.closest('tr');
-              const celdaEstudiante = fila?.querySelector('td:first-child');
-              if (fila && celdaEstudiante && !celdaEstudiante.querySelector('.teacher-action-buttons')) {
-                  celdaEstudiante.appendChild(contenedor);
+              if (fila && !fila.nextElementSibling?.classList.contains('teacher-actions-row')) {
+                  const filaAcciones = document.createElement('tr');
+                  filaAcciones.className = 'teacher-actions-row';
+                  filaAcciones.innerHTML = '<td colspan="11"></td>';
+                  filaAcciones.firstElementChild.appendChild(contenedor);
+                  fila.parentNode.insertBefore(filaAcciones, fila.nextSibling);
               }
           });
       }
