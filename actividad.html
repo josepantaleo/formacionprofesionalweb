@@ -1604,6 +1604,28 @@
         }
       };
 
+      window.guardarSalidasPestanaFirebase = async function(salidas, eventos) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db) return false;
+        try {
+          await setDoc(doc(db, "estudiantes", user.uid), {
+            salidasPestana: Number(salidas) || 0,
+            eventosSalidasPestana: Array.isArray(eventos) ? eventos : [],
+            uid: user.uid,
+            email: user.email || "",
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error guardando el cambio de pestaña:", error);
+          window.ultimoErrorSalidasPestana = {
+            code: error?.code || "",
+            message: error?.message || ""
+          };
+          return false;
+        }
+      };
+
       window.guardarRevisionDocenteFirebase = async function(uid, revision) {
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
@@ -1673,7 +1695,8 @@
         const database = contexto.database;
         if (!user || !database || !uid) return false;
         try {
-          await setDoc(doc(database, "estudiantes", uid), {
+          const referencia = doc(database, "estudiantes", uid);
+          await setDoc(referencia, {
             salidasPestana: 0,
             reinicioSalidas: {
               id: `${Date.now()}-${uid}`,
@@ -1685,11 +1708,36 @@
           return true;
         } catch (error) {
           console.error("Error reiniciando el contador de cambios de pestaña:", error);
+          if (error?.code === "permission-denied") {
+            try {
+              await setDoc(doc(database, "estudiantes", uid), {
+                salidasPestana: 0
+              }, { merge: true });
+              window.ultimoErrorReinicioSalidas = {
+                code: "diagnostic-minimal-write-ok",
+                message: "La escritura mínima funcionó; la regla rechazó reinicioSalidas o actualizadoEn.",
+                email: user?.email || "",
+                emailVerified: user?.emailVerified === true
+              };
+              return true;
+            } catch (errorMinimo) {
+              console.error("También falló la escritura mínima del contador:", errorMinimo);
+              window.ultimoErrorReinicioSalidas = {
+                code: errorMinimo?.code || "",
+                message: errorMinimo?.message || "",
+                email: user?.email || "",
+                emailVerified: user?.emailVerified === true,
+                projectId: firebaseConfig.projectId
+              };
+              return false;
+            }
+          }
           window.ultimoErrorReinicioSalidas = {
             code: error?.code || '',
             message: error?.message || '',
             email: user?.email || '',
-            emailVerified: user?.emailVerified === true
+            emailVerified: user?.emailVerified === true,
+            projectId: firebaseConfig.projectId
           };
           return false;
         }
@@ -3002,10 +3050,23 @@
           // Registro de cambios de pestaña para revisión docente.
           let ultimoEventoVisibilidad = 0;
 
-          function persistirEventosSalidas() {
+          async function persistirEventosSalidas(inmediato = false) {
               setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
               document.getElementById('btnJustificarSalida').style.display = eventosSalidasPestaña.length ? 'inline-flex' : 'none';
+              if (inmediato && window.guardarSalidasPestanaFirebase) {
+                  mostrarEstadoFirebase('saving', 'Guardando cambio de pestaña...');
+                  const ok = await window.guardarSalidasPestanaFirebase(
+                      totalSalidasPestaña,
+                      JSON.parse(JSON.stringify(eventosSalidasPestaña))
+                  );
+                  mostrarEstadoFirebase(
+                      ok ? 'online' : 'offline',
+                      ok ? 'Cambio de pestaña guardado' : 'No se guardó el cambio de pestaña'
+                  );
+                  return ok;
+              }
               programarGuardadoFirebase();
+              return true;
           }
 
           function registrarCambioPestaña(origen = 'visibility') {
@@ -3026,7 +3087,7 @@
                   justificacion: null
               };
               eventosSalidasPestaña.push(salidaActivaPestaña);
-              persistirEventosSalidas();
+              void persistirEventosSalidas(true);
 
               const badge = document.getElementById('blurCount');
               if (badge) badge.innerText = String(totalSalidasPestaña);
@@ -3049,7 +3110,7 @@
                   Math.round((regreso - new Date(salidaActivaPestaña.salidaEn).getTime()) / 1000)
               );
               salidaActivaPestaña = null;
-              persistirEventosSalidas();
+              void persistirEventosSalidas(true);
           }
 
           // Fuente principal: cambio real de visibilidad de la página.
@@ -3058,8 +3119,11 @@
                   registrarCambioPestaña('visibility');
               } else {
                   registrarRegresoPestaña();
-                  programarGuardadoFirebase();
               }
+          });
+
+          window.addEventListener('pagehide', () => {
+              void persistirEventosSalidas(true);
           });
 
           // Respaldo para navegadores muy antiguos sin Page Visibility API.
@@ -5072,6 +5136,7 @@
                       'Firestore rechazó el reinicio por permisos.\n\n' +
                       `Cuenta utilizada: ${error.email || 'sin identificar'}\n` +
                       `Correo verificado: ${error.emailVerified ? 'sí' : 'no'}\n\n` +
+                      `Proyecto Firebase: ${error.projectId || 'sin identificar'}\n\n` +
                       'Confirmá que esta cuenta figure en firestore.rules y que las reglas estén publicadas.'
                   );
               } else {
@@ -5082,7 +5147,14 @@
           d.salidasPestana = 0;
           renderPanelProfesor();
           abrirDetalleEstudianteProfesor(indice);
-          alert('Contador de cambios de pestaña reiniciado correctamente.');
+          if (window.ultimoErrorReinicioSalidas?.code === 'diagnostic-minimal-write-ok') {
+              alert(
+                  'El contador se reinició mediante la escritura mínima.\n\n' +
+                  'Diagnóstico: Firestore acepta salidasPestana, pero rechaza reinicioSalidas o actualizadoEn.'
+              );
+          } else {
+              alert('Contador de cambios de pestaña reiniciado correctamente.');
+          }
       }
 
       async function controlarCronometroEstudianteProfesor(indice, accion) {
