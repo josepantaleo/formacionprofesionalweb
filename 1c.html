@@ -1159,6 +1159,27 @@
         });
       };
 
+      window.escucharReinicioSalidasFirebase = function() {
+        if (!db || !window.firebaseCurrentUser) return;
+        if (window.__reinicioSalidasUnsubscribe) window.__reinicioSalidasUnsubscribe();
+        const referencia = doc(db, "estudiantes", window.firebaseCurrentUser.uid);
+        window.__reinicioSalidasUnsubscribe = onSnapshot(referencia, snapshot => {
+          if (!snapshot.exists()) return;
+          const datos = snapshot.data();
+          const reinicio = datos.reinicioSalidas || null;
+          if (!reinicio?.id) return;
+          window.dispatchEvent(new CustomEvent("reinicio-salidas-estudiante", {
+            detail: {
+              id: reinicio.id,
+              solicitadoEn: reinicio.solicitadoEn || null,
+              salidasPestaña: Number(datos.salidasPestaña || 0)
+            }
+          }));
+        }, error => {
+          console.error("Error escuchando reinicio de cambios de pestaña:", error);
+        });
+      };
+
       window.iniciarClaseFirebase = async function() {
         const autorizado = await window.autorizarDocenteFirebase?.();
         if (!autorizado) return false;
@@ -1291,6 +1312,28 @@
           return true;
         } catch (error) {
           console.error("Error guardando estado de estudiante:", error);
+          return false;
+        }
+      };
+
+      window.reiniciarSalidasEstudianteFirebase = async function(uid) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid) return false;
+        try {
+          await setDoc(doc(database, "estudiantes", uid), {
+            salidasPestaña: 0,
+            reinicioSalidas: {
+              id: `${Date.now()}-${uid}`,
+              solicitadoPor: user.email || user.displayName || user.uid,
+              solicitadoEn: serverTimestamp()
+            },
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error reiniciando el contador de cambios de pestaña:", error);
           return false;
         }
       };
@@ -1979,6 +2022,23 @@
         await actualizarVisibilidadDocente();
         if (event.detail) window.escucharInicioClaseFirebase?.();
       });
+      window.addEventListener('reinicio-salidas-estudiante', event => {
+          const datos = event.detail || {};
+          const ultimoReinicio = getLocalStorage('app_last_tab_reset') || '';
+          if (!datos.id || datos.id === ultimoReinicio) return;
+          const fechaReinicio = datos.solicitadoEn?.toMillis
+              ? datos.solicitadoEn.toMillis()
+              : Number(datos.solicitadoEn?.seconds || 0) * 1000;
+          const reinicioReciente = fechaReinicio > 0 && Date.now() - fechaReinicio < 10 * 60 * 1000;
+          if (Number(datos.salidasPestaña) !== 0 && !reinicioReciente) return;
+          totalSalidasPestaña = 0;
+          salidaActivaPestaña = null;
+          setLocalStorage('app_blur_count', 0);
+          setLocalStorage('app_last_tab_reset', datos.id);
+          const contador = document.getElementById('blurCount');
+          if (contador) contador.innerText = '0';
+          alert('El docente reinició el contador de cambios de pestaña. El historial detallado permanece registrado.');
+      });
       window.addEventListener('profesor-data', e => { estudiantesProfesor = e.detail || []; document.getElementById('estadoPanelProfesor').textContent = `Actualizado en tiempo real: ${new Date().toLocaleTimeString()}`; renderPanelProfesor(); });
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
       window.addEventListener('load', () => {
@@ -2215,6 +2275,7 @@
           overlay.classList.add('hidden');
           aplicarEstadoInicioClase(false);
           window.escucharInicioClaseFirebase?.();
+          window.escucharReinicioSalidasFirebase?.();
 
           // La configuración docente de desafíos tiene prioridad sobre la copia local.
           if (typeof window.cargarDesafiosFirebase === 'function') {
@@ -4019,6 +4080,28 @@
           renderPanelProfesor();
           abrirDetalleEstudianteProfesor(indice);
       }
+
+      async function reiniciarSalidasEstudianteProfesor(indice) {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) {
+              alert('No se encontró el identificador Firebase del estudiante.');
+              return;
+          }
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'este estudiante';
+          if (!confirm(`¿Reiniciar a cero el contador visible de cambios de pestaña de ${nombre}?\n\nEl historial detallado y las justificaciones se conservarán.`)) {
+              return;
+          }
+          const ok = await window.reiniciarSalidasEstudianteFirebase?.(d.uid);
+          if (!ok) {
+              alert('No se pudo reiniciar el contador. Verificá que las reglas de Firestore estén publicadas.');
+              return;
+          }
+          d.salidasPestaña = 0;
+          renderPanelProfesor();
+          abrirDetalleEstudianteProfesor(indice);
+          alert('Contador de cambios de pestaña reiniciado correctamente.');
+      }
+
       function renderPreguntaProfesor(p, indice) {
           const seleccionadas = Array.isArray(p?.seleccionadas) ? p.seleccionadas : [];
           const opciones = Array.isArray(p?.opciones) ? p.opciones : [];
@@ -4165,6 +4248,9 @@
                   <summary>Registro de cambios de pestaña y revisión docente</summary>
                   <div class="teacher-activity-content">
                       <p style="color:var(--text-muted);margin-bottom:.7rem;">Estos eventos son indicadores para revisión; no constituyen por sí solos una prueba de fraude.</p>
+                      <button class="btn btn-danger" style="margin-bottom:.8rem" onclick="reiniciarSalidasEstudianteProfesor(${indice})">
+                          <i class="fa-solid fa-rotate-left"></i> Reiniciar contador de cambios de pestaña
+                      </button>
                       ${eventosHtml}
                       <div style="margin-top:1rem;padding:1rem;border:1px solid rgba(245,158,11,.35);border-radius:8px;background:rgba(245,158,11,.06)">
                           <h4>Decisión docente</h4>
@@ -4231,7 +4317,7 @@
               const fecha=d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : '—';
               const indice=estudiantesProfesor.indexOf(d);
               const inactiva = d.estadoCuenta === 'inactivo';
-              return `<tr><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button></td></tr>`;
+              return `<tr><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Reiniciar</button></div></td></tr>`;
           }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
       }
       function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
