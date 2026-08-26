@@ -457,6 +457,86 @@
         line-height: 1.4;
       }
 
+      .ai-chat-box {
+        margin-top: 1rem;
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.72);
+        overflow: hidden;
+      }
+      .ai-chat-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        padding: .75rem .9rem;
+        background: rgba(56, 189, 248, 0.08);
+        border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+      }
+      .ai-chat-title {
+        color: #7dd3fc;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+      }
+      .ai-chat-note {
+        color: var(--text-muted);
+        font-size: .72rem;
+      }
+      .ai-chat-messages {
+        max-height: 260px;
+        overflow-y: auto;
+        padding: .8rem;
+        display: flex;
+        flex-direction: column;
+        gap: .6rem;
+      }
+      .ai-chat-message {
+        max-width: 92%;
+        padding: .65rem .75rem;
+        border-radius: 8px;
+        line-height: 1.45;
+        font-size: .82rem;
+        white-space: pre-wrap;
+      }
+      .ai-chat-message.assistant {
+        align-self: flex-start;
+        background: rgba(56, 189, 248, 0.1);
+        border: 1px solid rgba(56, 189, 248, 0.22);
+      }
+      .ai-chat-message.student {
+        align-self: flex-end;
+        background: rgba(139, 92, 246, 0.16);
+        border: 1px solid rgba(139, 92, 246, 0.3);
+      }
+      .ai-chat-composer {
+        display: flex;
+        gap: .5rem;
+        padding: .75rem;
+        border-top: 1px solid rgba(148, 163, 184, .16);
+      }
+      .ai-chat-input {
+        flex: 1;
+        min-width: 0;
+        border: 1px solid rgba(148, 163, 184, .3);
+        border-radius: 6px;
+        background: rgba(15, 23, 42, .9);
+        color: var(--text-main);
+        padding: .65rem .7rem;
+        font: inherit;
+      }
+      .ai-chat-quick-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .45rem;
+        padding: 0 .75rem .75rem;
+      }
+      .ai-chat-quick-actions .btn {
+        font-size: .74rem;
+        padding: .45rem .6rem;
+      }
+
       /* Analista de Viabilidad y Excelencia — RESPONDE AHORA */
       .analyst-box {
         display: none;
@@ -2682,6 +2762,23 @@
 
                           <div class="console-output" id="console-${sec.id}" role="status" aria-live="polite">${isFinalized ? '// Actividad finalizada y bloqueada.' : '// Pulsa "Ejecutar y Probar" para ver la consola...'}</div>
 
+                          <div class="ai-chat-box" id="ai-chat-${sec.id}">
+                              <div class="ai-chat-header">
+                                  <div class="ai-chat-title"><i class="fa-solid fa-comments"></i> Chat de pistas por módulo</div>
+                                  <span class="ai-chat-note">No entrega la solución completa</span>
+                              </div>
+                              <div class="ai-chat-messages" id="ai-chat-messages-${sec.id}" aria-live="polite"></div>
+                              <div class="ai-chat-quick-actions">
+                                  <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'pista')"><i class="fa-solid fa-lightbulb"></i> Dame una pista</button>
+                                  <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'error')"><i class="fa-solid fa-bug"></i> Ayúdame con el error</button>
+                                  <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'siguiente')"><i class="fa-solid fa-forward"></i> ¿Qué reviso ahora?</button>
+                              </div>
+                              <form class="ai-chat-composer" onsubmit="enviarMensajeIA(event, '${sec.id}')">
+                                  <input class="ai-chat-input" id="ai-chat-input-${sec.id}" maxlength="240" autocomplete="off" placeholder="Escribí tu duda sobre este módulo..." aria-label="Pregunta a la IA sobre ${sec.title}" ${isFinalized ? 'disabled' : ''}>
+                                  <button class="btn btn-ai" type="submit" ${isFinalized ? 'disabled' : ''}><i class="fa-solid fa-paper-plane"></i> Enviar</button>
+                              </form>
+                          </div>
+
                           <div class="ai-feedback-box ${isFinalized ? 'active' : ''}" id="ai-feedback-${sec.id}">
                               <div class="ai-header"><i class="fa-solid fa-wand-magic-sparkles"></i> Evaluación automática orientativa</div>
                               <div class="ai-comparison-grid">
@@ -2721,6 +2818,13 @@
                   </div>
               `;
               sectionsContainer.appendChild(card);
+              try {
+                  const guardadoChat = JSON.parse(getLocalStorage(`ai_chat_${sec.id}`) || "[]");
+                  historialChatIA[sec.id] = Array.isArray(guardadoChat) ? guardadoChat.slice(-20) : [];
+              } catch (_) {
+                  historialChatIA[sec.id] = [];
+              }
+              renderizarChatIA(sec.id);
               actualizarDisplayTiempo(sec.id);
 
               if (isFinalized) {
@@ -3811,6 +3915,87 @@
           return String(s || "")
               .replace(/&/g,"&amp;").replace(/</g,"&lt;")
               .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+      }
+
+      const historialChatIA = {};
+
+      function guardarChatIA(sectionId) {
+          const mensajes = historialChatIA[sectionId] || [];
+          setLocalStorage(`ai_chat_${sectionId}`, JSON.stringify(mensajes.slice(-20)));
+      }
+
+      function renderizarChatIA(sectionId) {
+          const contenedor = document.getElementById(`ai-chat-messages-${sectionId}`);
+          if (!contenedor) return;
+          const mensajes = historialChatIA[sectionId] || [];
+          contenedor.innerHTML = mensajes.length
+              ? mensajes.map(m => `<div class="ai-chat-message ${m.rol === "student" ? "student" : "assistant"}">${escaparTextoAnalista(m.texto)}</div>`).join("")
+              : `<div class="ai-chat-message assistant">Soy tu guía de este módulo. Puedo darte pistas, ayudarte a interpretar un error o proponerte qué revisar, pero no voy a entregar la solución completa.</div>`;
+          contenedor.scrollTop = contenedor.scrollHeight;
+      }
+
+      function agregarMensajeChatIA(sectionId, rol, texto) {
+          if (!historialChatIA[sectionId]) historialChatIA[sectionId] = [];
+          historialChatIA[sectionId].push({ rol, texto: String(texto || "").trim() });
+          guardarChatIA(sectionId);
+          renderizarChatIA(sectionId);
+      }
+
+      function generarRespuestaChatIA(sectionId, pregunta, modo = "consulta") {
+          const sec = seccionesData.find(s => s.id === sectionId) || {};
+          const editor = document.getElementById(`editor-${sectionId}`);
+          const code = editor?.value || "";
+          const historial = historialResultados[sectionId] || {};
+          const evaluacion = evaluarCodigoPorEvidencias(code, sec, historial.exito === undefined ? null : {
+              ok: Boolean(historial.exito),
+              salida: historial.salida || "",
+              error: historial.exito ? "" : "La ejecución no fue validada correctamente."
+          });
+          const texto = normalizarEvaluacion(`${pregunta} ${modo}`);
+          const pendientes = (evaluacion.conceptos || []).filter(x => !x.cumple).map(x => x.nombre).slice(0, 3);
+          const error = historial.exito === false || historial.error;
+
+          if (/solucion|codigo completo|respuesta completa|hacelo por mi|dame el codigo/.test(texto)) {
+              return "Puedo orientarte, pero no voy a escribir la solución completa. Decime qué parte te cuesta: datos de entrada, condición, repetición, función o salida.";
+          }
+          if (modo === "error" || /error|no funciona|falla|undefined|syntax/.test(texto)) {
+              if (error) return `Primero revisá el mensaje de la consola: ${historial.error || "hay un error de ejecución"}. Ubicá la línea señalada y comprobá nombres de variables, paréntesis y llaves. ¿Qué valor esperabas obtener allí?`;
+              return "Ejecutá el código y copiá mentalmente el primer resultado inesperado. Después revisá la línea que construye ese valor, sin cambiar varias cosas a la vez.";
+          }
+          if (modo === "siguiente" || /ahora|sigo|continuo|reviso/.test(texto)) {
+              if (pendientes.length) return `El próximo foco de revisión puede ser: ${pendientes.join(", ")}. Elegí uno y explicá qué debería hacer en tu solución.`;
+              return "Probá al menos un caso normal y un caso límite. Luego explicá qué parte del código demuestra que cumplís la consigna.";
+          }
+          if (/condicion|if|decidir/.test(texto)) return "Escribí primero la regla en palabras: «si ocurre..., entonces...; de lo contrario...». Después buscá cómo traducir esa regla a una condición.";
+          if (/bucle|repet|for|while|recorrer/.test(texto)) return "Identificá qué dato se repite, desde dónde empieza el recorrido y cuándo debe detenerse. No programes el bucle hasta poder responder esas tres preguntas.";
+          if (/funcion|parametro|return/.test(texto)) return "Pensá qué tarea única debería resolver la función, qué información necesita recibir y qué resultado debe devolver. Probá la función con un ejemplo pequeño.";
+          if (/salida|console|mostrar|resultado/.test(texto)) return "Compará la salida real con la salida que pide la consigna. Revisá qué variable estás mostrando y en qué momento se calcula.";
+          if (pendientes.length) return `Pista: todavía no encuentro evidencia clara de ${pendientes.join(", ")}. Volvé a la consigna y buscá una instrucción que puedas convertir en una pequeña prueba.`;
+          return "Pista inicial: explicá con tus palabras qué debe entrar, qué debe procesarse y qué debe salir. Esa explicación te va a indicar cuál es el próximo bloque de código.";
+      }
+
+      function pedirPistaIA(sectionId, modo = "pista") {
+          if (!claseHabilitada || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
+          const textos = {
+              pista: "Dame una pista para avanzar.",
+              error: "Ayúdame a revisar un posible error.",
+              siguiente: "¿Qué debería revisar ahora?"
+          };
+          const pregunta = textos[modo] || textos.pista;
+          agregarMensajeChatIA(sectionId, "student", pregunta);
+          agregarMensajeChatIA(sectionId, "assistant", generarRespuestaChatIA(sectionId, pregunta, modo));
+      }
+
+      function enviarMensajeIA(event, sectionId) {
+          event.preventDefault();
+          if (!claseHabilitada || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
+          const input = document.getElementById(`ai-chat-input-${sectionId}`);
+          const pregunta = input?.value.trim() || "";
+          if (!pregunta) return;
+          agregarMensajeChatIA(sectionId, "student", pregunta);
+          agregarMensajeChatIA(sectionId, "assistant", generarRespuestaChatIA(sectionId, pregunta));
+          input.value = "";
+          input.focus();
       }
 
       function extraerEvidencias(code) {
