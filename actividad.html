@@ -1299,6 +1299,14 @@
               actualizadoPor: controlCronometro.actualizadoPor || ""
             }
           }));
+          if (datos.chatIABorradoId) {
+            window.dispatchEvent(new CustomEvent("borrado-chat-ia-estudiante", {
+              detail: {
+                id: datos.chatIABorradoId,
+                borradoPor: datos.chatIABorradoPor || ""
+              }
+            }));
+          }
         }, error => {
           console.error("Error escuchando reinicio de cambios de pestaña:", error);
         });
@@ -1522,6 +1530,29 @@
           return true;
         } catch (error) {
           console.error("Error controlando el cronómetro individual:", error);
+          return false;
+        }
+      };
+
+      window.borrarConsultasIAEstudiantesFirebase = async function(uids) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return false;
+        const { user, database } = contextoDocenteFirebase();
+        const ids = [...new Set((Array.isArray(uids) ? uids : []).filter(Boolean))];
+        if (!user || !database || !ids.length) return false;
+        try {
+          for (const uid of ids) {
+            await setDoc(doc(database, "estudiantes", uid), {
+              chatIA: {},
+              chatIABorradoId: `${Date.now()}-${uid}`,
+              chatIABorradoPor: user.email || user.displayName || user.uid,
+              chatIABorradoEn: serverTimestamp(),
+              actualizadoEn: serverTimestamp()
+            }, { merge: true });
+          }
+          return true;
+        } catch (error) {
+          console.error("Error borrando consultas IA:", error);
           return false;
         }
       };
@@ -2272,6 +2303,18 @@
       window.addEventListener('control-cronometro-individual', event => {
           ultimoControlCronometroIndividual = event.detail || {};
           aplicarControlCronometroIndividual(ultimoControlCronometroIndividual);
+      });
+      window.addEventListener('borrado-chat-ia-estudiante', event => {
+          const id = String(event.detail?.id || "");
+          const ultimo = getLocalStorage('app_last_ai_chat_delete') || "";
+          if (!id || id === ultimo) return;
+          Object.keys(historialChatIA).forEach(sectionId => {
+              historialChatIA[sectionId] = [];
+              localStorage.removeItem(storageKey(`ai_chat_${sectionId}`));
+              renderizarChatIA(sectionId);
+              actualizarEstadoChatIA(sectionId, "saved", "Historial borrado por el docente");
+          });
+          setLocalStorage('app_last_ai_chat_delete', id);
       });
       window.addEventListener('estado-cuenta-estudiante', event => {
           if (event.detail?.estadoCuenta === 'inactivo') {
@@ -4874,9 +4917,49 @@
           };
       }
 
+      let estudiantesConsultasIAVisibles = [];
+
+      async function borrarConsultasIAGeneralesProfesor() {
+          const estudiantes = estudiantesConsultasIAVisibles.filter(d => d?.uid);
+          const conConsultas = estudiantes.filter(d => resumirConsultasIAEstudiante(d).total > 0);
+          const totalConsultas = conConsultas.reduce((total, d) => total + resumirConsultasIAEstudiante(d).total, 0);
+          if (!conConsultas.length) {
+              alert("No hay consultas de IA para borrar entre los alumnos mostrados.");
+              return;
+          }
+          if (!confirm(
+              `¿Borrar ${totalConsultas} consulta(s) del chat IA de ${conConsultas.length} alumno(s) mostrados?\n\n` +
+              "Se eliminarán preguntas y respuestas del chat. No se borrarán códigos, notas, cronómetros ni actividades."
+          )) return;
+          if (!confirm("Esta acción no se puede deshacer desde el panel. ¿Confirmás el borrado definitivo?")) return;
+
+          const boton = document.getElementById("btnBorrarConsultasIAGenerales");
+          const contenidoOriginal = boton?.innerHTML || "";
+          if (boton) {
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Borrando...';
+          }
+          const ok = await window.borrarConsultasIAEstudiantesFirebase?.(conConsultas.map(d => d.uid));
+          if (boton) {
+              boton.disabled = false;
+              boton.innerHTML = contenidoOriginal;
+          }
+          if (!ok) {
+              alert("No se pudieron borrar las consultas. Verificá que las reglas actualizadas estén publicadas en Firebase.");
+              return;
+          }
+          const ids = new Set(conConsultas.map(d => d.uid));
+          estudiantesProfesor.forEach(d => {
+              if (ids.has(d.uid)) d.chatIA = {};
+          });
+          renderPanelProfesor();
+          alert("Las consultas generales del chat IA fueron borradas correctamente.");
+      }
+
       function renderResumenConsultasIAGeneral(estudiantes) {
           const contenedor = document.getElementById("resumenConsultasIAProfesor");
           if (!contenedor) return;
+          estudiantesConsultasIAVisibles = Array.isArray(estudiantes) ? [...estudiantes] : [];
           const resumen = resumirConsultasIAGeneral(estudiantes);
           if (!resumen.totalConsultas) {
               contenedor.innerHTML = `<div style="padding:1rem;border:1px solid rgba(139,92,246,.28);border-radius:8px;background:rgba(139,92,246,.05);color:var(--text-muted)">
@@ -4887,9 +4970,14 @@
           contenedor.innerHTML = `<div style="padding:1rem;border:1px solid rgba(139,92,246,.38);border-radius:8px;background:rgba(139,92,246,.07)">
               <div style="display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:.8rem">
                   <h3 style="margin:0;color:#d8b4fe"><i class="fa-solid fa-chart-line"></i> Consultas generales al chat IA</h3>
-                  <span style="padding:.35rem .55rem;border-radius:6px;background:${resumen.alumnosConAlerta ? "rgba(239,68,68,.16)" : "rgba(16,185,129,.13)"};color:${resumen.alumnosConAlerta ? "#fecaca" : "#a7f3d0"}">
-                      ${resumen.alumnosConAlerta} alumno(s) con alerta
-                  </span>
+                  <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+                      <span style="padding:.35rem .55rem;border-radius:6px;background:${resumen.alumnosConAlerta ? "rgba(239,68,68,.16)" : "rgba(16,185,129,.13)"};color:${resumen.alumnosConAlerta ? "#fecaca" : "#a7f3d0"}">
+                          ${resumen.alumnosConAlerta} alumno(s) con alerta
+                      </span>
+                      <button class="btn btn-danger" id="btnBorrarConsultasIAGenerales" type="button" onclick="borrarConsultasIAGeneralesProfesor()">
+                          <i class="fa-solid fa-trash-can"></i> Borrar consultas generales
+                      </button>
+                  </div>
               </div>
               <div class="teacher-detail-summary" style="margin:.4rem 0 .9rem">
                   <div class="teacher-detail-stat"><small>Consultas totales</small><strong>${resumen.totalConsultas}</strong></div>
