@@ -1677,6 +1677,10 @@
           return true;
         } catch (error) {
           console.error("Error reiniciando el contador de cambios de pestaña:", error);
+          window.ultimoErrorReinicioSalidas = {
+            code: error?.code || '',
+            message: error?.message || ''
+          };
           return false;
         }
       };
@@ -1968,9 +1972,12 @@
           <span><i class="fa-solid fa-comments" aria-hidden="true"></i> Borrar IA</span>
           <span><i class="fa-solid fa-trash-can" aria-hidden="true"></i> Eliminar estudiante</span>
         </div>
-        <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
-          <input id="filtroProfesor" placeholder="Buscar estudiante o email" style="flex:1;min-width:220px;">
+        <div id="filtrosPanelProfesor" style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
+          <input id="filtroProfesor" placeholder="Estudiante" aria-label="Filtrar por estudiante" style="flex:1;min-width:150px;">
+          <input id="filtroEmailProfesor" placeholder="Email" aria-label="Filtrar por email" style="flex:1;min-width:180px;">
           <select id="filtroCursoProfesor"><option value="">Todos los cursos</option></select>
+          <select id="filtroDivisionProfesor" aria-label="Filtrar por división"><option value="">Todas las divisiones</option></select>
+          <select id="filtroTurnoProfesor"><option value="">Todos los turnos</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select>
           <select id="filtroEstadoProfesor" aria-label="Filtrar por estado">
             <option value="">Todos los estados</option>
             <option value="activa">Cuenta activa</option>
@@ -2001,8 +2008,32 @@
             <option value="5">5 o más</option>
             <option value="10">10 o más</option>
           </select>
-          <select id="ordenProfesor" aria-label="Ordenar estudiantes"><option value="actividad">Última actividad</option><option value="alertas">Alertas primero</option><option value="progreso">Menor progreso</option><option value="nombre">Nombre A-Z</option></select>
-          <select id="filtroTurnoProfesor"><option value="">Todos los turnos</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select>
+          <select id="filtroNotaProfesor" aria-label="Filtrar por nota definitiva"><option value="">Todas las notas</option><option value="sin-nota">Sin calificación</option><option value="0-3.9">0–3,9</option><option value="4-5.9">4–5,9</option><option value="6-6.9">6–6,9</option><option value="7-8.9">7–8,9</option><option value="9-10">9–10</option></select>
+          <select id="filtroActualizacionProfesor" aria-label="Filtrar por última actualización"><option value="">Cualquier actualización</option><option value="5m">Últimos 5 minutos</option><option value="15m">Últimos 15 minutos</option><option value="1h">Última hora</option><option value="hoy">Hoy</option><option value="7d">Últimos 7 días</option><option value="sin-fecha">Sin fecha</option></select>
+          <select id="ordenProfesor" aria-label="Ordenar tabla">
+            <option value="actualizacion-desc">Última actualización: reciente</option>
+            <option value="actualizacion-asc">Última actualización: antigua</option>
+            <option value="nombre-asc">Estudiante: A–Z</option>
+            <option value="nombre-desc">Estudiante: Z–A</option>
+            <option value="email-asc">Email: A–Z</option>
+            <option value="email-desc">Email: Z–A</option>
+            <option value="curso-asc">Curso: ascendente</option>
+            <option value="curso-desc">Curso: descendente</option>
+            <option value="division-asc">División: A–Z</option>
+            <option value="division-desc">División: Z–A</option>
+            <option value="turno-asc">Turno: A–Z</option>
+            <option value="turno-desc">Turno: Z–A</option>
+            <option value="estado-asc">Estado: activas primero</option>
+            <option value="estado-desc">Estado: inactivas primero</option>
+            <option value="progreso-asc">Progreso: menor primero</option>
+            <option value="progreso-desc">Progreso: mayor primero</option>
+            <option value="nota-asc">Nota: menor primero</option>
+            <option value="nota-desc">Nota: mayor primero</option>
+            <option value="salidas-asc">Pestañas: menor primero</option>
+            <option value="salidas-desc">Pestañas: mayor primero</option>
+            <option value="alertas-desc">Alertas primero</option>
+          </select>
+          <button class="btn btn-secondary" type="button" onclick="limpiarFiltrosProfesor()" title="Restablecer todos los filtros"><i class="fa-solid fa-filter-circle-xmark"></i> Limpiar</button>
         </div>
         <div style="padding:.75rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06);margin-bottom:1rem;font-size:.82rem;line-height:1.5;">
           <strong>Cómo se calcula:</strong> cada actividad obtiene
@@ -2554,7 +2585,7 @@
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
       window.addEventListener('load', () => {
         actualizarVisibilidadDocente();
-          ['filtroProfesor','filtroCursoProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','ordenProfesor'].forEach(id => {
+          ['filtroProfesor','filtroEmailProfesor','filtroCursoProfesor','filtroDivisionProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','filtroNotaProfesor','filtroActualizacionProfesor','ordenProfesor'].forEach(id => {
               document.getElementById(id)?.addEventListener('input', renderPanelProfesor);
               document.getElementById(id)?.addEventListener('change', renderPanelProfesor);
           });
@@ -5021,7 +5052,10 @@
           }
           const ok = await window.reiniciarSalidasEstudianteFirebase?.(d.uid);
           if (!ok) {
-              alert('No se pudo reiniciar el contador. Verificá que las reglas de Firestore estén publicadas.');
+              const error = window.ultimoErrorReinicioSalidas;
+              alert(error?.code === 'permission-denied'
+                  ? 'Firestore rechazó el reinicio por permisos. Publicá la versión actualizada de firestore.rules y volvé a iniciar la sesión docente.'
+                  : `No se pudo reiniciar el contador${error?.message ? `: ${error.message}` : '.'}`);
               return;
           }
           d.salidasPestaña = 0;
