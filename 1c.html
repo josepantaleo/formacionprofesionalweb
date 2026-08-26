@@ -536,6 +536,22 @@
         font-size: .74rem;
         padding: .45rem .6rem;
       }
+      .ai-chat-quick-actions .btn-chat-primary {
+        background: rgba(56, 189, 248, .16);
+        border-color: rgba(56, 189, 248, .35);
+        color: #bae6fd;
+      }
+      .ai-chat-quick-actions .btn-chat-danger {
+        background: rgba(239, 68, 68, .12);
+        border-color: rgba(239, 68, 68, .35);
+        color: #fecaca;
+        margin-left: auto;
+      }
+      @media (max-width: 620px) {
+        .ai-chat-quick-actions .btn-chat-danger {
+          margin-left: 0;
+        }
+      }
 
       /* Analista de Viabilidad y Excelencia — RESPONDE AHORA */
       .analyst-box {
@@ -2776,9 +2792,13 @@
                               </div>
                               <div class="ai-chat-messages" id="ai-chat-messages-${sec.id}" aria-live="polite"></div>
                               <div class="ai-chat-quick-actions">
-                                  <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'pista')"><i class="fa-solid fa-lightbulb"></i> Dame una pista</button>
+                                  <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'consigna')"><i class="fa-solid fa-list-check"></i> Entender consigna</button>
+                                  <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'revisar')"><i class="fa-solid fa-code"></i> Revisar mi código</button>
+                                  <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'pista')"><i class="fa-solid fa-lightbulb"></i> Dame una pista</button>
                                   <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'error')"><i class="fa-solid fa-bug"></i> Ayúdame con el error</button>
                                   <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'siguiente')"><i class="fa-solid fa-forward"></i> ¿Qué reviso ahora?</button>
+                                  <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'ejemplo')"><i class="fa-solid fa-flask"></i> Proponer prueba</button>
+                                  <button class="btn btn-chat-danger" type="button" onclick="limpiarChatIA('${sec.id}')"><i class="fa-solid fa-trash-can"></i> Limpiar chat</button>
                               </div>
                               <form class="ai-chat-composer" onsubmit="enviarMensajeIA(event, '${sec.id}')">
                                   <input class="ai-chat-input" id="ai-chat-input-${sec.id}" maxlength="240" autocomplete="off" placeholder="Escribí tu duda sobre este módulo..." aria-label="Pregunta a la IA sobre ${sec.title}" ${isFinalized ? 'disabled' : ''}>
@@ -3963,6 +3983,20 @@
           const pendientes = (evaluacion.conceptos || []).filter(x => !x.cumple).map(x => x.nombre).slice(0, 3);
           const error = historial.exito === false || historial.error;
 
+          if (modo === "consigna" || /consigna|que pide|objetivo|entender/.test(texto)) {
+              return `La consigna pide: ${sec.exerciseDesc || "resolver el desafío del módulo"}. Separala en tres partes: qué datos entran, qué transformación debe hacer tu programa y qué resultado debe mostrar. No empieces por copiar código; primero escribí esas tres respuestas.`;
+          }
+          if (modo === "revisar" || /revisar mi codigo|revisar|esta bien|calidad/.test(texto)) {
+              if (!code.trim() || (sec.initialCode && code.trim() === String(sec.initialCode).trim())) {
+                  return "Todavía veo la plantilla inicial. Escribí al menos un primer intento y luego puedo ayudarte a revisar su estructura.";
+              }
+              const fortalezas = (evaluacion.fortalezas || []).slice(0, 2);
+              const mejoras = (evaluacion.mejoras || []).slice(0, 2);
+              return `${fortalezas.length ? `Detecto como avance: ${fortalezas.join(" · ")}. ` : ""}${mejoras.length ? `Para revisar ahora: ${mejoras.join(" · ")}.` : "La estructura general parece encaminada; probá casos distintos antes de entregar."}`;
+          }
+          if (modo === "ejemplo" || /prueba|caso|ejemplo|dato/.test(texto)) {
+              return "Proponé un caso normal y uno límite. Para cada uno, anotá el resultado esperado antes de ejecutar. Si ambos coinciden, agregá un tercer caso que pueda revelar una condición faltante.";
+          }
           if (/solucion|codigo completo|respuesta completa|hacelo por mi|dame el codigo/.test(texto)) {
               return "Puedo orientarte, pero no voy a escribir la solución completa. Decime qué parte te cuesta: datos de entrada, condición, repetición, función o salida.";
           }
@@ -3985,13 +4019,25 @@
       function pedirPistaIA(sectionId, modo = "pista") {
           if (!claseHabilitada || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
           const textos = {
+              consigna: "Ayudame a entender la consigna.",
+              revisar: "Revisá mi código sin darme la solución.",
               pista: "Dame una pista para avanzar.",
               error: "Ayúdame a revisar un posible error.",
-              siguiente: "¿Qué debería revisar ahora?"
+              siguiente: "¿Qué debería revisar ahora?",
+              ejemplo: "Proponeme una prueba para verificar mi solución."
           };
           const pregunta = textos[modo] || textos.pista;
           agregarMensajeChatIA(sectionId, "student", pregunta);
           agregarMensajeChatIA(sectionId, "assistant", generarRespuestaChatIA(sectionId, pregunta, modo));
+      }
+
+      function limpiarChatIA(sectionId) {
+          if (!claseHabilitada || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
+          if (!confirm("¿Limpiar las consultas de IA de este módulo? El docente dejará de ver este historial después de sincronizarse.")) return;
+          historialChatIA[sectionId] = [];
+          guardarChatIA(sectionId);
+          renderizarChatIA(sectionId);
+          programarGuardadoFirebase();
       }
 
       function enviarMensajeIA(event, sectionId) {
