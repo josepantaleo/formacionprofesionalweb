@@ -1934,6 +1934,23 @@
             <option value="alertas">Con alertas IA</option>
             <option value="cambios">Con cambios de pestaña</option>
           </select>
+          <select id="filtroProgresoProfesor" aria-label="Filtrar por rango de progreso">
+            <option value="">Todo el progreso</option>
+            <option value="0">0%</option>
+            <option value="1-25">1–25%</option>
+            <option value="26-50">26–50%</option>
+            <option value="51-75">51–75%</option>
+            <option value="76-99">76–99%</option>
+            <option value="100">100%</option>
+          </select>
+          <select id="filtroSalidasProfesor" aria-label="Filtrar por cambios de pestaña">
+            <option value="">Todos los cambios</option>
+            <option value="0">Sin cambios</option>
+            <option value="1">1 o más</option>
+            <option value="3">3 o más</option>
+            <option value="5">5 o más</option>
+            <option value="10">10 o más</option>
+          </select>
           <select id="ordenProfesor" aria-label="Ordenar estudiantes"><option value="actividad">Última actividad</option><option value="alertas">Alertas primero</option><option value="progreso">Menor progreso</option><option value="nombre">Nombre A-Z</option></select>
           <select id="filtroTurnoProfesor"><option value="">Todos los turnos</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select>
         </div>
@@ -2487,7 +2504,7 @@
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
       window.addEventListener('load', () => {
         actualizarVisibilidadDocente();
-          ['filtroProfesor','filtroCursoProfesor','filtroTurnoProfesor','filtroEstadoProfesor','ordenProfesor'].forEach(id => {
+          ['filtroProfesor','filtroCursoProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','ordenProfesor'].forEach(id => {
               document.getElementById(id)?.addEventListener('input', renderPanelProfesor);
               document.getElementById(id)?.addEventListener('change', renderPanelProfesor);
           });
@@ -5463,6 +5480,8 @@
           const curso = document.getElementById('filtroCursoProfesor').value;
           const turno = document.getElementById('filtroTurnoProfesor').value;
           const estadoFiltro = document.getElementById('filtroEstadoProfesor')?.value || '';
+          const progresoFiltro = document.getElementById('filtroProgresoProfesor')?.value || '';
+          const salidasFiltro = document.getElementById('filtroSalidasProfesor')?.value || '';
           const orden = document.getElementById('ordenProfesor')?.value || 'actividad';
           const rows = estudiantesProfesor.filter(d => {
               const e=d.estudiante||{};
@@ -5477,6 +5496,18 @@
               const cronometroPausado = d.controlCronometroIndividual?.pausado === true
                   || d.controlCronometros?.pausado === true;
               const tieneCambios = Number(d.salidasPestaña || 0) > 0;
+              const salidas = Number(d.salidasPestaña || 0);
+              const cumpleProgreso = !progresoFiltro || (
+                  progresoFiltro === '0' ? progreso === 0 :
+                  progresoFiltro === '100' ? progreso === 100 :
+                  (() => {
+                      const [min, max] = progresoFiltro.split('-').map(Number);
+                      return progreso >= min && progreso <= max;
+                  })()
+              );
+              const cumpleSalidas = !salidasFiltro || (
+                  salidasFiltro === '0' ? salidas === 0 : salidas >= Number(salidasFiltro)
+              );
               const cumpleEstado = !estadoFiltro
                 || (estadoFiltro === 'activa' && !cuentaInactiva)
                 || (estadoFiltro === 'inactiva' && cuentaInactiva)
@@ -5489,7 +5520,7 @@
                 || (estadoFiltro === 'alertas' && alerta.activa)
                 || (estadoFiltro === 'cambios' && tieneCambios);
               d.__panelMeta = { progreso, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cronometroPausado, tieneCambios };
-              return (!q || text.includes(q)) && (!curso || e.curso===curso) && (!turno || e.turno===turno) && cumpleEstado;
+              return (!q || text.includes(q)) && (!curso || e.curso===curso) && (!turno || e.turno===turno) && cumpleEstado && cumpleProgreso && cumpleSalidas;
           }).sort((a,b) => {
               const am=a.__panelMeta||{}, bm=b.__panelMeta||{};
               if (orden === 'nombre') return String(a.estudiante?.nombre||a.nombreGoogle||'').localeCompare(String(b.estudiante?.nombre||b.nombreGoogle||''));
