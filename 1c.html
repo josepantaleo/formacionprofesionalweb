@@ -1374,10 +1374,18 @@
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
       <div class="firebase-auth-card">
         <div style="font-size:3rem; margin-bottom:.5rem;">🔐</div>
-        <h2 id="firebaseAuthTitle">Acceso de Estudiantes</h2>
-        <p id="firebaseAuthMessage">Inicia sesión con tu cuenta institucional de Google para guardar y recuperar automáticamente tu avance.</p>
+        <h2 id="firebaseAuthTitle">Elegí cómo ingresar</h2>
+        <p id="firebaseAuthMessage"><strong>Alumnos:</strong> ingresen con su propia cuenta de Google para guardar y recuperar el avance.</p>
         <button class="btn btn-google" style="width:100%; justify-content:center; font-size:1rem; padding:.8rem 1rem;" onclick="iniciarSesionGoogle()">
-          <i class="fa-brands fa-google"></i> Iniciar sesión con Google
+          <i class="fa-brands fa-google"></i> Ingresar como alumno
+        </button>
+        <div style="display:flex;align-items:center;gap:.7rem;margin:1rem 0;color:var(--text-muted);font-size:.8rem;">
+          <span style="height:1px;background:var(--border);flex:1;"></span>
+          <span>DOCENTES</span>
+          <span style="height:1px;background:var(--border);flex:1;"></span>
+        </div>
+        <button class="btn btn-warning" style="width:100%;justify-content:center;font-size:1rem;padding:.8rem 1rem;" onclick="ingresarComoDocente(this)">
+          <i class="fa-solid fa-chalkboard-user"></i> Ingresar como docente
         </button>
         <div id="firebaseConfigWarning" style="display:none; margin-top:1rem; color:#fca5a5; font-size:.8rem;">Firebase no está configurado todavía.</div>
       </div>
@@ -1447,7 +1455,7 @@
           </div>
           <div class="btn-group">
             <button class="btn btn-success" onclick="guardarAhoraFirebase()"><i class="fa-solid fa-cloud-arrow-up"></i> Guardar ahora</button>
-            <button class="btn btn-warning" id="btnIngresoDocente" onclick="ingresarComoDocente()"><i class="fa-solid fa-chalkboard-user"></i> Ingresar como docente</button>
+            <button class="btn btn-warning" id="btnIngresoDocente" onclick="ingresarComoDocente(this)"><i class="fa-solid fa-chalkboard-user"></i> Ingresar como docente</button>
             <button class="btn btn-primary teacher-only" onclick="solicitarAccionProfesor('editor_desafios')"><i class="fa-solid fa-puzzle-piece"></i> Editor de desafíos</button>
             <button class="btn btn-primary teacher-only" onclick="solicitarAccionProfesor('panel_profesor')"><i class="fa-solid fa-chalkboard-user"></i> Panel Profesor</button>
             <button class="btn btn-warning teacher-only teacher-session-only" onclick="cerrarAccesoDocenteTemporal()"><i class="fa-solid fa-user-lock"></i> Cerrar acceso docente</button>
@@ -1489,7 +1497,15 @@
       <div class="modal-box" style="max-width:1100px;width:95vw;max-height:90vh;overflow:auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
           <div><h3 id="panelProfesorTitle"><i class="fa-solid fa-chalkboard-user"></i> Panel del Profesor</h3><p>Estudiantes y progreso sincronizados en tiempo real.</p></div>
-          <div style="display:flex;gap:.5rem;flex-wrap:wrap;"><button class="btn btn-primary" onclick="abrirEditorDesafiosFirebase()">🧩 Editar 19 desafíos</button><button class="btn btn-secondary" onclick="cerrarPanelProfesor()">Cerrar</button></div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <button class="btn btn-success" onclick="iniciarClaseDesdeInterfaz(this)"><i class="fa-solid fa-play"></i> Iniciar clase</button>
+            <button class="btn btn-danger" onclick="finalizarClaseDesdeInterfaz(this)"><i class="fa-solid fa-stop"></i> Finalizar clase</button>
+            <button class="btn btn-primary" onclick="abrirEditorDesafiosFirebase()"><i class="fa-solid fa-puzzle-piece"></i> Editar desafíos</button>
+            <button class="btn btn-secondary" onclick="cerrarPanelProfesor()">Cerrar panel</button>
+          </div>
+        </div>
+        <div id="estadoClaseProfesor" style="margin-top:1rem;padding:.75rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06);color:#bae6fd;font-size:.85rem;">
+          Usá “Iniciar clase” para habilitar las actividades de todos los alumnos conectados.
         </div>
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
           <input id="filtroProfesor" placeholder="Buscar estudiante o email" style="flex:1;min-width:220px;">
@@ -1513,6 +1529,9 @@
         <div style="font-size:3rem;margin-bottom:.6rem;"><i class="fa-solid fa-hourglass-start"></i></div>
         <h2 id="classStartTitle">Esperando el inicio de la clase</h2>
         <p id="classStartMessage">El docente habilitará las actividades. Mantené esta pestaña abierta.</p>
+        <button class="btn btn-warning" style="margin-top:1rem;" onclick="ingresarComoDocente(this)">
+          <i class="fa-solid fa-chalkboard-user"></i> Soy docente
+        </button>
         <div style="margin-top:1rem;color:#fbbf24;font-size:.85rem;">
           <i class="fa-solid fa-wifi"></i> Conectado al control de clase
         </div>
@@ -1890,8 +1909,9 @@
           }
       }
 
-      async function ingresarComoDocente() {
-          const boton = document.getElementById('btnIngresoDocente');
+      async function ingresarComoDocente(botonOrigen = null) {
+          const boton = botonOrigen || document.getElementById('btnIngresoDocente');
+          const contenidoOriginal = boton?.innerHTML || '<i class="fa-solid fa-chalkboard-user"></i> Ingresar como docente';
           if (boton) {
               boton.disabled = true;
               boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando cuenta...';
@@ -1900,10 +1920,40 @@
           await actualizarVisibilidadDocente();
           if (boton) {
               boton.disabled = false;
-              boton.innerHTML = '<i class="fa-solid fa-chalkboard-user"></i> Ingresar como docente';
+              boton.innerHTML = contenidoOriginal;
           }
           if (!autorizado) return;
           abrirPanelProfesor();
+      }
+
+      async function iniciarClaseDesdeInterfaz(boton = null) {
+          if (boton) boton.disabled = true;
+          const estado = document.getElementById('estadoClaseProfesor');
+          if (estado) estado.textContent = 'Iniciando la clase...';
+          const iniciada = await window.iniciarClaseFirebase?.();
+          if (boton) boton.disabled = false;
+          if (!iniciada) {
+              if (estado) estado.textContent = 'No se pudo iniciar. Verificá que las reglas de Firestore estén publicadas.';
+              return;
+          }
+          aplicarEstadoInicioClase(true, {
+              iniciadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || 'docente autorizado'
+          });
+          if (estado) estado.textContent = 'Clase iniciada. Los alumnos conectados ya pueden trabajar.';
+          alert('Clase iniciada. Los alumnos conectados ya pueden comenzar.');
+      }
+
+      async function finalizarClaseDesdeInterfaz(boton = null) {
+          if (boton) boton.disabled = true;
+          const estado = document.getElementById('estadoClaseProfesor');
+          const finalizada = await window.finalizarClaseFirebase?.();
+          if (boton) boton.disabled = false;
+          if (!finalizada) return;
+          aplicarEstadoInicioClase(false, {
+              finalizadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || 'docente autorizado'
+          });
+          if (estado) estado.textContent = 'Clase finalizada. Las actividades de los alumnos están bloqueadas.';
+          alert('Clase finalizada. Todos los estudiantes volvieron al estado de espera.');
       }
 
       async function cerrarAccesoDocenteTemporal() {
