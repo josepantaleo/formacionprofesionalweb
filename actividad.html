@@ -1776,6 +1776,13 @@
         <div id="estadoClaseProfesor" style="margin-top:1rem;padding:.75rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06);color:#bae6fd;font-size:.85rem;">
           Usá “Iniciar clase” para habilitar las actividades de todos los alumnos conectados.
         </div>
+        <details open style="margin-top:1rem;padding:.8rem;border:1px solid rgba(16,185,129,.32);border-radius:8px;background:rgba(16,185,129,.06)">
+          <summary style="cursor:pointer;color:#a7f3d0;font-weight:700">
+            <i class="fa-solid fa-user-shield"></i> Docentes autorizados
+            <span id="cantidadDocentesAutorizados" style="margin-left:.35rem;color:var(--text-muted);font-size:.78rem"></span>
+          </summary>
+          <div id="listaDocentesAutorizados" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.55rem;margin-top:.75rem"></div>
+        </details>
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
           <input id="filtroProfesor" placeholder="Buscar estudiante o email" style="flex:1;min-width:220px;">
           <select id="filtroCursoProfesor"><option value="">Todos los cursos</option></select>
@@ -4583,8 +4590,32 @@
       // ===============================
       let profesorUnsubscribe = null;
       let estudiantesProfesor = [];
+
+      function renderDocentesAutorizados() {
+          const contenedor = document.getElementById('listaDocentesAutorizados');
+          const cantidad = document.getElementById('cantidadDocentesAutorizados');
+          if (!contenedor || !cantidad) return;
+          const correoSesion = String(
+              window.firebaseTeacherUser?.email ||
+              window.firebaseCurrentUser?.email ||
+              ''
+          ).trim().toLowerCase();
+          cantidad.textContent = `(${TEACHER_EMAILS.length})`;
+          contenedor.innerHTML = TEACHER_EMAILS.map((email, indice) => {
+              const actual = email.toLowerCase() === correoSesion;
+              return `<div style="display:flex;align-items:center;gap:.55rem;padding:.6rem .7rem;border:1px solid ${actual ? 'rgba(16,185,129,.55)' : 'rgba(148,163,184,.2)'};border-radius:6px;background:${actual ? 'rgba(16,185,129,.12)' : 'rgba(15,23,42,.45)'}">
+                  <i class="fa-solid ${actual ? 'fa-circle-check' : 'fa-envelope'}" style="color:${actual ? '#6ee7b7' : '#7dd3fc'}"></i>
+                  <div style="min-width:0">
+                      <strong style="display:block;overflow-wrap:anywhere">${escapeHtml(email)}</strong>
+                      <small style="color:${actual ? '#a7f3d0' : 'var(--text-muted)'}">${actual ? 'Sesión docente actual' : `Docente autorizado ${indice + 1}`}</small>
+                  </div>
+              </div>`;
+          }).join('');
+      }
+
       function abrirPanelProfesor() {
           document.getElementById('panelProfesorModal').classList.add('active');
+          renderDocentesAutorizados();
           iniciarPanelProfesorTiempoReal();
       }
       function cerrarPanelProfesor() {
