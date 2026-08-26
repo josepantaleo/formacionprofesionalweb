@@ -1150,7 +1150,10 @@
               iniciadaEn: datos.iniciadaEn || null,
               iniciadaPor: datos.iniciadaPor || "",
               finalizadaEn: datos.finalizadaEn || null,
-              finalizadaPor: datos.finalizadaPor || ""
+              finalizadaPor: datos.finalizadaPor || "",
+              cronometrosPausados: datos.cronometrosPausados === true,
+              cronometrosReinicioId: datos.cronometrosReinicioId || "",
+              cronometrosActualizadosPor: datos.cronometrosActualizadosPor || ""
             }
           }));
         }, error => {
@@ -1167,12 +1170,21 @@
           if (!snapshot.exists()) return;
           const datos = snapshot.data();
           const reinicio = datos.reinicioSalidas || null;
-          if (!reinicio?.id) return;
-          window.dispatchEvent(new CustomEvent("reinicio-salidas-estudiante", {
+          if (reinicio?.id) {
+            window.dispatchEvent(new CustomEvent("reinicio-salidas-estudiante", {
+              detail: {
+                id: reinicio.id,
+                solicitadoEn: reinicio.solicitadoEn || null,
+                salidasPestaña: Number(datos.salidasPestaña || 0)
+              }
+            }));
+          }
+          const controlCronometro = datos.controlCronometroIndividual || {};
+          window.dispatchEvent(new CustomEvent("control-cronometro-individual", {
             detail: {
-              id: reinicio.id,
-              solicitadoEn: reinicio.solicitadoEn || null,
-              salidasPestaña: Number(datos.salidasPestaña || 0)
+              pausado: controlCronometro.pausado === true,
+              reinicioId: controlCronometro.reinicioId || "",
+              actualizadoPor: controlCronometro.actualizadoPor || ""
             }
           }));
         }, error => {
@@ -1219,6 +1231,39 @@
         } catch (error) {
           console.error("Error finalizando la clase:", error);
           alert("No se pudo finalizar la clase. Verificá las reglas de Firestore.");
+          return false;
+        }
+      };
+
+      window.controlarCronometrosFirebase = async function(accion) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return false;
+        const { user, database } = contextoDocenteFirebase();
+        if (!user || !database) return false;
+        try {
+          const referencia = doc(database, "controlClase", idClaseActual());
+          const estadoActual = await getDoc(referencia);
+          if (!estadoActual.exists()) {
+            alert("Primero iniciá la clase. Después podrás pausar o reiniciar los cronómetros.");
+            return false;
+          }
+          const payload = {
+            cronometrosActualizadosEn: serverTimestamp(),
+            cronometrosActualizadosPor: user.email || user.displayName || user.uid,
+            zonaHoraria: "America/Argentina/Buenos_Aires"
+          };
+          if (accion === "pausar" || accion === "reanudar") {
+            payload.cronometrosPausados = accion === "pausar";
+          } else if (accion === "reiniciar") {
+            payload.cronometrosReinicioId = `${Date.now()}-${user.uid}`;
+          } else {
+            return false;
+          }
+          await setDoc(referencia, payload, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error controlando los cronómetros:", error);
+          alert("No se pudo actualizar el cronómetro. Verificá las reglas de Firestore.");
           return false;
         }
       };
@@ -1334,6 +1379,37 @@
           return true;
         } catch (error) {
           console.error("Error reiniciando el contador de cambios de pestaña:", error);
+          return false;
+        }
+      };
+
+      window.controlarCronometroEstudianteFirebase = async function(uid, accion) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid) return false;
+        try {
+          const referencia = doc(database, "estudiantes", uid);
+          const snapshot = await getDoc(referencia);
+          const controlActual = snapshot.exists() ? (snapshot.data().controlCronometroIndividual || {}) : {};
+          let pausado = controlActual.pausado === true;
+          let reinicioId = String(controlActual.reinicioId || "");
+          if (accion === "pausar") pausado = true;
+          else if (accion === "reanudar") pausado = false;
+          else if (accion === "reiniciar") reinicioId = `${Date.now()}-${uid}`;
+          else return false;
+          await setDoc(referencia, {
+            controlCronometroIndividual: {
+              pausado,
+              reinicioId,
+              actualizadoPor: user.email || user.displayName || user.uid,
+              actualizadoEn: serverTimestamp()
+            },
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error controlando el cronómetro individual:", error);
           return false;
         }
       };
@@ -1543,6 +1619,8 @@
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
             <button class="btn btn-success" onclick="iniciarClaseDesdeInterfaz(this)"><i class="fa-solid fa-play"></i> Iniciar clase</button>
             <button class="btn btn-danger" onclick="finalizarClaseDesdeInterfaz(this)"><i class="fa-solid fa-stop"></i> Finalizar clase</button>
+            <button class="btn btn-warning" id="btnPausarCronometrosProfesor" onclick="pausarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-pause"></i> Pausar cronómetros</button>
+            <button class="btn btn-secondary" onclick="reiniciarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00</button>
             <button class="btn btn-primary" onclick="abrirEditorDesafiosFirebase()"><i class="fa-solid fa-puzzle-piece"></i> Editar desafíos</button>
             <button class="btn btn-secondary" onclick="cerrarPanelProfesor()">Cerrar panel</button>
           </div>
@@ -1885,6 +1963,10 @@
       let tiemposRestantes = {};
       let cronometrosActivos = {};
       let modulosPausados = {};
+      let cronometrosPausadosPorDocente = false;
+      let cronometrosPausadosIndividualmente = false;
+      let ultimoControlCronometros = {};
+      let ultimoControlCronometroIndividual = {};
       let seccionPendientePausa = null;
       let tipoAccionModal = '';
 
@@ -1916,7 +1998,10 @@
       }
 
       window.addEventListener('estado-inicio-clase', event => {
-          aplicarEstadoInicioClase(Boolean(event.detail?.iniciada), event.detail || {});
+          const datos = event.detail || {};
+          ultimoControlCronometros = datos;
+          aplicarEstadoInicioClase(Boolean(datos.iniciada), datos);
+          aplicarControlCronometrosDocente(datos);
       });
       window.addEventListener('estado-inicio-clase-error', event => {
           aplicarEstadoInicioClase(false);
@@ -1999,6 +2084,31 @@
           alert('Clase finalizada. Todos los estudiantes volvieron al estado de espera.');
       }
 
+      async function pausarCronometrosDesdeInterfaz(boton = null) {
+          const accion = cronometrosPausadosPorDocente ? 'reanudar' : 'pausar';
+          if (boton) boton.disabled = true;
+          const ok = await window.controlarCronometrosFirebase?.(accion);
+          if (boton) boton.disabled = false;
+          if (!ok) return;
+          establecerPausaGlobal(accion === 'pausar', false);
+          actualizarBotonPausaCronometros();
+          alert(accion === 'pausar'
+              ? 'Cronómetros pausados para todos los alumnos.'
+              : 'Cronómetros reanudados para todos los alumnos.');
+      }
+
+      async function reiniciarCronometrosDesdeInterfaz(boton = null) {
+          if (!confirm('¿Reiniciar a 40:00 los cronómetros de los módulos activos para todos los alumnos?\n\nNo se borrarán códigos, respuestas ni calificaciones.')) {
+              return;
+          }
+          if (boton) boton.disabled = true;
+          const ok = await window.controlarCronometrosFirebase?.('reiniciar');
+          if (boton) boton.disabled = false;
+          if (!ok) return;
+          reiniciarCronometrosLocales();
+          alert('Cronómetros reiniciados a 40:00 para todos los alumnos.');
+      }
+
       async function cerrarAccesoDocenteTemporal() {
           if (!window.firebaseTeacherUser) {
               alert("No hay una autorización docente temporal activa.");
@@ -2038,6 +2148,10 @@
           const contador = document.getElementById('blurCount');
           if (contador) contador.innerText = '0';
           alert('El docente reinició el contador de cambios de pestaña. El historial detallado permanece registrado.');
+      });
+      window.addEventListener('control-cronometro-individual', event => {
+          ultimoControlCronometroIndividual = event.detail || {};
+          aplicarControlCronometroIndividual(ultimoControlCronometroIndividual);
       });
       window.addEventListener('profesor-data', e => { estudiantesProfesor = e.detail || []; document.getElementById('estadoPanelProfesor').textContent = `Actualizado en tiempo real: ${new Date().toLocaleTimeString()}`; renderPanelProfesor(); });
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
@@ -2456,7 +2570,7 @@
 
               let savedTime = getLocalStorage(`timer_${sec.id}`);
               tiemposRestantes[sec.id] = savedTime !== null ? parseInt(savedTime) : TIEMPO_MAXIMO_SEGUNDOS;
-              modulosPausados[sec.id] = false;
+              modulosPausados[sec.id] = cronometrosPausadosPorDocente;
 
               const card = document.createElement('div');
               card.className = `section-card ${idx === 0 ? 'active' : ''}`;
@@ -2584,6 +2698,8 @@
           });
 
           guardarAhoraFirebase();
+          aplicarControlCronometrosDocente(ultimoControlCronometros);
+          aplicarControlCronometroIndividual(ultimoControlCronometroIndividual);
       }
 
       function abrirJustificacionUltimaSalida() {
@@ -2958,17 +3074,16 @@
           }
       }
 
-      function togglePausaGlobal() {
-          const algunPausado = Object.values(modulosPausados).some(val => val === true);
-          const nuevoEstadoPausa = !algunPausado;
-
+      function establecerPausaGlobal(nuevoEstadoPausa, mostrarAviso = true) {
+          cronometrosPausadosPorDocente = Boolean(nuevoEstadoPausa);
+          const pausaEfectiva = cronometrosPausadosPorDocente || cronometrosPausadosIndividualmente;
           seccionesData.forEach(sec => {
-              modulosPausados[sec.id] = nuevoEstadoPausa;
+              modulosPausados[sec.id] = pausaEfectiva;
               const btnPause = document.getElementById(`btn-pause-${sec.id}`);
               const banner = document.getElementById(`pause-banner-${sec.id}`);
               const editor = document.getElementById(`editor-${sec.id}`);
 
-              if (nuevoEstadoPausa) {
+              if (pausaEfectiva) {
                   if (cronometrosActivos[sec.id]) {
                       clearInterval(cronometrosActivos[sec.id]);
                       cronometrosActivos[sec.id] = null;
@@ -2999,12 +3114,63 @@
                   }
               }
           });
-
-          if (nuevoEstadoPausa) {
-              alert("⏸️ Pausa Global Activada: Se han congelado los cronómetros y editores de todos los módulos.");
-          } else {
-              alert("▶️ Pausa Global Desactivada: Se han reanudado todos los módulos activos.");
+          actualizarBotonPausaCronometros();
+          if (mostrarAviso) {
+              alert(cronometrosPausadosPorDocente
+                  ? "⏸️ Pausa Global Activada: Se han congelado los cronómetros y editores de todos los módulos."
+                  : "▶️ Pausa Global Desactivada: Se han reanudado todos los módulos activos.");
           }
+      }
+
+      function togglePausaGlobal() {
+          establecerPausaGlobal(!cronometrosPausadosPorDocente, true);
+      }
+
+      function actualizarBotonPausaCronometros() {
+          const boton = document.getElementById('btnPausarCronometrosProfesor');
+          if (!boton) return;
+          boton.innerHTML = cronometrosPausadosPorDocente
+              ? '<i class="fa-solid fa-play"></i> Reanudar cronómetros'
+              : '<i class="fa-solid fa-pause"></i> Pausar cronómetros';
+          boton.className = cronometrosPausadosPorDocente ? 'btn btn-success' : 'btn btn-warning';
+      }
+
+      function reiniciarCronometrosLocales() {
+          seccionesData.forEach(sec => {
+              if (actividadesFinalizadas[sec.id]) return;
+              if (cronometrosActivos[sec.id]) {
+                  clearInterval(cronometrosActivos[sec.id]);
+                  cronometrosActivos[sec.id] = null;
+              }
+              tiemposRestantes[sec.id] = TIEMPO_MAXIMO_SEGUNDOS;
+              setLocalStorage(`timer_${sec.id}`, TIEMPO_MAXIMO_SEGUNDOS);
+              actualizarDisplayTiempo(sec.id);
+          });
+      }
+
+      function aplicarControlCronometrosDocente(datos = {}) {
+          establecerPausaGlobal(Boolean(datos.cronometrosPausados), false);
+          const reinicioId = String(datos.cronometrosReinicioId || '');
+          const ultimoReinicio = getLocalStorage('app_last_timer_reset') || '';
+          if (!reinicioId || reinicioId === ultimoReinicio) return;
+          reiniciarCronometrosLocales();
+          setLocalStorage('app_last_timer_reset', reinicioId);
+          const responsable = datos.cronometrosActualizadosPor
+              ? ` por ${datos.cronometrosActualizadosPor}`
+              : '';
+          alert(`El docente reinició los cronómetros a 40:00${responsable}.`);
+      }
+
+      function aplicarControlCronometroIndividual(datos = {}) {
+          cronometrosPausadosIndividualmente = Boolean(datos.pausado);
+          establecerPausaGlobal(cronometrosPausadosPorDocente, false);
+          const reinicioId = String(datos.reinicioId || '');
+          const ultimoReinicio = getLocalStorage('app_last_individual_timer_reset') || '';
+          if (!reinicioId || reinicioId === ultimoReinicio) return;
+          reiniciarCronometrosLocales();
+          setLocalStorage('app_last_individual_timer_reset', reinicioId);
+          const responsable = datos.actualizadoPor ? ` por ${datos.actualizadoPor}` : '';
+          alert(`Tu cronómetro fue reiniciado a 40:00${responsable}.`);
       }
 
       function resetearSistemaCompleto() {
@@ -4102,6 +4268,39 @@
           alert('Contador de cambios de pestaña reiniciado correctamente.');
       }
 
+      async function controlarCronometroEstudianteProfesor(indice, accion) {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) {
+              alert('No se encontró el identificador Firebase del estudiante.');
+              return;
+          }
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'el estudiante';
+          const mensajes = {
+              pausar: `¿Pausar el cronómetro y la edición de ${nombre}?`,
+              reanudar: `¿Reanudar el cronómetro y la edición de ${nombre}?`,
+              reiniciar: `¿Reiniciar a 40:00 los módulos activos de ${nombre}?\n\nNo se borrarán códigos, respuestas ni calificaciones.`
+          };
+          if (!confirm(mensajes[accion] || '¿Confirmar la operación?')) return;
+          const ok = await window.controlarCronometroEstudianteFirebase?.(d.uid, accion);
+          if (!ok) {
+              alert('No se pudo actualizar el cronómetro individual. Verificá las reglas de Firestore.');
+              return;
+          }
+          const control = d.controlCronometroIndividual || {};
+          if (accion === 'pausar') control.pausado = true;
+          if (accion === 'reanudar') control.pausado = false;
+          if (accion === 'reiniciar') control.reinicioId = `${Date.now()}-${d.uid}`;
+          d.controlCronometroIndividual = control;
+          renderPanelProfesor();
+          abrirDetalleEstudianteProfesor(indice);
+          const resultado = accion === 'pausar'
+              ? 'Cronómetro individual pausado.'
+              : accion === 'reanudar'
+                  ? 'Cronómetro individual reanudado.'
+                  : 'Cronómetro individual reiniciado a 40:00.';
+          alert(resultado);
+      }
+
       function renderPreguntaProfesor(p, indice) {
           const seleccionadas = Array.isArray(p?.seleccionadas) ? p.seleccionadas : [];
           const opciones = Array.isArray(p?.opciones) ? p.opciones : [];
@@ -4143,6 +4342,7 @@
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
           const eventos = Array.isArray(d.eventosSalidasPestaña) ? d.eventosSalidasPestaña : [];
           const revision = d.revisionSalidas || {};
+          const cronometroIndividualPausado = d.controlCronometroIndividual?.pausado === true;
           const cuentaInactiva = d.estadoCuenta === 'inactivo';
           const fecha = d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : 'Sin fecha';
           document.getElementById('detalleEstudianteProfesorTitle').innerHTML =
@@ -4234,6 +4434,18 @@
                       </button>
                   </div>
               </div>
+              <div style="padding:1rem;border:1px solid rgba(56,189,248,.35);border-radius:8px;background:rgba(56,189,248,.06);margin-bottom:1rem">
+                  <strong>Control individual del cronómetro: ${cronometroIndividualPausado ? 'PAUSADO' : 'ACTIVO'}</strong>
+                  <div class="btn-group" style="margin-top:.7rem">
+                      <button class="btn ${cronometroIndividualPausado ? 'btn-success' : 'btn-warning'}" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroIndividualPausado ? 'reanudar' : 'pausar'}')">
+                          <i class="fa-solid ${cronometroIndividualPausado ? 'fa-play' : 'fa-pause'}"></i>
+                          ${cronometroIndividualPausado ? 'Reanudar cronómetro' : 'Pausar cronómetro'}
+                      </button>
+                      <button class="btn btn-secondary" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')">
+                          <i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00
+                      </button>
+                  </div>
+              </div>
               <details class="teacher-activity" open>
                   <summary>Cómo se calculó el promedio final</summary>
                   <div class="teacher-activity-content">
@@ -4317,7 +4529,8 @@
               const fecha=d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : '—';
               const indice=estudiantesProfesor.indexOf(d);
               const inactiva = d.estadoCuenta === 'inactivo';
-              return `<tr><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Reiniciar</button></div></td></tr>`;
+              const cronometroPausado = d.controlCronometroIndividual?.pausado === true;
+              return `<tr><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button></div></td></tr>`;
           }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
       }
       function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
