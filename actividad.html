@@ -1040,6 +1040,35 @@
          scrollbar-width:auto;
          scrollbar-color:#38bdf8 #0f172a;
        }
+       #panelProfesorModal .teacher-icon-legend{
+         position:sticky;
+         top:0;
+         z-index:4;
+         display:flex;
+         align-items:center;
+         gap:.65rem;
+         flex-wrap:wrap;
+         padding:.55rem .7rem;
+         margin:.8rem 0;
+         border:1px solid rgba(56,189,248,.3);
+         border-radius:7px;
+         background:rgba(15,23,42,.96);
+         color:var(--text-muted);
+         font-size:.74rem;
+       }
+       #panelProfesorModal .teacher-icon-legend strong{color:#bae6fd}
+       #panelProfesorModal .teacher-icon-legend span{display:inline-flex;align-items:center;gap:.3rem}
+       #panelProfesorModal .teacher-icon-legend i{color:var(--primary);width:1rem;text-align:center}
+       #panelProfesorModal .teacher-action-buttons{
+         margin-top:.4rem;
+         justify-content:flex-start;
+       }
+       #panelProfesorModal table td:first-child .teacher-action-buttons{
+         display:flex;
+       }
+       #panelProfesorModal table td:last-child .teacher-action-buttons{
+         display:none !important;
+       }
       .teacher-detail-summary {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1846,6 +1875,14 @@
           </summary>
           <div id="listaDocentesAutorizados" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.55rem;margin-top:.75rem"></div>
         </details>
+        <div class="teacher-icon-legend" role="note" aria-label="Leyenda de iconos del panel docente">
+          <strong>Leyenda de acciones:</strong>
+          <span><i class="fa-solid fa-eye" aria-hidden="true"></i> Ver todo</span>
+          <span><i class="fa-solid fa-pause" aria-hidden="true"></i> Pausar/Reanudar</span>
+          <span><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Reiniciar a 40:00</span>
+          <span><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reiniciar pestañas</span>
+          <span><i class="fa-solid fa-comments" aria-hidden="true"></i> Borrar IA</span>
+        </div>
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
           <input id="filtroProfesor" placeholder="Buscar estudiante o email" style="flex:1;min-width:220px;">
           <select id="filtroCursoProfesor"><option value="">Todos los cursos</option></select>
@@ -5409,6 +5446,11 @@
                   if (texto.includes('ver todo')) boton.title = 'Ver progreso y detalle completo del estudiante';
                   else if (texto.includes('pausar') || texto.includes('reanudar')) boton.title = 'Pausar o reanudar el cronómetro del estudiante';
               });
+              const fila = contenedor.closest('tr');
+              const celdaEstudiante = fila?.querySelector('td:first-child');
+              if (fila && celdaEstudiante && !celdaEstudiante.querySelector('.teacher-action-buttons')) {
+                  celdaEstudiante.appendChild(contenedor);
+              }
           });
       }
       function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
