@@ -1091,6 +1091,8 @@
         "josepantaleo90@gmail.com",
         "josepantaleo@gmail.com"
       ]);
+      // La lista se usa también desde los scripts no modulares del panel docente.
+      window.TEACHER_EMAILS = TEACHER_EMAILS;
       let auth = null, db = null, googleProvider = null;
       let teacherAuth = null, teacherDb = null, teacherProvider = null;
       let teacherPersistenceReady = Promise.resolve();
@@ -4595,13 +4597,16 @@
           const contenedor = document.getElementById('listaDocentesAutorizados');
           const cantidad = document.getElementById('cantidadDocentesAutorizados');
           if (!contenedor || !cantidad) return;
+          const docentesAutorizados = Array.isArray(window.TEACHER_EMAILS)
+              ? window.TEACHER_EMAILS
+              : [];
           const correoSesion = String(
               window.firebaseTeacherUser?.email ||
               window.firebaseCurrentUser?.email ||
               ''
           ).trim().toLowerCase();
-          cantidad.textContent = `(${TEACHER_EMAILS.length})`;
-          contenedor.innerHTML = TEACHER_EMAILS.map((email, indice) => {
+          cantidad.textContent = `(${docentesAutorizados.length})`;
+          contenedor.innerHTML = docentesAutorizados.map((email, indice) => {
               const actual = email.toLowerCase() === correoSesion;
               return `<div style="display:flex;align-items:center;gap:.55rem;padding:.6rem .7rem;border:1px solid ${actual ? 'rgba(16,185,129,.55)' : 'rgba(148,163,184,.2)'};border-radius:6px;background:${actual ? 'rgba(16,185,129,.12)' : 'rgba(15,23,42,.45)'}">
                   <i class="fa-solid ${actual ? 'fa-circle-check' : 'fa-envelope'}" style="color:${actual ? '#6ee7b7' : '#7dd3fc'}"></i>
