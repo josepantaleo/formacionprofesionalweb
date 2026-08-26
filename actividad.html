@@ -998,7 +998,9 @@
     
       #panelProfesorModal table th,#panelProfesorModal table td{padding:.55rem;border-bottom:1px solid rgba(148,163,184,.15);text-align:left;font-size:.78rem}
       #panelProfesorModal table th{color:var(--primary);position:sticky;top:0;background:var(--surface,#0f172a)}
-      #panelProfesorModal input,#panelProfesorModal select{width:100%;padding:.65rem;border-radius:8px;border:1px solid rgba(148,163,184,.25);background:rgba(15,23,42,.65);color:inherit}
+       #panelProfesorModal input,#panelProfesorModal select{width:100%;padding:.65rem;border-radius:8px;border:1px solid rgba(148,163,184,.25);background:rgba(15,23,42,.65);color:inherit}
+       #panelProfesorModal table td:last-child > div{flex-wrap:nowrap !important;align-items:center;white-space:nowrap}
+       #panelProfesorModal table td:last-child .btn{flex:0 0 auto;white-space:nowrap}
       .teacher-detail-summary {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1407,12 +1409,32 @@
       };
 
       window.cerrarSesionGoogle = async function() {
-        if (!auth) return;
+        const sesionesActivas = [];
+        if (auth?.currentUser) sesionesActivas.push(signOut(auth));
+        if (teacherAuth?.currentUser) sesionesActivas.push(signOut(teacherAuth));
+        try {
+          if (window.__profesorUnsubscribe) {
+            window.__profesorUnsubscribe();
+            window.__profesorUnsubscribe = null;
+          }
+          if (window.__desafiosProfesorUnsubscribe) {
+            window.__desafiosProfesorUnsubscribe();
+            window.__desafiosProfesorUnsubscribe = null;
+          }
+          await Promise.all(sesionesActivas);
+        } catch (error) {
+          console.error("Error cerrando las sesiones de Firebase:", error);
+          alert("No se pudo cerrar la sesión completamente. Intenta nuevamente.");
+          return;
+        }
         // El estado local está aislado por UID. No se comparte con otra cuenta.
         // Firebase conserva el avance definitivo en Firestore.
-        await signOut(auth);
         localStorage.removeItem('firebase_active_uid');
         firebaseStorageUid = null;
+        window.firebaseCurrentUser = null;
+        window.firebaseTeacherUser = null;
+        window.dispatchEvent(new CustomEvent("firebase-auth-changed", { detail: null }));
+        window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: null }));
         window.location.reload();
       };
 
