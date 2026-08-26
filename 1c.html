@@ -4515,7 +4515,6 @@
       }
       function obtenerDetallePromedioEstudiante(d) {
           const historial = d.historialResultados || {};
-          const chatIA = d.chatIA || {};
           const actividades = seccionesData.map(sec => {
               const resultado = historial[sec.id] || {};
               const valor = Number(resultado.notaFinal ?? resultado.notaIA);
@@ -4699,11 +4698,72 @@
               ${p?.respuestaTexto ? `<div style="margin-top:.5rem"><strong>Respuesta escrita:</strong> ${escapeHtml(p.respuestaTexto)}</div>` : ''}
           </div>`;
       }
+
+      function resumirConsultasIAEstudiante(d) {
+          const chat = d?.chatIA && typeof d.chatIA === "object" ? d.chatIA : {};
+          const categorias = {
+              "Errores y depuración": 0,
+              "Comprensión de consigna": 0,
+              "Revisión de código": 0,
+              "Pistas para avanzar": 0,
+              "Pruebas y resultados": 0,
+              "Conceptos de programación": 0,
+              "Otras consultas": 0
+          };
+          const modulos = [];
+          const preguntas = new Map();
+          let total = 0;
+
+          Object.entries(chat).forEach(([sectionId, mensajes]) => {
+              const consultas = (Array.isArray(mensajes) ? mensajes : [])
+                  .filter(m => m?.rol === "student" && String(m?.texto || "").trim());
+              if (!consultas.length) return;
+              const sec = seccionesData.find(s => s.id === sectionId);
+              modulos.push({
+                  id: sectionId,
+                  titulo: sec?.title || sectionId,
+                  cantidad: consultas.length
+              });
+              consultas.forEach(m => {
+                  const original = String(m.texto || "").trim();
+                  const texto = normalizarEvaluacion(original);
+                  total++;
+                  let categoria = "Otras consultas";
+                  if (/error|falla|no funciona|bug|syntax|undefined|consola/.test(texto)) categoria = "Errores y depuración";
+                  else if (/consigna|entender|que pide|objetivo/.test(texto)) categoria = "Comprensión de consigna";
+                  else if (/revisa|revisar|codigo|esta bien|calidad/.test(texto)) categoria = "Revisión de código";
+                  else if (/pista|avanzar|siguiente|continuar|ahora/.test(texto)) categoria = "Pistas para avanzar";
+                  else if (/prueba|caso|ejemplo|resultado|salida/.test(texto)) categoria = "Pruebas y resultados";
+                  else if (/variable|condicion|if|bucle|for|while|funcion|parametro|return|array|objeto/.test(texto)) categoria = "Conceptos de programación";
+                  categorias[categoria]++;
+
+                  const clave = texto.replace(/[¿?¡!.,;:]+/g, "").trim().slice(0, 120);
+                  if (clave) {
+                      const actual = preguntas.get(clave) || { texto: original.slice(0, 160), cantidad: 0 };
+                      actual.cantidad++;
+                      preguntas.set(clave, actual);
+                  }
+              });
+          });
+
+          return {
+              total,
+              categorias: Object.entries(categorias)
+                  .filter(([, cantidad]) => cantidad > 0)
+                  .sort((a, b) => b[1] - a[1]),
+              modulos: modulos.sort((a, b) => b.cantidad - a.cantidad),
+              frecuentes: [...preguntas.values()]
+                  .sort((a, b) => b.cantidad - a.cantidad)
+                  .slice(0, 5)
+          };
+      }
+
       function abrirDetalleEstudianteProfesor(indice) {
           const d = estudiantesProfesor[indice];
           if (!d) return;
           const e = d.estudiante || {};
           const historial = d.historialResultados || {};
+          const chatIA = d.chatIA || {};
           const codigos = d.codigos || {};
           const tiempos = d.tiemposRestantes || {};
           const finalizadas = d.finalizadas || {};
@@ -4712,6 +4772,7 @@
           const promedio = calcularNotaEstudiante(d);
           const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
+          const resumenConsultasIA = resumirConsultasIAEstudiante(d);
           const eventos = Array.isArray(d.eventosSalidasPestaña) ? d.eventosSalidasPestaña : [];
           const revision = d.revisionSalidas || {};
           const cronometroIndividualPausado = d.controlCronometroIndividual?.pausado === true;
@@ -4794,6 +4855,36 @@
               </div>`;
           }).join('') : '<p style="color:var(--text-muted)">No hay cambios de pestaña registrados.</p>';
 
+          const resumenConsultasHtml = resumenConsultasIA.total
+              ? `<div style="padding:1rem;border:1px solid rgba(139,92,246,.38);border-radius:8px;background:rgba(139,92,246,.07);margin-bottom:1rem">
+                  <h3 style="color:#d8b4fe;margin-bottom:.7rem"><i class="fa-solid fa-chart-column"></i> Resumen de consultas al chat IA</h3>
+                  <div class="teacher-detail-summary" style="margin:.4rem 0 .9rem">
+                      <div class="teacher-detail-stat"><small>Consultas del alumno</small><strong>${resumenConsultasIA.total}</strong></div>
+                      <div class="teacher-detail-stat"><small>Tema más consultado</small><strong>${escapeHtml(resumenConsultasIA.categorias[0]?.[0] || "Sin clasificar")}</strong></div>
+                      <div class="teacher-detail-stat"><small>Módulo con más consultas</small><strong>${escapeHtml(resumenConsultasIA.modulos[0]?.titulo || "Sin módulo")}</strong></div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem">
+                      <div>
+                          <h4>Temas frecuentes</h4>
+                          <div style="margin-top:.4rem;line-height:1.65">${resumenConsultasIA.categorias.map(([nombre, cantidad]) =>
+                              `<div>${escapeHtml(nombre)}: <strong>${cantidad}</strong></div>`).join("")}</div>
+                      </div>
+                      <div>
+                          <h4>Consultas por módulo</h4>
+                          <div style="margin-top:.4rem;line-height:1.65">${resumenConsultasIA.modulos.slice(0, 6).map(m =>
+                              `<div>${escapeHtml(m.titulo)}: <strong>${m.cantidad}</strong></div>`).join("")}</div>
+                      </div>
+                  </div>
+                  <div style="margin-top:.8rem">
+                      <h4>Preguntas más repetidas</h4>
+                      <ol style="margin:.45rem 0 0 1.2rem;line-height:1.6">${resumenConsultasIA.frecuentes.map(p =>
+                          `<li>${escapeHtml(p.texto)}${p.cantidad > 1 ? ` <strong>(${p.cantidad} veces)</strong>` : ""}</li>`).join("")}</ol>
+                  </div>
+              </div>`
+              : `<div style="padding:1rem;border:1px solid rgba(139,92,246,.3);border-radius:8px;background:rgba(139,92,246,.05);margin-bottom:1rem;color:var(--text-muted)">
+                  <strong>Resumen de consultas al chat IA:</strong> este alumno todavía no realizó consultas guardadas.
+              </div>`;
+
           document.getElementById('detalleEstudianteProfesorContenido').innerHTML = `
               <div class="teacher-detail-summary">
                   <div class="teacher-detail-stat"><small>Nombre</small><strong>${escapeHtml(e.nombre || d.nombreGoogle || 'Sin nombre')}</strong></div>
@@ -4829,6 +4920,7 @@
                       </button>
                   </div>
               </div>
+              ${resumenConsultasHtml}
               <details class="teacher-activity" open>
                   <summary>Cómo se calculó el promedio final</summary>
                   <div class="teacher-activity-content">
