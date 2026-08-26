@@ -4956,6 +4956,47 @@
           alert("Las consultas generales del chat IA fueron borradas correctamente.");
       }
 
+      async function borrarConsultasIAAlumnoProfesor(indice, origen = "tabla") {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) {
+              alert("No se encontró el identificador Firebase del alumno.");
+              return;
+          }
+          const resumen = resumirConsultasIAEstudiante(d);
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || "este alumno";
+          if (!resumen.total) {
+              alert(`${nombre} no tiene consultas del chat IA para borrar.`);
+              return;
+          }
+          if (!confirm(
+              `¿Borrar las ${resumen.total} consulta(s) del chat IA de ${nombre}?\n\n` +
+              "No se borrarán códigos, notas, cronómetros, actividades ni otros alumnos."
+          )) return;
+          if (!confirm(`El historial de chat IA de ${nombre} no podrá recuperarse desde el panel. ¿Confirmás?`)) return;
+
+          const boton = origen === "detalle"
+              ? document.getElementById("btnBorrarConsultasIAAlumnoDetalle")
+              : document.getElementById(`btnBorrarConsultasIAAlumno-${indice}`);
+          const contenidoOriginal = boton?.innerHTML || "";
+          if (boton) {
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Borrando...';
+          }
+          const ok = await window.borrarConsultasIAEstudiantesFirebase?.([d.uid]);
+          if (boton) {
+              boton.disabled = false;
+              boton.innerHTML = contenidoOriginal;
+          }
+          if (!ok) {
+              alert("No se pudieron borrar las consultas del alumno. Verificá las reglas publicadas en Firebase.");
+              return;
+          }
+          d.chatIA = {};
+          renderPanelProfesor();
+          if (origen === "detalle") abrirDetalleEstudianteProfesor(indice);
+          alert(`Las consultas IA de ${nombre} fueron borradas correctamente.`);
+      }
+
       function renderResumenConsultasIAGeneral(estudiantes) {
           const contenedor = document.getElementById("resumenConsultasIAProfesor");
           if (!contenedor) return;
@@ -5092,7 +5133,12 @@
 
           const resumenConsultasHtml = resumenConsultasIA.total
               ? `<div style="padding:1rem;border:1px solid rgba(139,92,246,.38);border-radius:8px;background:rgba(139,92,246,.07);margin-bottom:1rem">
-                  <h3 style="color:#d8b4fe;margin-bottom:.7rem"><i class="fa-solid fa-chart-column"></i> Resumen de consultas al chat IA</h3>
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.7rem">
+                      <h3 style="color:#d8b4fe;margin:0"><i class="fa-solid fa-chart-column"></i> Resumen de consultas al chat IA</h3>
+                      <button class="btn btn-danger" id="btnBorrarConsultasIAAlumnoDetalle" type="button" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'detalle')">
+                          <i class="fa-solid fa-trash-can"></i> Borrar consultas de este alumno
+                      </button>
+                  </div>
                   <div class="teacher-detail-summary" style="margin:.4rem 0 .9rem">
                       <div class="teacher-detail-stat"><small>Consultas del alumno</small><strong>${resumenConsultasIA.total}</strong></div>
                       <div class="teacher-detail-stat"><small>Tema más consultado</small><strong>${escapeHtml(resumenConsultasIA.categorias[0]?.[0] || "Sin clasificar")}</strong></div>
@@ -5254,7 +5300,7 @@
                       <i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(alertaIA.texto)}<br>${escapeHtml(alertaIA.detalle)}
                     </div>`
                   : '';
-              return `<tr style="${alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button></div></td></tr>`;
+              return `<tr style="${alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestaña||0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
           }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
       }
       function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
