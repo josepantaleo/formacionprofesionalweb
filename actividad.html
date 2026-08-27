@@ -510,6 +510,18 @@
         font-size: .82rem;
         white-space: pre-wrap;
       }
+      .ai-chat-message strong {
+        color: #e0f2fe;
+      }
+      .ai-chat-message .ai-message-label {
+        display: block;
+        margin-bottom: .25rem;
+        color: var(--text-muted);
+        font-size: .68rem;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
       .ai-chat-message.assistant {
         align-self: flex-start;
         background: rgba(56, 189, 248, 0.1);
@@ -4426,8 +4438,13 @@
           if (!contenedor) return;
           const mensajes = historialChatIA[sectionId] || [];
           contenedor.innerHTML = mensajes.length
-              ? mensajes.map(m => `<div class="ai-chat-message ${m.rol === "student" ? "student" : "assistant"}">${escaparTextoAnalista(m.texto)}</div>`).join("")
-              : `<div class="ai-chat-message assistant">Soy tu guía de este módulo. Puedo darte pistas, ayudarte a interpretar un error o proponerte qué revisar, pero no voy a entregar la solución completa.</div>`;
+              ? mensajes.map(m => {
+                  const esEstudiante = m.rol === "student";
+                  return `<div class="ai-chat-message ${esEstudiante ? "student" : "assistant"}">
+                      <span class="ai-message-label">${esEstudiante ? "Tu consulta" : "Guía IA"}</span>${escaparTextoAnalista(m.texto)}
+                  </div>`;
+              }).join("")
+              : `<div class="ai-chat-message assistant"><span class="ai-message-label">Guía IA</span>Voy a leer tu código antes de responder. Puedo ayudarte a entender la consigna, localizar un error, revisar decisiones y diseñar pruebas. Te daré pistas progresivas, no la solución completa.</div>`;
           contenedor.scrollTop = contenedor.scrollHeight;
       }
 
@@ -4438,6 +4455,71 @@
           renderizarChatIA(sectionId);
           actualizarEstadoChatIA(sectionId, "saving", "Pendiente de guardar");
           programarGuardadoFirebase();
+      }
+
+      function diagnosticarCodigoChatIA(code, sec, evaluacion, historial) {
+          const fuente = String(code || "");
+          const lineas = fuente.split(/\r?\n/);
+          const lineasUtiles = lineas
+              .map((texto, indice) => ({ numero: indice + 1, texto: texto.trim() }))
+              .filter(x => x.texto && !x.texto.startsWith("//"));
+          const esPlantilla = !fuente.trim() ||
+              (sec.initialCode && fuente.trim() === String(sec.initialCode).trim());
+          const marcadoresPendientes = lineasUtiles
+              .filter(x => /\b(TODO|FIXME)\b|completar|tu codigo|escrib/i.test(x.texto))
+              .slice(0, 2);
+          const delimitadores = [
+              ["(", ")"], ["[", "]"], ["{", "}"]
+          ].map(([abre, cierra]) => ({
+              simbolo: `${abre}${cierra}`,
+              diferencia: (fuente.split(abre).length - 1) - (fuente.split(cierra).length - 1)
+          })).filter(x => x.diferencia !== 0);
+          const variables = [...fuente.matchAll(/\b(?:let|const|var)\s+([A-Za-z_$][\w$]*)/g)]
+              .map(x => x[1]);
+          const repetidas = [...new Set(variables.filter((nombre, indice) => variables.indexOf(nombre) !== indice))];
+          const conceptosCumplidos = (evaluacion.conceptos || [])
+              .filter(x => x.cumple).map(x => x.nombre).slice(0, 3);
+          const conceptosPendientes = (evaluacion.conceptos || [])
+              .filter(x => !x.cumple).map(x => x.nombre).slice(0, 3);
+          const errorTexto = String(historial.error || (historial.exito === false ? historial.salida : "") || "").trim();
+          const coincidenciaLinea = errorTexto.match(/(?:line|línea)\s*(\d+)/i);
+
+          return {
+              esPlantilla,
+              lineasUtiles,
+              marcadoresPendientes,
+              delimitadores,
+              variables,
+              repetidas,
+              conceptosCumplidos,
+              conceptosPendientes,
+              errorTexto,
+              lineaError: coincidenciaLinea ? Number(coincidenciaLinea[1]) : null,
+              tieneSalida: /\bconsole\.(log|info|warn|error)\s*\(/.test(fuente),
+              tieneDecision: /\b(if|switch)\b/.test(fuente),
+              tieneRepeticion: /\b(for|while|do)\b/.test(fuente),
+              tieneFuncion: /\bfunction\b|=>/.test(fuente)
+          };
+      }
+
+      function obtenerNivelPistaIA(sectionId, pregunta) {
+          const mensajes = historialChatIA[sectionId] || [];
+          const consultas = mensajes.filter(m => m.rol === "student");
+          const clave = normalizarEvaluacion(pregunta).replace(/[¿?¡!.,;:]+/g, "").trim();
+          const similares = consultas.filter(m => {
+              const anterior = normalizarEvaluacion(m.texto).replace(/[¿?¡!.,;:]+/g, "").trim();
+              return anterior === clave || (clave.length > 12 && (anterior.includes(clave) || clave.includes(anterior)));
+          }).length;
+          return Math.max(1, Math.min(3, similares));
+      }
+
+      function construirRespuestaIA(titulo, observacion, accion, preguntaGuia = "") {
+          return [
+              titulo ? `${titulo}` : "",
+              observacion ? `Lo que observo: ${observacion}` : "",
+              accion ? `Próximo paso: ${accion}` : "",
+              preguntaGuia ? `Comprobación: ${preguntaGuia}` : ""
+          ].filter(Boolean).join("\n\n");
       }
 
       function generarRespuestaChatIA(sectionId, pregunta, modo = "consulta") {
@@ -4451,40 +4533,150 @@
               error: historial.exito ? "" : "La ejecución no fue validada correctamente."
           });
           const texto = normalizarEvaluacion(`${pregunta} ${modo}`);
-          const pendientes = (evaluacion.conceptos || []).filter(x => !x.cumple).map(x => x.nombre).slice(0, 3);
-          const error = historial.exito === false || historial.error;
+          const diagnostico = diagnosticarCodigoChatIA(code, sec, evaluacion, historial);
+          const pendientes = diagnostico.conceptosPendientes;
+          const nivelPista = obtenerNivelPistaIA(sectionId, pregunta);
+          const preguntaSocratica = (sec.preguntasSocraticas || [])[Math.min(nivelPista - 1, Math.max(0, (sec.preguntasSocraticas || []).length - 1))];
+
+          if (/^(hola|buenas|buen dia|buenas tardes|buenas noches)\b/.test(texto)) {
+              return construirRespuestaIA(
+                  "Hola. Ya estoy mirando este módulo.",
+                  diagnostico.esPlantilla
+                      ? "todavía está la plantilla inicial."
+                      : `hay ${diagnostico.lineasUtiles.length} líneas útiles y la evaluación orientativa marca ${evaluacion.nota}/10.`,
+                  "Elegí “Entender consigna” si todavía estás planificando o “Revisar mi código” si ya hiciste un intento."
+              );
+          }
 
           if (modo === "consigna" || /consigna|que pide|objetivo|entender/.test(texto)) {
-              return `La consigna pide: ${sec.exerciseDesc || "resolver el desafío del módulo"}. Separala en tres partes: qué datos entran, qué transformación debe hacer tu programa y qué resultado debe mostrar. No empieces por copiar código; primero escribí esas tres respuestas.`;
+              return construirRespuestaIA(
+                  "Lectura de la consigna",
+                  sec.exerciseDesc || "debes resolver el desafío del módulo.",
+                  "Escribí tres comentarios en el editor: 1) datos de entrada, 2) transformación o decisión, 3) salida esperada.",
+                  preguntaSocratica || "¿Qué resultado concreto debería mostrar el programa para demostrar que resolviste el problema?"
+              );
           }
           if (modo === "revisar" || /revisar mi codigo|revisar|esta bien|calidad/.test(texto)) {
-              if (!code.trim() || (sec.initialCode && code.trim() === String(sec.initialCode).trim())) {
-                  return "Todavía veo la plantilla inicial. Escribí al menos un primer intento y luego puedo ayudarte a revisar su estructura.";
+              if (diagnostico.esPlantilla) {
+                  return construirRespuestaIA(
+                      "Todavía no puedo revisar una solución.",
+                      "el editor conserva la plantilla inicial.",
+                      "Transformá el primer comentario de la plantilla en una instrucción ejecutable y volvé a consultar.",
+                      "¿Cuál es el primer dato que necesita tu programa?"
+                  );
               }
               const fortalezas = (evaluacion.fortalezas || []).slice(0, 2);
               const mejoras = (evaluacion.mejoras || []).slice(0, 2);
-              return `${fortalezas.length ? `Detecto como avance: ${fortalezas.join(" · ")}. ` : ""}${mejoras.length ? `Para revisar ahora: ${mejoras.join(" · ")}.` : "La estructura general parece encaminada; probá casos distintos antes de entregar."}`;
+              const problemaEstructural = diagnostico.delimitadores.length
+                  ? `hay delimitadores desbalanceados: ${diagnostico.delimitadores.map(x => x.simbolo).join(", ")}.`
+                  : diagnostico.repetidas.length
+                      ? `se repiten declaraciones de variables: ${diagnostico.repetidas.join(", ")}.`
+                      : "";
+              return construirRespuestaIA(
+                  `Revisión orientativa: ${evaluacion.nota}/10`,
+                  problemaEstructural ||
+                      (fortalezas.length ? fortalezas.join(" · ") : "ya existe un intento ejecutable para analizar."),
+                  mejoras.length
+                      ? mejoras[0]
+                      : pendientes.length
+                          ? `Hacé visible en el código el concepto “${pendientes[0]}”.`
+                          : "Ejecutá dos casos con datos distintos y compará los resultados esperados.",
+                  preguntaSocratica || "¿Qué línea demuestra mejor que tu programa cumple la consigna?"
+              );
           }
           if (modo === "ejemplo" || /prueba|caso|ejemplo|dato/.test(texto)) {
-              return "Proponé un caso normal y uno límite. Para cada uno, anotá el resultado esperado antes de ejecutar. Si ambos coinciden, agregá un tercer caso que pueda revelar una condición faltante.";
+              const foco = diagnostico.tieneDecision
+                  ? "un valor que cumpla la condición y otro que no la cumpla"
+                  : diagnostico.tieneRepeticion
+                      ? "una colección con varios elementos y otra vacía o con un solo elemento"
+                      : "dos valores de entrada claramente diferentes";
+              return construirRespuestaIA(
+                  "Plan de prueba",
+                  `tu código ${diagnostico.tieneDecision ? "contiene decisiones" : diagnostico.tieneRepeticion ? "contiene una repetición" : "necesita validar su resultado con más de un caso"}.`,
+                  `Probá ${foco}. Antes de ejecutar, anotá la salida que esperás en cada caso.`,
+                  "¿La salida real coincide exactamente con lo esperado en ambos casos?"
+              );
           }
           if (/solucion|codigo completo|respuesta completa|hacelo por mi|dame el codigo/.test(texto)) {
-              return "Puedo orientarte, pero no voy a escribir la solución completa. Decime qué parte te cuesta: datos de entrada, condición, repetición, función o salida.";
+              return construirRespuestaIA(
+                  "No voy a entregar el código completo.",
+                  "la actividad evalúa tu razonamiento y tus decisiones, no solo el resultado final.",
+                  pendientes.length
+                      ? `Trabajemos sobre “${pendientes[0]}”: explicá en una frase qué debería hacer esa parte.`
+                      : "Decime qué parte te cuesta: entrada, condición, repetición, función o salida.",
+                  "¿Qué intentaste hasta ahora y qué resultado obtuviste?"
+              );
           }
           if (modo === "error" || /error|no funciona|falla|undefined|syntax/.test(texto)) {
-              if (error) return `Primero revisá el mensaje de la consola: ${historial.error || "hay un error de ejecución"}. Ubicá la línea señalada y comprobá nombres de variables, paréntesis y llaves. ¿Qué valor esperabas obtener allí?`;
-              return "Ejecutá el código y copiá mentalmente el primer resultado inesperado. Después revisá la línea que construye ese valor, sin cambiar varias cosas a la vez.";
+              if (diagnostico.delimitadores.length) {
+                  return construirRespuestaIA(
+                      "Posible error de sintaxis",
+                      `los delimitadores ${diagnostico.delimitadores.map(x => x.simbolo).join(", ")} no están balanceados.`,
+                      "Revisá desde la última estructura que abriste y cerrá solo el bloque correspondiente.",
+                      "¿Cada paréntesis, corchete y llave de apertura tiene su cierre?"
+                  );
+              }
+              if (diagnostico.errorTexto) {
+                  return construirRespuestaIA(
+                      "Diagnóstico de ejecución",
+                      `${diagnostico.errorTexto}${diagnostico.lineaError ? ` El navegador señala la línea ${diagnostico.lineaError}.` : ""}`,
+                      "Revisá primero nombres de variables y el valor disponible justo antes de esa instrucción. Cambiá una sola cosa y volvé a ejecutar.",
+                      "¿Qué valor esperabas y qué valor existe realmente en ese punto?"
+                  );
+              }
+              return construirRespuestaIA(
+                  "Necesito una ejecución reciente.",
+                  "no encuentro un error registrado en la consola del módulo.",
+                  "Pulsá “Ejecutar y probar” y después volvé a “Ayúdame con el error”.",
+                  "¿Cuál es la primera salida que difiere de lo esperado?"
+              );
           }
           if (modo === "siguiente" || /ahora|sigo|continuo|reviso/.test(texto)) {
-              if (pendientes.length) return `El próximo foco de revisión puede ser: ${pendientes.join(", ")}. Elegí uno y explicá qué debería hacer en tu solución.`;
-              return "Probá al menos un caso normal y un caso límite. Luego explicá qué parte del código demuestra que cumplís la consigna.";
+              const foco = pendientes[0];
+              return construirRespuestaIA(
+                  "Un solo foco para avanzar",
+                  foco
+                      ? `todavía no encuentro evidencia clara de “${foco}”.`
+                      : `la estructura alcanza una estimación de ${evaluacion.nota}/10 y no detecto un concepto principal ausente.`,
+                  foco
+                      ? `Agregá o corregí únicamente la parte que demuestra “${foco}” y ejecutá de nuevo.`
+                      : "Diseñá un caso límite y verificá que la salida siga siendo correcta.",
+                  preguntaSocratica || "¿Qué cambio pequeño podés comprobar antes de continuar?"
+              );
           }
-          if (/condicion|if|decidir/.test(texto)) return "Escribí primero la regla en palabras: «si ocurre..., entonces...; de lo contrario...». Después buscá cómo traducir esa regla a una condición.";
-          if (/bucle|repet|for|while|recorrer/.test(texto)) return "Identificá qué dato se repite, desde dónde empieza el recorrido y cuándo debe detenerse. No programes el bucle hasta poder responder esas tres preguntas.";
-          if (/funcion|parametro|return/.test(texto)) return "Pensá qué tarea única debería resolver la función, qué información necesita recibir y qué resultado debe devolver. Probá la función con un ejemplo pequeño.";
-          if (/salida|console|mostrar|resultado/.test(texto)) return "Compará la salida real con la salida que pide la consigna. Revisá qué variable estás mostrando y en qué momento se calcula.";
-          if (pendientes.length) return `Pista: todavía no encuentro evidencia clara de ${pendientes.join(", ")}. Volvé a la consigna y buscá una instrucción que puedas convertir en una pequeña prueba.`;
-          return "Pista inicial: explicá con tus palabras qué debe entrar, qué debe procesarse y qué debe salir. Esa explicación te va a indicar cuál es el próximo bloque de código.";
+          if (/condicion|if|decidir/.test(texto)) return construirRespuestaIA("Condiciones", diagnostico.tieneDecision ? "tu código ya contiene una decisión." : "todavía no detecto una decisión explícita.", "Escribí la regla en palabras: “si ocurre..., entonces...; de lo contrario...”. Después traducí exactamente esa regla.", "¿Qué dos resultados diferentes debería producir la condición?");
+          if (/bucle|repet|for|while|recorrer/.test(texto)) return construirRespuestaIA("Repeticiones", diagnostico.tieneRepeticion ? "tu código ya contiene una estructura repetitiva." : "todavía no detecto un bucle.", "Definí qué dato recorrés, dónde empieza y cuál es la condición de finalización.", "¿Qué cambia en cada vuelta para evitar un ciclo infinito?");
+          if (/funcion|parametro|return/.test(texto)) return construirRespuestaIA("Funciones", diagnostico.tieneFuncion ? "tu código ya declara una función." : "todavía no detecto una función.", "Definí una tarea única, los datos que recibe y el resultado que devuelve. Probala con un ejemplo pequeño.", "¿La función devuelve un valor o solamente lo muestra?");
+          if (/salida|console|mostrar|resultado/.test(texto)) return construirRespuestaIA("Salida del programa", diagnostico.tieneSalida ? "hay una instrucción de salida en tu código." : "no encuentro una salida visible con console.log.", "Compará la variable mostrada con la salida exacta que exige la consigna y verificá cuándo se calcula.", "¿La salida permite comprobar el resultado sin leer el código?");
+          if (/no entiendo|no se|no puedo|estoy perdido|me trabe|me trabé/.test(texto)) {
+              return construirRespuestaIA(
+                  "Vamos a reducir el problema.",
+                  diagnostico.esPlantilla ? "todavía no hay un intento ejecutable." : `ya escribiste ${diagnostico.lineasUtiles.length} líneas útiles.`,
+                  nivelPista >= 3 && pendientes.length
+                      ? `Buscá en la teoría del módulo el concepto “${pendientes[0]}” y escribí una sola instrucción que lo represente.`
+                      : "Completá esta frase en un comentario: “Mi programa recibe..., hace... y muestra...”.",
+                  preguntaSocratica || "¿Cuál de esas tres partes podés resolver primero?"
+              );
+          }
+          if (pendientes.length) {
+              const accion = nivelPista === 1
+                  ? `Revisá la consigna y localizá dónde debería aparecer “${pendientes[0]}”.`
+                  : nivelPista === 2
+                      ? `Escribí en un comentario qué debería hacer “${pendientes[0]}” y convertí ese comentario en una instrucción.`
+                      : `Concentrate solo en “${pendientes[0]}”: agregá la estructura mínima que lo demuestre y ejecutá un caso pequeño.`;
+              return construirRespuestaIA(
+                  `Pista ${nivelPista} de 3`,
+                  `detecté ${diagnostico.conceptosCumplidos.length ? `como avances ${diagnostico.conceptosCumplidos.join(", ")}, pero ` : ""}falta evidencia clara de ${pendientes.join(", ")}.`,
+                  accion,
+                  preguntaSocratica || "¿Cómo vas a comprobar que ese cambio funciona?"
+              );
+          }
+          return construirRespuestaIA(
+              "Tu solución está encaminada.",
+              `la evaluación orientativa es ${evaluacion.nota}/10 y no detecto conceptos principales ausentes.`,
+              "Explicá qué debe entrar, qué se procesa y qué sale; después probá un caso límite.",
+              preguntaSocratica || "¿Qué evidencia usarías para defender que tu solución es correcta?"
+          );
       }
 
       function pedirPistaIA(sectionId, modo = "pista") {
