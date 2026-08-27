@@ -1196,12 +1196,14 @@
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
       import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+      import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
+      import { getAI, getTemplateGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
 
       // ============================================================
       // PEGA AQUÍ LA CONFIGURACIÓN DE TU PROYECTO FIREBASE
       // Firebase Console -> Configuración del proyecto -> Tus apps -> Web
       // ============================================================
- const firebaseConfig = {
+  const firebaseConfig = {
     apiKey: "AIzaSyA9Xvz6_NoyWIcl2gU2rLYsNzj_6uwB3hA",
     authDomain: "ipem146js.firebaseapp.com",
     projectId: "ipem146js",
@@ -1210,6 +1212,11 @@
     appId: "1:572464024232:web:a30ef451228ac9109d509d",
     measurementId: "G-WBDVFLQD73"
   };
+
+      // Esta clave identifica el sitio ante reCAPTCHA Enterprise y es pública.
+      // No pegues aquí claves de Gemini, Vertex AI, cuentas de servicio ni secretos.
+      const APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY = "6Ld7l5stAAAAABjs2OrNxeDMaKZ6oAGERjopw3U9";
+      const FIREBASE_AI_TEMPLATE_ID = "tutor-javascript-ipem146-v1-0-0";
 
       const firebaseConfigured = !Object.values(firebaseConfig).some(v => String(v).includes("REEMPLAZAR_"));
       const TEACHER_EMAILS = Object.freeze([
@@ -1220,10 +1227,24 @@
       window.TEACHER_EMAILS = TEACHER_EMAILS;
       let auth = null, db = null, googleProvider = null;
       let teacherAuth = null, teacherDb = null, teacherProvider = null;
+      let firebaseAITemplateModel = null;
       let teacherPersistenceReady = Promise.resolve();
 
       if (firebaseConfigured) {
         const app = initializeApp(firebaseConfig);
+        const appCheckConfigured = !APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY.includes("REEMPLAZAR_");
+        if (appCheckConfigured) {
+          initializeAppCheck(app, {
+            provider: new ReCaptchaEnterpriseProvider(APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY),
+            isTokenAutoRefreshEnabled: true
+          });
+          try {
+            const ai = getAI(app, { backend: new GoogleAIBackend() });
+            firebaseAITemplateModel = getTemplateGenerativeModel(ai);
+          } catch (error) {
+            console.warn("Firebase AI Logic no pudo inicializarse; se usará el tutor local.", error);
+          }
+        }
         auth = getAuth(app);
         db = getFirestore(app);
         googleProvider = new GoogleAuthProvider();
@@ -1248,6 +1269,34 @@
           window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: user || null }));
         });
       }
+
+      window.firebaseAIRealConfigurada = Boolean(firebaseAITemplateModel);
+      window.consultarTutorIAFirebase = async function(payload = {}) {
+        if (!firebaseAITemplateModel) {
+          throw new Error("Firebase AI Logic todavía no está configurado.");
+        }
+        const user = auth?.currentUser;
+        if (!user) {
+          throw new Error("El estudiante debe iniciar sesión para consultar la IA.");
+        }
+        const textoSeguro = (valor, limite) => String(valor || "").slice(0, limite);
+        const response = await firebaseAITemplateModel.generateContent(
+          FIREBASE_AI_TEMPLATE_ID,
+          {
+            nombreModulo: textoSeguro(payload.nombreModulo, 180),
+            consigna: textoSeguro(payload.consigna, 1800),
+            pregunta: textoSeguro(payload.pregunta, 500),
+            modo: textoSeguro(payload.modo, 40),
+            codigo: textoSeguro(payload.codigo, 5000),
+            conceptos: textoSeguro(payload.conceptos, 800),
+            diagnosticoLocal: textoSeguro(payload.diagnosticoLocal, 1200),
+            historialReciente: textoSeguro(payload.historialReciente, 1800)
+          }
+        );
+        const texto = response?.response?.text?.().trim() || "";
+        if (!texto) throw new Error("La IA no devolvió una respuesta utilizable.");
+        return texto;
+      };
 
       window.firebaseAuthReady = new Promise(resolve => {
         if (!firebaseConfigured) return resolve(null);
@@ -3251,7 +3300,7 @@
                               <div class="ai-chat-header">
                                   <div class="ai-chat-title"><i class="fa-solid fa-comments"></i> Chat de pistas por módulo</div>
                                   <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.2rem">
-                                      <span class="ai-chat-note">No entrega la solución completa</span>
+                                      <span class="ai-chat-note">${window.firebaseAIRealConfigurada ? "Tutor IA protegido por Firebase App Check" : "Tutor local activo · IA real pendiente de configurar"}</span>
                                       <span class="ai-chat-sync saved" id="ai-chat-sync-${sec.id}"><i class="fa-solid fa-cloud"></i> Sincronizado</span>
                                   </div>
                               </div>
@@ -3978,18 +4027,7 @@
           document.getElementById('progressText').innerText = `Progreso: ${porcentaje}% (${finalizadasCount}/${seccionesData.length} finalizadas)`;
       }
 
-      async function ejecutarCodigo(sectionId) {
-          if (!claseHabilitada) return;
-          if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
-
-          const editor = document.getElementById(`editor-${sectionId}`);
-          const consoleBox = document.getElementById(`console-${sectionId}`);
-          if (!editor || !consoleBox) return;
-          const code = editor.value;
-
-          consoleBox.style.color = "#fbbf24";
-          consoleBox.textContent = "// Ejecutando en un entorno aislado...";
-
+      async function ejecutarCodigoAislado(code) {
           const workerSource = `
               const serializar = valor => {
                   if (typeof valor !== "object" || valor === null) return String(valor);
@@ -4019,10 +4057,8 @@
                   }
               };
           `;
-
-          let resultado;
           try {
-              resultado = await new Promise((resolve, reject) => {
+              return await new Promise((resolve, reject) => {
                   const blob = new Blob([workerSource], { type: "text/javascript" });
                   const workerUrl = URL.createObjectURL(blob);
                   const worker = new Worker(workerUrl);
@@ -4047,8 +4083,23 @@
                   worker.postMessage({ code });
               });
           } catch (error) {
-              resultado = { ok: false, logs: [], error: error.message };
+              return { ok: false, logs: [], error: error.message };
           }
+      }
+
+      async function ejecutarCodigo(sectionId) {
+          if (!claseHabilitada) return;
+          if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
+
+          const editor = document.getElementById(`editor-${sectionId}`);
+          const consoleBox = document.getElementById(`console-${sectionId}`);
+          if (!editor || !consoleBox) return;
+          const code = editor.value;
+
+          consoleBox.style.color = "#fbbf24";
+          consoleBox.textContent = "// Ejecutando en un entorno aislado...";
+
+          const resultado = await ejecutarCodigoAislado(code);
 
           const logs = Array.isArray(resultado.logs) ? resultado.logs : [];
           if (!resultado.ok) logs.push("[EXCEPCIÓN]: " + resultado.error);
@@ -4061,6 +4112,7 @@
           if(!historialResultados[sectionId]) historialResultados[sectionId] = {};
           historialResultados[sectionId].codigo = code;
           historialResultados[sectionId].salida = logs.join("\n");
+          historialResultados[sectionId].error = resultado.error || "";
           historialResultados[sectionId].fecha = new Date().toLocaleString();
           historialResultados[sectionId].exito = esExitoso;
           const sec = seccionesData.find(s => s.id === sectionId);
@@ -4084,23 +4136,71 @@
               .trim();
       }
 
+      function validarSintaxisCodigo(code) {
+          try {
+              new Function('"use strict";\n' + String(code || ""));
+              return { valida: true, error: "" };
+          } catch (error) {
+              return { valida: false, error: error?.message || String(error) };
+          }
+      }
+
+      function limpiarSalidaEvaluacion(valor) {
+          return normalizarEvaluacion(String(valor || "")
+              .replace(/\[(?:LOG|INFO|AVISO|ERROR|EXCEPCIÓN)\]:/gi, " ")
+              .replace(/\/\/ ejecutado sin salida en consola\./gi, " ")
+              .replace(/[{}[\]",'`]/g, " "));
+      }
+
+      function calcularSimilitudSalida(real, esperada) {
+          const a = limpiarSalidaEvaluacion(real);
+          const b = limpiarSalidaEvaluacion(esperada);
+          if (!b) return a ? 0.75 : 1;
+          if (!a) return 0;
+          if (a === b || a.includes(b) || b.includes(a)) return 1;
+          const tokensA = new Set(a.split(/[^a-z0-9_$.-]+/).filter(x => x.length > 1));
+          const tokensB = new Set(b.split(/[^a-z0-9_$.-]+/).filter(x => x.length > 1));
+          if (!tokensB.size) return a ? 0.65 : 0;
+          const interseccion = [...tokensB].filter(x => tokensA.has(x)).length;
+          const union = new Set([...tokensA, ...tokensB]).size || 1;
+          const coberturaEsperada = interseccion / tokensB.size;
+          const jaccard = interseccion / union;
+          return Math.max(0, Math.min(1, coberturaEsperada * 0.7 + jaccard * 0.3));
+      }
+
       function evaluarCodigoPorEvidencias(code, sec, resultadoEjecucion) {
           const fuente = String(code || "");
           const limpia = normalizarEvaluacion(fuente);
-          const salida = normalizarEvaluacion(
-              resultadoEjecucion?.salida ||
-              (Array.isArray(resultadoEjecucion?.logs) ? resultadoEjecucion.logs.join(" ") : "")
+          const sintaxis = validarSintaxisCodigo(fuente);
+          const ejecucionIntentada = resultadoEjecucion !== null && resultadoEjecucion !== undefined;
+          const salidaReal = resultadoEjecucion?.salida ||
+              (Array.isArray(resultadoEjecucion?.logs) ? resultadoEjecucion.logs.join("\n") : "");
+          const salidaEsperada = resultadoEjecucion?.salidaEsperada || "";
+          const error = resultadoEjecucion?.error ||
+              (ejecucionIntentada && !resultadoEjecucion?.ok ? "Error de ejecución" : "");
+          const esPlantilla = !fuente.trim() ||
+              (sec?.initialCode && fuente.trim() === String(sec.initialCode).trim());
+          const lineas = fuente.split(/\r?\n/);
+          const lineasUtiles = lineas.filter(linea => {
+              const texto = linea.trim();
+              return texto && !texto.startsWith("//") && !/^[{}[\]();,]+$/.test(texto);
+          });
+          const instruccionesEstimadas = Math.max(
+              lineasUtiles.length,
+              (fuente.match(/;/g) || []).length,
+              (fuente.match(/\b(if|switch|for|while|return|console\.(?:log|info|warn|error))\b/g) || []).length
           );
-          const error = resultadoEjecucion?.error || (!resultadoEjecucion?.ok && resultadoEjecucion ? "Error de ejecución" : "");
-          const esPlantilla = !fuente.trim() || (sec?.initialCode && fuente.trim() === String(sec.initialCode).trim());
-          const conceptos = Array.isArray(sec?.conceptosDetectar) ? sec.conceptosDetectar : [];
-          const criteriosDefinidos = Array.isArray(sec?.criteriosEvaluacion) ? sec.criteriosEvaluacion.filter(c => c && (c.criterio || c.indicador)) : [];
-          const criteriosBase = criteriosDefinidos.length ? criteriosDefinidos : [
-              { criterio: "Ejecución segura", peso: 25, indicador: "El código se ejecuta sin errores y termina." },
-              { criterio: "Conceptos del desafío", peso: 30, indicador: "Usa los conceptos solicitados en la consigna." },
-              { criterio: "Lógica y estructura", peso: 25, indicador: "Presenta una solución coherente, legible y organizada." },
-              { criterio: "Resultado observable", peso: 20, indicador: "La salida demuestra el objetivo del ejercicio." }
-          ];
+          const tienePendientes = /\b(TODO|FIXME)\b|completar|escrib[ií].*aqu[ií]|tu c[oó]digo/i.test(fuente);
+          const declaraciones = [...fuente.matchAll(/\b(?:let|const|var)\s+([A-Za-z_$][\w$]*)/g)].map(x => x[1]);
+          const declaracionesRepetidas = [...new Set(declaraciones.filter((x, i) => declaraciones.indexOf(x) !== i))];
+          const nombresDescriptivos = declaraciones.length
+              ? declaraciones.filter(x => x.length >= 3 && !/^(x|y|z|a|b|c|n|i|j|k|dato|valor)\d*$/i.test(x)).length / declaraciones.length
+              : 0.6;
+          const lineasMuyLargas = lineas.filter(x => x.length > 120).length;
+          const usaVar = /\bvar\b/.test(fuente);
+          const usaConstOLet = /\b(const|let)\b/.test(fuente);
+          const complejidad = (fuente.match(/\b(if|switch|for|while|forEach|map|filter|reduce)\b/g) || []).length;
+
           const patrones = {
               "variable": /\b(let|const|var)\b/,
               "variables": /\b(let|const|var)\b/,
@@ -4114,74 +4214,191 @@
               "ciclo": /\b(for|while|do)\b|\.forEach\s*\(/,
               "array": /\[[\s\S]*\]|\.map\s*\(|\.filter\s*\(|\.reduce\s*\(/,
               "arreglo": /\[[\s\S]*\]|\.map\s*\(|\.filter\s*\(|\.reduce\s*\(/,
-              "objeto": /\{[\s\S]*\}|Object\./,
+              "objeto": /(?:const|let|var)\s+\w+\s*=\s*\{|Object\.(?:keys|values|entries|assign)\s*\(/,
+              "objetos": /(?:const|let|var)\s+\w+\s*=\s*\{|Object\.(?:keys|values|entries|assign)\s*\(/,
               "console": /console\.(log|info|warn|error)\s*\(/,
               "salida": /console\.(log|info|warn|error)\s*\(/,
               "metodo": /\.[a-zA-Z_$][\w$]*\s*\(/,
-              "parametro": /function\s*\w*\s*\([^)]*\)|\([^)]*\)\s*=>/
+              "parametro": /function\s*\w*\s*\([^)]*\)|(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>/,
+              "return": /\breturn\b/,
+              "retorno": /\breturn\b/,
+              "template literal": /`[\s\S]*\$\{[\s\S]*\}[\s\S]*`/,
+              "interpolacion": /`[\s\S]*\$\{[\s\S]*\}[\s\S]*`/
           };
+          const conceptos = Array.isArray(sec?.conceptosDetectar) ? sec.conceptosDetectar : [];
           const evidenciasConceptos = conceptos.map(concepto => {
               const nombre = String(concepto);
               const clave = normalizarEvaluacion(nombre);
-              const palabras = clave.split(/[^a-z0-9]+/).filter(Boolean);
-              const patron = patrones[clave] || new RegExp(palabras.map(p => p.length > 3 ? `\\b${p}\\b` : p).join("|"), "i");
+              const clavePatron = Object.keys(patrones).find(k => clave === k || clave.includes(k));
+              const palabras = clave.split(/[^a-z0-9]+/).filter(x => x.length >= 4);
+              const patron = clavePatron
+                  ? patrones[clavePatron]
+                  : palabras.length
+                      ? new RegExp(palabras.map(p => `\\b${p}\\b`).join("|"), "i")
+                      : /$a/;
               const cumple = patron.test(limpia);
-              return { nombre, cumple, evidencia: cumple ? "Detectado en el código." : "No se detectó evidencia suficiente." };
+              return {
+                  nombre,
+                  cumple,
+                  evidencia: cumple
+                      ? `Se encontró una estructura compatible con “${nombre}”.`
+                      : `No se encontró una estructura verificable para “${nombre}”.`
+              };
           });
           const conceptosCumplidos = evidenciasConceptos.filter(x => x.cumple).length;
-          const porcentajeConceptos = evidenciasConceptos.length ? conceptosCumplidos / evidenciasConceptos.length : (/\b(let|const|function|if|for|while|console\.log)\b/.test(limpia) ? 1 : 0.4);
-          const ejecucion = esPlantilla ? 0 : (resultadoEjecucion ? (resultadoEjecucion.ok ? 1 : 0) : (/\b(console\.log|function|let|const)\b/.test(limpia) ? 0.6 : 0));
-          const estructura = esPlantilla ? 0 : Math.min(1, (
-              (/\b(let|const|var)\b/.test(limpia) ? 0.2 : 0) +
-              (/\bfunction\b|=>/.test(limpia) ? 0.2 : 0) +
-              (/\b(if|switch|for|while|forEach|map|filter|reduce)\b/.test(limpia) ? 0.25 : 0) +
-              (/\breturn\b/.test(limpia) ? 0.15 : 0) +
-              (/\bconsole\.(log|info|warn|error)\b/.test(limpia) ? 0.1 : 0) +
-              (fuente.split("\n").filter(l => l.trim()).length >= 2 ? 0.1 : 0)
+          const proporcionConceptos = evidenciasConceptos.length
+              ? conceptosCumplidos / evidenciasConceptos.length
+              : (lineasUtiles.length >= 2 ? 0.75 : 0.35);
+
+          const puntajeSintaxis = esPlantilla ? 0 : (sintaxis.valida ? 1 : 0);
+          const puntajeEjecucion = esPlantilla || !sintaxis.valida
+              ? 0
+              : ejecucionIntentada
+                  ? (resultadoEjecucion?.ok ? 1 : 0)
+                  : 0.45;
+          const similitudSalida = salidaEsperada
+              ? calcularSimilitudSalida(salidaReal, salidaEsperada)
+              : (limpiarSalidaEvaluacion(salidaReal) ? 0.75 : (resultadoEjecucion?.ok ? 0.55 : 0));
+          const puntajeComportamiento = esPlantilla || !sintaxis.valida || !resultadoEjecucion?.ok
+              ? 0
+              : similitudSalida;
+          const suficiencia = Math.min(1, instruccionesEstimadas / Math.max(2, Math.min(6, conceptos.length + 1)));
+          const puntajeEstructura = esPlantilla ? 0 : Math.max(0, Math.min(1,
+              proporcionConceptos * 0.55 +
+              suficiencia * 0.3 +
+              (complejidad || conceptos.length <= 1 ? 0.15 : 0.05)
           ));
-          const tokensSalida = String(sec?.aiSolution || "").match(/console\.(?:log|info|warn|error)\s*\(([^)]*)\)/gi) || [];
-          const salidaEsperada = tokensSalida.map(x => normalizarEvaluacion(x.replace(/^.*?\(/, "").replace(/\)$/, ""))).filter(Boolean);
-          const salidaCoincide = salidaEsperada.length ? salidaEsperada.some(t => t && salida.includes(t.replace(/['"`]/g, ""))) : salida.length > 0;
-          const resultado = esPlantilla ? 0 : (salidaCoincide ? 1 : (salida.length ? 0.55 : 0));
-          const claridad = esPlantilla ? 0 : Math.min(1, (/\b(const|let)\b/.test(limpia) ? 0.35 : 0) + (/\breturn\b/.test(limpia) ? 0.25 : 0) + (!/\/\/.*TODO|alert\(/i.test(fuente) ? 0.2 : 0) + (fuente.split("\n").length > 2 ? 0.2 : 0));
-          const obtenerPuntajeCriterio = criterio => {
+          const puntajeCalidad = esPlantilla ? 0 : Math.max(0, Math.min(1,
+              0.35 +
+              (usaConstOLet ? 0.15 : 0) +
+              nombresDescriptivos * 0.25 +
+              (lineasMuyLargas === 0 ? 0.1 : 0) +
+              (declaracionesRepetidas.length === 0 ? 0.1 : 0) +
+              (!tienePendientes ? 0.05 : 0) -
+              (usaVar ? 0.08 : 0)
+          ));
+
+          const criteriosDefinidos = Array.isArray(sec?.criteriosEvaluacion)
+              ? sec.criteriosEvaluacion.filter(c => c && (c.criterio || c.indicador))
+              : [];
+          const criteriosBase = criteriosDefinidos.length ? criteriosDefinidos : [
+              { criterio: "Sintaxis y ejecución", peso: 25, indicador: "El código es válido, se ejecuta sin errores y termina." },
+              { criterio: "Requisitos del desafío", peso: 30, indicador: "Usa las estructuras y conceptos solicitados." },
+              { criterio: "Comportamiento verificable", peso: 25, indicador: "La salida coincide razonablemente con el comportamiento de referencia." },
+              { criterio: "Calidad y claridad", peso: 20, indicador: "La solución es legible, suficiente y evita problemas básicos de mantenimiento." }
+          ];
+          const obtenerResultadoCriterio = criterio => {
               const texto = normalizarEvaluacion(`${criterio.criterio} ${criterio.indicador}`);
-              if (/ejec|error|compil|funciona/.test(texto)) return ejecucion;
-              if (/concept|consigna|requis|estructura solicit/.test(texto)) return porcentajeConceptos;
-              if (/salida|resultado|objetivo|evidencia/.test(texto)) return resultado;
-              if (/clar|legib|orden|estructura|calidad/.test(texto)) return Math.max(estructura, claridad);
-              return Math.max(ejecucion, porcentajeConceptos, estructura, resultado);
+              if (/sintaxis|compil/.test(texto)) {
+                  return { proporcion: puntajeSintaxis * 0.4 + puntajeEjecucion * 0.6, evidencia: sintaxis.valida ? (resultadoEjecucion?.ok ? "Sintaxis válida y ejecución correcta." : "La sintaxis es válida, pero falta una ejecución correcta.") : `Error de sintaxis: ${sintaxis.error}` };
+              }
+              if (/ejec|error|funciona|termina/.test(texto)) {
+                  return { proporcion: puntajeEjecucion, evidencia: resultadoEjecucion?.ok ? "La ejecución terminó sin excepciones." : (error || "Todavía no hay una ejecución correcta registrada.") };
+              }
+              if (/concept|consigna|requis|estructura solicit|contenido/.test(texto)) {
+                  return { proporcion: proporcionConceptos, evidencia: `${conceptosCumplidos}/${evidenciasConceptos.length || conceptos.length || 1} conceptos esperados detectados.` };
+              }
+              if (/salida|resultado|objetivo|comport|evidencia|prueba/.test(texto)) {
+                  return { proporcion: puntajeComportamiento, evidencia: salidaEsperada ? `Coincidencia orientativa con la salida de referencia: ${Math.round(similitudSalida * 100)}%.` : "Se verificó la existencia de una salida, pero este módulo no define una salida de referencia automática." };
+              }
+              if (/clar|legib|orden|calidad|manten|nombre/.test(texto)) {
+                  return { proporcion: puntajeCalidad, evidencia: declaracionesRepetidas.length ? `Hay declaraciones repetidas: ${declaracionesRepetidas.join(", ")}.` : "Se revisaron nombres, declaraciones, extensión de líneas y marcadores pendientes." };
+              }
+              return {
+                  proporcion: puntajeEstructura * 0.45 + puntajeComportamiento * 0.35 + puntajeCalidad * 0.2,
+                  evidencia: "Evaluado mediante requisitos, comportamiento y calidad del código."
+              };
           };
           const totalPeso = criteriosBase.reduce((s, c) => s + (Number(c.peso) || 0), 0) || 100;
           const criterios = criteriosBase.map((c, i) => {
               const peso = (Number(c.peso) || 0) * 100 / totalPeso;
-              const proporcion = Math.max(0, Math.min(1, obtenerPuntajeCriterio(c)));
-              const puntos = Number((peso * proporcion).toFixed(1));
+              const resultadoCriterio = obtenerResultadoCriterio(c);
+              const proporcion = Math.max(0, Math.min(1, resultadoCriterio.proporcion));
               return {
                   id: c.id || `criterio-${i + 1}`,
                   nombre: c.criterio || `Criterio ${i + 1}`,
                   peso: Number(peso.toFixed(1)),
-                  puntos,
+                  puntos: Number((peso * proporcion).toFixed(1)),
                   estado: proporcion >= 0.8 ? "cumplido" : (proporcion >= 0.45 ? "parcial" : "pendiente"),
-                  evidencia: c.indicador || (proporcion >= 0.8 ? "Evidencia suficiente." : "Revisar la consigna y la salida.")
+                  evidencia: resultadoCriterio.evidencia
               };
           });
-          const porcentaje = Math.max(0, Math.min(100, criterios.reduce((s, c) => s + c.puntos, 0)));
-          const nota = Number((porcentaje / 10).toFixed(1));
+
+          const porcentajeBase = Math.max(0, Math.min(100, criterios.reduce((s, c) => s + c.puntos, 0)));
+          let nota = Number((porcentajeBase / 10).toFixed(1));
+          const limites = [];
+          if (esPlantilla) {
+              nota = 1;
+              limites.push("Plantilla inicial o editor vacío: nota máxima 1.");
+          } else if (!sintaxis.valida) {
+              nota = Math.min(nota, 3);
+              limites.push("Error de sintaxis: nota máxima 3.");
+          } else if (ejecucionIntentada && !resultadoEjecucion?.ok) {
+              nota = Math.min(nota, 4);
+              limites.push("Error de ejecución: nota máxima 4.");
+          } else if (!ejecucionIntentada) {
+              nota = Math.min(nota, 6);
+              limites.push("Sin ejecución comprobada: nota máxima 6.");
+          }
+          if (!esPlantilla && instruccionesEstimadas < 2) {
+              nota = Math.min(nota, 5);
+              limites.push("Código insuficiente para demostrar una solución completa: nota máxima 5.");
+          }
+          if (resultadoEjecucion?.ok && salidaEsperada && similitudSalida < 0.35) {
+              nota = Math.min(nota, 6);
+              limites.push("La salida difiere sustancialmente de la referencia: nota máxima 6.");
+          }
+          if (tienePendientes) {
+              nota = Math.min(nota, 7);
+              limites.push("Persisten marcadores de código pendiente: nota máxima 7.");
+          }
+          nota = Number(Math.max(1, Math.min(10, nota)).toFixed(1));
+          const porcentaje = Number((nota * 10).toFixed(1));
+
           const fortalezas = [];
           const mejoras = [];
-          if (ejecucion >= 0.8) fortalezas.push("El código se ejecuta sin errores.");
-          else mejoras.push(error ? `Corregir el error de ejecución: ${error}` : "Ejecutar y verificar el código antes de entregar.");
-          if (conceptosCumplidos) fortalezas.push(`Se detectaron ${conceptosCumplidos}/${evidenciasConceptos.length || conceptos.length || 1} conceptos esperados.`);
-          if (evidenciasConceptos.some(x => !x.cumple)) mejoras.push("Completar los conceptos o estructuras indicados en la consigna.");
-          if (resultado >= 0.8) fortalezas.push("La salida aporta evidencia del resultado solicitado.");
-          else mejoras.push("Verificar que la salida de consola demuestre el objetivo.");
-          if (claridad < 0.6) mejoras.push("Mejorar nombres, organización y legibilidad del código.");
+          if (sintaxis.valida && !esPlantilla) fortalezas.push("La sintaxis del código es válida.");
+          else mejoras.push(sintaxis.error ? `Corregir la sintaxis: ${sintaxis.error}` : "Reemplazar la plantilla por una solución propia.");
+          if (resultadoEjecucion?.ok) fortalezas.push("El código se ejecuta sin errores.");
+          else mejoras.push(error ? `Corregir la ejecución: ${error}` : "Ejecutar el código antes de entregar.");
+          if (conceptosCumplidos) fortalezas.push(`Se verificaron ${conceptosCumplidos}/${evidenciasConceptos.length || conceptos.length || 1} conceptos esperados.`);
+          if (evidenciasConceptos.some(x => !x.cumple)) mejoras.push("Completar las estructuras que exige la consigna.");
+          if (puntajeComportamiento >= 0.8) fortalezas.push("La salida coincide razonablemente con el comportamiento de referencia.");
+          else if (salidaEsperada) mejoras.push("Revisar la salida: no coincide suficientemente con el comportamiento esperado.");
+          if (puntajeCalidad < 0.65) mejoras.push("Mejorar nombres, declaraciones y organización del código.");
+
           return {
-              nota, porcentaje, criterios, fortalezas, mejoras,
-              advertencias: ["Evaluación automática orientativa: debe ser revisada por el docente.", ...(esPlantilla ? ["El código coincide con la plantilla inicial."] : [])],
-              ejecucion: { ok: Boolean(resultadoEjecucion?.ok), salida: resultadoEjecucion?.salida || "", error: error || "" },
-              conceptos: evidenciasConceptos
+              nota,
+              porcentaje,
+              porcentajeBase: Number(porcentajeBase.toFixed(1)),
+              criterios,
+              fortalezas,
+              mejoras,
+              limites,
+              advertencias: [
+                  "Evaluación automática orientativa: el docente conserva la decisión final.",
+                  ...limites
+              ],
+              ejecucion: {
+                  intentada: ejecucionIntentada,
+                  ok: Boolean(resultadoEjecucion?.ok),
+                  salida: salidaReal,
+                  salidaEsperada,
+                  similitudSalida: Number(similitudSalida.toFixed(3)),
+                  error: error || ""
+              },
+              sintaxis,
+              conceptos: evidenciasConceptos,
+              metricas: {
+                  lineasUtiles: lineasUtiles.length,
+                  instruccionesEstimadas,
+                  sintaxis: puntajeSintaxis,
+                  ejecucion: puntajeEjecucion,
+                  requisitos: Number(proporcionConceptos.toFixed(3)),
+                  comportamiento: Number(puntajeComportamiento.toFixed(3)),
+                  estructura: Number(puntajeEstructura.toFixed(3)),
+                  calidad: Number(puntajeCalidad.toFixed(3))
+              }
           };
       }
 
@@ -4236,10 +4453,17 @@
           return evaluarCodigoPorEvidencias(code, sec, resultadoEjecucion).nota;
       }
 
-      function calcularNotaCombinada(notaCodigo, porcentajePreguntas) {
+      function calcularNotaCombinada(notaCodigo, porcentajePreguntas, evaluacionCodigo = null) {
           const codigo = Math.max(0, Math.min(10, Number(notaCodigo) || 0));
           const preguntas = Math.max(0, Math.min(100, Number(porcentajePreguntas) || 0)) / 10;
-          return Number((codigo * 0.7 + preguntas * 0.3).toFixed(1));
+          let nota = codigo * 0.7 + preguntas * 0.3;
+          const sintaxisValida = evaluacionCodigo?.sintaxis?.valida !== false;
+          const ejecucionCorrecta = evaluacionCodigo?.ejecucion?.ok !== false;
+          const comportamiento = Number(evaluacionCodigo?.metricas?.comportamiento);
+          if (!sintaxisValida) nota = Math.min(nota, 3);
+          else if (!ejecucionCorrecta) nota = Math.min(nota, 4);
+          else if (Number.isFinite(comportamiento) && comportamiento < 0.35) nota = Math.min(nota, 6);
+          return Number(Math.max(1, Math.min(10, nota)).toFixed(1));
       }
 
       function previsualizarNotaIA(sectionId) {
@@ -4522,6 +4746,63 @@
           ].filter(Boolean).join("\n\n");
       }
 
+      function validarRespuestaTutorRemoto(texto, respaldoLocal) {
+          const respuesta = String(texto || "").trim();
+          if (!respuesta) return respaldoLocal;
+          const bloquesCodigo = respuesta.match(/```[\s\S]*?```/g) || [];
+          const lineasCodigo = bloquesCodigo.reduce((total, bloque) => total + bloque.split(/\r?\n/).length, 0);
+          const instruccionesEjecutables = (respuesta.match(/(?:\bconst\b|\blet\b|\bfunction\b|=>|console\.log\s*\()/g) || []).length;
+          if (lineasCodigo > 6 || instruccionesEjecutables > 8) {
+              return `${respaldoLocal}\n\nLa respuesta remota fue reemplazada porque incluía demasiado código listo para copiar.`;
+          }
+          return respuesta.slice(0, 1800);
+      }
+
+      async function generarRespuestaChatIASegura(sectionId, pregunta, modo = "consulta") {
+          const respaldoLocal = generarRespuestaChatIA(sectionId, pregunta, modo);
+          if (!window.firebaseAIRealConfigurada || typeof window.consultarTutorIAFirebase !== "function") {
+              return respaldoLocal;
+          }
+          const sec = seccionesData.find(s => s.id === sectionId) || {};
+          const code = document.getElementById(`editor-${sectionId}`)?.value || "";
+          const mensajes = (historialChatIA[sectionId] || []).slice(-6);
+          const historial = historialResultados[sectionId] || {};
+          const evaluacion = evaluarCodigoPorEvidencias(code, sec, historial.exito === undefined ? null : {
+              ok: Boolean(historial.exito),
+              salida: historial.salida || "",
+              error: historial.error || ""
+          });
+          const resumenLocal = [
+              `Nota orientativa local: ${evaluacion.nota}/10.`,
+              `Sintaxis válida: ${evaluacion.sintaxis?.valida ? "sí" : "no"}.`,
+              `Ejecución correcta: ${evaluacion.ejecucion?.ok ? "sí" : "no"}.`,
+              `Conceptos pendientes: ${(evaluacion.conceptos || []).filter(x => !x.cumple).map(x => x.nombre).join(", ") || "ninguno detectado"}.`,
+              `Mejora prioritaria: ${evaluacion.mejoras?.[0] || "probar casos diferentes"}.`
+          ].join(" ");
+          actualizarEstadoChatIA(sectionId, "saving", "Consultando tutor IA seguro...");
+          try {
+              const consulta = window.consultarTutorIAFirebase({
+                  nombreModulo: sec.title || sectionId,
+                  consigna: sec.exerciseDesc || "",
+                  pregunta,
+                  modo,
+                  codigo: code,
+                  conceptos: (sec.conceptosDetectar || []).join(", "),
+                  diagnosticoLocal: resumenLocal,
+                  historialReciente: mensajes.map(m => `${m.rol === "student" ? "Alumno" : "Tutor"}: ${m.texto}`).join("\n")
+              });
+              const respuestaRemota = await Promise.race([
+                  consulta,
+                  new Promise((_, reject) => setTimeout(() => reject(new Error("Tiempo de espera agotado.")), 15000))
+              ]);
+              return validarRespuestaTutorRemoto(respuestaRemota, respaldoLocal);
+          } catch (error) {
+              console.warn("Tutor IA remoto no disponible; se usará el tutor local.", error);
+              actualizarEstadoChatIA(sectionId, "error", "Tutor local activo");
+              return respaldoLocal;
+          }
+      }
+
       function generarRespuestaChatIA(sectionId, pregunta, modo = "consulta") {
           const sec = seccionesData.find(s => s.id === sectionId) || {};
           const editor = document.getElementById(`editor-${sectionId}`);
@@ -4679,7 +4960,7 @@
           );
       }
 
-      function pedirPistaIA(sectionId, modo = "pista") {
+      async function pedirPistaIA(sectionId, modo = "pista") {
           if (!claseHabilitada || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
           const textos = {
               consigna: "Ayudame a entender la consigna.",
@@ -4691,7 +4972,8 @@
           };
           const pregunta = textos[modo] || textos.pista;
           agregarMensajeChatIA(sectionId, "student", pregunta);
-          agregarMensajeChatIA(sectionId, "assistant", generarRespuestaChatIA(sectionId, pregunta, modo));
+          const respuesta = await generarRespuestaChatIASegura(sectionId, pregunta, modo);
+          agregarMensajeChatIA(sectionId, "assistant", respuesta);
       }
 
       function limpiarChatIA(sectionId) {
@@ -4703,15 +4985,18 @@
           programarGuardadoFirebase();
       }
 
-      function enviarMensajeIA(event, sectionId) {
+      async function enviarMensajeIA(event, sectionId) {
           event.preventDefault();
           if (!claseHabilitada || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
           const input = document.getElementById(`ai-chat-input-${sectionId}`);
           const pregunta = input?.value.trim() || "";
           if (!pregunta) return;
-          agregarMensajeChatIA(sectionId, "student", pregunta);
-          agregarMensajeChatIA(sectionId, "assistant", generarRespuestaChatIA(sectionId, pregunta));
           input.value = "";
+          input.disabled = true;
+          agregarMensajeChatIA(sectionId, "student", pregunta);
+          const respuesta = await generarRespuestaChatIASegura(sectionId, pregunta);
+          agregarMensajeChatIA(sectionId, "assistant", respuesta);
+          input.disabled = false;
           input.focus();
       }
 
@@ -4888,6 +5173,7 @@
           let correctas = 0;
           let respondidas = 0;
           let maxPuntos = preguntas.length;
+          let puntosObtenidos = 0;
 
           preguntas.forEach((p,i) => {
               const marcadas = [...document.querySelectorAll(`input[name="analyst-${sectionId}-${i}"]:checked`)]
@@ -4903,6 +5189,12 @@
               if (JSON.stringify(marcadas) === JSON.stringify(reales)) {
                   correctas++;
               }
+              const aciertos = marcadas.filter(x => reales.includes(x)).length;
+              const errores = marcadas.filter(x => !reales.includes(x)).length;
+              const puntajePregunta = reales.length
+                  ? Math.max(0, Math.min(1, (aciertos - errores) / reales.length))
+                  : 0;
+              puntosObtenidos += puntajePregunta;
           });
 
           const result = document.getElementById(`analyst-result-${sectionId}`);
@@ -4912,7 +5204,7 @@
               return;
           }
 
-          const porcentaje = Math.round((correctas / maxPuntos) * 100);
+          const porcentaje = Math.round((puntosObtenidos / maxPuntos) * 100);
           const notaPreguntas = Number((porcentaje / 10).toFixed(1));
           const viabilidad = porcentaje >= 80 ? "ALTA" : porcentaje >= 60 ? "MEDIA" : "BAJA";
           const excelencia = porcentaje === 100 ? "EXCELENTE" :
@@ -4924,15 +5216,24 @@
 
           if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
           const notaCodigo = Number(historialResultados[sectionId].notaCodigo ?? historialResultados[sectionId].notaIA ?? 0);
-          const notaFinal = calcularNotaCombinada(notaCodigo, porcentaje);
+          const evaluacionCodigo = historialResultados[sectionId].evaluacionCodigo || null;
+          const notaFinal = calcularNotaCombinada(notaCodigo, porcentaje, evaluacionCodigo);
+          const limiteFinal = evaluacionCodigo?.sintaxis?.valida === false
+              ? "La nota final se limitó a 3 porque el código contiene un error de sintaxis."
+              : evaluacionCodigo?.ejecucion?.ok === false
+                  ? "La nota final se limitó a 4 porque el código no se ejecutó correctamente."
+                  : Number(evaluacionCodigo?.metricas?.comportamiento) < 0.35
+                      ? "La nota final se limitó a 6 porque la salida no demuestra el comportamiento esperado."
+                      : "";
 
           result.innerHTML =
               `<strong>Calificación final del módulo: ${notaFinal}/10</strong><br>` +
               `Código: <strong>${notaCodigo}/10</strong> (70%).<br>` +
-              `Preguntas: <strong>${notaPreguntas}/10</strong> (30%) — ${correctas}/${maxPuntos} respuestas completas correctas.<br>` +
+              `Preguntas: <strong>${notaPreguntas}/10</strong> (30%) — ${correctas}/${maxPuntos} respuestas perfectas; las selecciones parcialmente correctas recibieron puntaje proporcional y las incorrectas descontaron.<br>` +
               `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
               `Excelencia: <strong>${excelencia}</strong>.<br>` +
-              `Las preguntas mezclaron evidencias de tu código, de la solución IA, de la comparación entre ambos y situaciones de razonamiento socrático.`;
+              `Las preguntas mezclaron evidencias de tu código, de la solución IA, de la comparación entre ambos y situaciones de razonamiento socrático.` +
+              (limiteFinal ? `<br><strong>${escaparTextoAnalista(limiteFinal)}</strong>` : "");
 
           resaltarRespuestasAnalista(sectionId);
           document.querySelectorAll(`#analyst-${sectionId} input`).forEach(el => el.disabled = true);
@@ -4945,6 +5246,7 @@
               correctas,
               total: maxPuntos,
               porcentaje,
+              puntosObtenidos: Number(puntosObtenidos.toFixed(2)),
               viabilidad,
               excelencia,
               preguntas: preguntas.map((p, i) => ({
@@ -4977,7 +5279,7 @@
           programarGuardadoFirebase();
       }
 
-      function resolverYCompararIA(sectionId) {
+      async function resolverYCompararIA(sectionId) {
           if (!claseHabilitada) return;
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
@@ -4998,15 +5300,32 @@
           if (idealDisplay) idealDisplay.innerText = "// La solución de referencia se habilita después de entregar el análisis.";
           feedbackBox.classList.add('active');
           if (studentCodeDisplay) studentCodeDisplay.innerText = code;
-          feedbackText.innerHTML = "<i>Realizando una evaluación automática orientativa...</i>";
+          feedbackText.innerHTML = "<i>Ejecutando el código del estudiante y la referencia en entornos aislados...</i>";
 
-          setTimeout(() => {
-              const evaluacion = evaluarCodigoPorEvidencias(code, sec, historialResultados[sectionId] ? {
-                  ok: Boolean(historialResultados[sectionId].exito),
-                  salida: historialResultados[sectionId].salida || "",
-                  error: historialResultados[sectionId].exito ? "" : "La ejecución no fue validada correctamente."
-              } : null);
-              const diagnostico = generarDiagnosticoIA(evaluacion, sec, historialResultados[sectionId]);
+          await new Promise(resolve => setTimeout(resolve, 300));
+          const [resultadoAlumno, resultadoReferencia] = await Promise.all([
+              ejecutarCodigoAislado(code),
+              ejecutarCodigoAislado(sec.aiSolution || "")
+          ]);
+          const salidaAlumno = [
+              ...(Array.isArray(resultadoAlumno.logs) ? resultadoAlumno.logs : []),
+              ...(!resultadoAlumno.ok && resultadoAlumno.error ? [`[EXCEPCIÓN]: ${resultadoAlumno.error}`] : [])
+          ].join("\n");
+          const salidaReferencia = resultadoReferencia.ok
+              ? (Array.isArray(resultadoReferencia.logs) ? resultadoReferencia.logs.join("\n") : "")
+              : "";
+          const evaluacion = evaluarCodigoPorEvidencias(code, sec, {
+              ok: Boolean(resultadoAlumno.ok),
+              logs: resultadoAlumno.logs || [],
+              salida: salidaAlumno,
+              error: resultadoAlumno.error || "",
+              salidaEsperada: salidaReferencia
+          });
+              const diagnostico = generarDiagnosticoIA(evaluacion, sec, {
+                  ok: Boolean(resultadoAlumno.ok),
+                  salida: salidaAlumno,
+                  error: resultadoAlumno.error || ""
+              });
               const puntaje = evaluacion.nota;
               let analisis = "";
 
@@ -5021,7 +5340,10 @@
                   `<br><strong>Guía de mejora:</strong><ol>${diagnostico.pasos.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ol>` +
                   `<br><strong>Fortalezas:</strong> ${evaluacion.fortalezas.length ? evaluacion.fortalezas.map(escaparTextoAnalista).join(" · ") : "Todavía no se observan evidencias suficientes."}` +
                   `<br><strong>Mejoras:</strong> ${evaluacion.mejoras.length ? evaluacion.mejoras.map(escaparTextoAnalista).join(" · ") : "No se detectaron mejoras prioritarias."}` +
-                  `<hr><strong>Desglose:</strong><ul>${evaluacion.criterios.map(c => `<li>${escaparTextoAnalista(c.nombre)}: ${c.puntos}/${c.peso} puntos (${c.estado})</li>`).join("")}</ul>`;
+                  `<hr><strong>Desglose verificable:</strong><ul>${evaluacion.criterios.map(c => `<li>${escaparTextoAnalista(c.nombre)}: ${c.puntos}/${c.peso} puntos (${c.estado}). ${escaparTextoAnalista(c.evidencia)}</li>`).join("")}</ul>` +
+                  (evaluacion.limites.length ? `<strong>Límites aplicados:</strong><ul>${evaluacion.limites.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ul>` : "") +
+                  `<strong>Ejecución del estudiante:</strong> ${resultadoAlumno.ok ? "correcta" : `fallida: ${escaparTextoAnalista(resultadoAlumno.error || "error no especificado")}`}.<br>` +
+                  `<strong>Coincidencia de comportamiento:</strong> ${Math.round((evaluacion.ejecucion.similitudSalida || 0) * 100)}%.`;
               const objetivos = Array.isArray(sec.objetivosPedagogicos) ? sec.objetivosPedagogicos : [];
               const conceptos = Array.isArray(sec.conceptosDetectar) ? sec.conceptosDetectar : [];
               const errores = Array.isArray(sec.erroresFrecuentes) ? sec.erroresFrecuentes : [];
@@ -5057,14 +5379,14 @@
               historialResultados[sectionId].solucionIA = sec.aiSolution;
               historialResultados[sectionId].notaCodigo = puntaje;
               historialResultados[sectionId].evaluacionCodigo = evaluacion;
+              historialResultados[sectionId].salida = salidaAlumno;
+              historialResultados[sectionId].error = resultadoAlumno.error || "";
               delete historialResultados[sectionId].notaPreguntas;
               delete historialResultados[sectionId].notaFinal;
               delete historialResultados[sectionId].notaIA;
               historialResultados[sectionId].analisisIA = analisis.replace(/<[^>]*>?/gm, '');
-              historialResultados[sectionId].exito = true;
+              historialResultados[sectionId].exito = Boolean(resultadoAlumno.ok);
               programarGuardadoFirebase();
-
-          }, 800);
       }
 
       function generarTextoAnalistaPDF(sectionId) {
