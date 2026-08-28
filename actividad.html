@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -322,252 +322,6 @@
         color: var(--text-main);
         margin-bottom: 1rem;
         line-height: 1.5;
-      }
-
-      .exercise-keyword {
-        display: inline-block;
-        padding: 0.14rem 0.38rem;
-        border-radius: 5px;
-        background: #0ea5e9;
-        border: 1px solid #7dd3fc;
-        box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.35);
-        color: #082f49;
-        font-size: 1.04em;
-        font-weight: 800;
-        letter-spacing: 0.01em;
-        line-height: 1.2;
-        cursor: help;
-        transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-      }
-
-      .exercise-keyword.keyword-action {
-        background: #38bdf8;
-        border-color: #bae6fd;
-        color: #082f49;
-      }
-
-      .exercise-keyword.keyword-concept {
-        background: #c084fc;
-        border-color: #e9d5ff;
-        color: #3b0764;
-      }
-
-      .exercise-keyword.keyword-tool {
-        background: #34d399;
-        border-color: #a7f3d0;
-        color: #052e16;
-      }
-
-      .exercise-keyword.keyword-result {
-        background: #facc15;
-        border-color: #fef08a;
-        color: #422006;
-      }
-
-      .exercise-keyword:hover,
-      .exercise-keyword:focus-visible {
-        filter: brightness(1.15);
-        box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.32);
-        transform: translateY(-1px);
-        outline: none;
-      }
-
-      .keyword-legend {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.45rem 0.7rem;
-        margin: 0 0 0.75rem;
-        color: var(--text-muted);
-        font-size: 0.76rem;
-      }
-
-      .keyword-legend span {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.3rem;
-      }
-
-      .keyword-legend i {
-        width: 0.7rem;
-        height: 0.7rem;
-        border-radius: 2px;
-      }
-
-      .keyword-help-panel {
-        display: none;
-        margin: 0.15rem 0 0.9rem;
-        padding: 0.75rem 0.85rem;
-        border-left: 4px solid #38bdf8;
-        border-radius: 6px;
-        background: rgba(14, 165, 233, 0.12);
-        color: #e0f2fe;
-        font-size: 0.88rem;
-        line-height: 1.5;
-      }
-
-      .keyword-help-panel.active {
-        display: block;
-      }
-
-      .keyword-help-panel strong {
-        color: #7dd3fc;
-      }
-
-      .keyword-help-example {
-        display: block;
-        margin-top: 0.55rem;
-        padding: 0.55rem 0.65rem;
-        border-radius: 5px;
-        background: rgba(2, 6, 23, 0.55);
-        color: #e2e8f0;
-        font-family: "Fira Code", monospace;
-        font-size: 0.8rem;
-        overflow-wrap: anywhere;
-      }
-
-      .comprehension-tools {
-        display: grid;
-        gap: 0.75rem;
-        margin: 0.2rem 0 1rem;
-      }
-
-      .comprehension-panel {
-        border: 1px solid rgba(148, 163, 184, 0.25);
-        border-radius: 8px;
-        background: rgba(15, 23, 42, 0.58);
-        padding: 0.85rem;
-      }
-
-      .comprehension-panel h4 {
-        margin: 0 0 0.55rem;
-        color: #e2e8f0;
-        font-size: 0.92rem;
-      }
-
-      .steps-panel {
-        display: none;
-        margin-top: 0.7rem;
-      }
-
-      .steps-panel.active {
-        display: block;
-      }
-
-      .steps-panel ol {
-        margin: 0;
-        padding-left: 1.35rem;
-        color: #dbeafe;
-        line-height: 1.55;
-      }
-
-      .comprehension-options,
-      .student-checklist {
-        display: grid;
-        gap: 0.45rem;
-      }
-
-      .comprehension-options label,
-      .student-checklist label {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.5rem;
-        padding: 0.48rem 0.55rem;
-        border-radius: 5px;
-        background: rgba(30, 41, 59, 0.65);
-        color: #e2e8f0;
-        line-height: 1.35;
-        cursor: pointer;
-      }
-
-      .comprehension-feedback {
-        display: none;
-        margin-top: 0.6rem;
-        padding: 0.55rem 0.65rem;
-        border-radius: 5px;
-        font-size: 0.82rem;
-      }
-
-      .comprehension-feedback.active {
-        display: block;
-      }
-
-      .comprehension-feedback.correct {
-        background: rgba(16, 185, 129, 0.14);
-        color: #a7f3d0;
-      }
-
-      .comprehension-feedback.incorrect {
-        background: rgba(245, 158, 11, 0.14);
-        color: #fde68a;
-      }
-
-      .checklist-progress {
-        margin-top: 0.55rem;
-        color: var(--text-muted);
-        font-size: 0.78rem;
-      }
-
-      .support-resource-button {
-        margin: 0.15rem 0 0.85rem;
-      }
-
-      #sitioApoyoModal {
-        z-index: 8500;
-      }
-
-      #sitioApoyoModal .support-site-box {
-        width: min(1180px, 96vw);
-        max-width: 1180px;
-        height: min(88vh, 850px);
-        padding: 0;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-      }
-
-      .support-site-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-        padding: 0.85rem 1rem;
-        border-bottom: 1px solid var(--border);
-        background: #0f172a;
-      }
-
-      .support-site-header h3 {
-        margin: 0;
-        color: #7dd3fc;
-      }
-
-      .support-site-note {
-        margin: 0;
-        padding: 0.55rem 1rem;
-        background: rgba(16, 185, 129, 0.1);
-        color: #a7f3d0;
-        font-size: 0.8rem;
-        border-bottom: 1px solid rgba(16, 185, 129, 0.25);
-      }
-
-      #sitioApoyoFrame {
-        width: 100%;
-        flex: 1;
-        min-height: 0;
-        border: 0;
-        background: #ffffff;
-      }
-
-      .exercise-ai-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        margin: -0.35rem 0 0.85rem;
-        color: var(--text-muted);
-        font-size: 0.76rem;
-      }
-
-      .exercise-ai-status.ready {
-        color: #86efac;
       }
 
       .code-playground {
@@ -1216,29 +970,6 @@
         background: rgba(2, 6, 23, 0.96); backdrop-filter: blur(8px);
       }
       #firebaseAuthOverlay.hidden { display: none; }
-      #screenLockOverlay {
-        position: fixed;
-        inset: 0;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        padding: 1.5rem;
-        background: rgba(2, 6, 23, 0.94);
-        backdrop-filter: blur(8px);
-        z-index: 2200;
-      }
-      #screenLockOverlay.active { display: flex; }
-      .screen-lock-card {
-        width: min(520px, 100%);
-        padding: 2rem;
-        text-align: center;
-        background: var(--bg-card);
-        border: 1px solid var(--danger);
-        border-radius: 12px;
-        box-shadow: 0 20px 45px rgba(0,0,0,.5);
-      }
-      .screen-lock-card h2 { color: #fca5a5; margin-bottom: .75rem; }
-      .screen-lock-card p { color: var(--text-muted); line-height: 1.55; margin-bottom: 1.25rem; }
       #classStartOverlay {
         position: fixed; inset: 0; z-index: 4500;
         display: flex; align-items: center; justify-content: center;
@@ -1531,44 +1262,6 @@
         color: var(--text-muted);
         display: block;
         margin-bottom: .2rem;
-      }
-      .teacher-lock-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: .4rem;
-        padding: .32rem .52rem;
-        border: 1px solid #f87171;
-        border-radius: 6px;
-        background: rgba(127, 29, 29, .72);
-        color: #fff;
-        font-size: .76rem;
-        font-weight: 800;
-        letter-spacing: .02em;
-        box-shadow: 0 0 0 2px rgba(239, 68, 68, .16);
-      }
-      .teacher-lock-badge i {
-        color: #fecaca;
-        animation: teacherLockPulse 1.15s ease-in-out infinite;
-      }
-      .teacher-blocked-row {
-        background: rgba(127, 29, 29, .16) !important;
-        box-shadow: inset 4px 0 0 #ef4444;
-      }
-      .teacher-blocked-summary {
-        border-color: rgba(239, 68, 68, .7) !important;
-        background: rgba(127, 29, 29, .28) !important;
-        color: #fecaca;
-      }
-      .teacher-unlock-attention {
-        border: 1px solid #fecaca !important;
-        box-shadow: 0 0 0 2px rgba(239, 68, 68, .2);
-      }
-      @keyframes teacherLockPulse {
-        0%, 100% { transform: scale(1); filter: brightness(1); }
-        50% { transform: scale(1.22); filter: brightness(1.45); }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .teacher-lock-badge i { animation: none; }
       }
       .teacher-activity {
         border: 1px solid rgba(148,163,184,.22);
@@ -1963,21 +1656,6 @@
               actualizadoPor: controlCronometro.actualizadoPor || ""
             }
           }));
-          const bloqueoRemoto = datos.pantallaBloqueada === true;
-          const bloqueoId = String(datos.pantallaBloqueadaEn || "");
-          const ultimoBloqueo = getLocalStorage("app_last_screen_lock_event") || "";
-          if (bloqueoRemoto && bloqueoId && bloqueoId !== ultimoBloqueo) {
-            setLocalStorage("app_last_screen_lock_event", bloqueoId);
-            window.dispatchEvent(new CustomEvent("pantalla-bloqueada-estudiante"));
-          }
-          const desbloqueoPantalla = datos.desbloqueoPantalla || null;
-          const ultimoDesbloqueo = getLocalStorage("app_last_screen_unlock_event") || "";
-          if (desbloqueoPantalla?.id && String(desbloqueoPantalla.id) !== ultimoDesbloqueo) {
-            setLocalStorage("app_last_screen_unlock_event", String(desbloqueoPantalla.id));
-            window.dispatchEvent(new CustomEvent("desbloqueo-pantalla-estudiante", {
-              detail: { id: desbloqueoPantalla.id, por: desbloqueoPantalla.por || "" }
-            }));
-          }
           if (datos.chatIABorradoId) {
             window.dispatchEvent(new CustomEvent("borrado-chat-ia-estudiante", {
               detail: {
@@ -2070,10 +1748,6 @@
       window.iniciarSesionGoogle = async function() {
         if (!firebaseConfigured) {
           alert("Firebase todavía no está configurado. Reemplaza los valores REEMPLAZAR_ en la configuración del archivo.");
-          return;
-        }
-        if (window.location.protocol === "file:") {
-          alert("Esta página está abierta como archivo local. Para ingresar con Google, abrila desde:\n\nhttp://localhost:5500/actividad.html");
           return;
         }
         try {
@@ -2184,24 +1858,17 @@
         }
       };
 
-      window.guardarSalidasPestanaFirebase = async function(salidas, eventos, bloqueo = {}) {
+      window.guardarSalidasPestanaFirebase = async function(salidas, eventos) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!user || !db) return false;
         try {
-          const payload = {
+          await setDoc(doc(db, "estudiantes", user.uid), {
             salidasPestana: Number(salidas) || 0,
             eventosSalidasPestana: Array.isArray(eventos) ? eventos : [],
             uid: user.uid,
             email: user.email || "",
             actualizadoEn: serverTimestamp()
-          };
-          if (bloqueo?.pantallaBloqueada === true) {
-            payload.pantallaBloqueada = true;
-            payload.pantallaBloqueadaEn = bloqueo.pantallaBloqueadaEn || new Date().toISOString();
-            payload.pantallaBloqueadaSalidas = Number(bloqueo.pantallaBloqueadaSalidas || salidas) || 0;
-            payload.pantallaBloqueadaSeccion = String(bloqueo.pantallaBloqueadaSeccion || "");
-          }
-          await setDoc(doc(db, "estudiantes", user.uid), payload, { merge: true });
+          }, { merge: true });
           return true;
         } catch (error) {
           console.error("Error guardando el cambio de pestaña:", error);
@@ -2366,28 +2033,6 @@
         }
       };
 
-      window.desbloquearPantallaEstudianteFirebase = async function(uid) {
-        const contexto = contextoDocenteFirebase();
-        const user = contexto.user || await window.firebaseAuthReady;
-        const database = contexto.database;
-        if (!user || !database || !uid) return false;
-        try {
-          await setDoc(doc(database, "estudiantes", uid), {
-            pantallaBloqueada: false,
-            desbloqueoPantalla: {
-              id: `${Date.now()}-${uid}`,
-              por: user.email || user.displayName || user.uid,
-              en: serverTimestamp()
-            },
-            actualizadoEn: serverTimestamp()
-          }, { merge: true });
-          return true;
-        } catch (error) {
-          console.error("Error desbloqueando la pantalla:", error);
-          return false;
-        }
-      };
-
       window.borrarConsultasIAEstudiantesFirebase = async function(uids) {
         const autorizado = await window.autorizarDocenteFirebase?.();
         if (!autorizado) return false;
@@ -2492,9 +2137,6 @@
         <div style="font-size:3rem; margin-bottom:.5rem;">🔐</div>
         <h2 id="firebaseAuthTitle">Elegí cómo ingresar</h2>
         <p id="firebaseAuthMessage"><strong>Alumnos:</strong> ingresen con su propia cuenta de Google para guardar y recuperar el avance.</p>
-        <div id="localFileNotice" style="display:none;margin:.8rem 0;padding:.7rem;border:1px solid #f59e0b;border-radius:6px;background:rgba(245,158,11,.12);color:#fde68a;font-size:.82rem;line-height:1.45;">
-          Para usar Google, abrí esta página desde <strong>http://localhost:5500/actividad.html</strong>. Firebase no permite iniciar sesión desde un archivo local.
-        </div>
         <button class="btn btn-google" style="width:100%; justify-content:center; font-size:1rem; padding:.8rem 1rem;" onclick="iniciarSesionGoogle()">
           <i class="fa-brands fa-google"></i> Ingresar como alumno
         </button>
@@ -2510,16 +2152,6 @@
           <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión / cambiar cuenta
         </button>
         <div id="firebaseConfigWarning" style="display:none; margin-top:1rem; color:#fca5a5; font-size:.8rem;">Firebase no está configurado todavía.</div>
-      </div>
-    </div>
-    <div id="screenLockOverlay" role="alertdialog" aria-modal="true" aria-labelledby="screenLockTitle">
-      <div class="screen-lock-card">
-        <div style="font-size:2.6rem;color:#f87171;margin-bottom:.5rem;"><i class="fa-solid fa-lock"></i></div>
-        <h2 id="screenLockTitle">Pantalla bloqueada</h2>
-        <p>La actividad detectó que la página dejó de estar visible. El evento fue registrado para revisión docente. Para continuar, un docente debe autorizar el desbloqueo.</p>
-        <button class="btn btn-danger" type="button" onclick="solicitarAccionProfesor('unlock_screen')">
-          <i class="fa-solid fa-key"></i> Solicitar desbloqueo docente
-        </button>
       </div>
     </div>
 
@@ -2708,11 +2340,6 @@
             <option value="alertas">Con alertas IA</option>
             <option value="cambios">Con cambios de pestaña</option>
           </select>
-          <select id="filtroBloqueoProfesor" aria-label="Filtrar por bloqueo de pantalla">
-            <option value="">Todos los bloqueos</option>
-            <option value="bloqueados">Solo estudiantes bloqueados</option>
-            <option value="activos">Solo estudiantes activos</option>
-          </select>
           <select id="filtroProgresoProfesor" aria-label="Filtrar por rango de progreso">
             <option value="">Todo el progreso</option>
             <option value="0">0%</option>
@@ -2751,8 +2378,8 @@
             <option value="progreso-desc">Progreso: mayor primero</option>
             <option value="nota-asc">Nota: menor primero</option>
             <option value="nota-desc">Nota: mayor primero</option>
-            <option value="salidas-asc">Pestanas: menor primero</option>
-            <option value="salidas-desc">Pestanas: mayor primero</option>
+            <option value="salidas-asc">Pestañas: menor primero</option>
+            <option value="salidas-desc">Pestañas: mayor primero</option>
             <option value="alertas-desc">Alertas primero</option>
           </select>
           <button class="btn btn-secondary" type="button" onclick="limpiarFiltrosProfesor()" title="Restablecer todos los filtros"><i class="fa-solid fa-filter-circle-xmark"></i> Limpiar</button>
@@ -2821,32 +2448,6 @@
           <button class="btn btn-secondary" onclick="cerrarJustificacionSalida()">Cancelar</button>
           <button class="btn btn-primary" onclick="guardarJustificacionSalida()">Guardar justificación</button>
         </div>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="sitioApoyoModal" role="dialog" aria-modal="true" aria-labelledby="sitioApoyoTitle">
-      <div class="modal-box support-site-box">
-        <div class="support-site-header">
-          <div>
-            <h3 id="sitioApoyoTitle"><i class="fa-solid fa-book-open-reader"></i> Material de apoyo</h3>
-            <small id="sitioApoyoSeccion" style="color:var(--text-muted)">Consulta dentro de la actividad</small>
-          </div>
-          <button class="btn btn-secondary" type="button" onclick="cerrarSitioApoyo()" aria-label="Cerrar material de apoyo">
-            <i class="fa-solid fa-xmark"></i> Cerrar
-          </button>
-        </div>
-        <p class="support-site-note">
-          <i class="fa-solid fa-shield-halved"></i>
-          Esta consulta se abre dentro de la misma pantalla y no suma una salida de pestaña.
-        </p>
-        <iframe
-          id="sitioApoyoFrame"
-          src="about:blank"
-          title="Sitio de Formación Profesional"
-          loading="lazy"
-          sandbox="allow-scripts allow-forms allow-same-origin allow-downloads"
-          referrerpolicy="strict-origin-when-cross-origin"
-        ></iframe>
       </div>
     </div>
 
@@ -3099,651 +2700,13 @@
           ? window.DESAFIOS_DATA
           : seccionesDataBase;
 
-      const SITIO_APOYO_URL = "https://josepantaleo.github.io/formacionprofesionalweb/";
-      const ayudasPalabrasClave = {
-          "diseña": "Planificá la solución y escribí el código que cumpla el objetivo indicado.",
-          "crea": "Construí en tu código el elemento que pide la consigna.",
-          "desarrolla": "Armá una solución completa siguiendo las condiciones indicadas.",
-          "construye": "Creá paso a paso la estructura o el programa solicitado.",
-          "escribe": "Redactá las instrucciones de JavaScript necesarias.",
-          "deberás": "Indica una acción obligatoria que debe aparecer en tu resolución.",
-          "debes": "Indica una acción obligatoria que debe aparecer en tu resolución.",
-          "define": "Creá el elemento indicado y asignale sus características iniciales.",
-          "declara": "Creá una variable e indicá su nombre antes de utilizarla.",
-          "declarar": "Crear una variable e indicar su nombre antes de utilizarla.",
-          "definir": "Establecer el nombre, el valor o el comportamiento que tendrá un elemento.",
-          "inicializa": "Crear una variable, arreglo u objeto asignándole su primer valor.",
-          "utiliza": "Aplicar en tu código el recurso indicado por la consigna.",
-          "usa": "Aplicá en tu código el recurso indicado por la consigna.",
-          "realiza": "Ejecutá la operación o el procedimiento solicitado.",
-          "implementar": "Escribir y poner en funcionamiento la lógica solicitada.",
-          "implementa": "Escribí y poné en funcionamiento la lógica solicitada.",
-          "validar": "Comprobar que un dato o una condición cumpla las reglas indicadas.",
-          "verifica": "Comprobá que el dato o resultado cumpla la condición solicitada.",
-          "evaluar": "Comprobar una condición para obtener un resultado verdadero o falso.",
-          "evalúa": "Comprobá la condición indicada y utilizá el resultado obtenido.",
-          "examina": "Revisá los datos o propiedades indicados antes de decidir el resultado.",
-          "calcular": "Realizar las operaciones necesarias y guardar o mostrar el resultado.",
-          "calcula": "Realizá las operaciones necesarias y guardá o mostrá el resultado.",
-          "convertir": "Transformar un dato de un formato o tipo a otro.",
-          "convierte": "Transformá el dato del formato de origen al formato solicitado.",
-          "almacenar": "Guardar un valor en una variable, arreglo, objeto o almacenamiento.",
-          "almacena": "Guardá el valor en la estructura indicada por la consigna.",
-          "recuperar": "Leer nuevamente un dato que fue guardado anteriormente.",
-          "recupera": "Leé nuevamente un dato que fue guardado anteriormente.",
-          "mostrar": "Presentar el resultado para que pueda verse.",
-          "muestra": "Presentá el resultado para que pueda verse.",
-          "imprimir": "Enviar el resultado a la consola mediante console.log().",
-          "imprime": "Mostrá el resultado en la consola mediante console.log().",
-          "generar": "Construir el resultado solicitado a partir de los datos disponibles.",
-          "genera": "Construí el resultado solicitado a partir de los datos disponibles.",
-          "incorpora": "Agregá el elemento o comportamiento solicitado a la solución.",
-          "agrega": "Sumá el elemento indicado a la estructura existente.",
-          "aplica": "Usá el método, operador o procedimiento indicado sobre los datos.",
-          "guarda": "Conservá el dato en la variable o estructura indicada.",
-          "simula": "Representá el comportamiento pedido sin depender de un sistema externo real.",
-          "retornar": "Devolver un resultado desde una función usando return.",
-          "función": "Bloque reutilizable de instrucciones. Debés definirlo y luego llamarlo.",
-          "function": "Palabra de JavaScript utilizada para declarar una función.",
-          "parámetros": "Datos que una función recibe entre paréntesis para poder trabajar.",
-          "const": "Declara una variable cuyo valor no debe reasignarse.",
-          "let": "Declara una variable cuyo valor puede cambiar.",
-          "var": "Forma antigua de declarar variables; tiene alcance de función.",
-          "array": "Lista ordenada de valores. En JavaScript se escribe entre corchetes.",
-          "arreglo": "Lista ordenada de valores. En JavaScript se escribe entre corchetes.",
-          "objeto": "Estructura que agrupa datos mediante propiedades de tipo clave y valor.",
-          "if": "Ejecuta un bloque solamente cuando la condición es verdadera.",
-          "else if": "Permite comprobar otra condición cuando la anterior no se cumplió.",
-          "else": "Ejecuta una alternativa cuando las condiciones anteriores son falsas.",
-          "if/else": "Estructura que permite elegir entre dos caminos según una condición.",
-          "for": "Bucle usado para repetir instrucciones una cantidad controlada de veces.",
-          "while": "Bucle que repite instrucciones mientras una condición sea verdadera.",
-          "class": "Plantilla para crear objetos con propiedades y métodos compartidos.",
-          "consola": "Zona donde se muestran resultados y mensajes del programa.",
-          "console.log()": "Instrucción para mostrar valores o mensajes en la consola.",
-          "dom": "Representación de los elementos HTML que JavaScript puede consultar y modificar.",
-          "scope": "Zona del programa donde una variable existe y puede utilizarse.",
-          "localstorage": "Almacenamiento del navegador que conserva datos entre recargas.",
-          "filter()": "Crea un nuevo arreglo conservando solo los elementos que cumplen una condición.",
-          "reduce()": "Recorre un arreglo y combina sus valores en un único resultado.",
-          "push()": "Agrega un elemento al final de un arreglo.",
-          "shift()": "Quita y devuelve el primer elemento de un arreglo.",
-          "trim()": "Elimina espacios innecesarios al principio y al final de un texto.",
-          "tolowercase()": "Convierte todas las letras de un texto a minúsculas.",
-          "replace()": "Reemplaza una parte de un texto por otro contenido.",
-          "json.parse()": "Convierte una cadena escrita en formato JSON en un valor de JavaScript.",
-          "tolocaletimestring()": "Obtiene la hora local con un formato legible.",
-          "innertext": "Propiedad utilizada para leer o cambiar el texto visible de un elemento.",
-          "style.color": "Propiedad que permite cambiar el color del texto de un elemento.",
-          "style.backgroundcolor": "Propiedad que permite cambiar el color de fondo de un elemento.",
-          "try...catch...finally": "Estructura para intentar una operación, capturar errores y ejecutar una acción final.",
-          "throw new error()": "Crea intencionalmente un error para que pueda ser capturado y tratado."
-      };
-
-      const ejemplosPalabrasClave = {
-          "declarar": 'Ejemplo general: let cantidad = 2;',
-          "declara": 'Ejemplo general: const escuela = "IPEM 146";',
-          "definir": 'Ejemplo general: const limite = 10;',
-          "define": 'Ejemplo general: let estado = "activo";',
-          "const": 'Ejemplo general: const curso = "5° Año";',
-          "let": "Ejemplo general: let contador = 0;",
-          "var": 'Ejemplo general: var mensaje = "Hola";',
-          "function": "Ejemplo general: function saludar(nombre) { return `Hola ${nombre}`; }",
-          "función": "Ejemplo general: function duplicar(numero) { return numero * 2; }",
-          "parámetros": "Ejemplo general: function sumar(a, b) { return a + b; }",
-          "retornar": "Ejemplo general: return resultado;",
-          "array": 'Ejemplo general: const colores = ["azul", "verde"];',
-          "arreglo": "Ejemplo general: const numeros = [2, 4, 6];",
-          "objeto": 'Ejemplo general: const libro = { titulo: "Programación", disponible: true };',
-          "if": 'Ejemplo general: if (edad >= 18) { console.log("Mayor"); }',
-          "else if": 'Ejemplo general: else if (nota >= 6) { console.log("Aprobado"); }',
-          "else": 'Ejemplo general: else { console.log("Revisar"); }',
-          "if/else": "Ejemplo general: if (condicion) { /* opción A */ } else { /* opción B */ }",
-          "for": "Ejemplo general: for (let i = 0; i < 3; i++) { console.log(i); }",
-          "while": "Ejemplo general: while (contador < 3) { contador++; }",
-          "class": "Ejemplo general: class Persona { constructor(nombre) { this.nombre = nombre; } }",
-          "console.log()": 'Ejemplo general: console.log("Resultado:", resultado);',
-          "filter()": "Ejemplo general: const pares = numeros.filter(n => n % 2 === 0);",
-          "reduce()": "Ejemplo general: const total = numeros.reduce((suma, n) => suma + n, 0);",
-          "push()": 'Ejemplo general: colores.push("rojo");',
-          "shift()": "Ejemplo general: const primero = colores.shift();",
-          "trim()": "Ejemplo general: const limpio = texto.trim();",
-          "tolowercase()": "Ejemplo general: const minusculas = texto.toLowerCase();",
-          "replace()": 'Ejemplo general: const nuevo = texto.replace("a", "e");',
-          "json.parse()": 'Ejemplo general: const dato = JSON.parse(\'{"activo":true}\');',
-          "tolocaletimestring()": "Ejemplo general: const hora = new Date().toLocaleTimeString();",
-          "innertext": 'Ejemplo general: elemento.innerText = "Nuevo texto";',
-          "style.color": 'Ejemplo general: elemento.style.color = "blue";',
-          "style.backgroundcolor": 'Ejemplo general: elemento.style.backgroundColor = "yellow";',
-          "localstorage": 'Ejemplo general: localStorage.setItem("tema", "oscuro");',
-          "dom": 'Ejemplo general: const titulo = document.querySelector("h1");',
-          "scope": "Ejemplo general: una variable declarada dentro de un bloque solo se usa allí.",
-          "try...catch...finally": "Ejemplo general: try { ejecutar(); } catch (error) { console.log(error); } finally { cerrar(); }",
-          "throw new error()": 'Ejemplo general: throw new Error("Dato inválido");',
-          "calcular": "Ejemplo general: const total = precio * cantidad;",
-          "calcula": "Ejemplo general: const promedio = suma / cantidad;",
-          "mostrar": 'Ejemplo general: console.log("Dato:", dato);',
-          "muestra": 'Ejemplo general: console.log("Estado:", estado);',
-          "imprimir": 'Ejemplo general: console.log("Proceso terminado");',
-          "imprime": 'Ejemplo general: console.log("Valor:", valor);',
-          "almacenar": "Ejemplo general: let resultado = operacion;",
-          "almacena": "Ejemplo general: const registro = { nombre, curso };",
-          "validar": "Ejemplo general: const esValido = valor > 0;",
-          "verifica": "Ejemplo general: if (texto.length >= 3) { /* válido */ }"
-      };
-
-      const palabrasAccion = new Set([
-          "diseña", "crea", "desarrolla", "construye", "escribe", "deberás", "debes",
-          "define", "definir", "declara", "declarar", "inicializa", "utiliza", "usa",
-          "realiza", "implementar", "implementa", "validar", "verifica", "evaluar",
-          "evalúa", "examina", "calcular", "calcula", "convertir", "convierte",
-          "almacenar", "almacena", "recuperar", "recupera", "mostrar", "muestra",
-          "imprimir", "imprime", "generar", "genera", "incorpora", "agrega",
-          "aplica", "guarda", "simula", "retornar"
-      ]);
-
-      const palabrasConcepto = new Set([
-          "function", "función", "parámetros", "class", "array", "arreglo", "objeto",
-          "dom", "scope", "consola", "const", "let", "var", "if", "else if", "else",
-          "if/else", "for", "while", "localstorage"
-      ]);
-
-      function categoriaPalabraClave(termino) {
-          const clave = normalizarTerminoAyuda(termino);
-          if (palabrasAccion.has(clave)) return "action";
-          if (palabrasConcepto.has(clave)) return "concept";
-          if (/[().]/.test(clave) || clave.startsWith("style.")) return "tool";
-          if (/resultado|condici[oó]n|total|promedio|booleano|mensaje|reporte/.test(clave)) return "result";
-          return "concept";
-      }
-
-      function etiquetaCategoriaPalabra(categoria) {
-          return {
-              action: "Acción que tenés que realizar",
-              concept: "Concepto de JavaScript",
-              tool: "Método o herramienta",
-              result: "Condición o resultado esperado"
-          }[categoria] || "Concepto importante";
-      }
-
-      function obtenerEjemploPalabraClave(termino, categoria) {
-          const clave = normalizarTerminoAyuda(termino);
-          if (ejemplosPalabrasClave[clave]) return ejemplosPalabrasClave[clave];
-          if (categoria === "action") {
-              return `Ejemplo general: aplicá la acción “${termino}” sobre datos de prueba antes de resolver el caso del desafío.`;
-          }
-          if (categoria === "tool") {
-              return `Ejemplo general: probá ${termino} con un valor sencillo y observá qué resultado produce.`;
-          }
-          if (categoria === "result") {
-              return 'Ejemplo general: console.log("Resultado:", resultado);';
-          }
-          return `Ejemplo general: creá una prueba pequeña que utilice ${termino} y verificá su funcionamiento.`;
-      }
-
-      function normalizarTerminoAyuda(termino) {
-          return String(termino || "")
-              .trim()
-              .toLocaleLowerCase("es")
-              .replace(/^\.|;$/g, "");
-      }
-
-      function obtenerAyudaPalabraClave(termino, explicacion = "") {
-          if (String(explicacion || "").trim()) return String(explicacion).trim();
-          const clave = normalizarTerminoAyuda(termino);
-          return ayudasPalabrasClave[clave]
-              || `Es una acción o un concepto central de la consigna. Identificá dónde aplicarlo y comprobá que aparezca claramente en tu solución.`;
-      }
-
-      function escaparAtributoAyuda(valor) {
-          return String(valor ?? "")
-              .replace(/&/g, "&amp;")
-              .replace(/"/g, "&quot;")
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;");
-      }
-
-      function crearPalabraClaveInteractiva(termino, explicacion = "") {
-          const ayuda = obtenerAyudaPalabraClave(termino, explicacion);
-          const categoria = categoriaPalabraClave(termino);
-          const ejemplo = obtenerEjemploPalabraClave(termino, categoria);
-          const etiqueta = `Ver ayuda sobre ${termino}`;
-          return `<span class="exercise-keyword keyword-${categoria}" role="button" tabindex="0" data-keyword="${escaparAtributoAyuda(termino)}" data-help="${escaparAtributoAyuda(ayuda)}" data-example="${escaparAtributoAyuda(ejemplo)}" data-category="${categoria}" title="${escaparAtributoAyuda(etiqueta)}" aria-label="${escaparAtributoAyuda(etiqueta)}">${termino}</span>`;
-      }
-
-      function resaltarPalabrasClave(texto) {
-          const palabrasClave = [
-              "console\\.log\\(\\)", "JSON\\.parse\\(\\)", "toLocaleTimeString\\(\\)",
-              "toLowerCase\\(\\)", "trim\\(\\)", "replace\\(\\)", "filter\\(\\)",
-              "reduce\\(\\)", "push\\(\\)", "shift\\(\\)", "innerText", "style\\.color",
-              "style\\.backgroundColor", "LocalStorage", "DOM", "Scope", "try\\.\\.\\.catch\\.\\.\\.finally",
-              "throw new Error\\(\\)", "if/else", "if", "else if", "else", "for", "while",
-              "function", "class", "const", "let", "var", "array", "arreglo", "objeto",
-              "funci[oó]n", "par[aá]metros", "retornar", "declarar", "inicializa",
-              "utiliza", "implementar", "validar", "calcular", "convertir", "almacenar",
-              "recuperar", "mostrar", "imprimir", "evaluar", "generar", "consola",
-              "diseña", "crea", "desarrolla", "construye", "escribe", "deber[aá]s",
-              "debes", "define", "declara", "usa", "realiza", "implementa", "verifica",
-              "eval[uú]a", "examina", "calcula", "convierte", "almacena", "recupera",
-              "muestra", "imprime", "genera", "incorpora", "agrega", "aplica", "guarda", "simula",
-              "resultado", "costo total", "promedio", "mensaje", "reporte", "booleano",
-              "condiciones", "lista actualizada"
-          ];
-          const escapar = valor => String(valor ?? "")
-              .replace(/&/g, "&amp;")
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;")
-              .replace(/"/g, "&quot;")
-              .replace(/'/g, "&#39;");
-          const textoSeguro = escapar(texto);
-          const patron = new RegExp(
-              `(?<![\\p{L}\\p{N}_])(${palabrasClave.sort((a, b) => b.length - a.length).join("|")})(?![\\p{L}\\p{N}_])`,
-              "giu"
-          );
-          return textoSeguro.replace(patron, coincidencia => crearPalabraClaveInteractiva(coincidencia));
-      }
-
-      function resaltarPalabrasClaveIA(texto, palabras) {
-          const escapar = valor => String(valor ?? "")
-              .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          const escaparHtml = valor => String(valor ?? "")
-              .replace(/&/g, "&amp;")
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;")
-              .replace(/"/g, "&quot;")
-              .replace(/'/g, "&#39;");
-          const detalles = [];
-          const vistos = new Set();
-          (Array.isArray(palabras) ? palabras : []).forEach(item => {
-              const termino = String(
-                  typeof item === "string"
-                      ? item
-                      : item?.palabra || item?.termino || item?.frase || ""
-              ).trim();
-              const explicacion = typeof item === "object"
-                  ? String(item?.explicacion || item?.ayuda || item?.significado || "").trim()
-                  : "";
-              const clave = normalizarTerminoAyuda(termino);
-              if (termino.length < 3 || termino.length > 80 || vistos.has(clave)) return;
-              vistos.add(clave);
-              detalles.push({ termino, explicacion });
-          });
-          detalles.sort((a, b) => b.termino.length - a.termino.length);
-          if (!detalles.length) return resaltarPalabrasClave(texto);
-          const textoSeguro = escaparHtml(texto);
-          const patron = new RegExp(
-              `(?<![\\p{L}\\p{N}_])(${detalles.map(item => escapar(item.termino)).join("|")})(?![\\p{L}\\p{N}_])`,
-              "giu"
-          );
-          const resultado = textoSeguro.replace(patron, coincidencia => {
-              const clave = normalizarTerminoAyuda(coincidencia);
-              const detalle = detalles.find(item => normalizarTerminoAyuda(item.termino) === clave);
-              return crearPalabraClaveInteractiva(coincidencia, detalle?.explicacion || "");
-          });
-          return resultado.includes('class="exercise-keyword"')
-              ? resultado
-              : resaltarPalabrasClave(texto);
-      }
-
-      function palabrasClaveLocales(sec) {
-          return [
-              ...(Array.isArray(sec?.conceptosDetectar) ? sec.conceptosDetectar : []),
-              ...(Array.isArray(sec?.objetivosPedagogicos) ? sec.objetivosPedagogicos : [])
-          ];
-      }
-
-      function extraerPalabrasClaveIA(respuesta) {
-          const texto = String(respuesta || "").trim();
-          const bloque = texto.match(/\[[\s\S]*\]/)?.[0] || texto;
-          try {
-              const datos = JSON.parse(bloque);
-              return Array.isArray(datos)
-                  ? datos.map(x => typeof x === "string"
-                      ? { termino: x, explicacion: "" }
-                      : {
-                          termino: x?.palabra || x?.termino || x?.frase || "",
-                          explicacion: x?.explicacion || x?.ayuda || x?.significado || ""
-                      })
-                  : [];
-          } catch (_) {
-              return texto.split(/[,;\n•]+/).map(x => ({
-                  termino: x.replace(/^[-*\d.\s]+/, "").trim(),
-                  explicacion: ""
-              }));
-          }
-      }
-
-      function obtenerRegistroAyuda(sectionId) {
-          if (!ayudasComprension[sectionId] || typeof ayudasComprension[sectionId] !== "object") {
-              ayudasComprension[sectionId] = {
-                  palabras: {},
-                  pasosVistos: 0,
-                  materialApoyoVistas: 0,
-                  verificacion: { intentos: 0, correcta: false, respuesta: null, ultimaFecha: "" },
-                  checklist: {}
-              };
-          }
-          const registro = ayudasComprension[sectionId];
-          if (!registro.palabras || typeof registro.palabras !== "object") registro.palabras = {};
-          if (!registro.verificacion || typeof registro.verificacion !== "object") {
-              registro.verificacion = { intentos: 0, correcta: false, respuesta: null, ultimaFecha: "" };
-          }
-          if (!registro.checklist || typeof registro.checklist !== "object") registro.checklist = {};
-          return registro;
-      }
-
-      function guardarRegistroAyuda(sectionId) {
-          const registro = obtenerRegistroAyuda(sectionId);
-          setLocalStorage(`ayudas_comprension_${sectionId}`, JSON.stringify(registro));
-          programarGuardadoFirebase();
-      }
-
-      function cargarRegistroAyudaLocal(sectionId) {
-          if (ayudasComprension[sectionId]) return;
-          try {
-              const local = JSON.parse(getLocalStorage(`ayudas_comprension_${sectionId}`) || "null");
-              if (local && typeof local === "object") ayudasComprension[sectionId] = local;
-          } catch (_) {
-              // Si el dato local quedó incompleto, se crea un registro nuevo.
-          }
-      }
-
-      function registrarPalabraConsultada(sectionId, termino, categoria) {
-          if (!sectionId) return;
-          const registro = obtenerRegistroAyuda(sectionId);
-          const clave = normalizarTerminoAyuda(termino);
-          const actual = registro.palabras[clave] || {
-              termino: String(termino || ""),
-              categoria: categoria || "concept",
-              consultas: 0,
-              ultimaFecha: ""
-          };
-          actual.consultas = Number(actual.consultas || 0) + 1;
-          actual.ultimaFecha = new Date().toISOString();
-          registro.palabras[clave] = actual;
-          guardarRegistroAyuda(sectionId);
-      }
-
-      function generarPasosConsigna(sec) {
-          const texto = String(sec?.exerciseDesc || "")
-              .replace(/\s+/g, " ")
-              .trim();
-          const fragmentos = texto
-              .split(/(?<=[.!?])\s+|(?=\b(?:Luego|Finalmente|Realiza|Utiliza|Aplica|Agrega|Incorpora|Muestra|Imprime|Guarda|Recupera|Convierte|Examina)\b)/i)
-              .map(item => item.trim().replace(/^[,;]\s*/, ""))
-              .filter(item => item.length >= 18);
-          const pasos = [];
-          fragmentos.forEach(fragmento => {
-              if (pasos.length >= 5) return;
-              pasos.push(fragmento.replace(/[.]\s*$/, ""));
-          });
-          if (pasos.length < 2) {
-              pasos.push("Identificá los datos, variables o estructuras que solicita la consigna");
-              pasos.push("Aplicá los conceptos del módulo para construir la solución");
-          }
-          if (!pasos.some(paso => /probar|verificar|ejecutar/i.test(paso))) {
-              pasos.push("Ejecutá el código y verificá que el resultado coincida con lo solicitado");
-          }
-          return pasos.slice(0, 6);
-      }
-
-      function generarChecklistConsigna(sec) {
-          const terminos = [
-              ...(Array.isArray(sec?.conceptosDetectar) ? sec.conceptosDetectar : []),
-              ...(Array.isArray(sec?.objetivosPedagogicos) ? sec.objetivosPedagogicos : [])
-          ].map(item => String(item).trim()).filter(Boolean).slice(0, 3);
-          const items = [
-              "Identifiqué qué datos, variables o estructuras necesito.",
-              "Realicé todas las acciones indicadas en la consigna.",
-              terminos.length
-                  ? `Incluí los conceptos principales: ${terminos.join(", ")}.`
-                  : "Apliqué los conceptos de JavaScript trabajados en este módulo.",
-              "Mostré o devolví el resultado en el lugar solicitado.",
-              "Ejecuté el código y revisé que no tenga errores."
-          ];
-          return items;
-      }
-
-      function generarVerificacionComprension(sec) {
-          const pasos = generarPasosConsigna(sec);
-          const objetivo = pasos[0].replace(/[.]\s*$/, "");
-          return {
-              pregunta: "¿Cuál de estas opciones describe mejor cómo comenzar este desafío?",
-              opciones: [
-                  objetivo,
-                  "Copiar una solución completa sin analizar la consigna.",
-                  "Modificar valores al azar sin identificar el objetivo del programa."
-              ],
-              correcta: 0
-          };
-      }
-
-      function renderPasosConsigna(sec) {
-          return generarPasosConsigna(sec)
-              .map(paso => `<li>${escaparAtributoAyuda(paso)}</li>`)
-              .join("");
-      }
-
-      function renderVerificacionComprension(sec) {
-          const verificacion = generarVerificacionComprension(sec);
-          return verificacion.opciones.map((opcion, indice) => `
-              <label>
-                  <input type="radio" name="comprension-${sec.id}" value="${indice}">
-                  <span>${escaparAtributoAyuda(opcion)}</span>
-              </label>`).join("");
-      }
-
-      function renderChecklistComprension(sec) {
-          return generarChecklistConsigna(sec).map((item, indice) => `
-              <label>
-                  <input type="checkbox" data-check-index="${indice}" onchange="actualizarChecklistComprension('${sec.id}', ${indice}, this.checked)">
-                  <span>${escaparAtributoAyuda(item)}</span>
-              </label>`).join("");
-      }
-
-      function mostrarPasosConsigna(sectionId) {
-          const panel = document.getElementById(`steps-panel-${sectionId}`);
-          const boton = document.getElementById(`btn-steps-${sectionId}`);
-          if (!panel) return;
-          const abrir = !panel.classList.contains("active");
-          panel.classList.toggle("active", abrir);
-          if (boton) {
-              boton.innerHTML = abrir
-                  ? '<i class="fa-solid fa-chevron-up"></i> Ocultar pasos'
-                  : '<i class="fa-solid fa-list-ol"></i> Ver consigna en pasos';
-              boton.setAttribute("aria-expanded", String(abrir));
-          }
-          if (abrir) {
-              const registro = obtenerRegistroAyuda(sectionId);
-              registro.pasosVistos = Number(registro.pasosVistos || 0) + 1;
-              registro.ultimaFecha = new Date().toISOString();
-              guardarRegistroAyuda(sectionId);
-          }
-      }
-
-      function verificarComprensionConsigna(sectionId) {
-          const seleccionado = document.querySelector(`input[name="comprension-${sectionId}"]:checked`);
-          const feedback = document.getElementById(`comprehension-feedback-${sectionId}`);
-          if (!seleccionado || !feedback) {
-              if (feedback) {
-                  feedback.className = "comprehension-feedback active incorrect";
-                  feedback.textContent = "Seleccioná una opción antes de verificar.";
-              }
-              return;
-          }
-          const respuesta = Number(seleccionado.value);
-          const correcta = respuesta === 0;
-          const registro = obtenerRegistroAyuda(sectionId);
-          registro.verificacion.intentos = Number(registro.verificacion.intentos || 0) + 1;
-          registro.verificacion.correcta = correcta;
-          registro.verificacion.respuesta = respuesta;
-          registro.verificacion.ultimaFecha = new Date().toISOString();
-          feedback.className = `comprehension-feedback active ${correcta ? "correct" : "incorrect"}`;
-          feedback.innerHTML = correcta
-              ? '<i class="fa-solid fa-circle-check"></i> Comprensión verificada. Ya podés usar los pasos y la lista de control para resolver.'
-              : '<i class="fa-solid fa-circle-info"></i> Revisá las acciones destacadas y abrí la consigna en pasos antes de volver a intentar.';
-          guardarRegistroAyuda(sectionId);
-      }
-
-      function actualizarChecklistComprension(sectionId, indice, checked) {
-          const registro = obtenerRegistroAyuda(sectionId);
-          registro.checklist[String(indice)] = checked === true;
-          registro.ultimaFecha = new Date().toISOString();
-          actualizarProgresoChecklist(sectionId);
-          guardarRegistroAyuda(sectionId);
-      }
-
-      function actualizarProgresoChecklist(sectionId) {
-          const registro = obtenerRegistroAyuda(sectionId);
-          const total = generarChecklistConsigna(seccionesData.find(sec => sec.id === sectionId)).length;
-          const marcados = Object.values(registro.checklist).filter(Boolean).length;
-          const elemento = document.getElementById(`checklist-progress-${sectionId}`);
-          if (elemento) elemento.textContent = `${marcados} de ${total} comprobaciones marcadas`;
-      }
-
-      function restaurarInterfazAyuda(sectionId) {
-          cargarRegistroAyudaLocal(sectionId);
-          const registro = obtenerRegistroAyuda(sectionId);
-          Object.entries(registro.checklist).forEach(([indice, checked]) => {
-              const input = document.querySelector(`#checklist-${sectionId} [data-check-index="${indice}"]`);
-              if (input) input.checked = checked === true;
-          });
-          const respuesta = Number(registro.verificacion?.respuesta);
-          if (Number.isInteger(respuesta)) {
-              const input = document.querySelector(`input[name="comprension-${sectionId}"][value="${respuesta}"]`);
-              if (input) input.checked = true;
-              const feedback = document.getElementById(`comprehension-feedback-${sectionId}`);
-              if (feedback && Number(registro.verificacion?.intentos || 0) > 0) {
-                  const correcta = registro.verificacion.correcta === true;
-                  feedback.className = `comprehension-feedback active ${correcta ? "correct" : "incorrect"}`;
-                  feedback.textContent = correcta
-                      ? "Comprensión verificada anteriormente."
-                      : "La última respuesta no fue correcta. Revisá los pasos e intentá nuevamente.";
-              }
-          }
-          actualizarProgresoChecklist(sectionId);
-      }
-
-      function mostrarAyudaPalabraClave(elemento) {
-          const seccion = elemento.closest(".section-card");
-          const panel = seccion?.querySelector(".keyword-help-panel");
-          if (!panel) return;
-          const termino = elemento.dataset.keyword || elemento.textContent || "Palabra clave";
-          const ayuda = elemento.dataset.help || obtenerAyudaPalabraClave(termino);
-          const categoria = elemento.dataset.category || categoriaPalabraClave(termino);
-          const ejemplo = elemento.dataset.example || obtenerEjemploPalabraClave(termino, categoria);
-          panel.innerHTML = "";
-          const titulo = document.createElement("strong");
-          titulo.textContent = `${termino}: `;
-          panel.appendChild(titulo);
-          panel.appendChild(document.createTextNode(ayuda));
-          const tipo = document.createElement("div");
-          tipo.style.cssText = "margin-top:.35rem;color:var(--text-muted);font-size:.76rem";
-          tipo.textContent = etiquetaCategoriaPalabra(categoria);
-          panel.appendChild(tipo);
-          if (ejemplo) {
-              const bloqueEjemplo = document.createElement("code");
-              bloqueEjemplo.className = "keyword-help-example";
-              bloqueEjemplo.textContent = ejemplo;
-              panel.appendChild(bloqueEjemplo);
-          }
-          panel.classList.add("active");
-          panel.focus();
-          registrarPalabraConsultada(seccion?.id || "", termino, categoria);
-      }
-
-      document.addEventListener("click", event => {
-          const palabra = event.target.closest?.(".exercise-keyword");
-          if (palabra) mostrarAyudaPalabraClave(palabra);
-      });
-
-      document.addEventListener("keydown", event => {
-          const palabra = event.target.closest?.(".exercise-keyword");
-          if (palabra && (event.key === "Enter" || event.key === " ")) {
-              event.preventDefault();
-              mostrarAyudaPalabraClave(palabra);
-          }
-      });
-
-      function abrirSitioApoyo(seccionId = "") {
-          const modal = document.getElementById("sitioApoyoModal");
-          const frame = document.getElementById("sitioApoyoFrame");
-          const seccion = seccionesData.find(item => item.id === seccionId);
-          const detalle = document.getElementById("sitioApoyoSeccion");
-          if (detalle) {
-              detalle.textContent = seccion
-                  ? `Consulta para apoyar: ${seccion.title}`
-                  : "Consulta dentro de la actividad";
-          }
-          if (frame && frame.src === "about:blank") frame.src = SITIO_APOYO_URL;
-          modal?.classList.add("active");
-          modal?.querySelector("button")?.focus();
-          if (seccionId) {
-              const registro = obtenerRegistroAyuda(seccionId);
-              registro.materialApoyoVistas = Number(registro.materialApoyoVistas || 0) + 1;
-              registro.ultimaFecha = new Date().toISOString();
-              guardarRegistroAyuda(seccionId);
-          }
-      }
-
-      function cerrarSitioApoyo() {
-          document.getElementById("sitioApoyoModal")?.classList.remove("active");
-      }
-
-      async function analizarDesafioConIA(sec) {
-          const descripcion = document.getElementById(`exercise-desc-${sec.id}`);
-          const estado = document.getElementById(`exercise-ai-status-${sec.id}`);
-          if (!descripcion) return;
-          const locales = palabrasClaveLocales(sec);
-          descripcion.innerHTML = resaltarPalabrasClaveIA(sec.exerciseDesc, locales);
-          if (estado) estado.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Palabras clave sugeridas por el desafío';
-          if (!window.firebaseAIRealConfigurada || typeof window.consultarTutorIAFirebase !== "function" || !window.firebaseCurrentUser) return;
-          try {
-              if (estado) estado.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> La IA está identificando las acciones y conceptos principales...';
-              const respuesta = await window.consultarTutorIAFirebase({
-                  nombreModulo: sec.title || sec.id,
-                  consigna: sec.exerciseDesc || "",
-                  pregunta: "Identificá entre 6 y 14 palabras o frases clave que ayuden a comprender qué debe hacer el estudiante. Devolvé únicamente un array JSON de objetos con las propiedades termino y explicacion. La explicación debe ser breve, clara, orientada a la acción y no debe resolver el ejercicio.",
-                  modo: "identificar_palabras_clave",
-                  conceptos: locales.join(", ")
-              });
-              const palabrasIA = extraerPalabrasClaveIA(respuesta);
-              if (palabrasIA.length) {
-                  descripcion.innerHTML = resaltarPalabrasClaveIA(sec.exerciseDesc, palabrasIA);
-                  if (estado) {
-                      estado.classList.add("ready");
-                      estado.innerHTML = '<i class="fa-solid fa-circle-check"></i> Palabras clave identificadas por IA';
-                  }
-              }
-          } catch (error) {
-              console.warn("No se pudieron identificar palabras clave con IA; se mantienen las sugerencias locales.", error);
-              if (estado) estado.innerHTML = '<i class="fa-solid fa-circle-info"></i> Palabras clave sugeridas localmente';
-          }
-      }
-
-      window.addEventListener("firebase-auth-changed", event => {
-          if (event.detail) seccionesData.forEach(sec => analizarDesafioConIA(sec));
-      });
-      window.addEventListener("desbloqueo-pantalla-estudiante", () => {
-          pantallaBloqueada = false;
-          pantallaBloqueadaEn = "";
-          pantallaBloqueadaSeccion = "";
-          document.getElementById("screenLockOverlay")?.classList.remove("active");
-          void window.guardarProgresoFirebase?.({ pantallaBloqueada: false });
-      });
-      window.addEventListener("pantalla-bloqueada-estudiante", () => {
-          pantallaBloqueada = true;
-          document.getElementById("screenLockOverlay")?.classList.add("active");
-      });
-
 
       let historialResultados = {};
       let actividadesFinalizadas = {};
       let contadorPrevisualizaciones = {};
-      let ayudasComprension = {};
-      let totalSalidasPestana = 0;
-      let eventosSalidasPestana = [];
-      let salidaActivaPestana = null;
+      let totalSalidasPestaña = 0;
+      let eventosSalidasPestaña = [];
+      let salidaActivaPestaña = null;
       let revisionSalidasActual = { estado: "pendiente", penalizacion: 0, motivo: "" };
       let seccionActivaActual = seccionesData[0].id;
 
@@ -3759,9 +2722,6 @@
       let moduloCronometroEnCurso = null;
       let seccionPendientePausa = null;
       let tipoAccionModal = '';
-      let pantallaBloqueada = false;
-      let pantallaBloqueadaEn = "";
-      let pantallaBloqueadaSeccion = "";
 
       let firebaseSaveTimer = null;
       let firebaseSaveInProgress = false;
@@ -3938,9 +2898,9 @@
               ? datos.solicitadoEn.toMillis()
               : Number(datos.solicitadoEn?.seconds || 0) * 1000;
           const reinicioReciente = fechaReinicio > 0 && Date.now() - fechaReinicio < 10 * 60 * 1000;
-          if (Number(datos.salidasPestana ?? datos.salidasPestana) !== 0 && !reinicioReciente) return;
-          totalSalidasPestana = 0;
-          salidaActivaPestana = null;
+          if (Number(datos.salidasPestana ?? datos.salidasPestaña) !== 0 && !reinicioReciente) return;
+          totalSalidasPestaña = 0;
+          salidaActivaPestaña = null;
           setLocalStorage('app_blur_count', 0);
           setLocalStorage('app_last_tab_reset', datos.id);
           const contador = document.getElementById('blurCount');
@@ -3993,7 +2953,7 @@
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
       window.addEventListener('load', () => {
         actualizarVisibilidadDocente();
-          ['filtroProfesor','filtroEmailProfesor','filtroCursoProfesor','filtroDivisionProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroBloqueoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','filtroNotaProfesor','filtroActualizacionProfesor','ordenProfesor'].forEach(id => {
+          ['filtroProfesor','filtroEmailProfesor','filtroCursoProfesor','filtroDivisionProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','filtroNotaProfesor','filtroActualizacionProfesor','ordenProfesor'].forEach(id => {
               document.getElementById(id)?.addEventListener('input', renderPanelProfesor);
               document.getElementById(id)?.addEventListener('change', renderPanelProfesor);
           });
@@ -4059,15 +3019,13 @@
           });
           return {
               estudiante: { nombre, curso, division, turno },
-              salidasPestana: totalSalidasPestana,
-              eventosSalidasPestana: JSON.parse(JSON.stringify(eventosSalidasPestana || [])),
-              pantallaBloqueada: pantallaBloqueada === true,
+              salidasPestana: totalSalidasPestaña,
+              eventosSalidasPestana: JSON.parse(JSON.stringify(eventosSalidasPestaña || [])),
               codigos,
               tiemposRestantes: { ...tiemposRestantes },
               finalizadas: { ...actividadesFinalizadas },
               historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
               chatIA: JSON.parse(JSON.stringify(historialChatIA || {})),
-              ayudasComprension: JSON.parse(JSON.stringify(ayudasComprension || {})),
               contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
               seccionActiva: seccionActivaActual,
               versionApp: '8.0-desafios-externos-editables-ia'
@@ -4219,13 +3177,13 @@
           }
           const salidasGuardadas = datos.salidasPestana ?? datos["salidasPesta\u00f1a"];
           if (salidasGuardadas !== undefined) {
-              totalSalidasPestana = Number(salidasGuardadas) || 0;
-              setLocalStorage('app_blur_count', totalSalidasPestana);
+              totalSalidasPestaña = Number(salidasGuardadas) || 0;
+              setLocalStorage('app_blur_count', totalSalidasPestaña);
           }
           const eventosGuardados = datos.eventosSalidasPestana ?? datos["eventosSalidasPesta\u00f1a"];
           if (Array.isArray(eventosGuardados)) {
-              eventosSalidasPestana = eventosGuardados;
-              setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestana));
+              eventosSalidasPestaña = eventosGuardados;
+              setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
           }
           if (datos.revisionSalidas && typeof datos.revisionSalidas === 'object') {
               revisionSalidasActual = {
@@ -4240,9 +3198,6 @@
           if (datos.contadorPrevisualizaciones) Object.entries(datos.contadorPrevisualizaciones).forEach(([id,v]) => setLocalStorage(`preview_count_${id}`, Number(v)));
           if (datos.codigos) Object.entries(datos.codigos).forEach(([id,v]) => { if (typeof v === 'string') setLocalStorage(`draft_editor-${id}`, v); });
           historialResultados = datos.historialResultados || {};
-          ayudasComprension = datos.ayudasComprension && typeof datos.ayudasComprension === 'object'
-              ? datos.ayudasComprension
-              : {};
           Object.keys(historialChatIA).forEach(id => delete historialChatIA[id]);
           if (datos.chatIA && typeof datos.chatIA === 'object') {
               Object.entries(datos.chatIA).forEach(([id, mensajes]) => {
@@ -4252,10 +3207,6 @@
           actividadesFinalizadas = datos.finalizadas || {};
           contadorPrevisualizaciones = datos.contadorPrevisualizaciones || {};
           tiemposRestantes = datos.tiemposRestantes || {};
-          pantallaBloqueada = datos.pantallaBloqueada === true;
-          pantallaBloqueadaEn = String(datos.pantallaBloqueadaEn || "");
-          pantallaBloqueadaSeccion = String(datos.pantallaBloqueadaSeccion || "");
-          if (pantallaBloqueada) document.getElementById("screenLockOverlay")?.classList.add("active");
           if (datos.seccionActiva && seccionesData.some(s => s.id === datos.seccionActiva)) seccionActivaActual = datos.seccionActiva;
       }
 
@@ -4452,8 +3403,6 @@
 
           const overlay = document.getElementById('firebaseAuthOverlay');
           const warning = document.getElementById('firebaseConfigWarning');
-          const localFileNotice = document.getElementById('localFileNotice');
-          if (window.location.protocol === 'file:' && localFileNotice) localFileNotice.style.display = 'block';
           if (!window.firebaseConfigured) {
               if (warning) warning.style.display = 'block';
               document.getElementById('firebaseAuthMessage').innerText = 'Primero configura Firebase en este archivo. Luego podrás ingresar con Google y guardar el avance en la nube.';
@@ -4530,15 +3479,15 @@
           document.getElementById('studentCourse').value = getLocalStorage('app_student_course') || '';
           document.getElementById('studentDivision').value = getLocalStorage('app_student_division') || '';
            document.getElementById('studentTurno').value = getLocalStorage('app_student_turno') || '';
-          totalSalidasPestana = parseInt(getLocalStorage('app_blur_count') || '0');
+          totalSalidasPestaña = parseInt(getLocalStorage('app_blur_count') || '0');
           try {
               const eventosLocales = JSON.parse(getLocalStorage('app_tab_events') || '[]');
-              if (!eventosSalidasPestana.length && Array.isArray(eventosLocales)) eventosSalidasPestana = eventosLocales;
+              if (!eventosSalidasPestaña.length && Array.isArray(eventosLocales)) eventosSalidasPestaña = eventosLocales;
           } catch {
-              eventosSalidasPestana = [];
+              eventosSalidasPestaña = [];
           }
-          document.getElementById('blurCount').innerText = totalSalidasPestana;
-          document.getElementById('btnJustificarSalida').style.display = eventosSalidasPestana.length ? 'inline-flex' : 'none';
+          document.getElementById('blurCount').innerText = totalSalidasPestaña;
+          document.getElementById('btnJustificarSalida').style.display = eventosSalidasPestaña.length ? 'inline-flex' : 'none';
 
           document.getElementById('studentName').addEventListener('input', (e) => {
               setLocalStorage('app_student_name', e.target.value);
@@ -4593,59 +3542,34 @@
           let ultimoEventoVisibilidad = 0;
 
           async function persistirEventosSalidas(inmediato = false) {
-              setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestana));
-              document.getElementById('btnJustificarSalida').style.display = eventosSalidasPestana.length ? 'inline-flex' : 'none';
+              setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
+              document.getElementById('btnJustificarSalida').style.display = eventosSalidasPestaña.length ? 'inline-flex' : 'none';
               if (inmediato && window.guardarSalidasPestanaFirebase) {
                   mostrarEstadoFirebase('saving', 'Guardando cambio de pestaña...');
                   const ok = await window.guardarSalidasPestanaFirebase(
-                      totalSalidasPestana,
-                      JSON.parse(JSON.stringify(eventosSalidasPestana)),
-                      pantallaBloqueada ? {
-                          pantallaBloqueada: true,
-                          pantallaBloqueadaEn: pantallaBloqueadaEn || getLocalStorage('app_screen_locked_at') || new Date().toISOString(),
-                          pantallaBloqueadaSalidas: totalSalidasPestana,
-                          pantallaBloqueadaSeccion: pantallaBloqueadaSeccion || getLocalStorage('app_screen_locked_section') || seccionActivaActual
-                      } : {}
+                      totalSalidasPestaña,
+                      JSON.parse(JSON.stringify(eventosSalidasPestaña))
                   );
                   mostrarEstadoFirebase(
                       ok ? 'online' : 'offline',
-                      ok ? 'Cambios de pestaña guardados' : `No se guardó el cambio de pestaña${window.ultimoErrorSalidasPestana?.code ? ` (${window.ultimoErrorSalidasPestana.code})` : ''}`
+                      ok ? 'Cambio de pestaña guardado' : 'No se guardó el cambio de pestaña'
                   );
-                  if (ok) {
-                      removeLocalStorage('app_pending_tab_sync');
-                  } else {
-                      setLocalStorage('app_pending_tab_sync', 'true');
-                  }
                   return ok;
               }
               programarGuardadoFirebase();
               return true;
           }
 
-          function registrarCambioPestana(origen = 'visibility') {
+          function registrarCambioPestaña(origen = 'visibility') {
               const ahora = Date.now();
               if (ahora - ultimoEventoVisibilidad < 1500) return;
               ultimoEventoVisibilidad = ahora;
 
-              totalSalidasPestana++;
-              if (totalSalidasPestana >= 3) {
-                  pantallaBloqueada = true;
-                  const fechaBloqueo = new Date().toISOString();
-                  pantallaBloqueadaEn = fechaBloqueo;
-                  pantallaBloqueadaSeccion = seccionActivaActual;
-                  setLocalStorage('app_screen_locked_at', fechaBloqueo);
-                  setLocalStorage('app_screen_locked_section', seccionActivaActual);
-                  void window.guardarProgresoFirebase?.({
-                      pantallaBloqueada: true,
-                      pantallaBloqueadaEn: fechaBloqueo,
-                      pantallaBloqueadaSalidas: totalSalidasPestana,
-                      pantallaBloqueadaSeccion: seccionActivaActual
-                  });
-              }
-              setLocalStorage('app_blur_count', totalSalidasPestana);
-              salidaActivaPestana = {
-                  id: `${ahora}-${totalSalidasPestana}`,
-                  numero: eventosSalidasPestana.length + 1,
+              totalSalidasPestaña++;
+              setLocalStorage('app_blur_count', totalSalidasPestaña);
+              salidaActivaPestaña = {
+                  id: `${ahora}-${totalSalidasPestaña}`,
+                  numero: eventosSalidasPestaña.length + 1,
                   salidaEn: new Date(ahora).toISOString(),
                   regresoEn: null,
                   duracionSegundos: null,
@@ -4653,62 +3577,50 @@
                   origen,
                   justificacion: null
               };
-              eventosSalidasPestana.push(salidaActivaPestana);
+              eventosSalidasPestaña.push(salidaActivaPestaña);
               void persistirEventosSalidas(true);
 
               const badge = document.getElementById('blurCount');
-              if (badge) badge.innerText = String(totalSalidasPestana);
+              if (badge) badge.innerText = String(totalSalidasPestaña);
 
-              if (totalSalidasPestana === 3) {
-                  alert('Se registraron 3 cambios de pestaña. La actividad quedó bloqueada y requiere autorización docente.');
-              } else if (totalSalidasPestana === 6) {
+              if (totalSalidasPestaña === 3) {
+                  alert('Aviso: se registraron 3 cambios de pestaña. No hay sanción automática; el profesor podrá revisar los eventos y sus justificaciones.');
+              } else if (totalSalidasPestaña === 6) {
                   alert('Atención: se registraron 6 cambios de pestaña. El caso quedará marcado para revisión docente.');
-              } else if (totalSalidasPestana === 8) {
+              } else if (totalSalidasPestaña === 8) {
                   alert('Alerta de revisión: se registraron 8 cambios de pestaña. Las actividades continúan habilitadas y el profesor decidirá si corresponde alguna medida.');
               }
           }
 
-          async function registrarRegresoPestana() {
-              if (!salidaActivaPestana) return;
+          function registrarRegresoPestaña() {
+              if (!salidaActivaPestaña) return;
               const regreso = Date.now();
-              salidaActivaPestana.regresoEn = new Date(regreso).toISOString();
-              salidaActivaPestana.duracionSegundos = Math.max(
+              salidaActivaPestaña.regresoEn = new Date(regreso).toISOString();
+              salidaActivaPestaña.duracionSegundos = Math.max(
                   0,
-                  Math.round((regreso - new Date(salidaActivaPestana.salidaEn).getTime()) / 1000)
+                  Math.round((regreso - new Date(salidaActivaPestaña.salidaEn).getTime()) / 1000)
               );
-              salidaActivaPestana = null;
-              const guardado = await persistirEventosSalidas(true);
-              if (!guardado) {
-                  setTimeout(() => void persistirEventosSalidas(true), 1200);
-              }
+              salidaActivaPestaña = null;
+              void persistirEventosSalidas(true);
           }
 
           // Fuente principal: cambio real de visibilidad de la página.
-          document.addEventListener('visibilitychange', async () => {
-              if (document.visibilityState === 'hidden') {
-                  registrarCambioPestana('visibility');
-              } else {
-                  await registrarRegresoPestana();
-              }
-          });
-
           document.addEventListener('visibilitychange', () => {
-              if (document.visibilityState === 'visible' && pantallaBloqueada) {
-                  document.getElementById('screenLockOverlay')?.classList.add('active');
+              if (document.visibilityState === 'hidden') {
+                  registrarCambioPestaña('visibility');
+              } else {
+                  registrarRegresoPestaña();
               }
           });
 
           window.addEventListener('pagehide', () => {
               void persistirEventosSalidas(true);
           });
-          window.addEventListener('online', () => {
-              if (getLocalStorage('app_pending_tab_sync') === 'true') void persistirEventosSalidas(true);
-          });
 
           // Respaldo para navegadores muy antiguos sin Page Visibility API.
           // En navegadores modernos NO se usa blur para evitar falsos positivos.
           if (!('visibilityState' in document)) {
-              window.addEventListener('blur', () => registrarCambioPestana('blur-fallback'));
+              window.addEventListener('blur', () => registrarCambioPestaña('blur-fallback'));
           }
 
           document.addEventListener('copy', e => { if (e.target && e.target.closest && e.target.closest('.code-editor')) e.preventDefault(); });
@@ -4785,55 +3697,7 @@
 
                   <div class="exercise-box">
                       <h3><i class="fa-solid fa-laptop-code"></i> ${sec.exerciseTitle}</h3>
-                      <p id="exercise-desc-${sec.id}">${resaltarPalabrasClave(sec.exerciseDesc)}</p>
-                      <div class="exercise-ai-status" id="exercise-ai-status-${sec.id}" aria-live="polite">
-                          <i class="fa-solid fa-wand-magic-sparkles"></i> Preparando palabras clave...
-                      </div>
-                      <div class="keyword-legend" aria-label="Categorías de palabras clave">
-                          <span><i style="background:#38bdf8"></i> Acción</span>
-                          <span><i style="background:#c084fc"></i> Concepto</span>
-                          <span><i style="background:#34d399"></i> Método o herramienta</span>
-                          <span><i style="background:#facc15"></i> Resultado esperado</span>
-                      </div>
-                      <div class="keyword-help-panel" id="keyword-help-${sec.id}" tabindex="-1" aria-live="polite">
-                          Seleccioná una palabra resaltada para ver qué significa y qué acción te pide realizar.
-                      </div>
-                      <div class="comprehension-tools">
-                          <div class="comprehension-panel">
-                              <h4><i class="fa-solid fa-list-ol"></i> Consigna organizada</h4>
-                              <button class="btn btn-primary" id="btn-steps-${sec.id}" type="button" aria-expanded="false" onclick="mostrarPasosConsigna('${sec.id}')">
-                                  <i class="fa-solid fa-list-ol"></i> Ver consigna en pasos
-                              </button>
-                              <div class="steps-panel" id="steps-panel-${sec.id}">
-                                  <ol>${renderPasosConsigna(sec)}</ol>
-                              </div>
-                          </div>
-
-                          <div class="comprehension-panel">
-                              <h4><i class="fa-solid fa-circle-question"></i> Verificación de comprensión</h4>
-                              <p style="margin:0 0 .6rem;color:var(--text-muted);font-size:.84rem">
-                                  ${escaparAtributoAyuda(generarVerificacionComprension(sec).pregunta)}
-                              </p>
-                              <div class="comprehension-options">
-                                  ${renderVerificacionComprension(sec)}
-                              </div>
-                              <button class="btn btn-success" type="button" style="margin-top:.65rem" onclick="verificarComprensionConsigna('${sec.id}')">
-                                  <i class="fa-solid fa-check"></i> Verificar
-                              </button>
-                              <div class="comprehension-feedback" id="comprehension-feedback-${sec.id}" aria-live="polite"></div>
-                          </div>
-
-                          <div class="comprehension-panel">
-                              <h4><i class="fa-solid fa-list-check"></i> Lista de control antes de entregar</h4>
-                              <div class="student-checklist" id="checklist-${sec.id}">
-                                  ${renderChecklistComprension(sec)}
-                              </div>
-                              <div class="checklist-progress" id="checklist-progress-${sec.id}">0 comprobaciones marcadas</div>
-                          </div>
-                      </div>
-                      <button class="btn btn-secondary support-resource-button" type="button" onclick="abrirSitioApoyo('${sec.id}')">
-                          <i class="fa-solid fa-book-open-reader"></i> Consultar material de apoyo
-                      </button>
+                      <p>${sec.exerciseDesc}</p>
 
                       <div class="code-playground">
                           <div class="editor-container">
@@ -4925,8 +3789,6 @@
                   </div>
               `;
               sectionsContainer.appendChild(card);
-              restaurarInterfazAyuda(sec.id);
-              analizarDesafioConIA(sec);
               try {
                   const guardadoChat = JSON.parse(getLocalStorage(`ai_chat_${sec.id}`) || "[]");
                   const chatFirebase = historialChatIA[sec.id];
@@ -4968,7 +3830,7 @@
       }
 
       function abrirJustificacionUltimaSalida() {
-          const evento = [...eventosSalidasPestana].reverse().find(x => !x.justificacion);
+          const evento = [...eventosSalidasPestaña].reverse().find(x => !x.justificacion);
           if (!evento) {
               alert('No hay cambios de pestaña pendientes de justificación.');
               return;
@@ -4987,7 +3849,7 @@
 
       function guardarJustificacionSalida() {
           const modal = document.getElementById('justificarSalidaModal');
-          const evento = eventosSalidasPestana.find(x => x.id === modal.dataset.eventoId);
+          const evento = eventosSalidasPestaña.find(x => x.id === modal.dataset.eventoId);
           const motivo = document.getElementById('motivoJustificacionSalida').value;
           const detalle = document.getElementById('detalleJustificacionSalida').value.trim();
           if (!evento || !motivo || !detalle) {
@@ -4999,7 +3861,7 @@
               detalle,
               enviadaEn: new Date().toISOString()
           };
-          setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestana));
+          setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
           cerrarJustificacionSalida();
           programarGuardadoFirebase();
           alert('La justificación quedó registrada para revisión docente.');
@@ -5105,8 +3967,6 @@
               desc.innerHTML = `Autorizar desbloqueo del ejercicio actual <b>(${seccionActivaActual})</b>:`;
           } else if (accion === 'unlock_all') {
               desc.innerHTML = `Autorizar desbloqueo <b>global de todos los ejercicios</b> de la plataforma:`;
-          } else if (accion === 'unlock_screen') {
-              desc.innerHTML = `Autorizar el <b>desbloqueo de la pantalla</b> tras un cambio de pestaña:`;
           } else if (accion === 'panel_profesor') {
               desc.innerHTML = `Autorizar <b>acceso al Panel del Profesor</b>:`;
           } else if (accion === 'editor_desafios') {
@@ -5146,9 +4006,6 @@
                   desbloquearEjercicioActual();
               } else if (accionConfirmada === 'unlock_all') {
                   desbloquearTodosEjercicios();
-              } else if (accionConfirmada === 'unlock_screen') {
-                  pantallaBloqueada = false;
-                  document.getElementById('screenLockOverlay')?.classList.remove('active');
               } else if (accionConfirmada === 'pausar_modulo' && sectionIdConfirmada) {
                   togglePausaModulo(sectionIdConfirmada);
               } else if (accionConfirmada === 'pausar_global') {
@@ -5219,13 +4076,13 @@
           if (!confirm("El contador visible volverá a cero. El historial de cambios de pestaña, las justificaciones y la revisión docente se conservarán. ¿Continuar?")) {
               return;
           }
-          const cantidadAnterior = totalSalidasPestana;
-          totalSalidasPestana = 0;
-          salidaActivaPestana = null;
-          setLocalStorage('app_blur_count', totalSalidasPestana);
-          setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestana));
-          document.getElementById('blurCount').innerText = totalSalidasPestana;
-          const hayPendientes = eventosSalidasPestana.some(evento => !evento.justificacion);
+          const cantidadAnterior = totalSalidasPestaña;
+          totalSalidasPestaña = 0;
+          salidaActivaPestaña = null;
+          setLocalStorage('app_blur_count', totalSalidasPestaña);
+          setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
+          document.getElementById('blurCount').innerText = totalSalidasPestaña;
+          const hayPendientes = eventosSalidasPestaña.some(evento => !evento.justificacion);
           document.getElementById('btnJustificarSalida').style.display = hayPendientes ? 'inline-flex' : 'none';
           await guardarAhoraFirebase();
           alert(`Contador reiniciado: ${cantidadAnterior} cambio(s) pasaron a 0. El historial anterior continúa disponible para el profesor.`);
@@ -5473,9 +4330,9 @@
       function resetearSistemaCompleto() {
           actividadesFinalizadas = {};
           contadorPrevisualizaciones = {};
-          totalSalidasPestana = 0;
-          eventosSalidasPestana = [];
-          salidaActivaPestana = null;
+          totalSalidasPestaña = 0;
+          eventosSalidasPestaña = [];
+          salidaActivaPestaña = null;
           revisionSalidasActual = { estado: "pendiente", penalizacion: 0, motivo: "" };
           removeLocalStorage('app_blur_count');
           removeLocalStorage('app_tab_events');
@@ -7597,18 +6454,6 @@
           alert(resultado);
       }
 
-      async function desbloquearPantallaEstudianteProfesor(indice) {
-          const d = estudiantesProfesor[indice];
-          if (!d?.uid) { alert('No se encontró el identificador Firebase del estudiante.'); return; }
-          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'este estudiante';
-          if (!confirm(`¿Desbloquear la pantalla de ${nombre}?`)) return;
-          const ok = await window.desbloquearPantallaEstudianteFirebase?.(d.uid);
-          if (!ok) { alert('No se pudo desbloquear la pantalla. Verificá las reglas de Firestore.'); return; }
-          d.pantallaBloqueada = false;
-          renderPanelProfesor();
-          alert('Pantalla desbloqueada. El estudiante puede continuar.');
-      }
-
       function renderPreguntaProfesor(p, indice) {
           const seleccionadas = Array.isArray(p?.seleccionadas) ? p.seleccionadas : [];
           const opciones = Array.isArray(p?.opciones) ? p.opciones : [];
@@ -7875,94 +6720,6 @@
           </div>`;
       }
 
-      function resumirAyudasComprensionEstudiante(estudiante) {
-          const ayudas = estudiante?.ayudasComprension && typeof estudiante.ayudasComprension === "object"
-              ? estudiante.ayudasComprension
-              : {};
-          const resumen = {
-              consultasPalabras: 0,
-              palabrasUnicas: new Set(),
-              pasosVistos: 0,
-              materialApoyoVistas: 0,
-              verificacionesCorrectas: 0,
-              verificacionesIntentadas: 0,
-              checklistMarcados: 0,
-              checklistTotal: 0,
-              modulosConAyuda: 0,
-              palabrasFrecuentes: {}
-          };
-          seccionesData.forEach(sec => {
-              const registro = ayudas[sec.id];
-              if (!registro || typeof registro !== "object") return;
-              let tuvoUso = false;
-              Object.values(registro.palabras || {}).forEach(item => {
-                  const consultas = Number(item?.consultas || 0);
-                  if (!consultas) return;
-                  tuvoUso = true;
-                  resumen.consultasPalabras += consultas;
-                  const termino = String(item?.termino || "").trim();
-                  if (termino) {
-                      resumen.palabrasUnicas.add(termino.toLocaleLowerCase("es"));
-                      resumen.palabrasFrecuentes[termino] = Number(resumen.palabrasFrecuentes[termino] || 0) + consultas;
-                  }
-              });
-              resumen.pasosVistos += Number(registro.pasosVistos || 0);
-              resumen.materialApoyoVistas += Number(registro.materialApoyoVistas || 0);
-              if (Number(registro.pasosVistos || 0) || Number(registro.materialApoyoVistas || 0)) tuvoUso = true;
-              const intentos = Number(registro.verificacion?.intentos || 0);
-              if (intentos) {
-                  tuvoUso = true;
-                  resumen.verificacionesIntentadas++;
-                  if (registro.verificacion?.correcta === true) resumen.verificacionesCorrectas++;
-              }
-              const totalChecklist = generarChecklistConsigna(sec).length;
-              const marcados = Object.values(registro.checklist || {}).filter(Boolean).length;
-              resumen.checklistTotal += totalChecklist;
-              resumen.checklistMarcados += Math.min(marcados, totalChecklist);
-              if (marcados) tuvoUso = true;
-              if (tuvoUso) resumen.modulosConAyuda++;
-          });
-          resumen.palabrasUnicasCantidad = resumen.palabrasUnicas.size;
-          resumen.palabrasFrecuentesOrdenadas = Object.entries(resumen.palabrasFrecuentes)
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 8);
-          return resumen;
-      }
-
-      function renderResumenAyudasComprensionProfesor(estudiante) {
-          const resumen = resumirAyudasComprensionEstudiante(estudiante);
-          const tieneUso = resumen.consultasPalabras || resumen.pasosVistos ||
-              resumen.materialApoyoVistas || resumen.verificacionesIntentadas ||
-              resumen.checklistMarcados;
-          if (!tieneUso) {
-              return `<div style="padding:1rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.05);margin-bottom:1rem;color:var(--text-muted)">
-                  <strong><i class="fa-solid fa-graduation-cap"></i> Registro de ayudas de comprensión:</strong>
-                  el estudiante todavía no utilizó las ayudas pedagógicas.
-              </div>`;
-          }
-          const frecuentes = resumen.palabrasFrecuentesOrdenadas.length
-              ? resumen.palabrasFrecuentesOrdenadas.map(([termino, cantidad]) =>
-                  `<span style="display:inline-flex;padding:.3rem .45rem;border-radius:5px;background:rgba(139,92,246,.14);margin:.18rem">${escapeHtml(termino)} (${cantidad})</span>`
-                ).join("")
-              : '<span style="color:var(--text-muted)">Sin palabras consultadas.</span>';
-          return `<div style="padding:1rem;border:1px solid rgba(56,189,248,.38);border-radius:8px;background:rgba(56,189,248,.07);margin-bottom:1rem">
-              <h3 style="margin:0 0 .7rem;color:#7dd3fc"><i class="fa-solid fa-graduation-cap"></i> Registro de ayudas de comprensión</h3>
-              <p style="margin:0 0 .75rem;color:var(--text-muted);font-size:.82rem">
-                  Estos datos muestran qué apoyos utilizó el estudiante. No modifican automáticamente la calificación.
-              </p>
-              <div class="teacher-detail-summary">
-                  <div class="teacher-detail-stat"><small>Consultas de palabras</small><strong>${resumen.consultasPalabras}</strong></div>
-                  <div class="teacher-detail-stat"><small>Palabras diferentes</small><strong>${resumen.palabrasUnicasCantidad}</strong></div>
-                  <div class="teacher-detail-stat"><small>Aperturas de pasos</small><strong>${resumen.pasosVistos}</strong></div>
-                  <div class="teacher-detail-stat"><small>Material de apoyo</small><strong>${resumen.materialApoyoVistas}</strong></div>
-                  <div class="teacher-detail-stat"><small>Comprensión verificada</small><strong>${resumen.verificacionesCorrectas}/${resumen.verificacionesIntentadas}</strong></div>
-                  <div class="teacher-detail-stat"><small>Lista de control</small><strong>${resumen.checklistMarcados}/${resumen.checklistTotal}</strong></div>
-                  <div class="teacher-detail-stat"><small>Módulos con ayuda</small><strong>${resumen.modulosConAyuda}</strong></div>
-              </div>
-              <div style="margin-top:.7rem"><strong>Palabras más consultadas:</strong><div style="margin-top:.35rem">${frecuentes}</div></div>
-          </div>`;
-      }
-
       function abrirDetalleEstudianteProfesor(indice) {
           const d = estudiantesProfesor[indice];
           if (!d) return;
@@ -7973,7 +6730,6 @@
           const tiempos = d.tiemposRestantes || {};
           const finalizadas = d.finalizadas || {};
           const previews = d.contadorPrevisualizaciones || {};
-          const ayudas = d.ayudasComprension || {};
           const progreso = calcularProgresoEstudiante(d);
           const promedio = calcularNotaEstudiante(d);
           const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
@@ -7981,7 +6737,7 @@
           const resumenConsultasIA = resumirConsultasIAEstudiante(d);
           const eventos = Array.isArray(d.eventosSalidasPestana)
               ? d.eventosSalidasPestana
-              : (Array.isArray(d.eventosSalidasPestana) ? d.eventosSalidasPestana : []);
+              : (Array.isArray(d.eventosSalidasPestaña) ? d.eventosSalidasPestaña : []);
           const revision = d.revisionSalidas || {};
           const cronometroIndividualPausado = d.controlCronometroIndividual?.pausado === true;
           const cuentaInactiva = d.estadoCuenta === 'inactivo';
@@ -8018,16 +6774,6 @@
               const salida = r.salida || '// Sin salida de ejecución guardada';
               const notaFinal = r.notaFinal ?? r.notaIA;
               const evaluacionCodigo = r.evaluacionCodigo || null;
-              const ayudaModulo = ayudas[sec.id] || {};
-              const palabrasModulo = Object.values(ayudaModulo.palabras || {});
-              const consultasPalabrasModulo = palabrasModulo.reduce((total, item) => total + Number(item?.consultas || 0), 0);
-              const palabrasModuloHtml = palabrasModulo
-                  .filter(item => Number(item?.consultas || 0) > 0)
-                  .sort((a, b) => Number(b.consultas || 0) - Number(a.consultas || 0))
-                  .map(item => `${escapeHtml(item.termino || "")} (${Number(item.consultas || 0)})`)
-                  .join(", ");
-              const checklistModuloTotal = generarChecklistConsigna(sec).length;
-              const checklistModuloMarcado = Object.values(ayudaModulo.checklist || {}).filter(Boolean).length;
               const estado = finalizadas[sec.id] ? 'Finalizada' : (r.notaCodigo !== undefined ? 'Preguntas pendientes' : 'En curso');
               const formulaActividad = r.notaCodigo !== undefined && r.notaPreguntas !== undefined
                   ? `(${r.notaCodigo} × 0,70) + (${r.notaPreguntas} × 0,30) = ${notaFinal}`
@@ -8045,14 +6791,6 @@
                       </div>
                       <div style="padding:.65rem;border-radius:6px;background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.25);margin-bottom:.8rem;">
                           <strong>Cálculo de esta actividad:</strong> ${escapeHtml(formulaActividad)}
-                      </div>
-                      <div style="padding:.7rem;border-radius:6px;background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.25);margin-bottom:.8rem;line-height:1.5">
-                          <strong><i class="fa-solid fa-graduation-cap"></i> Ayudas de comprensión:</strong><br>
-                          Palabras consultadas: ${consultasPalabrasModulo}${palabrasModuloHtml ? ` · ${palabrasModuloHtml}` : ""}<br>
-                          Aperturas de pasos: ${Number(ayudaModulo.pasosVistos || 0)} · Material de apoyo: ${Number(ayudaModulo.materialApoyoVistas || 0)}<br>
-                          Verificación: ${Number(ayudaModulo.verificacion?.intentos || 0)
-                              ? (ayudaModulo.verificacion?.correcta === true ? "Correcta" : "Pendiente") + ` (${Number(ayudaModulo.verificacion?.intentos || 0)} intento/s)`
-                              : "Sin realizar"} · Lista: ${checklistModuloMarcado}/${checklistModuloTotal}
                       </div>
                       <h4>Código entregado</h4>
                       <pre class="teacher-code">${escapeHtml(codigo)}</pre>
@@ -8146,7 +6884,7 @@
                   <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === '—' ? 'Pendiente' : `${notaDefinitiva}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Estado de cuenta</small><strong style="color:${colorCuentaDetalle}">${estadoCuentaDetalle}</strong></div>
-                  <div class="teacher-detail-stat"><small>Salidas de pestaña</small><strong>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</strong></div>
+                  <div class="teacher-detail-stat"><small>Salidas de pestaña</small><strong>${Number(d.salidasPestana ?? d.salidasPestaña ?? 0)}</strong></div>
                   <div class="teacher-detail-stat"><small>Última actualización</small><strong>${escapeHtml(fecha)}</strong></div>
               </div>
               <div style="position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;padding:.7rem;margin-bottom:1rem;border:1px solid rgba(56,189,248,.35);border-radius:8px;background:rgba(15,23,42,.96);box-shadow:0 8px 18px rgba(0,0,0,.22)">
@@ -8180,21 +6918,9 @@
                       <button class="btn btn-secondary" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')">
                           <i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00
                       </button>
-                      <button class="btn btn-danger" onclick="desbloquearPantallaEstudianteProfesor(${indice})">
-                          <i class="fa-solid fa-unlock-keyhole"></i> Desbloquear pantalla
-                      </button>
-                  </div>
-              </div>
-              <div style="padding:1rem;border:1px solid ${d.pantallaBloqueada ? 'rgba(239,68,68,.45)' : 'rgba(16,185,129,.35)'};border-radius:8px;background:${d.pantallaBloqueada ? 'rgba(239,68,68,.08)' : 'rgba(16,185,129,.06)'};margin-bottom:1rem">
-                  <strong>Estado de pantalla: ${d.pantallaBloqueada ? 'BLOQUEADO' : 'ACTIVO'}</strong>
-                  <div style="margin-top:.4rem;color:var(--text-muted);line-height:1.5">
-                    Fecha del bloqueo: ${escapeHtml(d.pantallaBloqueadaEn ? new Date(d.pantallaBloqueadaEn).toLocaleString() : 'Sin bloqueo registrado')}<br>
-                    Cantidad de salidas: ${Number(d.pantallaBloqueadaSalidas || d.salidasPestana || 0)}<br>
-                    Última sección: ${escapeHtml(d.pantallaBloqueadaSeccion || 'Sin identificar')}
                   </div>
               </div>
               ${resumenConsultasHtml}
-              ${renderResumenAyudasComprensionProfesor(d)}
               <details class="teacher-activity" open>
                   <summary>Cómo se calculó el promedio final</summary>
                   <div class="teacher-activity-content">
@@ -8261,7 +6987,6 @@
           const division = document.getElementById('filtroDivisionProfesor')?.value || '';
           const turno = document.getElementById('filtroTurnoProfesor').value;
           const estadoFiltro = document.getElementById('filtroEstadoProfesor')?.value || '';
-          const bloqueoFiltro = document.getElementById('filtroBloqueoProfesor')?.value || '';
           const progresoFiltro = document.getElementById('filtroProgresoProfesor')?.value || '';
           const salidasFiltro = document.getElementById('filtroSalidasProfesor')?.value || '';
           const notaFiltro = document.getElementById('filtroNotaProfesor')?.value || '';
@@ -8284,8 +7009,7 @@
               const cuentaRechazada = d.estadoCuenta === 'rechazado';
               const cronometroPausado = d.controlCronometroIndividual?.pausado === true
                   || d.controlCronometros?.pausado === true;
-              const pantallaBloqueada = d.pantallaBloqueada === true;
-              const salidas = Number(d.salidasPestana ?? d.salidasPestana ?? 0);
+              const salidas = Number(d.salidasPestana ?? d.salidasPestaña ?? 0);
               const tieneCambios = salidas > 0;
               const cumpleProgreso = !progresoFiltro || (
                   progresoFiltro === '0' ? progreso === 0 :
@@ -8328,9 +7052,6 @@
                 || (estadoFiltro === 'pendientes' && !finalizado)
                 || (estadoFiltro === 'alertas' && alerta.activa)
                 || (estadoFiltro === 'cambios' && tieneCambios);
-              const cumpleBloqueo = !bloqueoFiltro
-                || (bloqueoFiltro === 'bloqueados' && pantallaBloqueada)
-                || (bloqueoFiltro === 'activos' && !pantallaBloqueada);
               d.__panelMeta = { progreso, nota, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cuentaPendiente, cuentaRechazada, cronometroPausado, tieneCambios, salidas };
               return (!cuentaPendiente || estadoFiltro === 'solicitudes')
                   && (!q || nombre.includes(q))
@@ -8338,7 +7059,7 @@
                   && (!curso || e.curso===curso)
                   && (!division || e.division===division)
                   && (!turno || e.turno===turno)
-              && cumpleEstado && cumpleBloqueo && cumpleProgreso && cumpleSalidas && cumpleNota && cumpleActualizacion;
+                  && cumpleEstado && cumpleProgreso && cumpleSalidas && cumpleNota && cumpleActualizacion;
           }).sort((a,b) => {
               const am=a.__panelMeta||{}, bm=b.__panelMeta||{};
               const texto = (valorA, valorB, direccion='asc') => {
@@ -8374,21 +7095,12 @@
           const trabajando=rows.filter(d=>d.__panelMeta?.conectado && d.__panelMeta?.progreso<100).length;
           const solicitudesPendientes=rows.filter(d=>d.estadoCuenta==='pendiente').length;
           const conAlertas=rows.filter(d=>d.__panelMeta?.alerta).length;
-          const bloqueados=rows.filter(d=>d.pantallaBloqueada===true).length;
           const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='—').map(Number);
           const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'—';
-          document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Solicitudes pendientes',solicitudesPendientes],['Bloqueados',bloqueados,'blocked'],['Conectados',conectados],['Trabajando',trabajando],['Con alertas',conAlertas],['Completaron',completos],['Promedio definitivo',promedio]].map(x=>`<div class="${x[2] === 'blocked' && Number(x[1]) > 0 ? 'teacher-blocked-summary' : ''}" style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[2] === 'blocked' ? '<i class="fa-solid fa-lock"></i> ' : ''}${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
+          document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Solicitudes pendientes',solicitudesPendientes],['Conectados',conectados],['Trabajando',trabajando],['Con alertas',conAlertas],['Completaron',completos],['Promedio definitivo',promedio]].map(x=>`<div style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
           renderResumenConsultasIAGeneral(rows);
           document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
               const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
-              const resumenAyudasFila = resumirAyudasComprensionEstudiante(d);
-              const ayudasFilaHtml = (resumenAyudasFila.consultasPalabras || resumenAyudasFila.pasosVistos || resumenAyudasFila.verificacionesIntentadas)
-                  ? `<div style="margin-top:.35rem;padding:.3rem .45rem;border-radius:5px;background:rgba(56,189,248,.11);color:#bae6fd;font-size:.7rem;line-height:1.35" title="Registro de ayudas de comprensión">
-                      <i class="fa-solid fa-graduation-cap"></i>
-                      Ayudas: ${resumenAyudasFila.consultasPalabras + resumenAyudasFila.pasosVistos + resumenAyudasFila.materialApoyoVistas}
-                      · Comprensión: ${resumenAyudasFila.verificacionesCorrectas}/${resumenAyudasFila.verificacionesIntentadas}
-                    </div>`
-                  : '';
               const fecha=d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : '—';
               const indice=estudiantesProfesor.indexOf(d);
               const inactiva = d.estadoCuenta === 'inactivo';
@@ -8399,27 +7111,14 @@
                       <i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(alertaIA.texto)}<br>${escapeHtml(alertaIA.detalle)}
                     </div>`
                   : '';
-              const bloqueado = d.pantallaBloqueada === true;
-              const estadoVisual = bloqueado ? 'Bloqueado' : (inactiva ? 'Inactiva' : 'Activa');
-              const colorEstado = bloqueado ? '#fca5a5' : (inactiva ? '#fca5a5' : '#6ee7b7');
-              const bloqueoFecha = d.pantallaBloqueadaEn ? new Date(d.pantallaBloqueadaEn).toLocaleString() : '';
-              const bloqueoDetalle = bloqueado
-                  ? `<div style="margin-top:.3rem;color:#fecaca;font-size:.72rem;line-height:1.35">Salidas: ${Number(d.pantallaBloqueadaSalidas || d.salidasPestana || 0)}<br>Sección: ${escapeHtml(d.pantallaBloqueadaSeccion || 'Sin identificar')}<br>${escapeHtml(bloqueoFecha || 'Fecha no registrada')}</div>`
-                  : '';
-              const estadoHtml = bloqueado
-                  ? `<span class="teacher-lock-badge" title="El estudiante requiere desbloqueo docente"><i class="fa-solid fa-lock"></i> BLOQUEADO</span>${bloqueoDetalle}`
-                  : `<span style="color:${colorEstado};font-weight:700"><i class="fa-solid fa-circle-check"></i> ${estadoVisual}</span>`;
-              const botonDesbloqueo = bloqueado
-                  ? `<button class="btn btn-danger teacher-unlock-attention" onclick="desbloquearPantallaEstudianteProfesor(${indice})" style="padding:.4rem .65rem" title="Desbloquear pantalla del estudiante"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear</button>`
-                  : '';
-              return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button>${botonDesbloqueo}<button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
+              return `<tr style="${alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestaña ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
               }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
               if (!estudiante) return;
               const estado = estudiante.estadoCuenta || 'activo';
               const celdaEstado = fila.children[5];
-              if (celdaEstado && estudiante.pantallaBloqueada !== true) {
+              if (celdaEstado) {
                   const configuracion = {
                       activo: ['Activa', '#6ee7b7'],
                       pendiente: ['Pendiente', '#fde68a'],
@@ -8644,7 +7343,7 @@
           doc.text("IPEM 146 - Reporte de Evaluaciones JavaScript", 14, 20);
           doc.setFontSize(10);
           doc.text(`Alumno: ${nombre} | Curso: ${curso} | División: ${division} | Turno: ${turno}`, 14, 28);
-          doc.text(`Cambios de pestaña registrados: ${totalSalidasPestana}`, 14, 34);
+          doc.text(`Cambios de pestaña registrados: ${totalSalidasPestaña}`, 14, 34);
           doc.text(`Fecha de Emisión: ${new Date().toLocaleString()}`, 14, 40);
           doc.line(14, 43, 196, 43);
 
@@ -8741,11 +7440,11 @@
 
           asegurarEspacioPDF(12);
           doc.setFont("helvetica", "bold");
-          doc.text(`Detalle de cambios de pestaña (${eventosSalidasPestana.length})`, 14, yPos);
+          doc.text(`Detalle de cambios de pestaña (${eventosSalidasPestaña.length})`, 14, yPos);
           yPos += 6;
           doc.setFont("helvetica", "normal");
-          if (eventosSalidasPestana.length) {
-              eventosSalidasPestana.forEach(evento => {
+          if (eventosSalidasPestaña.length) {
+              eventosSalidasPestaña.forEach(evento => {
                   const salida = evento.salidaEn ? new Date(evento.salidaEn).toLocaleString() : 'Sin fecha';
                   const duracion = evento.duracionSegundos === null || evento.duracionSegundos === undefined
                       ? 'duración no registrada'
@@ -8844,5 +7543,3 @@
     </script>
   </body>
 </html>
-
-
