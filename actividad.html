@@ -1706,11 +1706,17 @@
               actualizadoPor: controlCronometro.actualizadoPor || ""
             }
           }));
-          if (datos.pantallaBloqueada === true) {
+          const bloqueoRemoto = datos.pantallaBloqueada === true;
+          const bloqueoId = String(datos.pantallaBloqueadaEn || "");
+          const ultimoBloqueo = getLocalStorage("app_last_screen_lock_event") || "";
+          if (bloqueoRemoto && bloqueoId && bloqueoId !== ultimoBloqueo) {
+            setLocalStorage("app_last_screen_lock_event", bloqueoId);
             window.dispatchEvent(new CustomEvent("pantalla-bloqueada-estudiante"));
           }
           const desbloqueoPantalla = datos.desbloqueoPantalla || null;
-          if (desbloqueoPantalla?.id) {
+          const ultimoDesbloqueo = getLocalStorage("app_last_screen_unlock_event") || "";
+          if (desbloqueoPantalla?.id && String(desbloqueoPantalla.id) !== ultimoDesbloqueo) {
+            setLocalStorage("app_last_screen_unlock_event", String(desbloqueoPantalla.id));
             window.dispatchEvent(new CustomEvent("desbloqueo-pantalla-estudiante", {
               detail: { id: desbloqueoPantalla.id, por: desbloqueoPantalla.por || "" }
             }));
@@ -2110,6 +2116,7 @@
         if (!user || !database || !uid) return false;
         try {
           await setDoc(doc(database, "estudiantes", uid), {
+            pantallaBloqueada: false,
             desbloqueoPantalla: {
               id: `${Date.now()}-${uid}`,
               por: user.email || user.displayName || user.uid,
@@ -2907,6 +2914,8 @@
       });
       window.addEventListener("desbloqueo-pantalla-estudiante", () => {
           pantallaBloqueada = false;
+          pantallaBloqueadaEn = "";
+          pantallaBloqueadaSeccion = "";
           document.getElementById("screenLockOverlay")?.classList.remove("active");
           void window.guardarProgresoFirebase?.({ pantallaBloqueada: false });
       });
@@ -2938,6 +2947,8 @@
       let seccionPendientePausa = null;
       let tipoAccionModal = '';
       let pantallaBloqueada = false;
+      let pantallaBloqueadaEn = "";
+      let pantallaBloqueadaSeccion = "";
 
       let firebaseSaveTimer = null;
       let firebaseSaveInProgress = false;
@@ -3424,6 +3435,10 @@
           actividadesFinalizadas = datos.finalizadas || {};
           contadorPrevisualizaciones = datos.contadorPrevisualizaciones || {};
           tiemposRestantes = datos.tiemposRestantes || {};
+          pantallaBloqueada = datos.pantallaBloqueada === true;
+          pantallaBloqueadaEn = String(datos.pantallaBloqueadaEn || "");
+          pantallaBloqueadaSeccion = String(datos.pantallaBloqueadaSeccion || "");
+          if (pantallaBloqueada) document.getElementById("screenLockOverlay")?.classList.add("active");
           if (datos.seccionActiva && seccionesData.some(s => s.id === datos.seccionActiva)) seccionActivaActual = datos.seccionActiva;
       }
 
@@ -3770,9 +3785,9 @@
                       JSON.parse(JSON.stringify(eventosSalidasPestana)),
                       pantallaBloqueada ? {
                           pantallaBloqueada: true,
-                          pantallaBloqueadaEn: getLocalStorage('app_screen_locked_at') || new Date().toISOString(),
+                          pantallaBloqueadaEn: pantallaBloqueadaEn || getLocalStorage('app_screen_locked_at') || new Date().toISOString(),
                           pantallaBloqueadaSalidas: totalSalidasPestana,
-                          pantallaBloqueadaSeccion: getLocalStorage('app_screen_locked_section') || seccionActivaActual
+                          pantallaBloqueadaSeccion: pantallaBloqueadaSeccion || getLocalStorage('app_screen_locked_section') || seccionActivaActual
                       } : {}
                   );
                   mostrarEstadoFirebase(
@@ -3794,6 +3809,8 @@
               if (totalSalidasPestana >= 3) {
                   pantallaBloqueada = true;
                   const fechaBloqueo = new Date().toISOString();
+                  pantallaBloqueadaEn = fechaBloqueo;
+                  pantallaBloqueadaSeccion = seccionActivaActual;
                   setLocalStorage('app_screen_locked_at', fechaBloqueo);
                   setLocalStorage('app_screen_locked_section', seccionActivaActual);
                   void window.guardarProgresoFirebase?.({
