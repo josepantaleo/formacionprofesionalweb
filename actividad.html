@@ -2437,6 +2437,11 @@
             <option value="alertas">Con alertas IA</option>
             <option value="cambios">Con cambios de pestaÃ±a</option>
           </select>
+          <select id="filtroBloqueoProfesor" aria-label="Filtrar por bloqueo de pantalla">
+            <option value="">Todos los bloqueos</option>
+            <option value="bloqueados">Solo estudiantes bloqueados</option>
+            <option value="activos">Solo estudiantes activos</option>
+          </select>
           <select id="filtroProgresoProfesor" aria-label="Filtrar por rango de progreso">
             <option value="">Todo el progreso</option>
             <option value="0">0%</option>
@@ -3157,7 +3162,7 @@
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
       window.addEventListener('load', () => {
         actualizarVisibilidadDocente();
-          ['filtroProfesor','filtroEmailProfesor','filtroCursoProfesor','filtroDivisionProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','filtroNotaProfesor','filtroActualizacionProfesor','ordenProfesor'].forEach(id => {
+          ['filtroProfesor','filtroEmailProfesor','filtroCursoProfesor','filtroDivisionProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroBloqueoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','filtroNotaProfesor','filtroActualizacionProfesor','ordenProfesor'].forEach(id => {
               document.getElementById(id)?.addEventListener('input', renderPanelProfesor);
               document.getElementById(id)?.addEventListener('change', renderPanelProfesor);
           });
@@ -7242,6 +7247,7 @@
           const division = document.getElementById('filtroDivisionProfesor')?.value || '';
           const turno = document.getElementById('filtroTurnoProfesor').value;
           const estadoFiltro = document.getElementById('filtroEstadoProfesor')?.value || '';
+          const bloqueoFiltro = document.getElementById('filtroBloqueoProfesor')?.value || '';
           const progresoFiltro = document.getElementById('filtroProgresoProfesor')?.value || '';
           const salidasFiltro = document.getElementById('filtroSalidasProfesor')?.value || '';
           const notaFiltro = document.getElementById('filtroNotaProfesor')?.value || '';
@@ -7264,6 +7270,7 @@
               const cuentaRechazada = d.estadoCuenta === 'rechazado';
               const cronometroPausado = d.controlCronometroIndividual?.pausado === true
                   || d.controlCronometros?.pausado === true;
+              const pantallaBloqueada = d.pantallaBloqueada === true;
               const salidas = Number(d.salidasPestana ?? d.salidasPestaÃ±a ?? 0);
               const tieneCambios = salidas > 0;
               const cumpleProgreso = !progresoFiltro || (
@@ -7307,6 +7314,9 @@
                 || (estadoFiltro === 'pendientes' && !finalizado)
                 || (estadoFiltro === 'alertas' && alerta.activa)
                 || (estadoFiltro === 'cambios' && tieneCambios);
+              const cumpleBloqueo = !bloqueoFiltro
+                || (bloqueoFiltro === 'bloqueados' && pantallaBloqueada)
+                || (bloqueoFiltro === 'activos' && !pantallaBloqueada);
               d.__panelMeta = { progreso, nota, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cuentaPendiente, cuentaRechazada, cronometroPausado, tieneCambios, salidas };
               return (!cuentaPendiente || estadoFiltro === 'solicitudes')
                   && (!q || nombre.includes(q))
@@ -7314,7 +7324,7 @@
                   && (!curso || e.curso===curso)
                   && (!division || e.division===division)
                   && (!turno || e.turno===turno)
-                  && cumpleEstado && cumpleProgreso && cumpleSalidas && cumpleNota && cumpleActualizacion;
+              && cumpleEstado && cumpleBloqueo && cumpleProgreso && cumpleSalidas && cumpleNota && cumpleActualizacion;
           }).sort((a,b) => {
               const am=a.__panelMeta||{}, bm=b.__panelMeta||{};
               const texto = (valorA, valorB, direccion='asc') => {
