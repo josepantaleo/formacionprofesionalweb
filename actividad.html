@@ -3766,7 +3766,12 @@
               totalSalidasPestaÃ±a++;
               if (totalSalidasPestaÃ±a >= 3) {
                   pantallaBloqueada = true;
-                  void window.guardarProgresoFirebase?.({ pantallaBloqueada: true });
+                  void window.guardarProgresoFirebase?.({
+                      pantallaBloqueada: true,
+                      pantallaBloqueadaEn: new Date().toISOString(),
+                      pantallaBloqueadaSalidas: totalSalidasPestaÃ±a,
+                      pantallaBloqueadaSeccion: seccionActivaActual
+                  });
               }
               setLocalStorage('app_blur_count', totalSalidasPestaÃ±a);
               salidaActivaPestaÃ±a = {
@@ -7153,6 +7158,14 @@
                       </button>
                   </div>
               </div>
+              <div style="padding:1rem;border:1px solid ${d.pantallaBloqueada ? 'rgba(239,68,68,.45)' : 'rgba(16,185,129,.35)'};border-radius:8px;background:${d.pantallaBloqueada ? 'rgba(239,68,68,.08)' : 'rgba(16,185,129,.06)'};margin-bottom:1rem">
+                  <strong>Estado de pantalla: ${d.pantallaBloqueada ? 'BLOQUEADO' : 'ACTIVO'}</strong>
+                  <div style="margin-top:.4rem;color:var(--text-muted);line-height:1.5">
+                    Fecha del bloqueo: ${escapeHtml(d.pantallaBloqueadaEn ? new Date(d.pantallaBloqueadaEn).toLocaleString() : 'Sin bloqueo registrado')}<br>
+                    Cantidad de salidas: ${Number(d.pantallaBloqueadaSalidas || d.salidasPestana || 0)}<br>
+                    Última sección: ${escapeHtml(d.pantallaBloqueadaSeccion || 'Sin identificar')}
+                  </div>
+              </div>
               ${resumenConsultasHtml}
               <details class="teacher-activity" open>
                   <summary>CÃ³mo se calculÃ³ el promedio final</summary>
@@ -7347,7 +7360,11 @@
               const bloqueado = d.pantallaBloqueada === true;
               const estadoVisual = bloqueado ? 'Bloqueado' : (inactiva ? 'Inactiva' : 'Activa');
               const colorEstado = bloqueado ? '#fca5a5' : (inactiva ? '#fca5a5' : '#6ee7b7');
-              return `<tr style="${bloqueado ? 'background:rgba(239,68,68,.08)' : (alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : '')}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${colorEstado};font-weight:700"><i class="fa-solid ${bloqueado ? 'fa-lock' : 'fa-circle-check'}"></i> ${estadoVisual}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestaÃ±a ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronÃ³metro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaÃ±a" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> PestaÃ±as</button><button class="btn btn-danger" onclick="desbloquearPantallaEstudianteProfesor(${indice})" style="padding:.4rem .65rem" title="Desbloquear pantalla del estudiante"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
+              const bloqueoFecha = d.pantallaBloqueadaEn ? new Date(d.pantallaBloqueadaEn).toLocaleString() : '';
+              const bloqueoDetalle = bloqueado
+                  ? `<div style="margin-top:.3rem;color:#fecaca;font-size:.72rem;line-height:1.35">Salidas: ${Number(d.pantallaBloqueadaSalidas || d.salidasPestana || 0)}<br>Sección: ${escapeHtml(d.pantallaBloqueadaSeccion || 'Sin identificar')}<br>${escapeHtml(bloqueoFecha || 'Fecha no registrada')}</div>`
+                  : '';
+              return `<tr style="${bloqueado ? 'background:rgba(239,68,68,.08)' : (alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : '')}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${colorEstado};font-weight:700"><i class="fa-solid ${bloqueado ? 'fa-lock' : 'fa-circle-check'}"></i> ${estadoVisual}${bloqueoDetalle}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestaÃ±a ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronÃ³metro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaÃ±a" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> PestaÃ±as</button><button class="btn btn-danger" onclick="desbloquearPantallaEstudianteProfesor(${indice})" style="padding:.4rem .65rem" title="Desbloquear pantalla del estudiante"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
               }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
