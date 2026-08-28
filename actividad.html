@@ -1921,17 +1921,24 @@
         }
       };
 
-      window.guardarSalidasPestanaFirebase = async function(salidas, eventos) {
+      window.guardarSalidasPestanaFirebase = async function(salidas, eventos, bloqueo = {}) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!user || !db) return false;
         try {
-          await setDoc(doc(db, "estudiantes", user.uid), {
+          const payload = {
             salidasPestana: Number(salidas) || 0,
             eventosSalidasPestana: Array.isArray(eventos) ? eventos : [],
             uid: user.uid,
             email: user.email || "",
             actualizadoEn: serverTimestamp()
-          }, { merge: true });
+          };
+          if (bloqueo?.pantallaBloqueada === true) {
+            payload.pantallaBloqueada = true;
+            payload.pantallaBloqueadaEn = bloqueo.pantallaBloqueadaEn || new Date().toISOString();
+            payload.pantallaBloqueadaSalidas = Number(bloqueo.pantallaBloqueadaSalidas || salidas) || 0;
+            payload.pantallaBloqueadaSeccion = String(bloqueo.pantallaBloqueadaSeccion || "");
+          }
+          await setDoc(doc(db, "estudiantes", user.uid), payload, { merge: true });
           return true;
         } catch (error) {
           console.error("Error guardando el cambio de pestaña:", error);
@@ -3760,7 +3767,13 @@
                   mostrarEstadoFirebase('saving', 'Guardando cambio de pestaña...');
                   const ok = await window.guardarSalidasPestanaFirebase(
                       totalSalidasPestana,
-                      JSON.parse(JSON.stringify(eventosSalidasPestana))
+                      JSON.parse(JSON.stringify(eventosSalidasPestana)),
+                      pantallaBloqueada ? {
+                          pantallaBloqueada: true,
+                          pantallaBloqueadaEn: getLocalStorage('app_screen_locked_at') || new Date().toISOString(),
+                          pantallaBloqueadaSalidas: totalSalidasPestana,
+                          pantallaBloqueadaSeccion: getLocalStorage('app_screen_locked_section') || seccionActivaActual
+                      } : {}
                   );
                   mostrarEstadoFirebase(
                       ok ? 'online' : 'offline',
@@ -3780,9 +3793,12 @@
               totalSalidasPestana++;
               if (totalSalidasPestana >= 3) {
                   pantallaBloqueada = true;
+                  const fechaBloqueo = new Date().toISOString();
+                  setLocalStorage('app_screen_locked_at', fechaBloqueo);
+                  setLocalStorage('app_screen_locked_section', seccionActivaActual);
                   void window.guardarProgresoFirebase?.({
                       pantallaBloqueada: true,
-                      pantallaBloqueadaEn: new Date().toISOString(),
+                      pantallaBloqueadaEn: fechaBloqueo,
                       pantallaBloqueadaSalidas: totalSalidasPestana,
                       pantallaBloqueadaSeccion: seccionActivaActual
                   });
@@ -3813,7 +3829,7 @@
               }
           }
 
-          function registrarRegresoPestana() {
+          async function registrarRegresoPestana() {
               if (!salidaActivaPestana) return;
               const regreso = Date.now();
               salidaActivaPestana.regresoEn = new Date(regreso).toISOString();
@@ -3822,21 +3838,23 @@
                   Math.round((regreso - new Date(salidaActivaPestana.salidaEn).getTime()) / 1000)
               );
               salidaActivaPestana = null;
-              void persistirEventosSalidas(true);
+              const guardado = await persistirEventosSalidas(true);
+              if (!guardado) {
+                  setTimeout(() => void persistirEventosSalidas(true), 1200);
+              }
           }
 
           // Fuente principal: cambio real de visibilidad de la página.
-          document.addEventListener('visibilitychange', () => {
+          document.addEventListener('visibilitychange', async () => {
               if (document.visibilityState === 'hidden') {
                   registrarCambioPestana('visibility');
               } else {
-                  registrarRegresoPestana();
+                  await registrarRegresoPestana();
               }
           });
 
-          window.addEventListener('visibilitychange', () => {
-              if (document.visibilityState === 'hidden' && cuentaEstudianteActiva && !actividadesFinalizadas[seccionActivaActual]) {
-                  pantallaBloqueada = true;
+          document.addEventListener('visibilitychange', () => {
+              if (document.visibilityState === 'visible' && pantallaBloqueada) {
                   document.getElementById('screenLockOverlay')?.classList.add('active');
               }
           });
