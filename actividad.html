@@ -1189,17 +1189,13 @@
       body.teacher-authorized .teacher-only { display: inline-flex !important; }
       body.teacher-authorized .teacher-only.teacher-session-only { display: none !important; }
       body.teacher-temporary .teacher-only.teacher-session-only { display: inline-flex !important; }
-      :focus-visible { outline: 3px solid #38bdf8; outline-offset: 3px; }
-      @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
-      }
 </style>
 
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, collectionGroup, onSnapshot, getDocs, query, limit } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
       import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
       import { getAI, getTemplateGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
 
@@ -1645,118 +1641,6 @@
         return snap.exists() ? snap.data() : null;
       };
 
-      async function cargarSubcoleccionPropia(nombre) {
-        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
-        if (!user || !db) return {};
-        const snap = await getDocs(collection(db, "estudiantes", user.uid, nombre));
-        return Object.fromEntries(snap.docs.map(item => [
-          item.id,
-          { ...item.data(), __docId: item.id }
-        ]));
-      }
-
-      function seleccionarUltimoPorModulo(documentos = {}) {
-        const resultado = {};
-        Object.values(documentos).forEach(item => {
-          const moduloId = String(item?.moduloId || "");
-          if (!moduloId) return;
-          const fecha = item?.entregadaEn?.toMillis
-            ? item.entregadaEn.toMillis()
-            : Number(item?.entregadaEn?.seconds || 0) * 1000;
-          const anterior = resultado[moduloId];
-          const fechaAnterior = anterior?.entregadaEn?.toMillis
-            ? anterior.entregadaEn.toMillis()
-            : Number(anterior?.entregadaEn?.seconds || 0) * 1000;
-          if (!anterior || fecha >= fechaAnterior) resultado[moduloId] = item;
-        });
-        return resultado;
-      }
-
-      function agruparIntentosPorModulo(documentos = {}) {
-        const grupos = {};
-        Object.values(documentos).forEach(item => {
-          const moduloId = String(item?.moduloId || "");
-          if (!moduloId) return;
-          (grupos[moduloId] ||= []).push(item);
-        });
-        Object.values(grupos).forEach(intentos => {
-          intentos.sort((a, b) => {
-            const fechaA = a?.entregadaEn?.toMillis
-              ? a.entregadaEn.toMillis()
-              : Number(a?.entregadaEn?.seconds || 0) * 1000;
-            const fechaB = b?.entregadaEn?.toMillis
-              ? b.entregadaEn.toMillis()
-              : Number(b?.entregadaEn?.seconds || 0) * 1000;
-            return fechaB - fechaA;
-          });
-        });
-        return grupos;
-      }
-
-      window.cargarPaqueteEntregasFirebase = async function() {
-        const documentos = await cargarSubcoleccionPropia("entregas");
-        return {
-          ultimos: seleccionarUltimoPorModulo(documentos),
-          historial: agruparIntentosPorModulo(documentos)
-        };
-      };
-
-      window.cargarEntregasFirebase = async () =>
-        (await window.cargarPaqueteEntregasFirebase()).ultimos;
-      window.cargarHistorialIntentosFirebase = async () =>
-        (await window.cargarPaqueteEntregasFirebase()).historial;
-      window.escucharEntregasFirebase = function() {
-        const user = window.firebaseCurrentUser;
-        if (!user || !db) return;
-        if (window.__entregasEstudianteUnsubscribe) {
-          window.__entregasEstudianteUnsubscribe();
-        }
-        window.__entregasEstudianteUnsubscribe = onSnapshot(
-          query(collection(db, "estudiantes", user.uid, "entregas"), limit(100)),
-          snap => {
-            const documentos = Object.fromEntries(
-              snap.docs.map(item => [
-                item.id,
-                { ...item.data(), __docId: item.id }
-              ])
-            );
-            window.dispatchEvent(new CustomEvent("entregas-estudiante", {
-              detail: {
-                ultimos: seleccionarUltimoPorModulo(documentos),
-                historial: agruparIntentosPorModulo(documentos)
-              }
-            }));
-          },
-          error => console.error("Error escuchando entregas:", error)
-        );
-      };
-      window.cargarEvaluacionesFirebase = () => cargarSubcoleccionPropia("evaluaciones");
-      window.escucharEvaluacionesFirebase = function() {
-        const user = window.firebaseCurrentUser;
-        if (!user || !db) return;
-        if (window.__evaluacionesEstudianteUnsubscribe) {
-          window.__evaluacionesEstudianteUnsubscribe();
-        }
-        window.__evaluacionesEstudianteUnsubscribe = onSnapshot(
-          query(collection(db, "estudiantes", user.uid, "evaluaciones"), limit(100)),
-          snap => {
-            const evaluaciones = Object.fromEntries(
-              snap.docs.map(item => [item.id, item.data()])
-            );
-            window.dispatchEvent(new CustomEvent("evaluaciones-estudiante", {
-              detail: evaluaciones
-            }));
-          },
-          error => console.error("Error escuchando evaluaciones oficiales:", error)
-        );
-      };
-      window.cargarAuditoriaFirebase = async function() {
-        const datos = await cargarSubcoleccionPropia("auditoria");
-        return Object.values(datos).sort((a, b) =>
-          String(a.salidaEn || "").localeCompare(String(b.salidaEn || ""))
-        );
-      };
-
       window.guardarProgresoFirebase = async function(payload) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!user || !db) return false;
@@ -1781,204 +1665,24 @@
         }
       };
 
-      window.guardarEventoAuditoriaFirebase = async function(evento) {
+      window.guardarSalidasPestanaFirebase = async function(salidas, eventos) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
-        if (!user || !db || !evento?.id) return false;
+        if (!user || !db) return false;
         try {
-          await setDoc(doc(db, "estudiantes", user.uid, "auditoria", String(evento.id)), {
-            id: String(evento.id),
+          await setDoc(doc(db, "estudiantes", user.uid), {
+            salidasPestana: Number(salidas) || 0,
+            eventosSalidasPestana: Array.isArray(eventos) ? eventos : [],
             uid: user.uid,
-            numero: Math.max(1, Number(evento.numero) || 1),
-            salidaEn: String(evento.salidaEn || ""),
-            regresoEn: evento.regresoEn ? String(evento.regresoEn) : null,
-            duracionSegundos: evento.duracionSegundos === null || evento.duracionSegundos === undefined
-              ? null
-              : Math.max(0, Number(evento.duracionSegundos) || 0),
-            seccion: String(evento.seccion || "").slice(0, 80),
-            origen: String(evento.origen || "visibility").slice(0, 40),
-            justificacion: evento.justificacion ? {
-              motivo: String(evento.justificacion.motivo || "").slice(0, 80),
-              detalle: String(evento.justificacion.detalle || "").slice(0, 2000),
-              enviadaEn: String(evento.justificacion.enviadaEn || "")
-            } : null,
+            email: user.email || "",
             actualizadoEn: serverTimestamp()
           }, { merge: true });
           return true;
         } catch (error) {
-          console.error("Error guardando el evento de auditoría:", error);
+          console.error("Error guardando el cambio de pestaña:", error);
           window.ultimoErrorSalidasPestana = {
             code: error?.code || "",
             message: error?.message || ""
           };
-          return false;
-        }
-      };
-
-      window.guardarSalidasPestanaFirebase = async function(_salidas, eventos) {
-        const ultimo = Array.isArray(eventos) ? eventos[eventos.length - 1] : null;
-        if (!ultimo) return true;
-        return window.guardarEventoAuditoriaFirebase(ultimo);
-      };
-
-      window.guardarEntregaFirebase = async function(moduloId, entrega = {}) {
-        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
-        if (!user || !db || !moduloId) return false;
-        try {
-          const entregaId = `${String(moduloId)}--${Date.now()}`;
-          const referencia = doc(db, "estudiantes", user.uid, "entregas", entregaId);
-          await setDoc(referencia, {
-            entregaId,
-            uid: user.uid,
-            moduloId: String(moduloId),
-            estado: "entregada",
-            motivo: String(entrega.motivo || "entrega").slice(0, 40),
-            codigo: String(entrega.codigo || "").slice(0, 50000),
-            salida: String(entrega.salida || "").slice(0, 12000),
-            error: String(entrega.error || "").slice(0, 2000),
-            respuestasAnalista: Array.isArray(entrega.respuestasAnalista)
-              ? entrega.respuestasAnalista.slice(0, 30)
-              : [],
-            numeroIntento: Math.max(1, Number(entrega.numeroIntento) || 1),
-            pruebasAutomaticas: entrega.pruebasAutomaticas || {
-              version: "auto-v1",
-              ejecutadasClienteEn: new Date().toISOString(),
-              resumen: { aprobadas: 0, total: 0, porcentaje: 0 },
-              casos: []
-            },
-            revisionEstado: "pendiente",
-            versionApp: String(entrega.versionApp || "13.0-accesibilidad-offline-costos-retencion").slice(0, 80),
-            creadoClienteEn: new Date().toISOString(),
-            entregadaEn: serverTimestamp()
-          });
-          window.ultimaEntregaGuardadaFirebase = { entregaId, moduloId: String(moduloId) };
-          return true;
-        } catch (error) {
-          console.error("Error guardando entrega segura:", error);
-          window.ultimoErrorEntregaFirebase = {
-            code: error?.code || "",
-            message: error?.message || ""
-          };
-          return false;
-        }
-      };
-
-      window.guardarEvaluacionFirebase = async function(uid, moduloId, evaluacion = {}) {
-        const autorizado = await window.autorizarDocenteFirebase?.();
-        if (!autorizado || !uid || !moduloId) return false;
-        const { user, database } = contextoDocenteFirebase();
-        if (!user || !database) return false;
-        try {
-          await setDoc(doc(database, "estudiantes", uid, "evaluaciones", String(moduloId)), {
-            uid: String(uid),
-            moduloId: String(moduloId),
-            entregaId: String(evaluacion.entregaId || ""),
-            numeroIntento: Math.max(1, Number(evaluacion.numeroIntento) || 1),
-            estado: "evaluada",
-            notaCodigo: Number(evaluacion.notaCodigo),
-            notaPreguntas: Number(evaluacion.notaPreguntas),
-            notaFinal: Number(evaluacion.notaFinal),
-            observacion: String(evaluacion.observacion || "").slice(0, 4000),
-            versionRubrica: String(evaluacion.versionRubrica || "manual-v1").slice(0, 80),
-            pruebasResumen: evaluacion.pruebasResumen || {
-              aprobadas: 0,
-              total: 0,
-              porcentaje: 0
-            },
-            evaluadoPor: user.email || user.displayName || user.uid,
-            evaluadoEn: serverTimestamp()
-          });
-          return true;
-        } catch (error) {
-          console.error("Error guardando evaluación oficial:", error);
-          return false;
-        }
-      };
-
-      window.guardarRevisionEntregaFirebase = async function(uid, entregaId, revision = {}) {
-        const autorizado = await window.autorizarDocenteFirebase?.();
-        if (!autorizado || !uid || !entregaId) return false;
-        const { user, database } = contextoDocenteFirebase();
-        if (!user || !database) return false;
-        const estadoRevision = String(revision.estado || "pendiente");
-        if (!["pendiente", "aprobada", "devuelta"].includes(estadoRevision)) return false;
-        try {
-          const referencia = doc(database, "estudiantes", uid, "entregas", entregaId);
-          const snapshot = await getDoc(referencia);
-          if (!snapshot.exists()) return false;
-          const entrega = snapshot.data();
-          const devuelta = estadoRevision === "devuelta";
-          await setDoc(referencia, {
-            estado: devuelta ? "reabierta" : "entregada",
-            revisionEstado: estadoRevision,
-            revisionObservacion: String(revision.observacion || "").slice(0, 4000),
-            revisionPor: user.email || user.displayName || user.uid,
-            revisionEn: serverTimestamp(),
-            ...(devuelta ? {
-              reabiertaPor: user.email || user.displayName || user.uid,
-              reabiertaEn: serverTimestamp()
-            } : {})
-          }, { merge: true });
-          if (devuelta && entrega.moduloId) {
-            const evaluacionRef = doc(
-              database,
-              "estudiantes",
-              uid,
-              "evaluaciones",
-              String(entrega.moduloId)
-            );
-            const evaluacion = await getDoc(evaluacionRef);
-            if (evaluacion.exists()) {
-              await setDoc(evaluacionRef, {
-                estado: "anulada",
-                anuladaPor: user.email || user.displayName || user.uid,
-                anuladaEn: serverTimestamp()
-              }, { merge: true });
-            }
-          }
-          return true;
-        } catch (error) {
-          console.error("Error guardando revisión de entrega:", error);
-          return false;
-        }
-      };
-
-      window.reabrirEntregaFirebase = async function(uid, moduloId) {
-        const autorizado = await window.autorizarDocenteFirebase?.();
-        if (!autorizado || !uid || !moduloId) return false;
-        const { user, database } = contextoDocenteFirebase();
-        if (!user || !database) return false;
-        try {
-          const snap = await getDocs(collection(database, "estudiantes", uid, "entregas"));
-          const candidatos = snap.docs
-            .filter(item => item.data()?.moduloId === moduloId)
-            .sort((a, b) => {
-              const fechaA = a.data()?.entregadaEn?.toMillis?.() || 0;
-              const fechaB = b.data()?.entregadaEn?.toMillis?.() || 0;
-              return fechaB - fechaA;
-            });
-          if (candidatos[0]) {
-            await setDoc(candidatos[0].ref, {
-              estado: "reabierta",
-              revisionEstado: "devuelta",
-              revisionObservacion: "Reabierta manualmente por el docente.",
-              revisionPor: user.email || user.displayName || user.uid,
-              revisionEn: serverTimestamp(),
-              reabiertaPor: user.email || user.displayName || user.uid,
-              reabiertaEn: serverTimestamp()
-            }, { merge: true });
-          }
-          const evaluacionRef = doc(database, "estudiantes", uid, "evaluaciones", String(moduloId));
-          const evaluacion = await getDoc(evaluacionRef);
-          if (evaluacion.exists()) {
-            await setDoc(evaluacionRef, {
-              estado: "anulada",
-              anuladaPor: user.email || user.displayName || user.uid,
-              anuladaEn: serverTimestamp()
-            }, { merge: true });
-          }
-          return true;
-        } catch (error) {
-          console.error("Error reabriendo la entrega:", error);
           return false;
         }
       };
@@ -2030,10 +1734,6 @@
         if (!user || !contexto.database || !uid) return false;
         try {
           if (!(await verificarUsuarioDocente(user))) return false;
-          for (const nombre of ["entregas", "evaluaciones", "auditoria"]) {
-            const documentos = await getDocs(collection(contexto.database, "estudiantes", uid, nombre));
-            await Promise.all(documentos.docs.map(item => deleteDoc(item.ref)));
-          }
           await deleteDoc(doc(contexto.database, "estudiantes", uid));
           return true;
         } catch (error) {
@@ -2157,255 +1857,14 @@
           return false;
         }
       };
-
-      window.guardarClaseFirebase = async function(clase = {}) {
-        const autorizado = await window.autorizarDocenteFirebase?.();
-        if (!autorizado) return false;
-        const { user, database } = contextoDocenteFirebase();
-        const claseId = String(clase.claseId || "").trim();
-        if (!user || !database || !claseId || claseId.includes("/")) return false;
-        try {
-          const referencia = doc(database, "clases", claseId);
-          const anterior = await getDoc(referencia);
-          const datosAnteriores = anterior.exists() ? anterior.data() : {};
-          await setDoc(referencia, {
-            claseId,
-            nombre: String(clase.nombre || "").trim().slice(0, 120),
-            curso: String(clase.curso || "").trim().slice(0, 80),
-            division: String(clase.division || "").trim().slice(0, 20),
-            turno: String(clase.turno || "").trim().slice(0, 40),
-            cicloLectivo: Math.max(2020, Math.min(2100, Number(clase.cicloLectivo) || new Date().getFullYear())),
-            activa: clase.activa !== false,
-            miembros: [...new Set((Array.isArray(clase.miembros) ? clase.miembros : [])
-              .map(uid => String(uid || "").trim())
-              .filter(Boolean))]
-              .slice(0, 300),
-            creadaPor: datosAnteriores.creadaPor || user.email || user.displayName || user.uid,
-            creadaEn: datosAnteriores.creadaEn || serverTimestamp(),
-            actualizadaPor: user.email || user.displayName || user.uid,
-            actualizadaEn: serverTimestamp()
-          });
-          return true;
-        } catch (error) {
-          console.error("Error guardando clase:", error);
-          return false;
-        }
-      };
-
-      window.eliminarClaseFirebase = async function(claseId) {
-        const autorizado = await window.autorizarDocenteFirebase?.();
-        if (!autorizado || !claseId) return false;
-        const { database } = contextoDocenteFirebase();
-        if (!database) return false;
-        try {
-          await deleteDoc(doc(database, "clases", String(claseId)));
-          return true;
-        } catch (error) {
-          console.error("Error eliminando clase:", error);
-          return false;
-        }
-      };
-
-      window.cargarBibliotecaActividadesFirebase = async function() {
-        if (!db) return [];
-        try {
-          const snap = await getDocs(collection(db, "bibliotecaActividades"));
-          return snap.docs.map(item => ({ actividadId: item.id, ...item.data() }));
-        } catch (error) {
-          console.error("Error cargando biblioteca:", error);
-          return [];
-        }
-      };
-
-      window.guardarBibliotecaActividadFirebase = async function(actividad = {}) {
-        const autorizado = await window.autorizarDocenteFirebase?.();
-        if (!autorizado) return false;
-        const { user, database } = contextoDocenteFirebase();
-        const actividadId = String(actividad.actividadId || "").trim();
-        if (!user || !database || !actividadId || actividadId.includes("/")) return false;
-        try {
-          await setDoc(doc(database, "bibliotecaActividades", actividadId), {
-            actividadId,
-            titulo: String(actividad.titulo || "").trim().slice(0, 160),
-            descripcion: String(actividad.descripcion || "").trim().slice(0, 1200),
-            nivel: String(actividad.nivel || "intermedio").slice(0, 30),
-            etiquetas: [...new Set((Array.isArray(actividad.etiquetas) ? actividad.etiquetas : [])
-              .map(item => String(item).trim()).filter(Boolean))].slice(0, 12),
-            moduloBase: String(actividad.moduloBase || "").slice(0, 80),
-            activa: actividad.activa !== false,
-            creadaPor: actividad.creadaPor || user.email || user.uid,
-            actualizadaPor: user.email || user.uid,
-            actualizadaEn: serverTimestamp()
-          }, { merge: true });
-          return true;
-        } catch (error) {
-          console.error("Error guardando actividad de biblioteca:", error);
-          return false;
-        }
-      };
-
-      window.cargarRutaAdaptativaFirebase = async function(uid) {
-        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
-        if (!user || user.uid !== uid || !db) return null;
-        try {
-          const snap = await getDoc(doc(db, "rutasAdaptativas", uid));
-          return snap.exists() ? snap.data() : null;
-        } catch (error) {
-          console.error("Error cargando ruta adaptativa:", error);
-          return null;
-        }
-      };
-
-      window.guardarRutaAdaptativaFirebase = async function(uid, ruta = {}) {
-        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
-        if (!user || user.uid !== uid || !db) return false;
-        try {
-          await setDoc(doc(db, "rutasAdaptativas", uid), {
-            uid,
-            version: "adaptive-v1",
-            pasos: Array.isArray(ruta.pasos) ? ruta.pasos.slice(0, 19) : [],
-            calculadaEn: serverTimestamp()
-          }, { merge: true });
-          return true;
-        } catch (error) {
-          console.error("Error guardando ruta adaptativa:", error);
-          return false;
-        }
-      };
     
       window.__abrirPanelProfesorFirestore = function() {
         const { database } = contextoDocenteFirebase();
         if (!database) return;
         if (window.__profesorUnsubscribe) window.__profesorUnsubscribe();
-        const estado = {
-          estudiantes: [],
-          entregas: [],
-          evaluaciones: [],
-          auditoria: [],
-          clases: []
-        };
-        const emitir = () => {
-          const entregasPorUid = {};
-          const intentosPorUid = {};
-          const evaluacionesPorUid = {};
-          const auditoriaPorUid = {};
-          estado.entregas.forEach(item => {
-            if (!item.uid || !item.moduloId) return;
-            const intentosUid = (intentosPorUid[item.uid] ||= {});
-            (intentosUid[item.moduloId] ||= []).push(item);
-            const grupo = (entregasPorUid[item.uid] ||= {});
-            const anterior = grupo[item.moduloId];
-            const fecha = item.entregadaEn?.toMillis?.() || 0;
-            const fechaAnterior = anterior?.entregadaEn?.toMillis?.() || 0;
-            if (!anterior || fecha >= fechaAnterior) grupo[item.moduloId] = item;
-          });
-          Object.values(intentosPorUid).forEach(modulos => {
-            Object.values(modulos).forEach(intentos => {
-              intentos.sort((a, b) =>
-                (b.entregadaEn?.toMillis?.() || 0) -
-                (a.entregadaEn?.toMillis?.() || 0)
-              );
-            });
-          });
-          estado.evaluaciones.forEach(item => {
-            if (!item.uid || !item.moduloId || item.estado !== "evaluada") return;
-            (evaluacionesPorUid[item.uid] ||= {})[item.moduloId] = item;
-          });
-          estado.auditoria.forEach(item => {
-            if (!item.uid) return;
-            (auditoriaPorUid[item.uid] ||= []).push(item);
-          });
-          const combinados = estado.estudiantes.map(estudiante => {
-            const uid = estudiante.uid;
-            const clasesAsignadas = estado.clases.filter(clase =>
-              Array.isArray(clase.miembros) && clase.miembros.includes(uid)
-            );
-            const entregas = entregasPorUid[uid] || {};
-            const intentos = intentosPorUid[uid] || {};
-            const evaluaciones = evaluacionesPorUid[uid] || {};
-            const historialResultados = {};
-            const finalizadas = {};
-            const codigos = { ...(estudiante.codigos || {}) };
-            Object.entries(entregas).forEach(([moduloId, entrega]) => {
-              finalizadas[moduloId] = entrega.estado === "entregada";
-              codigos[moduloId] = entrega.codigo || codigos[moduloId] || "";
-              const evaluacionOficial = evaluaciones[moduloId]?.estado === "evaluada"
-                ? evaluaciones[moduloId]
-                : {};
-              historialResultados[moduloId] = {
-                codigo: entrega.codigo || "",
-                salida: entrega.salida || "",
-                error: entrega.error || "",
-                exito: !entrega.error,
-                analista: { preguntas: entrega.respuestasAnalista || [] },
-                estadoEntrega: entrega.estado || "entregada",
-                ...evaluacionOficial
-              };
-            });
-            Object.entries(evaluaciones).forEach(([moduloId, evaluacion]) => {
-              historialResultados[moduloId] = {
-                ...(historialResultados[moduloId] || {}),
-                ...evaluacion
-              };
-            });
-            const todosEventos = (auditoriaPorUid[uid] || []).sort((a, b) =>
-              String(a.salidaEn || "").localeCompare(String(b.salidaEn || ""))
-            );
-            const reinicio = estudiante.reinicioSalidas?.solicitadoEn;
-            const reinicioMs = reinicio?.toMillis
-              ? reinicio.toMillis()
-              : Number(reinicio?.seconds || 0) * 1000;
-            const eventosActuales = reinicioMs
-              ? todosEventos.filter(item => new Date(item.salidaEn || 0).getTime() > reinicioMs)
-              : todosEventos;
-            return {
-              ...estudiante,
-              entregas,
-              intentos,
-              evaluaciones,
-              historialResultados,
-              finalizadas,
-              codigos,
-              claseIds: clasesAsignadas.map(clase => clase.claseId),
-              clasesAsignadas: clasesAsignadas.map(clase => ({
-                claseId: clase.claseId,
-                nombre: clase.nombre,
-                activa: clase.activa !== false
-              })),
-              eventosSalidasPestana: todosEventos,
-              salidasPestana: eventosActuales.length
-            };
-          });
-          window.dispatchEvent(new CustomEvent('clases-profesor-data', {
-            detail: estado.clases
-          }));
-          window.dispatchEvent(new CustomEvent('profesor-data', { detail: combinados }));
-        };
-        const error = err =>
-          window.dispatchEvent(new CustomEvent('profesor-data-error', { detail: err.message }));
-        const cancelaciones = [
-          onSnapshot(collection(database, "estudiantes"), snap => {
-            estado.estudiantes = snap.docs.map(item => item.data());
-            emitir();
-          }, error),
-          onSnapshot(collectionGroup(database, "entregas"), snap => {
-            estado.entregas = snap.docs.map(item => item.data());
-            emitir();
-          }, error),
-          onSnapshot(collectionGroup(database, "evaluaciones"), snap => {
-            estado.evaluaciones = snap.docs.map(item => item.data());
-            emitir();
-          }, error),
-          onSnapshot(collectionGroup(database, "auditoria"), snap => {
-            estado.auditoria = snap.docs.map(item => item.data());
-            emitir();
-          }, error),
-          onSnapshot(collection(database, "clases"), snap => {
-            estado.clases = snap.docs.map(item => ({ claseId: item.id, ...item.data() }));
-            emitir();
-          }, error)
-        ];
-        window.__profesorUnsubscribe = () => cancelaciones.forEach(cancelar => cancelar());
+        window.__profesorUnsubscribe = onSnapshot(collection(database, 'estudiantes'), snap => {
+          window.dispatchEvent(new CustomEvent('profesor-data', { detail: snap.docs.map(x => x.data()) }));
+        }, err => window.dispatchEvent(new CustomEvent('profesor-data-error', { detail: err.message })));
       };
       
       // ============================================================
@@ -2558,7 +2017,7 @@
           <div class="firebase-account">
             <img id="firebaseUserPhoto" src="" alt="Google" style="display:none;">
             <div><strong id="firebaseUserName">Sin sesión</strong><div class="email" id="firebaseUserEmail"></div></div>
-            <span id="firebaseSaveStatus" class="firebase-status online" role="status" aria-live="polite">● Sincronización activa</span>
+            <span id="firebaseSaveStatus" class="firebase-status online">● Sincronización activa</span>
           </div>
           <div class="btn-group">
             <button class="btn btn-success" onclick="guardarAhoraFirebase()"><i class="fa-solid fa-cloud-arrow-up"></i> Guardar ahora</button>
@@ -2595,20 +2054,6 @@
         </button>
       </div>
 
-      <section id="rutaAdaptativaPanel" style="margin:1rem 0;padding:.9rem;border:1px solid rgba(56,189,248,.28);border-radius:6px;background:rgba(56,189,248,.05)">
-        <div style="display:flex;justify-content:space-between;gap:.7rem;align-items:center;flex-wrap:wrap">
-          <strong><i class="fa-solid fa-route"></i> Ruta adaptativa</strong>
-          <span id="rutaAdaptativaEstado" style="font-size:.78rem;color:var(--text-muted)">Calculando...</span>
-        </div>
-        <div id="rutaAdaptativaContenido" style="margin-top:.55rem;font-size:.84rem"></div>
-      </section>
-      <section id="bibliotecaActividadesPanel" style="margin:1rem 0;padding:.9rem;border:1px solid rgba(16,185,129,.25);border-radius:6px;background:rgba(16,185,129,.04)">
-        <div style="display:flex;justify-content:space-between;gap:.7rem;align-items:center;flex-wrap:wrap">
-          <strong><i class="fa-solid fa-book-open"></i> Biblioteca de actividades</strong>
-          <input id="buscarBibliotecaActividades" placeholder="Buscar actividad" style="max-width:220px" oninput="renderBibliotecaActividades()">
-        </div>
-        <div id="bibliotecaActividadesContenido" style="display:grid;gap:.45rem;margin-top:.6rem"></div>
-      </section>
       <div id="sectionsContainer"></div>
       <div style="height: 80px"></div>
     </main>
@@ -2623,8 +2068,6 @@
             <button class="btn btn-danger" onclick="finalizarClaseDesdeInterfaz(this)"><i class="fa-solid fa-stop"></i> Finalizar clase</button>
             <button class="btn btn-warning" id="btnPausarCronometrosProfesor" onclick="pausarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-pause"></i> Pausar cronómetros</button>
             <button class="btn btn-secondary" onclick="reiniciarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00</button>
-            <button class="btn btn-primary" onclick="abrirGestionClasesProfesor()"><i class="fa-solid fa-users-rectangle"></i> Gestionar clases</button>
-            <button class="btn btn-secondary" onclick="crearActividadBibliotecaProfesor()"><i class="fa-solid fa-book-medical"></i> Nueva actividad biblioteca</button>
             <button class="btn btn-primary" onclick="abrirEditorDesafiosFirebase()"><i class="fa-solid fa-puzzle-piece"></i> Editar desafíos</button>
             <button class="btn btn-secondary" onclick="cerrarPanelProfesor()">Cerrar panel</button>
           </div>
@@ -2651,7 +2094,6 @@
         <div id="filtrosPanelProfesor" style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
           <input id="filtroProfesor" placeholder="Estudiante" aria-label="Filtrar por estudiante" style="flex:1;min-width:150px;">
           <input id="filtroEmailProfesor" placeholder="Email" aria-label="Filtrar por email" style="flex:1;min-width:180px;">
-          <select id="filtroClaseProfesor" aria-label="Filtrar por clase"><option value="">Todas las clases</option><option value="sin-clase">Sin clase asignada</option></select>
           <select id="filtroCursoProfesor"><option value="">Todos los cursos</option></select>
           <select id="filtroDivisionProfesor" aria-label="Filtrar por división"><option value="">Todas las divisiones</option></select>
           <select id="filtroTurnoProfesor"><option value="">Todos los turnos</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select>
@@ -2663,11 +2105,9 @@
             <option value="desconectados">Sin actividad reciente</option>
             <option value="trabajando">Trabajando ahora</option>
             <option value="pausados">Cronómetro pausado</option>
-	            <option value="finalizados">Actividades finalizadas</option>
-	            <option value="pendientes">Actividades pendientes</option>
-	            <option value="revision-pendiente">Con entregas por revisar</option>
-	            <option value="devueltos">Con entregas devueltas</option>
-	            <option value="alertas">Con alertas IA</option>
+            <option value="finalizados">Actividades finalizadas</option>
+            <option value="pendientes">Actividades pendientes</option>
+            <option value="alertas">Con alertas IA</option>
             <option value="cambios">Con cambios de pestaña</option>
           </select>
           <select id="filtroProgresoProfesor" aria-label="Filtrar por rango de progreso">
@@ -2714,12 +2154,6 @@
           </select>
           <button class="btn btn-secondary" type="button" onclick="limpiarFiltrosProfesor()" title="Restablecer todos los filtros"><i class="fa-solid fa-filter-circle-xmark"></i> Limpiar</button>
         </div>
-        <div style="display:flex;gap:.55rem;flex-wrap:wrap;margin-bottom:1rem;padding:.75rem 0;border-top:1px solid rgba(148,163,184,.2);border-bottom:1px solid rgba(148,163,184,.2)">
-          <button class="btn btn-success" type="button" onclick="exportarPanelProfesorCSV()"><i class="fa-solid fa-file-csv"></i> Exportar resumen CSV</button>
-          <button class="btn btn-secondary" type="button" onclick="exportarPanelProfesorJSON()"><i class="fa-solid fa-file-code"></i> Exportar detalle JSON</button>
-          <button class="btn btn-primary" type="button" onclick="exportarReporteProfesorPDF()"><i class="fa-solid fa-file-pdf"></i> Reporte del grupo PDF</button>
-          <span id="alcanceReporteProfesor" style="align-self:center;color:var(--text-muted);font-size:.8rem">Las exportaciones respetan los filtros activos.</span>
-        </div>
         <div style="padding:.75rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06);margin-bottom:1rem;font-size:.82rem;line-height:1.5;">
           <strong>Cómo se calcula:</strong> cada actividad obtiene
           <strong>nota del código × 70% + nota de las preguntas × 30%</strong>.
@@ -2727,53 +2161,9 @@
           Las actividades pendientes no se incluyen.
         </div>
         <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
-        <div id="reporteVisualProfesor" style="margin-bottom:1rem;"></div>
-        <div id="analiticaPedagogicaProfesor" style="margin-bottom:1rem;"></div>
         <div id="resumenConsultasIAProfesor" style="margin-bottom:1rem;"></div>
-        <div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;min-width:1160px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Clase</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Última actualización</th><th>Detalle</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
+        <div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;min-width:1040px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Última actualización</th><th>Detalle</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
         <p id="estadoPanelProfesor" style="margin-top:1rem;color:var(--text-muted);font-size:.8rem;"></p>
-      </div>
-    </div>
-
-    <div class="modal-overlay" id="gestionClasesProfesorModal" role="dialog" aria-modal="true" aria-labelledby="gestionClasesProfesorTitle">
-      <div class="modal-box" style="max-width:1100px;width:95vw;max-height:92vh;overflow:auto;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap">
-          <div>
-            <h3 id="gestionClasesProfesorTitle"><i class="fa-solid fa-users-rectangle"></i> Gestión de clases</h3>
-            <p>Creá grupos y asigná estudiantes sin modificar sus perfiles académicos.</p>
-          </div>
-          <button class="btn btn-secondary" type="button" onclick="cerrarGestionClasesProfesor()">Cerrar</button>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1rem;align-items:start;margin-top:1rem">
-          <section style="padding-right:1rem;border-right:1px solid rgba(148,163,184,.22)">
-            <h4 style="margin-top:0">Datos de la clase</h4>
-            <input id="claseProfesorId" type="hidden">
-            <div class="input-group"><label for="claseProfesorNombre">Nombre</label><input id="claseProfesorNombre" maxlength="120" placeholder="Programación 6° A"></div>
-            <div style="display:grid;grid-template-columns:1fr 110px;gap:.6rem">
-              <div class="input-group"><label for="claseProfesorCurso">Curso</label><input id="claseProfesorCurso" maxlength="80" placeholder="6° Año"></div>
-              <div class="input-group"><label for="claseProfesorDivision">División</label><input id="claseProfesorDivision" maxlength="20" placeholder="A"></div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 120px;gap:.6rem">
-              <div class="input-group"><label for="claseProfesorTurno">Turno</label><select id="claseProfesorTurno"><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select></div>
-              <div class="input-group"><label for="claseProfesorCiclo">Ciclo</label><input id="claseProfesorCiclo" type="number" min="2020" max="2100"></div>
-            </div>
-            <label style="display:flex;align-items:center;gap:.5rem;margin:.7rem 0"><input id="claseProfesorActiva" type="checkbox" checked> Clase activa</label>
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-              <button class="btn btn-success" type="button" onclick="guardarClaseProfesor()"><i class="fa-solid fa-floppy-disk"></i> Guardar clase</button>
-              <button class="btn btn-secondary" type="button" onclick="limpiarFormularioClaseProfesor()"><i class="fa-solid fa-plus"></i> Nueva</button>
-            </div>
-            <p id="estadoGestionClasesProfesor" style="color:var(--text-muted);font-size:.8rem;margin-top:.75rem"></p>
-          </section>
-          <section>
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap">
-              <h4 style="margin:0">Estudiantes asignados</h4>
-              <input id="buscarMiembroClaseProfesor" placeholder="Buscar estudiante o email" style="min-width:240px" oninput="renderMiembrosClaseProfesor()">
-            </div>
-            <div id="miembrosClaseProfesor" style="display:grid;gap:.45rem;max-height:350px;overflow:auto;margin-top:.75rem"></div>
-            <h4>Clases registradas</h4>
-            <div id="listaClasesProfesor" style="display:grid;gap:.55rem"></div>
-          </section>
-        </div>
       </div>
     </div>
 
@@ -3083,11 +2473,6 @@
 
       let historialResultados = {};
       let actividadesFinalizadas = {};
-      let entregasSeguras = {};
-      let historialIntentos = {};
-      let bibliotecaActividades = [];
-      let rutaAdaptativaActual = null;
-      let evaluacionesOficiales = {};
       let contadorPrevisualizaciones = {};
       let totalSalidasPestaña = 0;
       let eventosSalidasPestaña = [];
@@ -3315,118 +2700,14 @@
               window.location.reload();
           }
       });
-      window.addEventListener("evaluaciones-estudiante", event => {
-          evaluacionesOficiales = event.detail || {};
-          Object.entries(evaluacionesOficiales).forEach(([sectionId, evaluacion]) => {
-              if (evaluacion?.estado !== "evaluada") return;
-              historialResultados[sectionId] = {
-                  ...(historialResultados[sectionId] || {}),
-                  ...evaluacion
-              };
-              const resumen = document.getElementById(`ai-text-${sectionId}`);
-              if (resumen && actividadesFinalizadas[sectionId]) {
-                  resumen.innerHTML =
-                      `<strong>Evaluación oficial: ${Number(evaluacion.notaFinal).toFixed(1)}/10</strong><br>` +
-                      `Código: ${Number(evaluacion.notaCodigo).toFixed(1)}/10 · ` +
-                      `Preguntas: ${Number(evaluacion.notaPreguntas).toFixed(1)}/10` +
-                      (evaluacion.observacion
-                          ? `<br>Observación: ${escapeHtml(evaluacion.observacion)}`
-                          : "");
-              }
-          });
-      });
-      window.addEventListener("entregas-estudiante", event => {
-          const paquete = event.detail || {};
-          entregasSeguras = paquete.ultimos || {};
-          historialIntentos = paquete.historial || {};
-          seccionesData.forEach(sec => {
-              const sectionId = sec.id;
-              const entrega = entregasSeguras[sectionId];
-              if (!entrega) {
-                  renderHistorialIntentosAlumno(sectionId);
-                  return;
-              }
-              historialResultados[sectionId] = {
-                  ...(historialResultados[sectionId] || {}),
-                  codigo: entrega.codigo || "",
-                  salida: entrega.salida || "",
-                  error: entrega.error || "",
-                  exito: !entrega.error,
-                  analista: { preguntas: entrega.respuestasAnalista || [] },
-                  estadoEntrega: entrega.estado || "entregada"
-              };
-              const reabierta = entrega.estado === "reabierta" ||
-                  entrega.revisionEstado === "devuelta";
-              if (reabierta) {
-                  delete actividadesFinalizadas[sectionId];
-                  delete evaluacionesOficiales[sectionId];
-                  delete historialResultados[sectionId].notaCodigo;
-                  delete historialResultados[sectionId].notaPreguntas;
-                  delete historialResultados[sectionId].notaFinal;
-                  delete historialResultados[sectionId].estado;
-                  removeLocalStorage(`finalized_${sectionId}`);
-                  const editor = document.getElementById(`editor-${sectionId}`);
-                  if (editor) {
-                      editor.disabled = false;
-                      editor.value = entrega.codigo || editor.value;
-                  }
-                  ["run", "preview", "ai", "reset", "pause"].forEach(nombre => {
-                      const boton = document.getElementById(`btn-${nombre}-${sectionId}`);
-                      if (boton) boton.disabled = false;
-                  });
-                  const nav = document.getElementById(`nav-btn-${sectionId}`);
-                  nav?.querySelector(".status-icon")?.remove();
-                  const resumen = document.getElementById(`ai-text-${sectionId}`);
-                  if (resumen) {
-                      resumen.innerHTML =
-                          `<strong>Entrega devuelta para corrección.</strong>` +
-                          (entrega.revisionObservacion
-                              ? `<br>${escapeHtml(entrega.revisionObservacion)}`
-                              : "");
-                  }
-              } else if (entrega.estado === "entregada") {
-                  actividadesFinalizadas[sectionId] = true;
-                  setLocalStorage(`finalized_${sectionId}`, "true");
-              }
-              renderHistorialIntentosAlumno(sectionId);
-          });
-          actualizarProgreso();
-      });
       window.addEventListener('profesor-data', e => { estudiantesProfesor = e.detail || []; document.getElementById('estadoPanelProfesor').textContent = `Actualizado en tiempo real: ${new Date().toLocaleTimeString()}`; renderPanelProfesor(); });
-      window.addEventListener('clases-profesor-data', e => {
-          clasesProfesor = Array.isArray(e.detail) ? e.detail : [];
-          renderPanelProfesor();
-          renderListaClasesProfesor();
-          renderMiembrosClaseProfesor();
-      });
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
       window.addEventListener('load', () => {
         actualizarVisibilidadDocente();
-          ['filtroProfesor','filtroEmailProfesor','filtroClaseProfesor','filtroCursoProfesor','filtroDivisionProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','filtroNotaProfesor','filtroActualizacionProfesor','ordenProfesor'].forEach(id => {
+          ['filtroProfesor','filtroEmailProfesor','filtroCursoProfesor','filtroDivisionProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','filtroNotaProfesor','filtroActualizacionProfesor','ordenProfesor'].forEach(id => {
               document.getElementById(id)?.addEventListener('input', renderPanelProfesor);
               document.getElementById(id)?.addEventListener('change', renderPanelProfesor);
           });
-      });
-      document.addEventListener('keydown', event => {
-          if (event.key !== 'Escape' && event.key !== 'Tab') return;
-          const modal = [...document.querySelectorAll('.modal-overlay.active')].pop();
-          if (!modal) return;
-          if (event.key === 'Escape') {
-              modal.classList.remove('active');
-              return;
-          }
-          const elementos = [...modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
-              .filter(elemento => !elemento.disabled && elemento.offsetParent !== null);
-          if (!elementos.length) return;
-          const primero = elementos[0];
-          const ultimo = elementos[elementos.length - 1];
-          if (event.shiftKey && document.activeElement === primero) {
-              event.preventDefault();
-              ultimo.focus();
-          } else if (!event.shiftKey && document.activeElement === ultimo) {
-              event.preventDefault();
-              primero.focus();
-          }
       });
 
       function mostrarEstadoFirebase(tipo, texto) {
@@ -3485,258 +2766,17 @@
           });
           return {
               estudiante: { nombre, curso, division, turno },
+              salidasPestana: totalSalidasPestaña,
+              eventosSalidasPestana: JSON.parse(JSON.stringify(eventosSalidasPestaña || [])),
               codigos,
               tiemposRestantes: { ...tiemposRestantes },
+              finalizadas: { ...actividadesFinalizadas },
+              historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
               chatIA: JSON.parse(JSON.stringify(historialChatIA || {})),
               contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
               seccionActiva: seccionActivaActual,
-              versionApp: '13.0-accesibilidad-offline-costos-retencion'
+              versionApp: '8.0-desafios-externos-editables-ia'
           };
-      }
-
-      function construirEntregaSegura(sectionId, motivo = "entrega") {
-          const resultado = historialResultados[sectionId] || {};
-          const editor = document.getElementById(`editor-${sectionId}`);
-          return {
-              motivo,
-              codigo: editor?.value || resultado.codigo || "",
-              salida: resultado.salida || "",
-              error: resultado.error || "",
-              respuestasAnalista: Array.isArray(resultado.analista?.preguntas)
-                  ? resultado.analista.preguntas
-                  : [],
-              versionApp: "13.0-accesibilidad-offline-costos-retencion"
-          };
-      }
-
-      async function ejecutarPruebasAutomaticasEntrega(sectionId, code) {
-          const sec = seccionesData.find(item => item.id === sectionId) || {};
-          const [resultadoAlumno, resultadoReferencia] = await Promise.all([
-              ejecutarCodigoAislado(code),
-              ejecutarCodigoAislado(sec.aiSolution || "")
-          ]);
-          const salidaAlumno = [
-              ...(resultadoAlumno.logs || []),
-              ...(!resultadoAlumno.ok && resultadoAlumno.error
-                  ? [`[EXCEPCIÓN]: ${resultadoAlumno.error}`]
-                  : [])
-          ].join("\n");
-          const salidaReferencia = resultadoReferencia.ok
-              ? (resultadoReferencia.logs || []).join("\n")
-              : "";
-          const evaluacion = evaluarCodigoPorEvidencias(code, sec, {
-              ok: Boolean(resultadoAlumno.ok),
-              logs: resultadoAlumno.logs || [],
-              salida: salidaAlumno,
-              error: resultadoAlumno.error || "",
-              salidaEsperada: salidaReferencia
-          });
-          const conceptos = evaluacion.conceptos || [];
-          const conceptosCumplidos = conceptos.filter(item => item.cumple).length;
-          const proporcionConceptos = conceptos.length
-              ? conceptosCumplidos / conceptos.length
-              : 1;
-          const criterios = evaluacion.criterios || [];
-          const criteriosCumplidos = criterios.filter(item => item.estado === "cumplido").length;
-          const proporcionCriterios = criterios.length
-              ? criteriosCumplidos / criterios.length
-              : 1;
-          const similitud = Number(evaluacion.ejecucion?.similitudSalida || 0);
-          const casos = [
-              {
-                  id: "sintaxis",
-                  nombre: "Sintaxis válida",
-                  aprobada: evaluacion.sintaxis?.valida === true,
-                  detalle: evaluacion.sintaxis?.valida
-                      ? "El código puede interpretarse correctamente."
-                      : String(evaluacion.sintaxis?.error || "Error de sintaxis.")
-              },
-              {
-                  id: "ejecucion",
-                  nombre: "Ejecución sin excepciones",
-                  aprobada: resultadoAlumno.ok === true,
-                  detalle: resultadoAlumno.ok
-                      ? "La ejecución finalizó dentro del límite permitido."
-                      : String(resultadoAlumno.error || "La ejecución produjo un error.")
-              },
-              {
-                  id: "salida",
-                  nombre: "Salida verificable",
-                  aprobada: Boolean((resultadoAlumno.logs || []).length),
-                  detalle: (resultadoAlumno.logs || []).length
-                      ? `Se registraron ${(resultadoAlumno.logs || []).length} mensajes de consola.`
-                      : "No se registró una salida verificable."
-              },
-              {
-                  id: "comportamiento",
-                  nombre: "Comportamiento esperado",
-                  aprobada: salidaReferencia ? similitud >= 0.5 : resultadoAlumno.ok === true,
-                  detalle: salidaReferencia
-                      ? `Coincidencia orientativa con la referencia: ${Math.round(similitud * 100)}%.`
-                      : "No existe una salida de referencia comparable; se verificó la ejecución."
-              },
-              {
-                  id: "conceptos",
-                  nombre: "Conceptos requeridos",
-                  aprobada: proporcionConceptos >= 0.6,
-                  detalle: conceptos.length
-                      ? `${conceptosCumplidos}/${conceptos.length} conceptos detectados.`
-                      : "El desafío no define conceptos automáticos adicionales."
-              },
-              {
-                  id: "rubrica",
-                  nombre: "Cobertura de rúbrica",
-                  aprobada: proporcionCriterios >= 0.6,
-                  detalle: criterios.length
-                      ? `${criteriosCumplidos}/${criterios.length} criterios cumplidos.`
-                      : "El desafío no define criterios automáticos adicionales."
-              }
-          ];
-          const aprobadas = casos.filter(item => item.aprobada).length;
-          return {
-              version: "auto-v1",
-              ejecutadasClienteEn: new Date().toISOString(),
-              resumen: {
-                  aprobadas,
-                  total: casos.length,
-                  porcentaje: Math.round(aprobadas * 100 / Math.max(1, casos.length))
-              },
-              casos
-          };
-      }
-
-      function resumenPruebasAutomaticasHtml(pruebas) {
-          const casos = Array.isArray(pruebas?.casos) ? pruebas.casos : [];
-          if (!casos.length) return '<span style="color:var(--text-muted)">Sin pruebas automáticas registradas.</span>';
-          return `
-              <div style="margin-bottom:.45rem">
-                  <strong>${Number(pruebas.resumen?.aprobadas || 0)}/${Number(pruebas.resumen?.total || casos.length)} pruebas aprobadas</strong>
-                  · ${Number(pruebas.resumen?.porcentaje || 0)}%
-              </div>
-              <div style="display:grid;gap:.35rem">
-                  ${casos.map(caso => `
-                      <div style="padding:.45rem .55rem;border-radius:5px;border:1px solid ${caso.aprobada ? "rgba(16,185,129,.35)" : "rgba(239,68,68,.35)"};background:${caso.aprobada ? "rgba(16,185,129,.07)" : "rgba(239,68,68,.07)"}">
-                          <strong>${caso.aprobada ? "APROBADA" : "REVISAR"} · ${escapeHtml(caso.nombre || "")}</strong><br>
-                          <small>${escapeHtml(caso.detalle || "")}</small>
-                      </div>
-                  `).join("")}
-              </div>`;
-      }
-
-      function formatearFechaIntento(valor) {
-          const fecha = valor?.toDate
-              ? valor.toDate()
-              : valor?.seconds
-                  ? new Date(Number(valor.seconds) * 1000)
-                  : valor
-                      ? new Date(valor)
-                      : null;
-          return fecha && !Number.isNaN(fecha.getTime())
-              ? fecha.toLocaleString()
-              : "Sincronizando fecha...";
-      }
-
-      function renderHistorialIntentosAlumno(sectionId) {
-          const contenedor = document.getElementById(`historial-intentos-${sectionId}`);
-          if (!contenedor) return;
-          const intentos = historialIntentos[sectionId] || [];
-          contenedor.innerHTML = intentos.length
-              ? intentos.map((intento, indice) => {
-                  const numero = Number(intento.numeroIntento) || (intentos.length - indice);
-                  const estadoRevision = intento.revisionEstado || "pendiente";
-                  const color = estadoRevision === "aprobada"
-                      ? "#86efac"
-                      : estadoRevision === "devuelta"
-                          ? "#fca5a5"
-                          : "#fde68a";
-                  return `<div style="padding:.75rem;border:1px solid rgba(148,163,184,.25);border-radius:6px;margin-top:.55rem;background:rgba(15,23,42,.45)">
-                      <div style="display:flex;justify-content:space-between;gap:.7rem;flex-wrap:wrap">
-                          <strong>Intento ${numero} · ${escapeHtml(formatearFechaIntento(intento.entregadaEn || intento.creadoClienteEn))}</strong>
-                          <span style="color:${color};font-weight:700">${escapeHtml(estadoRevision.toUpperCase())}</span>
-                      </div>
-                      ${intento.revisionObservacion
-                          ? `<div style="margin-top:.45rem;color:#cbd5e1"><strong>Devolución docente:</strong> ${escapeHtml(intento.revisionObservacion)}</div>`
-                          : ""}
-                      <details style="margin-top:.55rem">
-                          <summary>Pruebas automáticas</summary>
-                          <div style="margin-top:.5rem">${resumenPruebasAutomaticasHtml(intento.pruebasAutomaticas)}</div>
-                      </details>
-                  </div>`;
-              }).join("")
-              : '<p style="color:var(--text-muted)">Todavía no hay intentos registrados para este módulo.</p>';
-      }
-
-      async function registrarEntregaSegura(sectionId, motivo = "entrega") {
-          const entrega = construirEntregaSegura(sectionId, motivo);
-          entrega.numeroIntento = (historialIntentos[sectionId]?.length || 0) + 1;
-          entrega.pruebasAutomaticas = await ejecutarPruebasAutomaticasEntrega(
-              sectionId,
-              entrega.codigo
-          );
-          const ok = await window.guardarEntregaFirebase?.(sectionId, entrega);
-          if (ok) {
-              const intentoGuardado = {
-                  entregaId: window.ultimaEntregaGuardadaFirebase?.entregaId || "",
-                  uid: window.firebaseCurrentUser?.uid || "",
-                  moduloId: sectionId,
-                  estado: "entregada",
-                  revisionEstado: "pendiente",
-                  ...entrega
-              };
-              entregasSeguras[sectionId] = intentoGuardado;
-              (historialIntentos[sectionId] ||= []).unshift(intentoGuardado);
-              renderHistorialIntentosAlumno(sectionId);
-              const resumen = document.getElementById(`ai-text-${sectionId}`);
-              if (resumen) {
-                  resumen.insertAdjacentHTML(
-                      "beforeend",
-                      `<div style="margin-top:.8rem;padding:.7rem;border:1px solid rgba(56,189,248,.35);border-radius:6px">
-                          <strong>Pruebas automáticas del intento ${entrega.numeroIntento}</strong>
-                          ${resumenPruebasAutomaticasHtml(entrega.pruebasAutomaticas)}
-                      </div>`
-                  );
-              }
-          } else {
-              mostrarEstadoFirebase("offline", "La entrega no pudo registrarse");
-              alert("No se pudo registrar la entrega segura. Verificá la conexión antes de cerrar la página.");
-          }
-          return ok;
-      }
-
-      async function migrarDatosLegados(datos, entregas, auditoria) {
-          const finales = datos?.finalizadas || {};
-          const resultados = datos?.historialResultados || {};
-          const codigos = datos?.codigos || {};
-          for (const [sectionId, finalizada] of Object.entries(finales)) {
-              if (!finalizada || entregas[sectionId]) continue;
-              const resultado = resultados[sectionId] || {};
-              const entrega = {
-                  motivo: "migracion_legacy",
-                  codigo: resultado.codigo || codigos[sectionId] || "",
-                  salida: resultado.salida || "",
-                  error: resultado.error || "",
-                  respuestasAnalista: Array.isArray(resultado.analista?.preguntas)
-                      ? resultado.analista.preguntas
-                      : [],
-                  versionApp: "9.0-migracion-legacy"
-              };
-              if (await window.guardarEntregaFirebase?.(sectionId, entrega)) {
-                  entregas[sectionId] = {
-                      uid: window.firebaseCurrentUser?.uid || "",
-                      moduloId: sectionId,
-                      estado: "entregada",
-                      ...entrega
-                  };
-              }
-          }
-          const eventosLegados = Array.isArray(datos?.eventosSalidasPestana)
-              ? datos.eventosSalidasPestana
-              : [];
-          if (!auditoria.length && eventosLegados.length) {
-              for (const evento of eventosLegados) {
-                  if (await window.guardarEventoAuditoriaFirebase?.(evento)) auditoria.push(evento);
-              }
-          }
       }
 
       function programarGuardadoFirebase() {
@@ -3772,14 +2812,8 @@
       }
 
       async function guardarAhoraFirebase() {
-           if (!firebaseInitialized || !window.firebaseCurrentUser) return false;
-           const paqueteActual = construirPaqueteAvanceFirebase();
-           const fingerprint = JSON.stringify(paqueteActual);
-           if (navigator.onLine && fingerprint === ultimoGuardadoFirebaseFingerprint && !firebaseSavePending) {
-               mostrarEstadoFirebase('online', 'Sin cambios pendientes');
-               return true;
-           }
-           if (firebaseSaveInProgress) {
+          if (!firebaseInitialized || !window.firebaseCurrentUser) return false;
+          if (firebaseSaveInProgress) {
               firebaseSavePending = true;
               return false;
           }
@@ -3788,21 +2822,12 @@
           mostrarEstadoFirebase('saving', 'Guardando...');
           actualizarTodosEstadosChatIA('saving', 'Guardando en Firebase...');
           try {
-               const ok = navigator.onLine
-                   ? await window.guardarProgresoFirebase(paqueteActual)
-                   : false;
+              const ok = await window.guardarProgresoFirebase(construirPaqueteAvanceFirebase());
               const errorGuardado = window.ultimoErrorGuardadoFirebase;
               const textoError = errorGuardado?.code === 'permission-denied'
                   ? 'Permiso denegado'
                   : 'Error al guardar';
-               if (ok) {
-                   ultimoGuardadoFirebaseFingerprint = fingerprint;
-                   mostrarEstadoFirebase('online', 'Guardado exitosamente');
-                   await sincronizarColaOfflineFirebase();
-               } else {
-                   encolarSnapshotOfflineFirebase(paqueteActual);
-                   mostrarEstadoFirebase('offline', navigator.onLine ? textoError : 'Sin conexión; cambios guardados localmente');
-               }
+              mostrarEstadoFirebase(ok ? 'online' : 'offline', ok ? 'Guardado exitosamente' : textoError);
               actualizarTodosEstadosChatIA(ok ? 'saved' : 'error', ok ? 'Guardado exitosamente' : 'Error de guardado');
               return ok;
           } catch (e) {
@@ -3826,11 +2851,6 @@
       // Firebase sigue siendo la fuente principal de verdad.
       // ============================================================
       let firebaseStorageUid = null;
-      let ultimoGuardadoFirebaseFingerprint = "";
-      let colaOfflineFirebase = [];
-      const RETENCION_LOCAL_DIAS = 30;
-      const RETENCION_AUDITORIA_DIAS = 180;
-      const MAX_COLA_OFFLINE = 5;
 
       function storageKey(clave) {
           if (clave === 'firebase_active_uid') return clave;
@@ -3851,79 +2871,6 @@
           programarGuardadoFirebase();
       }
 
-      function fingerprintLocalFirebase() {
-          try {
-              return JSON.stringify(construirPaqueteAvanceFirebase());
-          } catch (_) {
-              return "";
-          }
-      }
-
-      function guardarColaOfflineFirebase() {
-          try {
-              localStorage.setItem(storageKey("offline_queue_v1"), JSON.stringify(colaOfflineFirebase.slice(-MAX_COLA_OFFLINE)));
-          } catch (_) {}
-      }
-
-      function cargarColaOfflineFirebase() {
-          try {
-              const datos = JSON.parse(getLocalStorage("offline_queue_v1") || "[]");
-              colaOfflineFirebase = Array.isArray(datos) ? datos.slice(-MAX_COLA_OFFLINE) : [];
-          } catch (_) {
-              colaOfflineFirebase = [];
-          }
-      }
-
-      function encolarSnapshotOfflineFirebase(payload) {
-          if (!payload) return;
-          colaOfflineFirebase.push({ creadoEn: new Date().toISOString(), payload });
-          colaOfflineFirebase = colaOfflineFirebase.slice(-MAX_COLA_OFFLINE);
-          guardarColaOfflineFirebase();
-          mostrarEstadoFirebase("offline", `Sin conexión. Cambios en cola (${colaOfflineFirebase.length})`);
-      }
-
-      async function sincronizarColaOfflineFirebase() {
-          if (!navigator.onLine || !firebaseInitialized || !window.firebaseCurrentUser || !colaOfflineFirebase.length) return;
-          const pendientes = [...colaOfflineFirebase];
-          for (const item of pendientes) {
-              const ok = await window.guardarProgresoFirebase?.(item.payload);
-              if (!ok) break;
-              colaOfflineFirebase.shift();
-              guardarColaOfflineFirebase();
-          }
-          if (!colaOfflineFirebase.length) mostrarEstadoFirebase("online", "Cola offline sincronizada");
-      }
-
-      function aplicarRetencionLocal() {
-          cargarColaOfflineFirebase();
-          const limiteChat = Date.now() - RETENCION_LOCAL_DIAS * 86400000;
-          Object.keys(historialChatIA || {}).forEach(sectionId => {
-              const mensajes = Array.isArray(historialChatIA[sectionId]) ? historialChatIA[sectionId] : [];
-              historialChatIA[sectionId] = mensajes.filter(item => {
-                  const fecha = new Date(item.fecha || item.creadoEn || 0).getTime();
-                  return !fecha || fecha >= limiteChat;
-              }).slice(-20);
-          });
-          eventosSalidasPestaña = (eventosSalidasPestaña || []).filter(item => {
-              const fecha = new Date(item.salidaEn || 0).getTime();
-              return !fecha || fecha >= Date.now() - RETENCION_AUDITORIA_DIAS * 86400000;
-          });
-          colaOfflineFirebase = colaOfflineFirebase.filter(item => {
-              const fecha = new Date(item.creadoEn || 0).getTime();
-              return !fecha || fecha >= limiteChat;
-          }).slice(-MAX_COLA_OFFLINE);
-          guardarColaOfflineFirebase();
-      }
-
-      window.addEventListener("online", () => {
-          mostrarEstadoFirebase("saving", "Conexión recuperada. Sincronizando...");
-          sincronizarColaOfflineFirebase();
-          programarGuardadoFirebase();
-      });
-      window.addEventListener("offline", () => {
-          mostrarEstadoFirebase("offline", "Sin conexión. Se conservarán los cambios localmente.");
-      });
-
       function limpiarDatosLocalesDelEstudiante(uid = firebaseStorageUid) {
           if (!uid) return;
           const prefijo = `firebase_user_${uid}_`;
@@ -3940,13 +2887,7 @@
           programarGuardadoFirebase();
       }
 
-      async function restaurarDesdeFirebase(
-          datos,
-          entregas = {},
-          evaluaciones = {},
-          auditoria = [],
-          intentos = {}
-      ) {
+      async function restaurarDesdeFirebase(datos) {
           if (!datos) return;
           const estudiante = datos.estudiante || {};
           if (estudiante.nombre !== undefined) {
@@ -3981,18 +2922,16 @@
               document.getElementById('studentTurno').value = estudiante.turno || '';
               setLocalStorage('app_student_turno', estudiante.turno || '');
           }
-          eventosSalidasPestaña = Array.isArray(auditoria) ? auditoria : [];
-          const reinicio = datos.reinicioSalidas?.solicitadoEn;
-          const reinicioMs = reinicio?.toMillis
-              ? reinicio.toMillis()
-              : Number(reinicio?.seconds || 0) * 1000;
-          totalSalidasPestaña = reinicioMs
-              ? eventosSalidasPestaña.filter(evento =>
-                  new Date(evento.salidaEn || 0).getTime() > reinicioMs
-              ).length
-              : eventosSalidasPestaña.length;
-          setLocalStorage('app_blur_count', totalSalidasPestaña);
-          setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
+          const salidasGuardadas = datos.salidasPestana ?? datos["salidasPesta\u00f1a"];
+          if (salidasGuardadas !== undefined) {
+              totalSalidasPestaña = Number(salidasGuardadas) || 0;
+              setLocalStorage('app_blur_count', totalSalidasPestaña);
+          }
+          const eventosGuardados = datos.eventosSalidasPestana ?? datos["eventosSalidasPesta\u00f1a"];
+          if (Array.isArray(eventosGuardados)) {
+              eventosSalidasPestaña = eventosGuardados;
+              setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
+          }
           if (datos.revisionSalidas && typeof datos.revisionSalidas === 'object') {
               revisionSalidasActual = {
                   estado: datos.revisionSalidas.estado || 'pendiente',
@@ -4002,42 +2941,17 @@
               };
           }
           if (datos.tiemposRestantes) Object.entries(datos.tiemposRestantes).forEach(([id,v]) => setLocalStorage(`timer_${id}`, Number(v)));
+          if (datos.finalizadas) Object.entries(datos.finalizadas).forEach(([id,v]) => v ? setLocalStorage(`finalized_${id}`, 'true') : removeLocalStorage(`finalized_${id}`));
           if (datos.contadorPrevisualizaciones) Object.entries(datos.contadorPrevisualizaciones).forEach(([id,v]) => setLocalStorage(`preview_count_${id}`, Number(v)));
           if (datos.codigos) Object.entries(datos.codigos).forEach(([id,v]) => { if (typeof v === 'string') setLocalStorage(`draft_editor-${id}`, v); });
-          entregasSeguras = entregas || {};
-          historialIntentos = intentos || {};
-          evaluacionesOficiales = evaluaciones || {};
-          historialResultados = {};
-          actividadesFinalizadas = {};
-          seccionesData.forEach(sec => removeLocalStorage(`finalized_${sec.id}`));
-          Object.entries(entregasSeguras).forEach(([id, entrega]) => {
-              actividadesFinalizadas[id] = entrega?.estado === "entregada";
-              if (actividadesFinalizadas[id]) setLocalStorage(`finalized_${id}`, "true");
-              historialResultados[id] = {
-                  codigo: entrega?.codigo || "",
-                  salida: entrega?.salida || "",
-                  error: entrega?.error || "",
-                  exito: !entrega?.error,
-                  analista: { preguntas: entrega?.respuestasAnalista || [] },
-                  estadoEntrega: entrega?.estado || "entregada",
-                  ...(evaluacionesOficiales[id]?.estado === "evaluada"
-                      ? evaluacionesOficiales[id]
-                      : {})
-              };
-          });
-          Object.entries(evaluacionesOficiales).forEach(([id, evaluacion]) => {
-              if (evaluacion?.estado !== "evaluada") return;
-              historialResultados[id] = {
-                  ...(historialResultados[id] || {}),
-                  ...evaluacion
-              };
-          });
+          historialResultados = datos.historialResultados || {};
           Object.keys(historialChatIA).forEach(id => delete historialChatIA[id]);
           if (datos.chatIA && typeof datos.chatIA === 'object') {
               Object.entries(datos.chatIA).forEach(([id, mensajes]) => {
                   historialChatIA[id] = Array.isArray(mensajes) ? mensajes.slice(-20) : [];
               });
           }
+          actividadesFinalizadas = datos.finalizadas || {};
           contadorPrevisualizaciones = datos.contadorPrevisualizaciones || {};
           tiemposRestantes = datos.tiemposRestantes || {};
           if (datos.seccionActiva && seccionesData.some(s => s.id === datos.seccionActiva)) seccionActivaActual = datos.seccionActiva;
@@ -4102,9 +3016,8 @@
           // el caché local del estudiante anterior. Firebase es la fuente de verdad.
           // Desde aquí TODAS las claves locales pertenecen al UID actual.
           // Los datos de otras cuentas permanecen aislados por su propia clave.
-           firebaseStorageUid = user.uid;
-           localStorage.setItem('firebase_active_uid', user.uid);
-           aplicarRetencionLocal();
+          firebaseStorageUid = user.uid;
+          localStorage.setItem('firebase_active_uid', user.uid);
 
           // La configuración docente de desafíos tiene prioridad sobre la copia local.
           if (typeof window.cargarDesafiosFirebase === 'function') {
@@ -4115,16 +3028,7 @@
               }
           }
 
-          const [datosFirebase, paqueteEntregasFirebase, evaluacionesFirebase, auditoriaFirebase] = await Promise.all([
-              window.cargarProgresoFirebase(),
-              window.cargarPaqueteEntregasFirebase?.() || { ultimos: {}, historial: {} },
-              window.cargarEvaluacionesFirebase?.() || {},
-              window.cargarAuditoriaFirebase?.() || []
-          ]);
-          bibliotecaActividades = await window.cargarBibliotecaActividadesFirebase?.() || [];
-          renderBibliotecaActividades();
-          const entregasFirebase = paqueteEntregasFirebase?.ultimos || {};
-          const intentosFirebase = paqueteEntregasFirebase?.historial || {};
+          const datosFirebase = await window.cargarProgresoFirebase();
           if (datosFirebase?.estadoCuenta === 'inactivo') {
               bloquearCuentaEstudiante(datosFirebase.bajaMotivo || '');
               return;
@@ -4135,24 +3039,7 @@
           aplicarEstadoInicioClase(false);
           window.escucharInicioClaseFirebase?.();
           window.escucharReinicioSalidasFirebase?.();
-          window.escucharEntregasFirebase?.();
-          window.escucharEvaluacionesFirebase?.();
-          if (datosFirebase) {
-              await migrarDatosLegados(
-                  datosFirebase,
-                  entregasFirebase || {},
-                  auditoriaFirebase || []
-              );
-              await restaurarDesdeFirebase(
-                  datosFirebase,
-                  entregasFirebase || {},
-                  evaluacionesFirebase || {},
-                  auditoriaFirebase || [],
-                  intentosFirebase || {}
-              );
-          } else {
-              seccionesData.forEach(sec => removeLocalStorage(`finalized_${sec.id}`));
-          }
+          if (datosFirebase) await restaurarDesdeFirebase(datosFirebase);
 
           const photo = document.getElementById('firebaseUserPhoto');
           if (user.photoURL) { photo.src = user.photoURL; photo.style.display = 'block'; }
@@ -4335,18 +3222,7 @@
               li.innerHTML = `<i class="fa-solid ${sec.icon}"></i> <span>${sec.title}</span>`;
               navList.appendChild(li);
 
-              const entregaGuardada = entregasSeguras[sec.id] || null;
-              const resultadoGuardado = historialResultados[sec.id] || {};
-              const evaluacionOficialGuardada = resultadoGuardado.estado === "evaluada";
-              const savedCode = entregaGuardada?.codigo ||
-                  getLocalStorage(`draft_editor-${sec.id}`) ||
-                  sec.initialCode;
-              const resumenEvaluacionGuardada = evaluacionOficialGuardada
-                  ? `<strong>Evaluación oficial: ${Number(resultadoGuardado.notaFinal).toFixed(1)}/10</strong><br>
-                     Código: ${Number(resultadoGuardado.notaCodigo).toFixed(1)}/10 ·
-                     Preguntas: ${Number(resultadoGuardado.notaPreguntas).toFixed(1)}/10
-                     ${resultadoGuardado.observacion ? `<br>Observación: ${escapeHtml(resultadoGuardado.observacion)}` : ""}`
-                  : "Entrega registrada. La evaluación oficial está pendiente de publicación docente.";
+              const savedCode = getLocalStorage(`draft_editor-${sec.id}`) || sec.initialCode;
               const isFinalized = getLocalStorage(`finalized_${sec.id}`) === 'true';
               if (isFinalized) actividadesFinalizadas[sec.id] = true;
               contadorPrevisualizaciones[sec.id] = parseInt(getLocalStorage(`preview_count_${sec.id}`) || '0');
@@ -4400,7 +3276,7 @@
                                   <span>JavaScript (ES6)</span>
                               </div>
                               <label class="sr-only" for="editor-${sec.id}">Código para ${sec.title}</label>
-                              <textarea id="editor-${sec.id}" class="code-editor" aria-label="Código para ${sec.title}" spellcheck="false" autocapitalize="off" autocomplete="off" ${isFinalized ? 'disabled' : ''}>${escapeHtml(savedCode)}</textarea>
+                              <textarea id="editor-${sec.id}" class="code-editor" aria-label="Código para ${sec.title}" spellcheck="false" autocapitalize="off" autocomplete="off" ${isFinalized ? 'disabled' : ''}>${savedCode}</textarea>
                           </div>
 
                           <div class="btn-group">
@@ -4449,14 +3325,14 @@
                               <div class="ai-comparison-grid">
                                   <div class="ai-column">
                                       <h4><i class="fa-solid fa-user-graduate"></i> Tu Código Entregado</h4>
-                                      <pre id="ai-student-code-${sec.id}">${escapeHtml(savedCode)}</pre>
+                                      <pre id="ai-student-code-${sec.id}">${savedCode}</pre>
                                   </div>
                                   <div class="ai-column">
                                       <h4><i class="fa-solid fa-robot"></i> Solución de referencia</h4>
                                       <pre id="ai-ideal-code-${sec.id}">${sec.aiSolution}</pre>
                                   </div>
                               </div>
-                              <div class="ai-eval-summary" id="ai-text-${sec.id}">${isFinalized ? resumenEvaluacionGuardada : 'Generando comparativa...'}</div>
+                              <div class="ai-eval-summary" id="ai-text-${sec.id}">${isFinalized ? 'Actividad previamente evaluada de forma estricta y cerrada.' : 'Generando comparativa...'}</div>
 
                               <div class="analyst-box" id="analyst-${sec.id}">
                                   <div class="analyst-header">
@@ -4479,10 +3355,6 @@
                                   <div class="analyst-result" id="analyst-result-${sec.id}"></div>
                               </div>
                           </div>
-                          <details style="margin-top:1rem;border:1px solid rgba(148,163,184,.22);border-radius:8px;padding:.75rem">
-                              <summary style="cursor:pointer;font-weight:700;color:#cbd5e1">Historial de intentos</summary>
-                              <div id="historial-intentos-${sec.id}" style="margin-top:.5rem"></div>
-                          </details>
                       </div>
                   </div>
               `;
@@ -4500,7 +3372,6 @@
                   if (!Array.isArray(historialChatIA[sec.id])) historialChatIA[sec.id] = [];
               }
               renderizarChatIA(sec.id);
-              renderHistorialIntentosAlumno(sec.id);
               actualizarDisplayTiempo(sec.id);
 
               if (isFinalized) {
@@ -4512,7 +3383,6 @@
           configurarEditores();
           bloquearCopiaYPegado();
           actualizarProgreso();
-          renderRutaAdaptativa();
 
           // Autoguardado de respaldo: captura también cambios que no pasan por localStorage.
           clearInterval(window.__firebaseAutoSaveInterval);
@@ -4562,7 +3432,6 @@
               enviadaEn: new Date().toISOString()
           };
           setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaña));
-          void window.guardarEventoAuditoriaFirebase?.(evento);
           cerrarJustificacionSalida();
           programarGuardadoFirebase();
           alert('La justificación quedó registrada para revisión docente.');
@@ -4618,7 +3487,7 @@
       function expirarTiempoModulo(sectionId) {
           if (!cuentaEstudianteActiva || !claseHabilitada || actividadesFinalizadas[sectionId]) return;
 
-          alert(`⏰ ¡Tiempo agotado (40 minutos) para este módulo! La entrega quedará cerrada y pendiente de evaluación oficial.`);
+          alert(`⏰ ¡Tiempo agotado (40 minutos) para este módulo! Se registrará nota 1 por tiempo expirado.`);
 
           const editor = document.getElementById(`editor-${sectionId}`);
           if (editor) editor.disabled = true;
@@ -4637,7 +3506,7 @@
           historialResultados[sectionId].notaPreguntas = 0;
           historialResultados[sectionId].notaFinal = 1;
           historialResultados[sectionId].notaIA = 1;
-          historialResultados[sectionId].analisisIA = "Módulo expirado por límite de tiempo (40 minutos). Resultado local orientativo: 1/10.";
+          historialResultados[sectionId].analisisIA = "Módulo expirado por límite de tiempo (40 minutos). Nota: 1/10.";
           historialResultados[sectionId].exito = false;
 
           const feedbackBox = document.getElementById(`ai-feedback-${sectionId}`);
@@ -4652,7 +3521,6 @@
 
           actualizarIconoEstado(sectionId, false);
           actualizarProgreso();
-          void registrarEntregaSegura(sectionId, "tiempo_agotado");
       }
 
       function solicitarPausaModulo(sectionId) {
@@ -4790,21 +3658,14 @@
           alert(`Contador reiniciado: ${cantidadAnterior} cambio(s) pasaron a 0. El historial anterior continúa disponible para el profesor.`);
       }
 
-      async function desbloquearEjercicioActual() {
+      function desbloquearEjercicioActual() {
           const sectionId = seccionActivaActual;
           if (!actividadesFinalizadas[sectionId]) {
               alert("ℹ️ Este ejercicio ya se encuentra desbloqueado y activo.");
               return;
           }
-          const uid = window.firebaseCurrentUser?.uid;
-          if (uid && !(await window.reabrirEntregaFirebase?.(uid, sectionId))) {
-              alert("No se pudo reabrir la entrega en Firebase. No se modificó el registro anterior.");
-              return;
-          }
 
           delete actividadesFinalizadas[sectionId];
-          delete entregasSeguras[sectionId];
-          delete evaluacionesOficiales[sectionId];
           removeLocalStorage(`finalized_${sectionId}`);
           removeLocalStorage(`preview_count_${sectionId}`);
           delete historialResultados[sectionId];
@@ -4838,19 +3699,9 @@
           alert(`🔓 ¡El ejercicio actual (${sectionId}) ha sido desbloqueado con éxito por el profesor!`);
       }
 
-      async function desbloquearTodosEjercicios() {
-          const uid = window.firebaseCurrentUser?.uid;
-          const modulosFinalizados = seccionesData.filter(sec => actividadesFinalizadas[sec.id]);
-          for (const sec of modulosFinalizados) {
-              if (uid && !(await window.reabrirEntregaFirebase?.(uid, sec.id))) {
-                  alert(`No se pudo reabrir ${sec.id}. Los demás registros permanecen sin cambios.`);
-                  return;
-              }
-          }
+      function desbloquearTodosEjercicios() {
           seccionesData.forEach(sec => {
               delete actividadesFinalizadas[sec.id];
-              delete entregasSeguras[sec.id];
-              delete evaluacionesOficiales[sec.id];
               removeLocalStorage(`finalized_${sec.id}`);
               removeLocalStorage(`preview_count_${sec.id}`);
               delete historialResultados[sec.id];
@@ -5174,45 +4025,6 @@
           document.getElementById('progressBar').style.width = `${porcentaje}%`;
           document.getElementById('progressBarContainer')?.setAttribute('aria-valuenow', String(porcentaje));
           document.getElementById('progressText').innerText = `Progreso: ${porcentaje}% (${finalizadasCount}/${seccionesData.length} finalizadas)`;
-          renderRutaAdaptativa();
-      }
-
-      function construirRutaAdaptativa() {
-          const pendientes = seccionesData.filter(sec => !actividadesFinalizadas[sec.id]);
-          const puntuados = pendientes.map(sec => {
-              const intentos = historialIntentos[sec.id] || [];
-              const ultimo = intentos[0] || {};
-              const pruebas = Number(ultimo.pruebasAutomaticas?.resumen?.porcentaje || 0);
-              const sinIntentos = intentos.length === 0;
-              const devuelta = ultimo.revisionEstado === "devuelta" || ultimo.estado === "reabierta";
-              const prioridad = devuelta ? 100 : sinIntentos ? 75 : Math.max(25, 100 - pruebas);
-              return { moduloId: sec.id, titulo: sec.title, prioridad, motivo: devuelta ? "Corregir devolución docente" : sinIntentos ? "Actividad recomendada para iniciar" : `Refuerzo sugerido: pruebas ${pruebas}%` };
-          });
-          return puntuados.sort((a, b) => b.prioridad - a.prioridad).slice(0, 5);
-      }
-
-      function renderRutaAdaptativa() {
-          const contenido = document.getElementById("rutaAdaptativaContenido");
-          const estado = document.getElementById("rutaAdaptativaEstado");
-          if (!contenido) return;
-          const pasos = construirRutaAdaptativa();
-          rutaAdaptativaActual = { version: "adaptive-v1", pasos };
-          if (estado) estado.textContent = `${pasos.length} recomendación${pasos.length === 1 ? "" : "es"}`;
-          contenido.innerHTML = pasos.length
-              ? pasos.map((paso, indice) => `<button type="button" class="btn btn-secondary" style="width:100%;justify-content:flex-start;margin-top:.35rem;text-align:left" onclick="mostrarSeccion('${paso.moduloId}')"><strong>${indice + 1}. ${escapeHtml(paso.titulo)}</strong><small style="margin-left:.5rem;color:var(--text-muted)">${escapeHtml(paso.motivo)}</small></button>`).join("")
-              : '<span style="color:var(--text-muted)">Completaste todas las actividades actuales.</span>';
-          const uid = window.firebaseCurrentUser?.uid;
-          if (uid) window.guardarRutaAdaptativaFirebase?.(uid, rutaAdaptativaActual);
-      }
-
-      function renderBibliotecaActividades() {
-          const contenedor = document.getElementById("bibliotecaActividadesContenido");
-          if (!contenedor) return;
-          const q = String(document.getElementById("buscarBibliotecaActividades")?.value || "").toLowerCase().trim();
-          const actividades = bibliotecaActividades.filter(item => item.activa !== false && (!q || `${item.titulo} ${item.descripcion} ${(item.etiquetas || []).join(" ")}`.toLowerCase().includes(q)));
-          contenedor.innerHTML = actividades.length
-              ? actividades.slice(0, 20).map(item => `<article style="padding:.6rem;border:1px solid rgba(148,163,184,.2);border-radius:6px"><strong>${escapeHtml(item.titulo || "Actividad")}</strong><br><small>${escapeHtml(item.descripcion || "")}</small><br><span style="color:var(--text-muted);font-size:.75rem">${escapeHtml(item.nivel || "intermedio")} · ${escapeHtml((item.etiquetas || []).join(" · "))}</span></article>`).join("")
-              : '<span style="color:var(--text-muted)">No hay actividades disponibles.</span>';
       }
 
       async function ejecutarCodigoAislado(code) {
@@ -6356,7 +5168,7 @@
           });
       }
 
-      async function evaluarAnalista(sectionId) {
+      function evaluarAnalista(sectionId) {
           const preguntas = (window.analistaActual && window.analistaActual[sectionId]) || [];
           let correctas = 0;
           let respondidas = 0;
@@ -6415,12 +5227,12 @@
                       : "";
 
           result.innerHTML =
-              `<strong>Resultado local orientativo: ${notaFinal}/10</strong><br>` +
+              `<strong>Calificación final del módulo: ${notaFinal}/10</strong><br>` +
               `Código: <strong>${notaCodigo}/10</strong> (70%).<br>` +
               `Preguntas: <strong>${notaPreguntas}/10</strong> (30%) — ${correctas}/${maxPuntos} respuestas perfectas; las selecciones parcialmente correctas recibieron puntaje proporcional y las incorrectas descontaron.<br>` +
               `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
               `Excelencia: <strong>${excelencia}</strong>.<br>` +
-              `La nota oficial será publicada por el docente en una evaluación separada. Las preguntas mezclaron evidencias de tu código, de la solución IA, de la comparación entre ambos y situaciones de razonamiento socrático.` +
+              `Las preguntas mezclaron evidencias de tu código, de la solución IA, de la comparación entre ambos y situaciones de razonamiento socrático.` +
               (limiteFinal ? `<br><strong>${escaparTextoAnalista(limiteFinal)}</strong>` : "");
 
           resaltarRespuestasAnalista(sectionId);
@@ -6459,13 +5271,11 @@
               feedbackText.insertAdjacentHTML(
                   "beforeend",
                   `<div style="margin-top:.8rem;padding:.7rem;border:1px solid rgba(16,185,129,.4);border-radius:6px;color:#a7f3d0">
-                      <strong>Resultado local orientativo: ${notaFinal}/10</strong><br>
+                      <strong>Nota final: ${notaFinal}/10</strong><br>
                       Código ${notaCodigo}/10 × 70% + preguntas ${notaPreguntas}/10 × 30%.
-                      <br>La calificación oficial queda pendiente de revisión docente.
                   </div>`
               );
           }
-          await registrarEntregaSegura(sectionId, "entrega_analista");
           programarGuardadoFirebase();
       }
 
@@ -6660,9 +5470,6 @@
       // ===============================
       let profesorUnsubscribe = null;
       let estudiantesProfesor = [];
-      let clasesProfesor = [];
-      let estudiantesFiltradosProfesor = [];
-      let miembrosClaseEdicionProfesor = new Set();
 
       function renderDocentesAutorizados() {
           const contenedor = document.getElementById('listaDocentesAutorizados');
@@ -6698,162 +5505,6 @@
           document.getElementById('panelProfesorModal').classList.remove('active');
           if (profesorUnsubscribe) { profesorUnsubscribe(); profesorUnsubscribe = null; }
           if (window.__profesorUnsubscribe) { window.__profesorUnsubscribe(); window.__profesorUnsubscribe = null; }
-      }
-
-      function abrirGestionClasesProfesor() {
-          document.getElementById('gestionClasesProfesorModal')?.classList.add('active');
-          if (!document.getElementById('claseProfesorCiclo')?.value) {
-              document.getElementById('claseProfesorCiclo').value = new Date().getFullYear();
-          }
-          renderListaClasesProfesor();
-          renderMiembrosClaseProfesor();
-      }
-
-      function cerrarGestionClasesProfesor() {
-          document.getElementById('gestionClasesProfesorModal')?.classList.remove('active');
-      }
-
-      function limpiarFormularioClaseProfesor() {
-          document.getElementById('claseProfesorId').value = '';
-          document.getElementById('claseProfesorNombre').value = '';
-          document.getElementById('claseProfesorCurso').value = '';
-          document.getElementById('claseProfesorDivision').value = '';
-          document.getElementById('claseProfesorTurno').value = 'Mañana';
-          document.getElementById('claseProfesorCiclo').value = new Date().getFullYear();
-          document.getElementById('claseProfesorActiva').checked = true;
-          document.getElementById('buscarMiembroClaseProfesor').value = '';
-          miembrosClaseEdicionProfesor = new Set();
-          renderMiembrosClaseProfesor([]);
-      }
-
-      function claseEnEdicionProfesor() {
-          const claseId = document.getElementById('claseProfesorId')?.value || '';
-          return clasesProfesor.find(clase => clase.claseId === claseId) || null;
-      }
-
-      function renderMiembrosClaseProfesor(miembrosForzados) {
-          const contenedor = document.getElementById('miembrosClaseProfesor');
-          if (!contenedor) return;
-          if (Array.isArray(miembrosForzados)) {
-              miembrosClaseEdicionProfesor = new Set(miembrosForzados);
-          } else {
-              contenedor.querySelectorAll('input[type="checkbox"]').forEach(input => {
-                  if (input.checked) miembrosClaseEdicionProfesor.add(input.value);
-                  else miembrosClaseEdicionProfesor.delete(input.value);
-              });
-          }
-          const seleccionActual = miembrosClaseEdicionProfesor;
-          const busqueda = String(document.getElementById('buscarMiembroClaseProfesor')?.value || '').toLowerCase().trim();
-          const candidatos = estudiantesProfesor
-              .filter(estudiante => {
-                  const texto = `${estudiante.estudiante?.nombre || estudiante.nombreGoogle || ''} ${estudiante.email || ''}`.toLowerCase();
-                  return !busqueda || texto.includes(busqueda);
-              })
-              .sort((a, b) => String(a.estudiante?.nombre || a.nombreGoogle || '').localeCompare(String(b.estudiante?.nombre || b.nombreGoogle || ''), 'es'));
-          contenedor.innerHTML = candidatos.map(estudiante => {
-              const nombre = estudiante.estudiante?.nombre || estudiante.nombreGoogle || 'Sin nombre';
-              const contexto = [estudiante.estudiante?.curso, estudiante.estudiante?.division, estudiante.estudiante?.turno].filter(Boolean).join(' · ');
-              return `<label style="display:flex;align-items:center;gap:.65rem;padding:.55rem;border:1px solid rgba(148,163,184,.2);border-radius:6px">
-                  <input type="checkbox" value="${escapeHtml(estudiante.uid)}" ${seleccionActual.has(estudiante.uid) ? 'checked' : ''}>
-                  <span><strong>${escapeHtml(nombre)}</strong><br><small>${escapeHtml(estudiante.email || '')}${contexto ? ` · ${escapeHtml(contexto)}` : ''}</small></span>
-              </label>`;
-          }).join('') || '<p style="color:var(--text-muted)">No hay estudiantes que coincidan con la búsqueda.</p>';
-      }
-
-      function renderListaClasesProfesor() {
-          const contenedor = document.getElementById('listaClasesProfesor');
-          if (!contenedor) return;
-          contenedor.innerHTML = clasesProfesor
-              .slice()
-              .sort((a, b) => String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es'))
-              .map(clase => `<div style="display:flex;justify-content:space-between;gap:.7rem;align-items:center;padding:.65rem;border:1px solid rgba(148,163,184,.22);border-radius:6px">
-                  <div>
-                      <strong>${escapeHtml(clase.nombre || clase.claseId)}</strong>
-                      <br><small>${escapeHtml([clase.curso, clase.division, clase.turno, clase.cicloLectivo].filter(Boolean).join(' · '))} · ${Array.isArray(clase.miembros) ? clase.miembros.length : 0} estudiantes · ${clase.activa === false ? 'Inactiva' : 'Activa'}</small>
-                  </div>
-                  <div style="display:flex;gap:.35rem">
-                      <button class="btn btn-primary" type="button" title="Editar clase" onclick="editarClaseProfesor(decodeURIComponent('${encodeURIComponent(clase.claseId)}'))"><i class="fa-solid fa-pen"></i></button>
-                      <button class="btn btn-danger" type="button" title="Eliminar clase" onclick="eliminarClaseProfesor(decodeURIComponent('${encodeURIComponent(clase.claseId)}'))"><i class="fa-solid fa-trash-can"></i></button>
-                  </div>
-              </div>`).join('') || '<p style="color:var(--text-muted)">Todavía no hay clases registradas.</p>';
-      }
-
-      function editarClaseProfesor(claseId) {
-          const clase = clasesProfesor.find(item => item.claseId === claseId);
-          if (!clase) return;
-          document.getElementById('claseProfesorId').value = clase.claseId;
-          document.getElementById('claseProfesorNombre').value = clase.nombre || '';
-          document.getElementById('claseProfesorCurso').value = clase.curso || '';
-          document.getElementById('claseProfesorDivision').value = clase.division || '';
-          document.getElementById('claseProfesorTurno').value = clase.turno || 'Mañana';
-          document.getElementById('claseProfesorCiclo').value = Number(clase.cicloLectivo) || new Date().getFullYear();
-          document.getElementById('claseProfesorActiva').checked = clase.activa !== false;
-          document.getElementById('buscarMiembroClaseProfesor').value = '';
-          miembrosClaseEdicionProfesor = new Set(clase.miembros || []);
-          renderMiembrosClaseProfesor(clase.miembros || []);
-      }
-
-      async function guardarClaseProfesor() {
-          const nombre = document.getElementById('claseProfesorNombre')?.value.trim() || '';
-          if (!nombre) {
-              alert('Ingresá un nombre para la clase.');
-              document.getElementById('claseProfesorNombre')?.focus();
-              return;
-          }
-          const existente = document.getElementById('claseProfesorId')?.value || '';
-          const baseId = nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-              .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'clase';
-          const claseId = existente || `${baseId}-${Date.now()}`;
-          document.querySelectorAll('#miembrosClaseProfesor input[type="checkbox"]').forEach(input => {
-              if (input.checked) miembrosClaseEdicionProfesor.add(input.value);
-              else miembrosClaseEdicionProfesor.delete(input.value);
-          });
-          const miembros = [...miembrosClaseEdicionProfesor];
-          const payload = {
-              claseId,
-              nombre,
-              curso: document.getElementById('claseProfesorCurso')?.value.trim() || '',
-              division: document.getElementById('claseProfesorDivision')?.value.trim() || '',
-              turno: document.getElementById('claseProfesorTurno')?.value || '',
-              cicloLectivo: Number(document.getElementById('claseProfesorCiclo')?.value) || new Date().getFullYear(),
-              activa: document.getElementById('claseProfesorActiva')?.checked !== false,
-              miembros
-          };
-          const estado = document.getElementById('estadoGestionClasesProfesor');
-          if (estado) estado.textContent = 'Guardando clase...';
-          const ok = await window.guardarClaseFirebase?.(payload);
-          if (!ok) {
-              if (estado) estado.textContent = 'No se pudo guardar la clase.';
-              alert('No se pudo guardar la clase. Verificá la autorización docente y las reglas de Firestore.');
-              return;
-          }
-          if (estado) estado.textContent = 'Clase guardada correctamente.';
-          document.getElementById('claseProfesorId').value = claseId;
-      }
-
-      async function eliminarClaseProfesor(claseId) {
-          const clase = clasesProfesor.find(item => item.claseId === claseId);
-          if (!clase || !confirm(`Se eliminará la clase "${clase.nombre}". Los estudiantes y sus evaluaciones se conservarán. ¿Continuar?`)) return;
-          const ok = await window.eliminarClaseFirebase?.(claseId);
-          if (!ok) {
-              alert('No se pudo eliminar la clase.');
-              return;
-          }
-          if (document.getElementById('claseProfesorId')?.value === claseId) limpiarFormularioClaseProfesor();
-      }
-
-      function limpiarFiltrosProfesor() {
-          ['filtroProfesor','filtroEmailProfesor'].forEach(id => {
-              const campo = document.getElementById(id);
-              if (campo) campo.value = '';
-          });
-          ['filtroClaseProfesor','filtroCursoProfesor','filtroDivisionProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','filtroNotaProfesor','filtroActualizacionProfesor'].forEach(id => {
-              const campo = document.getElementById(id);
-              if (campo) campo.value = '';
-          });
-          const orden = document.getElementById('ordenProfesor');
-          if (orden) orden.value = 'actualizacion-desc';
-          renderPanelProfesor();
       }
       function calcularProgresoEstudiante(d) {
           const finalizadas = d.finalizadas || {};
@@ -6929,169 +5580,6 @@
           renderPanelProfesor();
           abrirDetalleEstudianteProfesor(indice);
           alert('Revisión docente guardada.');
-      }
-
-      async function guardarEvaluacionModuloProfesor(indice, sectionId) {
-          const estudiante = estudiantesProfesor[indice];
-          if (!estudiante?.uid) {
-              alert("No se pudo identificar al estudiante.");
-              return;
-          }
-          const notaCodigo = Number(document.getElementById(`notaCodigoProfesor-${sectionId}`)?.value);
-          const notaPreguntas = Number(document.getElementById(`notaPreguntasProfesor-${sectionId}`)?.value);
-          const observacion = document.getElementById(`observacionEvaluacionProfesor-${sectionId}`)?.value.trim() || "";
-          const intentos = estudiante.intentos?.[sectionId] || [];
-          const intento = intentos[0] || estudiante.entregas?.[sectionId] || null;
-          if (!intento?.entregaId) {
-              alert("No existe un intento entregado que pueda evaluarse.");
-              return;
-          }
-          if (![notaCodigo, notaPreguntas].every(nota => Number.isFinite(nota) && nota >= 0 && nota <= 10)) {
-              alert("Las notas de código y preguntas deben estar entre 0 y 10.");
-              return;
-          }
-          const notaFinal = Number((notaCodigo * 0.7 + notaPreguntas * 0.3).toFixed(1));
-          if ((intento.revisionEstado || "pendiente") === "pendiente") {
-              const revisionOk = await window.guardarRevisionEntregaFirebase?.(
-                  estudiante.uid,
-                  intento.entregaId,
-                  { estado: "aprobada", observacion }
-              );
-              if (!revisionOk) {
-                  alert("No se pudo aprobar el intento antes de guardar la evaluación.");
-                  return;
-              }
-              intento.revisionEstado = "aprobada";
-              intento.revisionObservacion = observacion;
-          }
-          const ok = await window.guardarEvaluacionFirebase?.(estudiante.uid, sectionId, {
-              notaCodigo,
-              notaPreguntas,
-              notaFinal,
-              observacion,
-              versionRubrica: "manual-v1",
-              entregaId: intento.entregaId,
-              numeroIntento: Number(intento.numeroIntento) || intentos.length || 1,
-              pruebasResumen: intento.pruebasAutomaticas?.resumen || {
-                  aprobadas: 0,
-                  total: 0,
-                  porcentaje: 0
-              }
-          });
-          if (!ok) {
-              alert("No se pudo guardar la evaluación oficial.");
-              return;
-          }
-          estudiante.evaluaciones ||= {};
-          estudiante.historialResultados ||= {};
-          const evaluacion = {
-              uid: estudiante.uid,
-              moduloId: sectionId,
-              entregaId: intento.entregaId,
-              numeroIntento: Number(intento.numeroIntento) || intentos.length || 1,
-              estado: "evaluada",
-              notaCodigo,
-              notaPreguntas,
-              notaFinal,
-              observacion,
-              versionRubrica: "manual-v1",
-              pruebasResumen: intento.pruebasAutomaticas?.resumen || {}
-          };
-          estudiante.evaluaciones[sectionId] = evaluacion;
-          estudiante.historialResultados[sectionId] = {
-              ...(estudiante.historialResultados[sectionId] || {}),
-              ...evaluacion
-          };
-          renderPanelProfesor();
-          abrirDetalleEstudianteProfesor(estudiantesProfesor.indexOf(estudiante));
-          alert(`Evaluación oficial guardada: ${notaFinal}/10.`);
-      }
-
-      async function devolverIntentoProfesor(indice, sectionId, entregaId) {
-          const estudiante = estudiantesProfesor[indice];
-          if (!estudiante?.uid || !entregaId) {
-              alert("No se pudo identificar el intento.");
-              return;
-          }
-          const campo = document.getElementById(`observacionRevisionProfesor-${sectionId}-${entregaId}`);
-          const observacion = campo?.value.trim() || "";
-          if (!observacion) {
-              alert("Escribí una devolución antes de habilitar un nuevo intento.");
-              campo?.focus();
-              return;
-          }
-          if (!confirm("Se conservará este intento y se habilitará una nueva entrega. ¿Continuar?")) return;
-          const ok = await window.guardarRevisionEntregaFirebase?.(
-              estudiante.uid,
-              entregaId,
-              { estado: "devuelta", observacion }
-          );
-          if (!ok) {
-              alert("No se pudo devolver el intento.");
-              return;
-          }
-          const intento = (estudiante.intentos?.[sectionId] || [])
-              .find(item => item.entregaId === entregaId);
-          if (intento) {
-              intento.estado = "reabierta";
-              intento.revisionEstado = "devuelta";
-              intento.revisionObservacion = observacion;
-          }
-          if (estudiante.entregas?.[sectionId]?.entregaId === entregaId) {
-              estudiante.entregas[sectionId] = {
-                  ...estudiante.entregas[sectionId],
-                  estado: "reabierta",
-                  revisionEstado: "devuelta",
-                  revisionObservacion: observacion
-              };
-          }
-          if (estudiante.finalizadas) delete estudiante.finalizadas[sectionId];
-          if (estudiante.evaluaciones) delete estudiante.evaluaciones[sectionId];
-          if (estudiante.historialResultados?.[sectionId]) {
-              delete estudiante.historialResultados[sectionId].estado;
-              delete estudiante.historialResultados[sectionId].notaCodigo;
-              delete estudiante.historialResultados[sectionId].notaPreguntas;
-              delete estudiante.historialResultados[sectionId].notaFinal;
-          }
-          abrirDetalleEstudianteProfesor(indice);
-          renderPanelProfesor();
-          alert("Intento devuelto. El estudiante puede corregir y realizar una nueva entrega.");
-      }
-
-      function renderIntentosProfesor(indice, sectionId, intentos = []) {
-          if (!intentos.length) {
-              return '<p style="color:var(--text-muted)">No hay intentos entregados.</p>';
-          }
-          return intentos.map((intento, posicion) => {
-              const entregaId = intento.entregaId || intento.__docId || "";
-              const numero = Number(intento.numeroIntento) || (intentos.length - posicion);
-              const revisionEstado = intento.revisionEstado || "pendiente";
-              const esUltimo = posicion === 0;
-              const puedeDevolver = esUltimo &&
-                  intento.estado === "entregada" &&
-                  revisionEstado !== "devuelta";
-              return `<details style="margin-top:.55rem;padding:.7rem;border:1px solid rgba(148,163,184,.24);border-radius:6px" ${esUltimo ? "open" : ""}>
-                  <summary>
-                      Intento ${numero} · ${escapeHtml(formatearFechaIntento(intento.entregadaEn || intento.creadoClienteEn))}
-                      · ${escapeHtml(revisionEstado.toUpperCase())}
-                  </summary>
-                  <div style="margin-top:.65rem">
-                      ${resumenPruebasAutomaticasHtml(intento.pruebasAutomaticas)}
-                      <h5 style="margin-top:.7rem">Código de este intento</h5>
-                      <pre class="teacher-code">${escapeHtml(intento.codigo || "// Sin código")}</pre>
-                      ${intento.revisionObservacion
-                          ? `<div style="margin-top:.6rem;color:#cbd5e1"><strong>Devolución registrada:</strong> ${escapeHtml(intento.revisionObservacion)}</div>`
-                          : ""}
-                      ${puedeDevolver ? `
-                          <label style="display:block;margin-top:.7rem">Devolución docente
-                              <textarea id="observacionRevisionProfesor-${sectionId}-${entregaId}" maxlength="4000" style="width:100%;min-height:75px"></textarea>
-                          </label>
-                          <button class="btn btn-warning" style="margin-top:.55rem" onclick="devolverIntentoProfesor(${indice}, '${sectionId}', '${entregaId}')">
-                              <i class="fa-solid fa-reply"></i> Devolver para corrección
-                          </button>` : ""}
-                  </div>
-              </details>`;
-          }).join("");
       }
       async function cambiarEstadoCuentaEstudiante(indice, nuevoEstado) {
           const d = estudiantesProfesor[indice];
@@ -7491,7 +5979,6 @@
           const codigos = d.codigos || {};
           const tiempos = d.tiemposRestantes || {};
           const finalizadas = d.finalizadas || {};
-          const intentosPorModulo = d.intentos || {};
           const previews = d.contadorPrevisualizaciones || {};
           const progreso = calcularProgresoEstudiante(d);
           const promedio = calcularNotaEstudiante(d);
@@ -7512,25 +5999,16 @@
 
           const actividadesHtml = seccionesData.map((sec, numero) => {
               const r = historial[sec.id] || {};
-              const intentosModulo = Array.isArray(intentosPorModulo[sec.id])
-                  ? intentosPorModulo[sec.id]
-                  : [];
-              const intentoVigente = intentosModulo[0] || d.entregas?.[sec.id] || null;
               const mensajesChat = Array.isArray(chatIA[sec.id]) ? chatIA[sec.id] : [];
               const preguntas = Array.isArray(r.analista?.preguntas) ? r.analista.preguntas : [];
               const codigo = r.codigo || codigos[sec.id] || '// Sin código guardado';
               const salida = r.salida || '// Sin salida de ejecución guardada';
-              const evaluacionOficial = r.estado === "evaluada";
-              const notaFinal = evaluacionOficial ? r.notaFinal : undefined;
+              const notaFinal = r.notaFinal ?? r.notaIA;
               const evaluacionCodigo = r.evaluacionCodigo || null;
-              const estado = evaluacionOficial
-                  ? "Evaluada"
-                  : intentoVigente?.revisionEstado === "devuelta"
-                      ? "Devuelta para corrección"
-                      : (finalizadas[sec.id] ? "Entregada · pendiente de evaluación" : "En curso");
-              const formulaActividad = evaluacionOficial && r.notaCodigo !== undefined && r.notaPreguntas !== undefined
+              const estado = finalizadas[sec.id] ? 'Finalizada' : (r.notaCodigo !== undefined ? 'Preguntas pendientes' : 'En curso');
+              const formulaActividad = r.notaCodigo !== undefined && r.notaPreguntas !== undefined
                   ? `(${r.notaCodigo} × 0,70) + (${r.notaPreguntas} × 0,30) = ${notaFinal}`
-                  : 'La entrega todavía no tiene una evaluación oficial.';
+                  : 'La fórmula se completará al entregar código y preguntas.';
               return `<details class="teacher-activity" ${numero === 0 ? 'open' : ''}>
                   <summary>${escapeHtml(sec.title)} · ${estado} · Nota ${notaFinal !== undefined ? `${notaFinal}/10` : 'pendiente'}</summary>
                   <div class="teacher-activity-content">
@@ -7544,27 +6022,6 @@
                       </div>
                       <div style="padding:.65rem;border-radius:6px;background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.25);margin-bottom:.8rem;">
                           <strong>Cálculo de esta actividad:</strong> ${escapeHtml(formulaActividad)}
-                      </div>
-                      <div style="padding:.8rem;border-radius:6px;background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.3);margin-bottom:.8rem;">
-                          <h4 style="color:#d8b4fe;margin-bottom:.55rem">Intentos y pruebas automáticas (${intentosModulo.length})</h4>
-                          ${renderIntentosProfesor(indice, sec.id, intentosModulo)}
-                      </div>
-                      <div style="padding:.8rem;border-radius:6px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.3);margin-bottom:.8rem;">
-                          <h4 style="color:#86efac;margin-bottom:.6rem">Evaluación oficial</h4>
-                          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem">
-                              <label>Nota de código
-                                  <input id="notaCodigoProfesor-${sec.id}" type="number" min="0" max="10" step="0.1" value="${evaluacionOficial ? Number(r.notaCodigo) : ''}">
-                              </label>
-                              <label>Nota de preguntas
-                                  <input id="notaPreguntasProfesor-${sec.id}" type="number" min="0" max="10" step="0.1" value="${evaluacionOficial ? Number(r.notaPreguntas) : ''}">
-                              </label>
-                          </div>
-                          <label style="display:block;margin-top:.6rem">Observación docente
-                              <textarea id="observacionEvaluacionProfesor-${sec.id}" maxlength="4000" style="width:100%;min-height:80px">${escapeHtml(evaluacionOficial ? r.observacion || '' : '')}</textarea>
-                          </label>
-                          <button class="btn btn-success" style="margin-top:.6rem" onclick="guardarEvaluacionModuloProfesor(${indice}, '${sec.id}')" ${!intentoVigente || intentoVigente.estado !== "entregada" ? "disabled" : ""}>
-                              <i class="fa-solid fa-check"></i> Guardar evaluación oficial
-                          </button>
                       </div>
                       <h4>Código entregado</h4>
                       <pre class="teacher-code">${escapeHtml(codigo)}</pre>
@@ -7752,267 +6209,9 @@
               ${actividadesHtml}`;
           document.getElementById('detalleEstudianteProfesorModal').classList.add('active');
       }
-      function renderReporteVisualProfesor(rows) {
-          const contenedor = document.getElementById('reporteVisualProfesor');
-          if (!contenedor) return;
-          const grupos = [
-              { etiqueta: '0–25%', min: 0, max: 25 },
-              { etiqueta: '26–50%', min: 26, max: 50 },
-              { etiqueta: '51–75%', min: 51, max: 75 },
-              { etiqueta: '76–99%', min: 76, max: 99 },
-              { etiqueta: '100%', min: 100, max: 100 }
-          ].map(grupo => ({
-              ...grupo,
-              cantidad: rows.filter(estudiante => {
-                  const progreso = calcularProgresoEstudiante(estudiante);
-                  return progreso >= grupo.min && progreso <= grupo.max;
-              }).length
-          }));
-          const total = Math.max(1, rows.length);
-          const evaluaciones = rows.reduce((suma, estudiante) =>
-              suma + Object.values(estudiante.evaluaciones || {}).filter(item => item?.estado === 'evaluada').length, 0);
-          const intentos = rows.reduce((suma, estudiante) =>
-              suma + Object.values(estudiante.intentos || {}).reduce((subtotal, lista) =>
-                  subtotal + (Array.isArray(lista) ? lista.length : 0), 0), 0);
-          const pendientes = rows.reduce((suma, estudiante) =>
-              suma + Object.values(estudiante.entregas || {}).filter(entrega =>
-                  entrega?.estado === 'entregada' && (entrega?.revisionEstado || 'pendiente') === 'pendiente'
-              ).length, 0);
-          contenedor.innerHTML = `<section style="padding:.85rem 0;border-top:1px solid rgba(148,163,184,.2);border-bottom:1px solid rgba(148,163,184,.2)">
-              <div style="display:flex;justify-content:space-between;gap:1rem;align-items:center;flex-wrap:wrap;margin-bottom:.7rem">
-                  <strong>Distribución de progreso</strong>
-                  <small style="color:var(--text-muted)">${intentos} intentos · ${evaluaciones} evaluaciones oficiales · ${pendientes} entregas pendientes</small>
-              </div>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:.65rem">
-                  ${grupos.map(grupo => {
-                      const porcentaje = Math.round(grupo.cantidad * 100 / total);
-                      return `<div>
-                          <div style="display:flex;justify-content:space-between;gap:.4rem;font-size:.75rem"><span>${grupo.etiqueta}</span><strong>${grupo.cantidad}</strong></div>
-                          <div style="height:8px;background:rgba(148,163,184,.18);margin-top:.3rem;overflow:hidden"><div style="height:100%;width:${porcentaje}%;background:${grupo.max === 100 ? '#10b981' : grupo.max >= 75 ? '#38bdf8' : '#f59e0b'}"></div></div>
-                      </div>`;
-                  }).join('')}
-              </div>
-          </section>`;
-      }
-
-      function renderAnaliticaPedagogicaProfesor(rows) {
-          const contenedor = document.getElementById("analiticaPedagogicaProfesor");
-          if (!contenedor) return;
-          const metricas = seccionesData.map(sec => {
-              const entregas = rows.map(estudiante => estudiante.entregas?.[sec.id]).filter(Boolean);
-              const evaluaciones = rows.map(estudiante => estudiante.evaluaciones?.[sec.id]).filter(item => item?.estado === "evaluada");
-              const intentos = rows.flatMap(estudiante => estudiante.intentos?.[sec.id] || []);
-              const aprobadas = intentos.filter(intento => intento.revisionEstado === "aprobada").length;
-              const devueltas = intentos.filter(intento => intento.revisionEstado === "devuelta").length;
-              const promedio = evaluaciones.length
-                  ? (evaluaciones.reduce((suma, item) => suma + Number(item.notaFinal || 0), 0) / evaluaciones.length).toFixed(1)
-                  : "—";
-              return { titulo: sec.title, entregas: entregas.length, evaluaciones: evaluaciones.length, intentos: intentos.length, aprobadas, devueltas, promedio };
-          }).filter(item => item.entregas || item.intentos || item.evaluaciones);
-          const mejor = metricas.slice().sort((a, b) => Number(b.promedio === "—" ? -1 : b.promedio) - Number(a.promedio === "—" ? -1 : a.promedio))[0];
-          const mayorRefuerzo = metricas.slice().sort((a, b) => (b.devueltas + b.intentos - b.aprobadas) - (a.devueltas + a.intentos - a.aprobadas))[0];
-          contenedor.innerHTML = `<details open style="padding:.8rem;border:1px solid rgba(245,158,11,.3);border-radius:6px;background:rgba(245,158,11,.04)">
-              <summary style="cursor:pointer;font-weight:700"><i class="fa-solid fa-chart-line"></i> Analítica pedagógica</summary>
-              <div style="display:flex;gap:1rem;flex-wrap:wrap;margin:.7rem 0;font-size:.82rem">
-                  <span><strong>Mejor desempeño:</strong> ${escapeHtml(mejor?.titulo || "Sin datos")} (${mejor?.promedio || "—"})</span>
-                  <span><strong>Mayor necesidad de refuerzo:</strong> ${escapeHtml(mayorRefuerzo?.titulo || "Sin datos")}</span>
-              </div>
-              <div style="overflow:auto"><table style="width:100%;border-collapse:collapse;min-width:720px;font-size:.8rem">
-                  <thead><tr><th>Actividad</th><th>Entregas</th><th>Intentos</th><th>Aprobados</th><th>Devueltos</th><th>Evaluaciones</th><th>Promedio</th></tr></thead>
-                  <tbody>${metricas.map(item => `<tr><td>${escapeHtml(item.titulo)}</td><td>${item.entregas}</td><td>${item.intentos}</td><td>${item.aprobadas}</td><td>${item.devueltas}</td><td>${item.evaluaciones}</td><td>${item.promedio}</td></tr>`).join("")}</tbody>
-              </table></div>
-          </details>`;
-      }
-
-      async function crearActividadBibliotecaProfesor() {
-          const titulo = prompt("Título de la actividad:");
-          if (!titulo?.trim()) return;
-          const descripcion = prompt("Descripción breve:");
-          if (!descripcion?.trim()) return;
-          const nivel = prompt("Nivel (inicial, intermedio o avanzado):", "intermedio") || "intermedio";
-          const etiquetas = (prompt("Etiquetas separadas por coma:", "refuerzo") || "")
-              .split(",").map(item => item.trim()).filter(Boolean);
-          const actividadId = `${titulo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "actividad"}-${Date.now()}`;
-          const ok = await window.guardarBibliotecaActividadFirebase?.({ actividadId, titulo, descripcion, nivel, etiquetas, activa: true });
-          alert(ok ? "Actividad agregada a la biblioteca." : "No se pudo guardar la actividad.");
-          if (ok) {
-              bibliotecaActividades = await window.cargarBibliotecaActividadesFirebase?.() || bibliotecaActividades;
-              renderBibliotecaActividades();
-          }
-      }
-
-      function descargarArchivoProfesor(nombre, contenido, tipo) {
-          const blob = new Blob([contenido], { type: tipo });
-          const enlace = document.createElement('a');
-          enlace.href = URL.createObjectURL(blob);
-          enlace.download = nombre;
-          document.body.appendChild(enlace);
-          enlace.click();
-          enlace.remove();
-          setTimeout(() => URL.revokeObjectURL(enlace.href), 1000);
-      }
-
-      function nombreArchivoReporteProfesor(extension) {
-          const claseId = document.getElementById('filtroClaseProfesor')?.value || 'todos';
-          const clase = clasesProfesor.find(item => item.claseId === claseId);
-          const alcance = (clase?.nombre || claseId).toLowerCase().normalize('NFD')
-              .replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'todos';
-          const fecha = new Date().toISOString().slice(0, 10);
-          return `reporte-${alcance}-${fecha}.${extension}`;
-      }
-
-      function construirFilasReporteProfesor(rows = estudiantesFiltradosProfesor) {
-          return rows.map(estudiante => {
-              const perfil = estudiante.estudiante || {};
-              const evaluaciones = Object.values(estudiante.evaluaciones || {}).filter(item => item?.estado === 'evaluada');
-              const intentos = Object.values(estudiante.intentos || {}).reduce((suma, lista) =>
-                  suma + (Array.isArray(lista) ? lista.length : 0), 0);
-              const pendientes = Object.values(estudiante.entregas || {}).filter(entrega =>
-                  entrega?.estado === 'entregada' && (entrega?.revisionEstado || 'pendiente') === 'pendiente'
-              ).length;
-              const devueltos = Object.values(estudiante.intentos || {}).reduce((suma, lista) =>
-                  suma + (Array.isArray(lista) ? lista.filter(item => item?.revisionEstado === 'devuelta').length : 0), 0);
-              return {
-                  estudiante: perfil.nombre || estudiante.nombreGoogle || '',
-                  email: estudiante.email || '',
-                  clases: (estudiante.clasesAsignadas || []).map(clase => clase.nombre).join(' | '),
-                  curso: perfil.curso || '',
-                  division: perfil.division || '',
-                  turno: perfil.turno || '',
-                  estadoCuenta: estudiante.estadoCuenta === 'inactivo' ? 'inactiva' : 'activa',
-                  progresoPorcentaje: calcularProgresoEstudiante(estudiante),
-                  promedioAcademico: calcularNotaEstudiante(estudiante),
-                  notaDefinitiva: calcularNotaDefinitivaEstudiante(estudiante),
-                  intentos,
-                  evaluacionesOficiales: evaluaciones.length,
-                  entregasPendientes: pendientes,
-                  intentosDevueltos: devueltos,
-                  cambiosPestana: Number(estudiante.salidasPestana ?? estudiante.salidasPestaña ?? 0),
-                  ultimaActualizacion: estudiante.actualizadoEn?.toDate
-                      ? estudiante.actualizadoEn.toDate().toISOString()
-                      : ''
-              };
-          });
-      }
-
-      function exportarPanelProfesorCSV() {
-          const filas = construirFilasReporteProfesor();
-          if (!filas.length) {
-              alert('No hay estudiantes para exportar con los filtros actuales.');
-              return;
-          }
-          const columnas = Object.keys(filas[0]);
-          const escaparCSV = valor => {
-              const texto = String(valor ?? '');
-              const protegido = /^\s*[=+\-@]/.test(texto) ? `'${texto}` : texto;
-              return `"${protegido.replace(/"/g, '""')}"`;
-          };
-          const contenido = '\uFEFF' + [
-              columnas.map(escaparCSV).join(';'),
-              ...filas.map(fila => columnas.map(columna => escaparCSV(fila[columna])).join(';'))
-          ].join('\r\n');
-          descargarArchivoProfesor(nombreArchivoReporteProfesor('csv'), contenido, 'text/csv;charset=utf-8');
-      }
-
-      function normalizarDatoProfesor(valor) {
-          if (valor?.toDate) return valor.toDate().toISOString();
-          if (Array.isArray(valor)) return valor.map(normalizarDatoProfesor);
-          if (valor && typeof valor === 'object') {
-              return Object.fromEntries(Object.entries(valor).map(([clave, dato]) => [clave, normalizarDatoProfesor(dato)]));
-          }
-          return valor;
-      }
-
-      function exportarPanelProfesorJSON() {
-          const filas = construirFilasReporteProfesor();
-          if (!filas.length) {
-              alert('No hay estudiantes para exportar con los filtros actuales.');
-              return;
-          }
-          const uids = new Set(estudiantesFiltradosProfesor.map(estudiante => estudiante.uid));
-          const clasesIncluidas = clasesProfesor.filter(clase =>
-              (clase.miembros || []).some(uid => uids.has(uid))
-          );
-          const detalle = estudiantesFiltradosProfesor.map((estudiante, indice) => ({
-              resumen: filas[indice],
-              uid: estudiante.uid,
-              entregas: estudiante.entregas || {},
-              intentos: estudiante.intentos || {},
-              evaluaciones: estudiante.evaluaciones || {},
-              revisionSalidas: estudiante.revisionSalidas || {},
-              eventosSalidasPestana: estudiante.eventosSalidasPestana || []
-          }));
-          const contenido = {
-              version: '13.0-accesibilidad-offline-costos-retencion',
-              generadoEn: new Date().toISOString(),
-              totalEstudiantes: detalle.length,
-              clases: clasesIncluidas,
-              estudiantes: detalle
-          };
-          descargarArchivoProfesor(
-              nombreArchivoReporteProfesor('json'),
-              JSON.stringify(normalizarDatoProfesor(contenido), null, 2),
-              'application/json;charset=utf-8'
-          );
-      }
-
-      function exportarReporteProfesorPDF() {
-          if (!window.jspdf?.jsPDF) {
-              alert('No se pudo cargar el generador de PDF.');
-              return;
-          }
-          const filas = construirFilasReporteProfesor();
-          if (!filas.length) {
-              alert('No hay estudiantes para incluir en el reporte.');
-              return;
-          }
-          const { jsPDF } = window.jspdf;
-          const pdf = new jsPDF({ orientation: 'landscape' });
-          const claseId = document.getElementById('filtroClaseProfesor')?.value || '';
-          const clase = clasesProfesor.find(item => item.claseId === claseId);
-          const tituloAlcance = clase?.nombre || (claseId === 'sin-clase' ? 'Estudiantes sin clase' : 'Todos los estudiantes filtrados');
-          const notas = filas.map(fila => Number(fila.notaDefinitiva)).filter(Number.isFinite);
-          const promedio = notas.length ? (notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(1) : 'Sin evaluar';
-          pdf.setFontSize(16);
-          pdf.text('IPEM 146 - Reporte docente consolidado', 14, 16);
-          pdf.setFontSize(10);
-          pdf.text(`Alcance: ${tituloAlcance}`, 14, 23);
-          pdf.text(`Estudiantes: ${filas.length} | Promedio definitivo: ${promedio} | Emitido: ${new Date().toLocaleString()}`, 14, 29);
-          let y = 39;
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('Estudiante', 14, y);
-          pdf.text('Curso', 76, y);
-          pdf.text('Progreso', 112, y);
-          pdf.text('Nota', 138, y);
-          pdf.text('Intentos', 158, y);
-          pdf.text('Pendientes', 184, y);
-          pdf.text('Devueltos', 218, y);
-          pdf.text('Pestañas', 248, y);
-          y += 5;
-          pdf.line(14, y, 282, y);
-          pdf.setFont('helvetica', 'normal');
-          filas.forEach(fila => {
-              y += 6;
-              if (y > 193) {
-                  pdf.addPage();
-                  y = 18;
-              }
-              pdf.text(String(fila.estudiante || '').slice(0, 34), 14, y);
-              pdf.text(`${fila.curso || ''} ${fila.division || ''}`.slice(0, 18), 76, y);
-              pdf.text(`${fila.progresoPorcentaje}%`, 112, y);
-              pdf.text(String(fila.notaDefinitiva), 138, y);
-              pdf.text(String(fila.intentos), 158, y);
-              pdf.text(String(fila.entregasPendientes), 184, y);
-              pdf.text(String(fila.intentosDevueltos), 218, y);
-              pdf.text(String(fila.cambiosPestana), 248, y);
-          });
-          pdf.save(nombreArchivoReporteProfesor('pdf'));
-      }
-
       function renderPanelProfesor() {
           const q = (document.getElementById('filtroProfesor').value || '').toLowerCase().trim();
           const emailFiltro = (document.getElementById('filtroEmailProfesor')?.value || '').toLowerCase().trim();
-          const claseFiltro = document.getElementById('filtroClaseProfesor')?.value || '';
           const curso = document.getElementById('filtroCursoProfesor').value;
           const division = document.getElementById('filtroDivisionProfesor')?.value || '';
           const turno = document.getElementById('filtroTurnoProfesor').value;
@@ -8038,20 +6237,7 @@
               const cronometroPausado = d.controlCronometroIndividual?.pausado === true
                   || d.controlCronometros?.pausado === true;
               const salidas = Number(d.salidasPestana ?? d.salidasPestaña ?? 0);
-              const claseIds = Array.isArray(d.claseIds) ? d.claseIds : [];
-              const claseNombres = Array.isArray(d.clasesAsignadas)
-                  ? d.clasesAsignadas.map(clase => clase.nombre).filter(Boolean)
-                  : [];
-	              const tieneCambios = salidas > 0;
-	              const entregasActuales = Object.values(d.entregas || {});
-	              const revisionPendiente = entregasActuales.some(entrega =>
-	                  entrega?.estado === "entregada" &&
-	                  (entrega?.revisionEstado || "pendiente") === "pendiente"
-	              );
-	              const tieneDevueltos = entregasActuales.some(entrega =>
-	                  entrega?.estado === "reabierta" ||
-	                  entrega?.revisionEstado === "devuelta"
-	              );
+              const tieneCambios = salidas > 0;
               const cumpleProgreso = !progresoFiltro || (
                   progresoFiltro === '0' ? progreso === 0 :
                   progresoFiltro === '100' ? progreso === 100 :
@@ -8087,31 +6273,13 @@
                 || (estadoFiltro === 'desconectados' && !conectado)
                 || (estadoFiltro === 'trabajando' && trabajando)
                 || (estadoFiltro === 'pausados' && cronometroPausado)
-	                || (estadoFiltro === 'finalizados' && finalizado)
-	                || (estadoFiltro === 'pendientes' && !finalizado)
-	                || (estadoFiltro === 'revision-pendiente' && revisionPendiente)
-	                || (estadoFiltro === 'devueltos' && tieneDevueltos)
-	                || (estadoFiltro === 'alertas' && alerta.activa)
-	                || (estadoFiltro === 'cambios' && tieneCambios);
-	              d.__panelMeta = {
-	                  progreso,
-	                  nota,
-	                  alerta: alerta.activa,
-	                  actualizado,
-	                  conectado,
-	                  cuentaInactiva,
-	                  cronometroPausado,
-	                  tieneCambios,
-	                  salidas,
-	                  claseIds,
-	                  claseNombres,
-	                  revisionPendiente,
-	                  tieneDevueltos
-	              };
+                || (estadoFiltro === 'finalizados' && finalizado)
+                || (estadoFiltro === 'pendientes' && !finalizado)
+                || (estadoFiltro === 'alertas' && alerta.activa)
+                || (estadoFiltro === 'cambios' && tieneCambios);
+              d.__panelMeta = { progreso, nota, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cronometroPausado, tieneCambios, salidas };
               return (!q || nombre.includes(q))
                   && (!emailFiltro || email.includes(emailFiltro))
-                  && (!claseFiltro
-                      || (claseFiltro === 'sin-clase' ? claseIds.length === 0 : claseIds.includes(claseFiltro)))
                   && (!curso || e.curso===curso)
                   && (!division || e.division===division)
                   && (!turno || e.turno===turno)
@@ -8146,39 +6314,13 @@
           const divisiones=[...new Set(estudiantesProfesor.map(d=>d.estudiante?.division).filter(Boolean))].sort();
           const selDivision=document.getElementById('filtroDivisionProfesor');
           if(selDivision){const anterior=selDivision.value;selDivision.innerHTML='<option value="">Todas las divisiones</option>'+divisiones.map(d=>`<option>${escapeHtml(d)}</option>`).join('');if(divisiones.includes(anterior))selDivision.value=anterior;}
-          const selClase=document.getElementById('filtroClaseProfesor');
-          if(selClase){
-              const anterior=selClase.value;
-              selClase.innerHTML='<option value="">Todas las clases</option><option value="sin-clase">Sin clase asignada</option>'+
-                  clasesProfesor.slice().sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''),'es'))
-                      .map(clase=>`<option value="${escapeHtml(clase.claseId)}">${escapeHtml(clase.nombre||clase.claseId)}</option>`).join('');
-              if(anterior==='sin-clase'||clasesProfesor.some(clase=>clase.claseId===anterior))selClase.value=anterior;
-          }
           const total=rows.length, completos=rows.filter(d=>calcularProgresoEstudiante(d)>=100).length;
           const conectados=rows.filter(d=>d.__panelMeta?.conectado).length;
-	          const trabajando=rows.filter(d=>d.__panelMeta?.conectado && d.__panelMeta?.progreso<100).length;
-	          const conAlertas=rows.filter(d=>d.__panelMeta?.alerta).length;
-	          const porRevisar=rows.filter(d=>d.__panelMeta?.revisionPendiente).length;
-	          const devueltos=rows.filter(d=>d.__panelMeta?.tieneDevueltos).length;
-	          const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='—').map(Number);
-	          const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'—';
-	          document.getElementById('resumenProfesor').innerHTML=[
-	              ['Estudiantes',total],
-	              ['Conectados',conectados],
-	              ['Por revisar',porRevisar],
-	              ['Devueltos',devueltos],
-	              ['Con alertas',conAlertas],
-	              ['Completaron',completos],
-	              ['Promedio definitivo',promedio]
-	          ].map(x=>`<div style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:6px;"><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
-          estudiantesFiltradosProfesor = rows;
-          renderReporteVisualProfesor(rows);
-          renderAnaliticaPedagogicaProfesor(rows);
-          const alcance = document.getElementById('alcanceReporteProfesor');
-          if (alcance) {
-              const claseSeleccionada = clasesProfesor.find(clase => clase.claseId === claseFiltro);
-              alcance.textContent = `Alcance actual: ${rows.length} estudiante${rows.length === 1 ? '' : 's'}${claseSeleccionada ? ` · ${claseSeleccionada.nombre}` : claseFiltro === 'sin-clase' ? ' · sin clase' : ''}.`;
-          }
+          const trabajando=rows.filter(d=>d.__panelMeta?.conectado && d.__panelMeta?.progreso<100).length;
+          const conAlertas=rows.filter(d=>d.__panelMeta?.alerta).length;
+          const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='—').map(Number);
+          const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'—';
+          document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Conectados',conectados],['Trabajando',trabajando],['Con alertas',conAlertas],['Completaron',completos],['Promedio definitivo',promedio]].map(x=>`<div style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
           renderResumenConsultasIAGeneral(rows);
           document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
               const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
@@ -8192,9 +6334,8 @@
                       <i class="fa-solid fa-triangle-exclamation"></i> ${escapeHtml(alertaIA.texto)}<br>${escapeHtml(alertaIA.detalle)}
                     </div>`
                   : '';
-              const clases = (d.clasesAsignadas || []).map(clase => clase.nombre).join(', ') || 'Sin clase';
-              return `<tr style="${alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(clases)}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestaña ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
-              }).join('') || '<tr><td colspan="12" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
+              return `<tr style="${alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestaña ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
+              }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           document.querySelectorAll('#tablaProfesorBody td:last-child > div').forEach(contenedor => {
               contenedor.classList.add('teacher-action-buttons');
               contenedor.querySelectorAll('.btn').forEach(boton => {
@@ -8220,7 +6361,7 @@
                   fila.nextElementSibling?.classList.contains('teacher-actions-row') && fila.nextElementSibling.remove();
                   const filaAcciones = document.createElement('tr');
                   filaAcciones.className = 'teacher-actions-row';
-                   filaAcciones.innerHTML = '<td colspan="12"></td>';
+                  filaAcciones.innerHTML = '<td colspan="11"></td>';
                   filaAcciones.firstElementChild.appendChild(contenedor);
                   fila.parentNode.insertBefore(filaAcciones, fila.nextSibling);
               }
@@ -8243,12 +6384,6 @@
           if (!ok) {
               alert('No se pudo eliminar el estudiante. Verificá que tu cuenta tenga autorización docente.');
               return;
-          }
-          for (const clase of clasesProfesor.filter(item => (item.miembros || []).includes(estudiante.uid))) {
-              await window.guardarClaseFirebase?.({
-                  ...clase,
-                  miembros: clase.miembros.filter(uid => uid !== estudiante.uid)
-              });
           }
           estudiantesProfesor = estudiantesProfesor.filter(item => item.uid !== estudiante.uid);
           renderPanelProfesor();
@@ -8418,9 +6553,7 @@
           };
           const actividadesEvaluadasPDF = seccionesData.map(sec => {
               const resultado = historialResultados[sec.id] || {};
-              const valor = resultado.estado === "evaluada"
-                  ? Number(resultado.notaFinal)
-                  : NaN;
+              const valor = Number(resultado.notaFinal ?? resultado.notaIA);
               return {
                   titulo: sec.title,
                   nota: Number.isFinite(valor) ? valor : null
@@ -8536,8 +6669,8 @@
               asegurarEspacioPDF(20);
 
               const res = historialResultados[sec.id] || {};
-              const notaFinalModulo = res.estado === "evaluada" ? res.notaFinal : undefined;
-              const nota = notaFinalModulo !== undefined ? `${notaFinalModulo}/10` : 'Pendiente de evaluación oficial';
+              const notaFinalModulo = res.notaFinal ?? res.notaIA;
+              const nota = notaFinalModulo !== undefined ? `${notaFinalModulo}/10` : 'Pendiente de preguntas';
               const codigo = res.codigo || document.getElementById(`editor-${sec.id}`)?.value || '// Sin código';
 
               doc.setFontSize(12);
@@ -8545,17 +6678,10 @@
               doc.text(`${sec.title} - Nota final: ${nota}`, 14, yPos);
               yPos += 6;
 
-	              if (res.estado === "evaluada" && (res.notaCodigo !== undefined || res.notaPreguntas !== undefined)) {
-	                  doc.setFontSize(9);
-	                  doc.setFont("helvetica", "normal");
-	                  const pruebas = res.pruebasResumen || {};
-	                  const trazabilidad =
-	                      `Intento evaluado: ${res.numeroIntento || 'sin identificar'} | ` +
-	                      `Pruebas automáticas: ${Number(pruebas.aprobadas || 0)}/${Number(pruebas.total || 0)} ` +
-	                      `(${Number(pruebas.porcentaje || 0)}%)`;
-	                  doc.text(trazabilidad, 14, yPos);
-	                  yPos += 5;
-	                  const desglose = `Código (70%): ${res.notaCodigo ?? 'Pendiente'}/10 | Preguntas (30%): ${res.notaPreguntas ?? 'Pendiente'}/10`;
+              if (res.notaCodigo !== undefined || res.notaPreguntas !== undefined) {
+                  doc.setFontSize(9);
+                  doc.setFont("helvetica", "normal");
+                  const desglose = `Código (70%): ${res.notaCodigo ?? 'Pendiente'}/10 | Preguntas (30%): ${res.notaPreguntas ?? 'Pendiente'}/10`;
                   doc.text(desglose, 14, yPos);
                   yPos += 5;
                   if (res.notaCodigo !== undefined && res.notaPreguntas !== undefined && notaFinalModulo !== undefined) {
