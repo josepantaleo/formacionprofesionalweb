@@ -2962,20 +2962,47 @@
 
       const SITIO_APOYO_URL = "https://josepantaleo.github.io/formacionprofesionalweb/";
       const ayudasPalabrasClave = {
+          "diseña": "Planificá la solución y escribí el código que cumpla el objetivo indicado.",
+          "crea": "Construí en tu código el elemento que pide la consigna.",
+          "desarrolla": "Armá una solución completa siguiendo las condiciones indicadas.",
+          "construye": "Creá paso a paso la estructura o el programa solicitado.",
+          "escribe": "Redactá las instrucciones de JavaScript necesarias.",
+          "deberás": "Indica una acción obligatoria que debe aparecer en tu resolución.",
+          "debes": "Indica una acción obligatoria que debe aparecer en tu resolución.",
+          "define": "Creá el elemento indicado y asignale sus características iniciales.",
+          "declara": "Creá una variable e indicá su nombre antes de utilizarla.",
           "declarar": "Crear una variable e indicar su nombre antes de utilizarla.",
           "definir": "Establecer el nombre, el valor o el comportamiento que tendrá un elemento.",
           "inicializa": "Crear una variable, arreglo u objeto asignándole su primer valor.",
           "utiliza": "Aplicar en tu código el recurso indicado por la consigna.",
+          "usa": "Aplicá en tu código el recurso indicado por la consigna.",
+          "realiza": "Ejecutá la operación o el procedimiento solicitado.",
           "implementar": "Escribir y poner en funcionamiento la lógica solicitada.",
+          "implementa": "Escribí y poné en funcionamiento la lógica solicitada.",
           "validar": "Comprobar que un dato o una condición cumpla las reglas indicadas.",
+          "verifica": "Comprobá que el dato o resultado cumpla la condición solicitada.",
           "evaluar": "Comprobar una condición para obtener un resultado verdadero o falso.",
+          "evalúa": "Comprobá la condición indicada y utilizá el resultado obtenido.",
+          "examina": "Revisá los datos o propiedades indicados antes de decidir el resultado.",
           "calcular": "Realizar las operaciones necesarias y guardar o mostrar el resultado.",
+          "calcula": "Realizá las operaciones necesarias y guardá o mostrá el resultado.",
           "convertir": "Transformar un dato de un formato o tipo a otro.",
+          "convierte": "Transformá el dato del formato de origen al formato solicitado.",
           "almacenar": "Guardar un valor en una variable, arreglo, objeto o almacenamiento.",
+          "almacena": "Guardá el valor en la estructura indicada por la consigna.",
           "recuperar": "Leer nuevamente un dato que fue guardado anteriormente.",
+          "recupera": "Leé nuevamente un dato que fue guardado anteriormente.",
           "mostrar": "Presentar el resultado para que pueda verse.",
+          "muestra": "Presentá el resultado para que pueda verse.",
           "imprimir": "Enviar el resultado a la consola mediante console.log().",
+          "imprime": "Mostrá el resultado en la consola mediante console.log().",
           "generar": "Construir el resultado solicitado a partir de los datos disponibles.",
+          "genera": "Construí el resultado solicitado a partir de los datos disponibles.",
+          "incorpora": "Agregá el elemento o comportamiento solicitado a la solución.",
+          "agrega": "Sumá el elemento indicado a la estructura existente.",
+          "aplica": "Usá el método, operador o procedimiento indicado sobre los datos.",
+          "guarda": "Conservá el dato en la variable o estructura indicada.",
+          "simula": "Representá el comportamiento pedido sin depender de un sistema externo real.",
           "retornar": "Devolver un resultado desde una función usando return.",
           "función": "Bloque reutilizable de instrucciones. Debés definirlo y luego llamarlo.",
           "function": "Palabra de JavaScript utilizada para declarar una función.",
@@ -3052,7 +3079,11 @@
               "function", "class", "const", "let", "var", "array", "arreglo", "objeto",
               "funci[oó]n", "par[aá]metros", "retornar", "declarar", "inicializa",
               "utiliza", "implementar", "validar", "calcular", "convertir", "almacenar",
-              "recuperar", "mostrar", "imprimir", "evaluar", "generar", "consola"
+              "recuperar", "mostrar", "imprimir", "evaluar", "generar", "consola",
+              "diseña", "crea", "desarrolla", "construye", "escribe", "deber[aá]s",
+              "debes", "define", "declara", "usa", "realiza", "implementa", "verifica",
+              "eval[uú]a", "examina", "calcula", "convierte", "almacena", "recupera",
+              "muestra", "imprime", "genera", "incorpora", "agrega", "aplica", "guarda", "simula"
           ];
           const escapar = valor => String(valor ?? "")
               .replace(/&/g, "&amp;")
@@ -3061,7 +3092,10 @@
               .replace(/"/g, "&quot;")
               .replace(/'/g, "&#39;");
           const textoSeguro = escapar(texto);
-          const patron = new RegExp(`(${palabrasClave.sort((a, b) => b.length - a.length).join("|")})`, "gi");
+          const patron = new RegExp(
+              `(?<![\\p{L}\\p{N}_])(${palabrasClave.sort((a, b) => b.length - a.length).join("|")})(?![\\p{L}\\p{N}_])`,
+              "giu"
+          );
           return textoSeguro.replace(patron, coincidencia => crearPalabraClaveInteractiva(coincidencia));
       }
 
@@ -3093,12 +3127,18 @@
           detalles.sort((a, b) => b.termino.length - a.termino.length);
           if (!detalles.length) return resaltarPalabrasClave(texto);
           const textoSeguro = escaparHtml(texto);
-          const patron = new RegExp(`(${detalles.map(item => escapar(item.termino)).join("|")})`, "gi");
-          return textoSeguro.replace(patron, coincidencia => {
+          const patron = new RegExp(
+              `(?<![\\p{L}\\p{N}_])(${detalles.map(item => escapar(item.termino)).join("|")})(?![\\p{L}\\p{N}_])`,
+              "giu"
+          );
+          const resultado = textoSeguro.replace(patron, coincidencia => {
               const clave = normalizarTerminoAyuda(coincidencia);
               const detalle = detalles.find(item => normalizarTerminoAyuda(item.termino) === clave);
               return crearPalabraClaveInteractiva(coincidencia, detalle?.explicacion || "");
           });
+          return resultado.includes('class="exercise-keyword"')
+              ? resultado
+              : resaltarPalabrasClave(texto);
       }
 
       function palabrasClaveLocales(sec) {
@@ -3183,7 +3223,7 @@
           const locales = palabrasClaveLocales(sec);
           descripcion.innerHTML = resaltarPalabrasClaveIA(sec.exerciseDesc, locales);
           if (estado) estado.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Palabras clave sugeridas por el desafío';
-          if (!window.firebaseAIRealConfigurada || typeof window.consultarTutorIAFirebase !== "function" || !auth?.currentUser) return;
+          if (!window.firebaseAIRealConfigurada || typeof window.consultarTutorIAFirebase !== "function" || !window.firebaseCurrentUser) return;
           try {
               if (estado) estado.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> La IA está identificando las acciones y conceptos principales...';
               const respuesta = await window.consultarTutorIAFirebase({
