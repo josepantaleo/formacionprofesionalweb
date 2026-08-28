@@ -1121,7 +1121,7 @@
        #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child{display:none}
        #panelProfesorModal #tablaProfesorBody > tr.teacher-actions-row > td:last-child{display:table-cell}
        #panelProfesorModal input,#panelProfesorModal select{width:100%;padding:.45rem .5rem;border-radius:6px;border:1px solid rgba(148,163,184,.25);background:rgba(15,23,42,.65);color:inherit;font-size:.72rem}
-       #panelProfesorModal #resumenProfesor{grid-template-columns:repeat(6,minmax(100px,1fr)) !important;gap:.4rem !important;margin-bottom:.55rem !important}
+       #panelProfesorModal #resumenProfesor{grid-template-columns:repeat(7,minmax(100px,1fr)) !important;gap:.4rem !important;margin-bottom:.55rem !important}
        #panelProfesorModal #resumenProfesor > div{padding:.45rem .55rem !important;border-radius:6px !important}
        #panelProfesorModal #resumenProfesor strong{font-size:1rem !important;margin-top:.1rem !important}
        #panelProfesorModal table td:last-child > div{flex-wrap:nowrap !important;align-items:center;white-space:nowrap}
@@ -2202,6 +2202,26 @@
         <div id="estadoClaseProfesor" style="margin-top:1rem;padding:.75rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06);color:#bae6fd;font-size:.85rem;">
           Usá “Iniciar clase” para habilitar las actividades de todos los alumnos conectados.
         </div>
+        <div id="alertaNuevaSolicitud" class="new-request-alert" role="alert" aria-live="assertive">
+          <div><i class="fa-solid fa-bell"></i> <strong id="textoAlertaNuevaSolicitud">Nueva solicitud de estudiante.</strong></div>
+          <button class="btn btn-secondary" type="button" onclick="ocultarAlertaNuevaSolicitud()" aria-label="Cerrar alerta"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <section id="solicitudesPendientesProfesor" class="pending-requests-panel" aria-labelledby="solicitudesPendientesTitulo">
+          <div class="pending-requests-header">
+            <div class="pending-requests-title">
+              <i class="fa-solid fa-user-clock"></i>
+              <h3 id="solicitudesPendientesTitulo" style="margin:0;color:inherit">Solicitudes pendientes</h3>
+              <span id="contadorSolicitudesPendientes" class="pending-count">0</span>
+            </div>
+            <label class="pending-sound-control" for="sonidoSolicitudesProfesor">
+              <input id="sonidoSolicitudesProfesor" type="checkbox" onchange="cambiarSonidoSolicitudes(this.checked)">
+              <i class="fa-solid fa-volume-high"></i> Aviso sonoro
+            </label>
+          </div>
+          <div id="listaSolicitudesPendientes" class="pending-requests-grid">
+            <p style="color:var(--text-muted);margin:0">No hay solicitudes pendientes.</p>
+          </div>
+        </section>
         <details open style="margin-top:1rem;padding:.8rem;border:1px solid rgba(16,185,129,.32);border-radius:8px;background:rgba(16,185,129,.06)">
           <summary style="cursor:pointer;color:#a7f3d0;font-weight:700">
             <i class="fa-solid fa-user-shield"></i> Docentes autorizados
@@ -2836,7 +2856,13 @@
               window.location.reload();
           }
       });
-      window.addEventListener('profesor-data', e => { estudiantesProfesor = e.detail || []; document.getElementById('estadoPanelProfesor').textContent = `Actualizado en tiempo real: ${new Date().toLocaleTimeString()}`; renderPanelProfesor(); });
+      window.addEventListener('profesor-data', e => {
+          const datos = e.detail || [];
+          detectarNuevasSolicitudes(datos);
+          estudiantesProfesor = datos;
+          document.getElementById('estadoPanelProfesor').textContent = `Actualizado en tiempo real: ${new Date().toLocaleTimeString()}`;
+          renderPanelProfesor();
+      });
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
       window.addEventListener('load', () => {
         actualizarVisibilidadDocente();
@@ -5698,6 +5724,96 @@
       // ===============================
       let profesorUnsubscribe = null;
       let estudiantesProfesor = [];
+      let solicitudesPendientesConocidas = null;
+      let sonidoSolicitudesActivo = localStorage.getItem('teacher_pending_request_sound') === 'true';
+
+      function cambiarSonidoSolicitudes(activo) {
+          sonidoSolicitudesActivo = Boolean(activo);
+          localStorage.setItem('teacher_pending_request_sound', String(sonidoSolicitudesActivo));
+          if (sonidoSolicitudesActivo) reproducirSonidoSolicitud();
+      }
+
+      function reproducirSonidoSolicitud() {
+          if (!sonidoSolicitudesActivo) return;
+          try {
+              const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+              if (!AudioContextClass) return;
+              const contexto = new AudioContextClass();
+              const oscilador = contexto.createOscillator();
+              const volumen = contexto.createGain();
+              oscilador.type = 'sine';
+              oscilador.frequency.setValueAtTime(740, contexto.currentTime);
+              oscilador.frequency.setValueAtTime(920, contexto.currentTime + .12);
+              volumen.gain.setValueAtTime(.0001, contexto.currentTime);
+              volumen.gain.exponentialRampToValueAtTime(.12, contexto.currentTime + .02);
+              volumen.gain.exponentialRampToValueAtTime(.0001, contexto.currentTime + .28);
+              oscilador.connect(volumen);
+              volumen.connect(contexto.destination);
+              oscilador.start();
+              oscilador.stop(contexto.currentTime + .3);
+              oscilador.addEventListener('ended', () => contexto.close().catch(() => null));
+          } catch (error) {
+              console.warn('No se pudo reproducir el aviso sonoro.', error);
+          }
+      }
+
+      function ocultarAlertaNuevaSolicitud() {
+          document.getElementById('alertaNuevaSolicitud')?.classList.remove('active');
+      }
+
+      function mostrarAlertaNuevaSolicitud(nuevas) {
+          if (!nuevas.length) return;
+          const nombres = nuevas.map(d => d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante');
+          const texto = nuevas.length === 1
+              ? `Nueva solicitud: ${nombres[0]}.`
+              : `${nuevas.length} nuevas solicitudes de estudiantes.`;
+          const etiqueta = document.getElementById('textoAlertaNuevaSolicitud');
+          if (etiqueta) etiqueta.textContent = texto;
+          document.getElementById('alertaNuevaSolicitud')?.classList.add('active');
+          reproducirSonidoSolicitud();
+      }
+
+      function detectarNuevasSolicitudes(datos) {
+          const pendientes = datos.filter(d => d.estadoCuenta === 'pendiente' && d.uid);
+          const idsActuales = new Set(pendientes.map(d => d.uid));
+          if (solicitudesPendientesConocidas === null) {
+              solicitudesPendientesConocidas = idsActuales;
+              return;
+          }
+          const nuevas = pendientes.filter(d => !solicitudesPendientesConocidas.has(d.uid));
+          solicitudesPendientesConocidas = idsActuales;
+          mostrarAlertaNuevaSolicitud(nuevas);
+      }
+
+      function renderSolicitudesPendientesProfesor() {
+          const lista = document.getElementById('listaSolicitudesPendientes');
+          const contador = document.getElementById('contadorSolicitudesPendientes');
+          const panel = document.getElementById('solicitudesPendientesProfesor');
+          if (!lista || !contador || !panel) return;
+          const pendientes = estudiantesProfesor.filter(d => d.estadoCuenta === 'pendiente');
+          contador.textContent = String(pendientes.length);
+          panel.style.display = 'block';
+          lista.innerHTML = pendientes.length ? pendientes.map(d => {
+              const e = d.estudiante || {};
+              const indice = estudiantesProfesor.indexOf(d);
+              const fechaValor = d.solicitudAprobacionEn;
+              const fecha = fechaValor?.toDate
+                  ? fechaValor.toDate().toLocaleString()
+                  : (fechaValor ? new Date(fechaValor).toLocaleString() : 'Sin fecha');
+              return `<article class="pending-request-card">
+                  <h4>${escapeHtml(e.nombre || d.nombreGoogle || 'Estudiante sin nombre')}</h4>
+                  <p>
+                      ${escapeHtml(d.email || 'Sin correo')}<br>
+                      ${escapeHtml(e.curso || 'Sin curso')} ${escapeHtml(e.division || '')} · ${escapeHtml(e.turno || 'Sin turno')}<br>
+                      Solicitud: ${escapeHtml(fecha)}
+                  </p>
+                  <div class="pending-request-actions">
+                      <button class="btn btn-success" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'activo')"><i class="fa-solid fa-user-check"></i> Aceptar</button>
+                      <button class="btn btn-danger" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'rechazado')"><i class="fa-solid fa-user-xmark"></i> Rechazar</button>
+                  </div>
+              </article>`;
+          }).join('') : '<p style="color:var(--text-muted);margin:0">No hay solicitudes pendientes.</p>';
+      }
 
       function renderDocentesAutorizados() {
           const contenedor = document.getElementById('listaDocentesAutorizados');
@@ -5726,7 +5842,10 @@
 
       function abrirPanelProfesor() {
           document.getElementById('panelProfesorModal').classList.add('active');
+          const controlSonido = document.getElementById('sonidoSolicitudesProfesor');
+          if (controlSonido) controlSonido.checked = sonidoSolicitudesActivo;
           renderDocentesAutorizados();
+          renderSolicitudesPendientesProfesor();
           iniciarPanelProfesorTiempoReal();
       }
       function cerrarPanelProfesor() {
@@ -6507,6 +6626,7 @@
           document.getElementById('detalleEstudianteProfesorModal').classList.add('active');
       }
       function renderPanelProfesor() {
+          renderSolicitudesPendientesProfesor();
           const q = (document.getElementById('filtroProfesor').value || '').toLowerCase().trim();
           const emailFiltro = (document.getElementById('filtroEmailProfesor')?.value || '').toLowerCase().trim();
           const curso = document.getElementById('filtroCursoProfesor').value;
@@ -6579,7 +6699,8 @@
                 || (estadoFiltro === 'alertas' && alerta.activa)
                 || (estadoFiltro === 'cambios' && tieneCambios);
               d.__panelMeta = { progreso, nota, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cuentaPendiente, cuentaRechazada, cronometroPausado, tieneCambios, salidas };
-              return (!q || nombre.includes(q))
+              return (!cuentaPendiente || estadoFiltro === 'solicitudes')
+                  && (!q || nombre.includes(q))
                   && (!emailFiltro || email.includes(emailFiltro))
                   && (!curso || e.curso===curso)
                   && (!division || e.division===division)
