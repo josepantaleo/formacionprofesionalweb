@@ -3792,8 +3792,13 @@
                   );
                   mostrarEstadoFirebase(
                       ok ? 'online' : 'offline',
-                      ok ? 'Cambio de pestaña guardado' : 'No se guardó el cambio de pestaña'
+                      ok ? 'Cambios de pestaña guardados' : `No se guardó el cambio de pestaña${window.ultimoErrorSalidasPestana?.code ? ` (${window.ultimoErrorSalidasPestana.code})` : ''}`
                   );
+                  if (ok) {
+                      removeLocalStorage('app_pending_tab_sync');
+                  } else {
+                      setLocalStorage('app_pending_tab_sync', 'true');
+                  }
                   return ok;
               }
               programarGuardadoFirebase();
@@ -3878,6 +3883,9 @@
 
           window.addEventListener('pagehide', () => {
               void persistirEventosSalidas(true);
+          });
+          window.addEventListener('online', () => {
+              if (getLocalStorage('app_pending_tab_sync') === 'true') void persistirEventosSalidas(true);
           });
 
           // Respaldo para navegadores muy antiguos sin Page Visibility API.
