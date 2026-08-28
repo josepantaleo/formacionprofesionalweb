@@ -2480,8 +2480,8 @@
             <option value="progreso-desc">Progreso: mayor primero</option>
             <option value="nota-asc">Nota: menor primero</option>
             <option value="nota-desc">Nota: mayor primero</option>
-            <option value="salidas-asc">PestaÃ±as: menor primero</option>
-            <option value="salidas-desc">PestaÃ±as: mayor primero</option>
+            <option value="salidas-asc">Pestanas: menor primero</option>
+            <option value="salidas-desc">Pestanas: mayor primero</option>
             <option value="alertas-desc">Alertas primero</option>
           </select>
           <button class="btn btn-secondary" type="button" onclick="limpiarFiltrosProfesor()" title="Restablecer todos los filtros"><i class="fa-solid fa-filter-circle-xmark"></i> Limpiar</button>
@@ -2912,9 +2912,9 @@
       let historialResultados = {};
       let actividadesFinalizadas = {};
       let contadorPrevisualizaciones = {};
-      let totalSalidasPestaÃ±a = 0;
-      let eventosSalidasPestaÃ±a = [];
-      let salidaActivaPestaÃ±a = null;
+      let totalSalidasPestana = 0;
+      let eventosSalidasPestana = [];
+      let salidaActivaPestana = null;
       let revisionSalidasActual = { estado: "pendiente", penalizacion: 0, motivo: "" };
       let seccionActivaActual = seccionesData[0].id;
 
@@ -3107,9 +3107,9 @@
               ? datos.solicitadoEn.toMillis()
               : Number(datos.solicitadoEn?.seconds || 0) * 1000;
           const reinicioReciente = fechaReinicio > 0 && Date.now() - fechaReinicio < 10 * 60 * 1000;
-          if (Number(datos.salidasPestana ?? datos.salidasPestaÃ±a) !== 0 && !reinicioReciente) return;
-          totalSalidasPestaÃ±a = 0;
-          salidaActivaPestaÃ±a = null;
+          if (Number(datos.salidasPestana ?? datos.salidasPestana) !== 0 && !reinicioReciente) return;
+          totalSalidasPestana = 0;
+          salidaActivaPestana = null;
           setLocalStorage('app_blur_count', 0);
           setLocalStorage('app_last_tab_reset', datos.id);
           const contador = document.getElementById('blurCount');
@@ -3228,8 +3228,8 @@
           });
           return {
               estudiante: { nombre, curso, division, turno },
-              salidasPestana: totalSalidasPestaÃ±a,
-              eventosSalidasPestana: JSON.parse(JSON.stringify(eventosSalidasPestaÃ±a || [])),
+              salidasPestana: totalSalidasPestana,
+              eventosSalidasPestana: JSON.parse(JSON.stringify(eventosSalidasPestana || [])),
               pantallaBloqueada: pantallaBloqueada === true,
               codigos,
               tiemposRestantes: { ...tiemposRestantes },
@@ -3387,13 +3387,13 @@
           }
           const salidasGuardadas = datos.salidasPestana ?? datos["salidasPesta\u00f1a"];
           if (salidasGuardadas !== undefined) {
-              totalSalidasPestaÃ±a = Number(salidasGuardadas) || 0;
-              setLocalStorage('app_blur_count', totalSalidasPestaÃ±a);
+              totalSalidasPestana = Number(salidasGuardadas) || 0;
+              setLocalStorage('app_blur_count', totalSalidasPestana);
           }
           const eventosGuardados = datos.eventosSalidasPestana ?? datos["eventosSalidasPesta\u00f1a"];
           if (Array.isArray(eventosGuardados)) {
-              eventosSalidasPestaÃ±a = eventosGuardados;
-              setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaÃ±a));
+              eventosSalidasPestana = eventosGuardados;
+              setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestana));
           }
           if (datos.revisionSalidas && typeof datos.revisionSalidas === 'object') {
               revisionSalidasActual = {
@@ -3691,15 +3691,15 @@
           document.getElementById('studentCourse').value = getLocalStorage('app_student_course') || '';
           document.getElementById('studentDivision').value = getLocalStorage('app_student_division') || '';
            document.getElementById('studentTurno').value = getLocalStorage('app_student_turno') || '';
-          totalSalidasPestaÃ±a = parseInt(getLocalStorage('app_blur_count') || '0');
+          totalSalidasPestana = parseInt(getLocalStorage('app_blur_count') || '0');
           try {
               const eventosLocales = JSON.parse(getLocalStorage('app_tab_events') || '[]');
-              if (!eventosSalidasPestaÃ±a.length && Array.isArray(eventosLocales)) eventosSalidasPestaÃ±a = eventosLocales;
+              if (!eventosSalidasPestana.length && Array.isArray(eventosLocales)) eventosSalidasPestana = eventosLocales;
           } catch {
-              eventosSalidasPestaÃ±a = [];
+              eventosSalidasPestana = [];
           }
-          document.getElementById('blurCount').innerText = totalSalidasPestaÃ±a;
-          document.getElementById('btnJustificarSalida').style.display = eventosSalidasPestaÃ±a.length ? 'inline-flex' : 'none';
+          document.getElementById('blurCount').innerText = totalSalidasPestana;
+          document.getElementById('btnJustificarSalida').style.display = eventosSalidasPestana.length ? 'inline-flex' : 'none';
 
           document.getElementById('studentName').addEventListener('input', (e) => {
               setLocalStorage('app_student_name', e.target.value);
@@ -3754,13 +3754,13 @@
           let ultimoEventoVisibilidad = 0;
 
           async function persistirEventosSalidas(inmediato = false) {
-              setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaÃ±a));
-              document.getElementById('btnJustificarSalida').style.display = eventosSalidasPestaÃ±a.length ? 'inline-flex' : 'none';
+              setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestana));
+              document.getElementById('btnJustificarSalida').style.display = eventosSalidasPestana.length ? 'inline-flex' : 'none';
               if (inmediato && window.guardarSalidasPestanaFirebase) {
                   mostrarEstadoFirebase('saving', 'Guardando cambio de pestaÃ±a...');
                   const ok = await window.guardarSalidasPestanaFirebase(
-                      totalSalidasPestaÃ±a,
-                      JSON.parse(JSON.stringify(eventosSalidasPestaÃ±a))
+                      totalSalidasPestana,
+                      JSON.parse(JSON.stringify(eventosSalidasPestana))
                   );
                   mostrarEstadoFirebase(
                       ok ? 'online' : 'offline',
@@ -3772,25 +3772,25 @@
               return true;
           }
 
-          function registrarCambioPestaÃ±a(origen = 'visibility') {
+          function registrarCambioPestana(origen = 'visibility') {
               const ahora = Date.now();
               if (ahora - ultimoEventoVisibilidad < 1500) return;
               ultimoEventoVisibilidad = ahora;
 
-              totalSalidasPestaÃ±a++;
-              if (totalSalidasPestaÃ±a >= 3) {
+              totalSalidasPestana++;
+              if (totalSalidasPestana >= 3) {
                   pantallaBloqueada = true;
                   void window.guardarProgresoFirebase?.({
                       pantallaBloqueada: true,
                       pantallaBloqueadaEn: new Date().toISOString(),
-                      pantallaBloqueadaSalidas: totalSalidasPestaÃ±a,
+                      pantallaBloqueadaSalidas: totalSalidasPestana,
                       pantallaBloqueadaSeccion: seccionActivaActual
                   });
               }
-              setLocalStorage('app_blur_count', totalSalidasPestaÃ±a);
-              salidaActivaPestaÃ±a = {
-                  id: `${ahora}-${totalSalidasPestaÃ±a}`,
-                  numero: eventosSalidasPestaÃ±a.length + 1,
+              setLocalStorage('app_blur_count', totalSalidasPestana);
+              salidaActivaPestana = {
+                  id: `${ahora}-${totalSalidasPestana}`,
+                  numero: eventosSalidasPestana.length + 1,
                   salidaEn: new Date(ahora).toISOString(),
                   regresoEn: null,
                   duracionSegundos: null,
@@ -3798,39 +3798,39 @@
                   origen,
                   justificacion: null
               };
-              eventosSalidasPestaÃ±a.push(salidaActivaPestaÃ±a);
+              eventosSalidasPestana.push(salidaActivaPestana);
               void persistirEventosSalidas(true);
 
               const badge = document.getElementById('blurCount');
-              if (badge) badge.innerText = String(totalSalidasPestaÃ±a);
+              if (badge) badge.innerText = String(totalSalidasPestana);
 
-              if (totalSalidasPestaÃ±a === 3) {
+              if (totalSalidasPestana === 3) {
                   alert('Se registraron 3 cambios de pestaña. La actividad quedó bloqueada y requiere autorización docente.');
-              } else if (totalSalidasPestaÃ±a === 6) {
+              } else if (totalSalidasPestana === 6) {
                   alert('AtenciÃ³n: se registraron 6 cambios de pestaÃ±a. El caso quedarÃ¡ marcado para revisiÃ³n docente.');
-              } else if (totalSalidasPestaÃ±a === 8) {
+              } else if (totalSalidasPestana === 8) {
                   alert('Alerta de revisiÃ³n: se registraron 8 cambios de pestaÃ±a. Las actividades continÃºan habilitadas y el profesor decidirÃ¡ si corresponde alguna medida.');
               }
           }
 
-          function registrarRegresoPestaÃ±a() {
-              if (!salidaActivaPestaÃ±a) return;
+          function registrarRegresoPestana() {
+              if (!salidaActivaPestana) return;
               const regreso = Date.now();
-              salidaActivaPestaÃ±a.regresoEn = new Date(regreso).toISOString();
-              salidaActivaPestaÃ±a.duracionSegundos = Math.max(
+              salidaActivaPestana.regresoEn = new Date(regreso).toISOString();
+              salidaActivaPestana.duracionSegundos = Math.max(
                   0,
-                  Math.round((regreso - new Date(salidaActivaPestaÃ±a.salidaEn).getTime()) / 1000)
+                  Math.round((regreso - new Date(salidaActivaPestana.salidaEn).getTime()) / 1000)
               );
-              salidaActivaPestaÃ±a = null;
+              salidaActivaPestana = null;
               void persistirEventosSalidas(true);
           }
 
           // Fuente principal: cambio real de visibilidad de la pÃ¡gina.
           document.addEventListener('visibilitychange', () => {
               if (document.visibilityState === 'hidden') {
-                  registrarCambioPestaÃ±a('visibility');
+                  registrarCambioPestana('visibility');
               } else {
-                  registrarRegresoPestaÃ±a();
+                  registrarRegresoPestana();
               }
           });
 
@@ -3848,7 +3848,7 @@
           // Respaldo para navegadores muy antiguos sin Page Visibility API.
           // En navegadores modernos NO se usa blur para evitar falsos positivos.
           if (!('visibilityState' in document)) {
-              window.addEventListener('blur', () => registrarCambioPestaÃ±a('blur-fallback'));
+              window.addEventListener('blur', () => registrarCambioPestana('blur-fallback'));
           }
 
           document.addEventListener('copy', e => { if (e.target && e.target.closest && e.target.closest('.code-editor')) e.preventDefault(); });
@@ -4062,7 +4062,7 @@
       }
 
       function abrirJustificacionUltimaSalida() {
-          const evento = [...eventosSalidasPestaÃ±a].reverse().find(x => !x.justificacion);
+          const evento = [...eventosSalidasPestana].reverse().find(x => !x.justificacion);
           if (!evento) {
               alert('No hay cambios de pestaÃ±a pendientes de justificaciÃ³n.');
               return;
@@ -4081,7 +4081,7 @@
 
       function guardarJustificacionSalida() {
           const modal = document.getElementById('justificarSalidaModal');
-          const evento = eventosSalidasPestaÃ±a.find(x => x.id === modal.dataset.eventoId);
+          const evento = eventosSalidasPestana.find(x => x.id === modal.dataset.eventoId);
           const motivo = document.getElementById('motivoJustificacionSalida').value;
           const detalle = document.getElementById('detalleJustificacionSalida').value.trim();
           if (!evento || !motivo || !detalle) {
@@ -4093,7 +4093,7 @@
               detalle,
               enviadaEn: new Date().toISOString()
           };
-          setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaÃ±a));
+          setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestana));
           cerrarJustificacionSalida();
           programarGuardadoFirebase();
           alert('La justificaciÃ³n quedÃ³ registrada para revisiÃ³n docente.');
@@ -4313,13 +4313,13 @@
           if (!confirm("El contador visible volverÃ¡ a cero. El historial de cambios de pestaÃ±a, las justificaciones y la revisiÃ³n docente se conservarÃ¡n. Â¿Continuar?")) {
               return;
           }
-          const cantidadAnterior = totalSalidasPestaÃ±a;
-          totalSalidasPestaÃ±a = 0;
-          salidaActivaPestaÃ±a = null;
-          setLocalStorage('app_blur_count', totalSalidasPestaÃ±a);
-          setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestaÃ±a));
-          document.getElementById('blurCount').innerText = totalSalidasPestaÃ±a;
-          const hayPendientes = eventosSalidasPestaÃ±a.some(evento => !evento.justificacion);
+          const cantidadAnterior = totalSalidasPestana;
+          totalSalidasPestana = 0;
+          salidaActivaPestana = null;
+          setLocalStorage('app_blur_count', totalSalidasPestana);
+          setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestana));
+          document.getElementById('blurCount').innerText = totalSalidasPestana;
+          const hayPendientes = eventosSalidasPestana.some(evento => !evento.justificacion);
           document.getElementById('btnJustificarSalida').style.display = hayPendientes ? 'inline-flex' : 'none';
           await guardarAhoraFirebase();
           alert(`Contador reiniciado: ${cantidadAnterior} cambio(s) pasaron a 0. El historial anterior continÃºa disponible para el profesor.`);
@@ -4567,9 +4567,9 @@
       function resetearSistemaCompleto() {
           actividadesFinalizadas = {};
           contadorPrevisualizaciones = {};
-          totalSalidasPestaÃ±a = 0;
-          eventosSalidasPestaÃ±a = [];
-          salidaActivaPestaÃ±a = null;
+          totalSalidasPestana = 0;
+          eventosSalidasPestana = [];
+          salidaActivaPestana = null;
           revisionSalidasActual = { estado: "pendiente", penalizacion: 0, motivo: "" };
           removeLocalStorage('app_blur_count');
           removeLocalStorage('app_tab_events');
@@ -6986,7 +6986,7 @@
           const resumenConsultasIA = resumirConsultasIAEstudiante(d);
           const eventos = Array.isArray(d.eventosSalidasPestana)
               ? d.eventosSalidasPestana
-              : (Array.isArray(d.eventosSalidasPestaÃ±a) ? d.eventosSalidasPestaÃ±a : []);
+              : (Array.isArray(d.eventosSalidasPestana) ? d.eventosSalidasPestana : []);
           const revision = d.revisionSalidas || {};
           const cronometroIndividualPausado = d.controlCronometroIndividual?.pausado === true;
           const cuentaInactiva = d.estadoCuenta === 'inactivo';
@@ -7133,7 +7133,7 @@
                   <div class="teacher-detail-stat"><small>Promedio acadÃ©mico</small><strong>${promedio === 'â€”' ? 'Pendiente' : `${promedio}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === 'â€”' ? 'Pendiente' : `${notaDefinitiva}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Estado de cuenta</small><strong style="color:${colorCuentaDetalle}">${estadoCuentaDetalle}</strong></div>
-                  <div class="teacher-detail-stat"><small>Salidas de pestaÃ±a</small><strong>${Number(d.salidasPestana ?? d.salidasPestaÃ±a ?? 0)}</strong></div>
+                  <div class="teacher-detail-stat"><small>Salidas de pestaÃ±a</small><strong>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</strong></div>
                   <div class="teacher-detail-stat"><small>Ãšltima actualizaciÃ³n</small><strong>${escapeHtml(fecha)}</strong></div>
               </div>
               <div style="position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;padding:.7rem;margin-bottom:1rem;border:1px solid rgba(56,189,248,.35);border-radius:8px;background:rgba(15,23,42,.96);box-shadow:0 8px 18px rgba(0,0,0,.22)">
@@ -7271,7 +7271,7 @@
               const cronometroPausado = d.controlCronometroIndividual?.pausado === true
                   || d.controlCronometros?.pausado === true;
               const pantallaBloqueada = d.pantallaBloqueada === true;
-              const salidas = Number(d.salidasPestana ?? d.salidasPestaÃ±a ?? 0);
+              const salidas = Number(d.salidasPestana ?? d.salidasPestana ?? 0);
               const tieneCambios = salidas > 0;
               const cumpleProgreso = !progresoFiltro || (
                   progresoFiltro === '0' ? progreso === 0 :
@@ -7383,7 +7383,7 @@
               const bloqueoDetalle = bloqueado
                   ? `<div style="margin-top:.3rem;color:#fecaca;font-size:.72rem;line-height:1.35">Salidas: ${Number(d.pantallaBloqueadaSalidas || d.salidasPestana || 0)}<br>Sección: ${escapeHtml(d.pantallaBloqueadaSeccion || 'Sin identificar')}<br>${escapeHtml(bloqueoFecha || 'Fecha no registrada')}</div>`
                   : '';
-              return `<tr style="${bloqueado ? 'background:rgba(239,68,68,.08)' : (alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : '')}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${colorEstado};font-weight:700"><i class="fa-solid ${bloqueado ? 'fa-lock' : 'fa-circle-check'}"></i> ${estadoVisual}${bloqueoDetalle}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestaÃ±a ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronÃ³metro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaÃ±a" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> PestaÃ±as</button><button class="btn btn-danger" onclick="desbloquearPantallaEstudianteProfesor(${indice})" style="padding:.4rem .65rem" title="Desbloquear pantalla del estudiante"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
+              return `<tr style="${bloqueado ? 'background:rgba(239,68,68,.08)' : (alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : '')}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${colorEstado};font-weight:700"><i class="fa-solid ${bloqueado ? 'fa-lock' : 'fa-circle-check'}"></i> ${estadoVisual}${bloqueoDetalle}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronÃ³metro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaÃ±a" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestanas</button><button class="btn btn-danger" onclick="desbloquearPantallaEstudianteProfesor(${indice})" style="padding:.4rem .65rem" title="Desbloquear pantalla del estudiante"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
               }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
@@ -7615,7 +7615,7 @@
           doc.text("IPEM 146 - Reporte de Evaluaciones JavaScript", 14, 20);
           doc.setFontSize(10);
           doc.text(`Alumno: ${nombre} | Curso: ${curso} | DivisiÃ³n: ${division} | Turno: ${turno}`, 14, 28);
-          doc.text(`Cambios de pestaÃ±a registrados: ${totalSalidasPestaÃ±a}`, 14, 34);
+          doc.text(`Cambios de pestaÃ±a registrados: ${totalSalidasPestana}`, 14, 34);
           doc.text(`Fecha de EmisiÃ³n: ${new Date().toLocaleString()}`, 14, 40);
           doc.line(14, 43, 196, 43);
 
@@ -7712,11 +7712,11 @@
 
           asegurarEspacioPDF(12);
           doc.setFont("helvetica", "bold");
-          doc.text(`Detalle de cambios de pestaÃ±a (${eventosSalidasPestaÃ±a.length})`, 14, yPos);
+          doc.text(`Detalle de cambios de pestaÃ±a (${eventosSalidasPestana.length})`, 14, yPos);
           yPos += 6;
           doc.setFont("helvetica", "normal");
-          if (eventosSalidasPestaÃ±a.length) {
-              eventosSalidasPestaÃ±a.forEach(evento => {
+          if (eventosSalidasPestana.length) {
+              eventosSalidasPestana.forEach(evento => {
                   const salida = evento.salidaEn ? new Date(evento.salidaEn).toLocaleString() : 'Sin fecha';
                   const duracion = evento.duracionSegundos === null || evento.duracionSegundos === undefined
                       ? 'duraciÃ³n no registrada'
@@ -7815,4 +7815,5 @@
     </script>
   </body>
 </html>
+
 
