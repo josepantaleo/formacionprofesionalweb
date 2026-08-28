@@ -325,7 +325,7 @@
       }
 
       .exercise-keyword {
-        display: inline;
+        display: inline-block;
         padding: 0.14rem 0.38rem;
         border-radius: 5px;
         background: #0ea5e9;
@@ -335,7 +335,87 @@
         font-size: 1.04em;
         font-weight: 800;
         letter-spacing: 0.01em;
-        white-space: nowrap;
+        line-height: 1.2;
+        cursor: help;
+        transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .exercise-keyword:hover,
+      .exercise-keyword:focus-visible {
+        background: #7dd3fc;
+        box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.32);
+        transform: translateY(-1px);
+        outline: none;
+      }
+
+      .keyword-help-panel {
+        display: none;
+        margin: 0.15rem 0 0.9rem;
+        padding: 0.75rem 0.85rem;
+        border-left: 4px solid #38bdf8;
+        border-radius: 6px;
+        background: rgba(14, 165, 233, 0.12);
+        color: #e0f2fe;
+        font-size: 0.88rem;
+        line-height: 1.5;
+      }
+
+      .keyword-help-panel.active {
+        display: block;
+      }
+
+      .keyword-help-panel strong {
+        color: #7dd3fc;
+      }
+
+      .support-resource-button {
+        margin: 0.15rem 0 0.85rem;
+      }
+
+      #sitioApoyoModal {
+        z-index: 8500;
+      }
+
+      #sitioApoyoModal .support-site-box {
+        width: min(1180px, 96vw);
+        max-width: 1180px;
+        height: min(88vh, 850px);
+        padding: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .support-site-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.85rem 1rem;
+        border-bottom: 1px solid var(--border);
+        background: #0f172a;
+      }
+
+      .support-site-header h3 {
+        margin: 0;
+        color: #7dd3fc;
+      }
+
+      .support-site-note {
+        margin: 0;
+        padding: 0.55rem 1rem;
+        background: rgba(16, 185, 129, 0.1);
+        color: #a7f3d0;
+        font-size: 0.8rem;
+        border-bottom: 1px solid rgba(16, 185, 129, 0.25);
+      }
+
+      #sitioApoyoFrame {
+        width: 100%;
+        flex: 1;
+        min-height: 0;
+        border: 0;
+        background: #ffffff;
       }
 
       .exercise-ai-status {
@@ -2605,6 +2685,32 @@
       </div>
     </div>
 
+    <div class="modal-overlay" id="sitioApoyoModal" role="dialog" aria-modal="true" aria-labelledby="sitioApoyoTitle">
+      <div class="modal-box support-site-box">
+        <div class="support-site-header">
+          <div>
+            <h3 id="sitioApoyoTitle"><i class="fa-solid fa-book-open-reader"></i> Material de apoyo</h3>
+            <small id="sitioApoyoSeccion" style="color:var(--text-muted)">Consulta dentro de la actividad</small>
+          </div>
+          <button class="btn btn-secondary" type="button" onclick="cerrarSitioApoyo()" aria-label="Cerrar material de apoyo">
+            <i class="fa-solid fa-xmark"></i> Cerrar
+          </button>
+        </div>
+        <p class="support-site-note">
+          <i class="fa-solid fa-shield-halved"></i>
+          Esta consulta se abre dentro de la misma pantalla y no suma una salida de pestaña.
+        </p>
+        <iframe
+          id="sitioApoyoFrame"
+          src="about:blank"
+          title="Sitio de Formación Profesional"
+          loading="lazy"
+          sandbox="allow-scripts allow-forms allow-same-origin allow-downloads"
+          referrerpolicy="strict-origin-when-cross-origin"
+        ></iframe>
+      </div>
+    </div>
+
     <!-- Editor de desafíos del profesor, persistido en Firestore -->
     <div class="modal-overlay" id="editorDesafiosFirebaseModal">
       <div class="modal-box" style="max-width:1250px;width:96vw;max-height:92vh;overflow:auto;">
@@ -2854,6 +2960,88 @@
           ? window.DESAFIOS_DATA
           : seccionesDataBase;
 
+      const SITIO_APOYO_URL = "https://josepantaleo.github.io/formacionprofesionalweb/";
+      const ayudasPalabrasClave = {
+          "declarar": "Crear una variable e indicar su nombre antes de utilizarla.",
+          "definir": "Establecer el nombre, el valor o el comportamiento que tendrá un elemento.",
+          "inicializa": "Crear una variable, arreglo u objeto asignándole su primer valor.",
+          "utiliza": "Aplicar en tu código el recurso indicado por la consigna.",
+          "implementar": "Escribir y poner en funcionamiento la lógica solicitada.",
+          "validar": "Comprobar que un dato o una condición cumpla las reglas indicadas.",
+          "evaluar": "Comprobar una condición para obtener un resultado verdadero o falso.",
+          "calcular": "Realizar las operaciones necesarias y guardar o mostrar el resultado.",
+          "convertir": "Transformar un dato de un formato o tipo a otro.",
+          "almacenar": "Guardar un valor en una variable, arreglo, objeto o almacenamiento.",
+          "recuperar": "Leer nuevamente un dato que fue guardado anteriormente.",
+          "mostrar": "Presentar el resultado para que pueda verse.",
+          "imprimir": "Enviar el resultado a la consola mediante console.log().",
+          "generar": "Construir el resultado solicitado a partir de los datos disponibles.",
+          "retornar": "Devolver un resultado desde una función usando return.",
+          "función": "Bloque reutilizable de instrucciones. Debés definirlo y luego llamarlo.",
+          "function": "Palabra de JavaScript utilizada para declarar una función.",
+          "parámetros": "Datos que una función recibe entre paréntesis para poder trabajar.",
+          "const": "Declara una variable cuyo valor no debe reasignarse.",
+          "let": "Declara una variable cuyo valor puede cambiar.",
+          "var": "Forma antigua de declarar variables; tiene alcance de función.",
+          "array": "Lista ordenada de valores. En JavaScript se escribe entre corchetes.",
+          "arreglo": "Lista ordenada de valores. En JavaScript se escribe entre corchetes.",
+          "objeto": "Estructura que agrupa datos mediante propiedades de tipo clave y valor.",
+          "if": "Ejecuta un bloque solamente cuando la condición es verdadera.",
+          "else if": "Permite comprobar otra condición cuando la anterior no se cumplió.",
+          "else": "Ejecuta una alternativa cuando las condiciones anteriores son falsas.",
+          "if/else": "Estructura que permite elegir entre dos caminos según una condición.",
+          "for": "Bucle usado para repetir instrucciones una cantidad controlada de veces.",
+          "while": "Bucle que repite instrucciones mientras una condición sea verdadera.",
+          "class": "Plantilla para crear objetos con propiedades y métodos compartidos.",
+          "consola": "Zona donde se muestran resultados y mensajes del programa.",
+          "console.log()": "Instrucción para mostrar valores o mensajes en la consola.",
+          "dom": "Representación de los elementos HTML que JavaScript puede consultar y modificar.",
+          "scope": "Zona del programa donde una variable existe y puede utilizarse.",
+          "localstorage": "Almacenamiento del navegador que conserva datos entre recargas.",
+          "filter()": "Crea un nuevo arreglo conservando solo los elementos que cumplen una condición.",
+          "reduce()": "Recorre un arreglo y combina sus valores en un único resultado.",
+          "push()": "Agrega un elemento al final de un arreglo.",
+          "shift()": "Quita y devuelve el primer elemento de un arreglo.",
+          "trim()": "Elimina espacios innecesarios al principio y al final de un texto.",
+          "tolowercase()": "Convierte todas las letras de un texto a minúsculas.",
+          "replace()": "Reemplaza una parte de un texto por otro contenido.",
+          "json.parse()": "Convierte una cadena escrita en formato JSON en un valor de JavaScript.",
+          "tolocaletimestring()": "Obtiene la hora local con un formato legible.",
+          "innertext": "Propiedad utilizada para leer o cambiar el texto visible de un elemento.",
+          "style.color": "Propiedad que permite cambiar el color del texto de un elemento.",
+          "style.backgroundcolor": "Propiedad que permite cambiar el color de fondo de un elemento.",
+          "try...catch...finally": "Estructura para intentar una operación, capturar errores y ejecutar una acción final.",
+          "throw new error()": "Crea intencionalmente un error para que pueda ser capturado y tratado."
+      };
+
+      function normalizarTerminoAyuda(termino) {
+          return String(termino || "")
+              .trim()
+              .toLocaleLowerCase("es")
+              .replace(/^\.|;$/g, "");
+      }
+
+      function obtenerAyudaPalabraClave(termino, explicacion = "") {
+          if (String(explicacion || "").trim()) return String(explicacion).trim();
+          const clave = normalizarTerminoAyuda(termino);
+          return ayudasPalabrasClave[clave]
+              || `Es una acción o un concepto central de la consigna. Identificá dónde aplicarlo y comprobá que aparezca claramente en tu solución.`;
+      }
+
+      function escaparAtributoAyuda(valor) {
+          return String(valor ?? "")
+              .replace(/&/g, "&amp;")
+              .replace(/"/g, "&quot;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;");
+      }
+
+      function crearPalabraClaveInteractiva(termino, explicacion = "") {
+          const ayuda = obtenerAyudaPalabraClave(termino, explicacion);
+          const etiqueta = `Ver ayuda sobre ${termino}`;
+          return `<span class="exercise-keyword" role="button" tabindex="0" data-keyword="${escaparAtributoAyuda(termino)}" data-help="${escaparAtributoAyuda(ayuda)}" title="${escaparAtributoAyuda(etiqueta)}" aria-label="${escaparAtributoAyuda(etiqueta)}">${termino}</span>`;
+      }
+
       function resaltarPalabrasClave(texto) {
           const palabrasClave = [
               "console\\.log\\(\\)", "JSON\\.parse\\(\\)", "toLocaleTimeString\\(\\)",
@@ -2874,7 +3062,7 @@
               .replace(/'/g, "&#39;");
           const textoSeguro = escapar(texto);
           const patron = new RegExp(`(${palabrasClave.sort((a, b) => b.length - a.length).join("|")})`, "gi");
-          return textoSeguro.replace(patron, '<strong class="exercise-keyword">$1</strong>');
+          return textoSeguro.replace(patron, coincidencia => crearPalabraClaveInteractiva(coincidencia));
       }
 
       function resaltarPalabrasClaveIA(texto, palabras) {
@@ -2886,14 +3074,31 @@
               .replace(/>/g, "&gt;")
               .replace(/"/g, "&quot;")
               .replace(/'/g, "&#39;");
-          const lista = [...new Set((Array.isArray(palabras) ? palabras : [])
-              .map(p => String(p).trim())
-              .filter(p => p.length >= 3 && p.length <= 80))]
-              .sort((a, b) => b.length - a.length);
-          if (!lista.length) return resaltarPalabrasClave(texto);
+          const detalles = [];
+          const vistos = new Set();
+          (Array.isArray(palabras) ? palabras : []).forEach(item => {
+              const termino = String(
+                  typeof item === "string"
+                      ? item
+                      : item?.palabra || item?.termino || item?.frase || ""
+              ).trim();
+              const explicacion = typeof item === "object"
+                  ? String(item?.explicacion || item?.ayuda || item?.significado || "").trim()
+                  : "";
+              const clave = normalizarTerminoAyuda(termino);
+              if (termino.length < 3 || termino.length > 80 || vistos.has(clave)) return;
+              vistos.add(clave);
+              detalles.push({ termino, explicacion });
+          });
+          detalles.sort((a, b) => b.termino.length - a.termino.length);
+          if (!detalles.length) return resaltarPalabrasClave(texto);
           const textoSeguro = escaparHtml(texto);
-          const patron = new RegExp(`(${lista.map(escapar).join("|")})`, "gi");
-          return textoSeguro.replace(patron, '<strong class="exercise-keyword">$1</strong>');
+          const patron = new RegExp(`(${detalles.map(item => escapar(item.termino)).join("|")})`, "gi");
+          return textoSeguro.replace(patron, coincidencia => {
+              const clave = normalizarTerminoAyuda(coincidencia);
+              const detalle = detalles.find(item => normalizarTerminoAyuda(item.termino) === clave);
+              return crearPalabraClaveInteractiva(coincidencia, detalle?.explicacion || "");
+          });
       }
 
       function palabrasClaveLocales(sec) {
@@ -2909,11 +3114,66 @@
           try {
               const datos = JSON.parse(bloque);
               return Array.isArray(datos)
-                  ? datos.map(x => typeof x === "string" ? x : x?.palabra || x?.termino || "")
+                  ? datos.map(x => typeof x === "string"
+                      ? { termino: x, explicacion: "" }
+                      : {
+                          termino: x?.palabra || x?.termino || x?.frase || "",
+                          explicacion: x?.explicacion || x?.ayuda || x?.significado || ""
+                      })
                   : [];
           } catch (_) {
-              return texto.split(/[,;\n•]+/).map(x => x.replace(/^[-*\d.\s]+/, "").trim());
+              return texto.split(/[,;\n•]+/).map(x => ({
+                  termino: x.replace(/^[-*\d.\s]+/, "").trim(),
+                  explicacion: ""
+              }));
           }
+      }
+
+      function mostrarAyudaPalabraClave(elemento) {
+          const seccion = elemento.closest(".section-card");
+          const panel = seccion?.querySelector(".keyword-help-panel");
+          if (!panel) return;
+          const termino = elemento.dataset.keyword || elemento.textContent || "Palabra clave";
+          const ayuda = elemento.dataset.help || obtenerAyudaPalabraClave(termino);
+          panel.innerHTML = "";
+          const titulo = document.createElement("strong");
+          titulo.textContent = `${termino}: `;
+          panel.appendChild(titulo);
+          panel.appendChild(document.createTextNode(ayuda));
+          panel.classList.add("active");
+          panel.focus();
+      }
+
+      document.addEventListener("click", event => {
+          const palabra = event.target.closest?.(".exercise-keyword");
+          if (palabra) mostrarAyudaPalabraClave(palabra);
+      });
+
+      document.addEventListener("keydown", event => {
+          const palabra = event.target.closest?.(".exercise-keyword");
+          if (palabra && (event.key === "Enter" || event.key === " ")) {
+              event.preventDefault();
+              mostrarAyudaPalabraClave(palabra);
+          }
+      });
+
+      function abrirSitioApoyo(seccionId = "") {
+          const modal = document.getElementById("sitioApoyoModal");
+          const frame = document.getElementById("sitioApoyoFrame");
+          const seccion = seccionesData.find(item => item.id === seccionId);
+          const detalle = document.getElementById("sitioApoyoSeccion");
+          if (detalle) {
+              detalle.textContent = seccion
+                  ? `Consulta para apoyar: ${seccion.title}`
+                  : "Consulta dentro de la actividad";
+          }
+          if (frame && frame.src === "about:blank") frame.src = SITIO_APOYO_URL;
+          modal?.classList.add("active");
+          modal?.querySelector("button")?.focus();
+      }
+
+      function cerrarSitioApoyo() {
+          document.getElementById("sitioApoyoModal")?.classList.remove("active");
       }
 
       async function analizarDesafioConIA(sec) {
@@ -2929,7 +3189,7 @@
               const respuesta = await window.consultarTutorIAFirebase({
                   nombreModulo: sec.title || sec.id,
                   consigna: sec.exerciseDesc || "",
-                  pregunta: "Identificá entre 6 y 14 palabras o frases clave que ayuden a un estudiante a comprender qué debe hacer. Devolvé únicamente un array JSON de strings, sin explicación ni código.",
+                  pregunta: "Identificá entre 6 y 14 palabras o frases clave que ayuden a comprender qué debe hacer el estudiante. Devolvé únicamente un array JSON de objetos con las propiedades termino y explicacion. La explicación debe ser breve, clara, orientada a la acción y no debe resolver el ejercicio.",
                   modo: "identificar_palabras_clave",
                   conceptos: locales.join(", ")
               });
@@ -4010,6 +4270,12 @@
                       <div class="exercise-ai-status" id="exercise-ai-status-${sec.id}" aria-live="polite">
                           <i class="fa-solid fa-wand-magic-sparkles"></i> Preparando palabras clave...
                       </div>
+                      <div class="keyword-help-panel" id="keyword-help-${sec.id}" tabindex="-1" aria-live="polite">
+                          Seleccioná una palabra resaltada para ver qué significa y qué acción te pide realizar.
+                      </div>
+                      <button class="btn btn-secondary support-resource-button" type="button" onclick="abrirSitioApoyo('${sec.id}')">
+                          <i class="fa-solid fa-book-open-reader"></i> Consultar material de apoyo
+                      </button>
 
                       <div class="code-playground">
                           <div class="editor-container">
