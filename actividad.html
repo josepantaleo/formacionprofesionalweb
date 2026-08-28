@@ -1230,6 +1230,7 @@
       let teacherAuth = null, teacherDb = null, teacherProvider = null;
       let firebaseAITemplateModel = null;
       let firebaseAIDirectModel = null;
+      let firebaseAIInitError = "";
       let teacherPersistenceReady = Promise.resolve();
 
       if (firebaseConfigured) {
@@ -1317,7 +1318,12 @@
         const response = firebaseAITemplateModel
           ? await firebaseAITemplateModel.generateContent(FIREBASE_AI_TEMPLATE_ID, parametros)
           : await firebaseAIDirectModel.generateContent(instrucciones);
-        const texto = response?.response?.text?.().trim() || "";
+        const texto = String(
+          response?.response?.text?.() ||
+          response?.text?.() ||
+          response?.candidates?.[0]?.content?.parts?.map(p => p?.text || "").join("") ||
+          ""
+        ).trim();
         if (!texto) throw new Error("La IA no devolvió una respuesta utilizable.");
         return texto;
       };
