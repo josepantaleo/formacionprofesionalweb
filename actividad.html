@@ -1509,7 +1509,8 @@
           window.dispatchEvent(new CustomEvent("estado-cuenta-estudiante", {
             detail: {
               estadoCuenta: datos.estadoCuenta || "activo",
-              bajaMotivo: datos.bajaMotivo || ""
+              bajaMotivo: datos.bajaMotivo || "",
+              rechazoMotivo: datos.rechazoMotivo || ""
             }
           }));
           const reinicio = datos.reinicioSalidas || null;
@@ -1749,6 +1750,11 @@
             bajaMotivo: estadoData.bajaMotivo || "",
             bajaFecha: estadoData.bajaFecha || null,
             bajaPor: estadoData.bajaPor || "",
+            rechazoMotivo: estadoData.rechazoMotivo || "",
+            rechazadoEn: estadoData.rechazadoEn || null,
+            rechazadoPor: estadoData.rechazadoPor || "",
+            aprobadoEn: estadoData.aprobadoEn || null,
+            aprobadoPor: estadoData.aprobadoPor || "",
             actualizadoEn: serverTimestamp()
           }, { merge: true });
           return true;
@@ -2130,6 +2136,8 @@
           <select id="filtroEstadoProfesor" aria-label="Filtrar por estado">
             <option value="">Todos los estados</option>
             <option value="activa">Cuenta activa</option>
+            <option value="solicitudes">Solicitudes pendientes</option>
+            <option value="rechazadas">Solicitudes rechazadas</option>
             <option value="inactiva">Cuenta inactiva</option>
             <option value="conectados">Conectados recientemente</option>
             <option value="desconectados">Sin actividad reciente</option>
@@ -2529,6 +2537,7 @@
       let firebaseInitialized = false;
       let claseHabilitada = false;
       let cuentaEstudianteActiva = false;
+      let estadoCuentaEstudiante = 'pendiente';
 
       function aplicarEstadoInicioClase(iniciada, datos = {}) {
           claseHabilitada = Boolean(iniciada);
@@ -2722,11 +2731,17 @@
           setLocalStorage('app_last_ai_chat_delete', id);
       });
       window.addEventListener('estado-cuenta-estudiante', event => {
-          if (event.detail?.estadoCuenta === 'inactivo') {
+          const estado = event.detail?.estadoCuenta || 'activo';
+          estadoCuentaEstudiante = estado;
+          if (estado === 'inactivo') {
               bloquearCuentaEstudiante(event.detail?.bajaMotivo || '');
               return;
           }
-          if (!cuentaEstudianteActiva && window.firebaseCurrentUser) {
+          if (estado === 'pendiente' || estado === 'rechazado') {
+              bloquearCuentaPorAprobacion(estado, event.detail?.rechazoMotivo || '');
+              return;
+          }
+          if (estado === 'activo' && !cuentaEstudianteActiva && window.firebaseCurrentUser) {
               window.location.reload();
           }
       });
@@ -2773,9 +2788,12 @@
           }
 
           try {
-              const ok = await window.guardarProgresoFirebase({
-                  estudiante: { nombre, curso, division, turno }
-              });
+              const payload = { estudiante: { nombre, curso, division, turno } };
+              if (estadoCuentaEstudiante) {
+                  payload.estadoCuenta = estadoCuentaEstudiante;
+                  if (estadoCuentaEstudiante === 'pendiente') payload.solicitudAprobacionEn = new Date().toISOString();
+              }
+              const ok = await window.guardarProgresoFirebase(payload);
               if (ok) mostrarEstadoFirebase('online', 'Datos del estudiante guardados en Firebase');
               return ok;
           } catch (e) {
@@ -3024,6 +3042,34 @@
           if (loginButton) loginButton.disabled = true;
       }
 
+      function bloquearCuentaPorAprobacion(estado = 'pendiente', motivo = '') {
+          cuentaEstudianteActiva = false;
+          firebaseInitialized = false;
+          claseHabilitada = false;
+          clearTimeout(firebaseSaveTimer);
+          clearInterval(window.__firebaseAutoSaveInterval);
+          Object.keys(cronometrosActivos).forEach(id => {
+              if (cronometrosActivos[id]) clearInterval(cronometrosActivos[id]);
+              cronometrosActivos[id] = null;
+          });
+          const overlay = document.getElementById('firebaseAuthOverlay');
+          overlay?.classList.remove('hidden');
+          const titulo = document.getElementById('firebaseAuthTitle');
+          const mensaje = document.getElementById('firebaseAuthMessage');
+          if (titulo) titulo.textContent = estado === 'rechazado' ? 'Acceso rechazado' : 'Solicitud pendiente';
+          if (mensaje) {
+              mensaje.innerHTML = estado === 'rechazado'
+                  ? '<strong>El docente rechazó tu solicitud de acceso.</strong><br>' +
+                    (motivo ? `Motivo: ${escapeHtml(motivo)}.<br>` : '') +
+                    'Consultá con el equipo docente si necesitás solicitar una revisión.'
+                  : '<strong>Tu registro fue enviado correctamente.</strong><br>' +
+                    'Un docente debe aceptar tu cuenta antes de que puedas comenzar las actividades. ' +
+                    'Esta pantalla se actualizará automáticamente cuando se apruebe el acceso.';
+          }
+          const loginButton = overlay?.querySelector('.btn-google');
+          if (loginButton) loginButton.style.display = 'none';
+      }
+
       async function initApp() {
           const navList = document.getElementById('navList');
           const sectionsContainer = document.getElementById('sectionsContainer');
@@ -3061,6 +3107,19 @@
           const datosFirebase = await window.cargarProgresoFirebase();
           if (datosFirebase?.estadoCuenta === 'inactivo') {
               bloquearCuentaEstudiante(datosFirebase.bajaMotivo || '');
+              return;
+          }
+          estadoCuentaEstudiante = datosFirebase
+              ? (datosFirebase.estadoCuenta || 'activo')
+              : 'pendiente';
+          if (estadoCuentaEstudiante === 'pendiente' && datosFirebase?.estudiante) {
+              window.escucharReinicioSalidasFirebase?.();
+              bloquearCuentaPorAprobacion('pendiente');
+              return;
+          }
+          if (estadoCuentaEstudiante === 'rechazado') {
+              window.escucharReinicioSalidasFirebase?.();
+              bloquearCuentaPorAprobacion('rechazado', datosFirebase?.rechazoMotivo || '');
               return;
           }
           cuentaEstudianteActiva = true;
@@ -3134,6 +3193,9 @@
               datosFirebase.estudiante.division && datosFirebase.estudiante.turno);
           if (!registroCompleto) {
               await solicitarDatosNuevoEstudiante();
+              window.escucharReinicioSalidasFirebase?.();
+              bloquearCuentaPorAprobacion('pendiente');
+              return;
           } else {
               setTimeout(() => guardarIdentificacionFirebase(), 300);
           }
@@ -5658,8 +5720,57 @@
       }
       async function cambiarEstadoCuentaEstudiante(indice, nuevoEstado) {
           const d = estudiantesProfesor[indice];
+          const estadoActual = d?.estadoCuenta || 'activo';
+          const responsable = window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email ||
+              window.firebaseTeacherUser?.displayName || window.firebaseCurrentUser?.displayName || '';
           if (!d?.uid) {
               alert('No se encontró el identificador Firebase del estudiante.');
+              return;
+          }
+          if (nuevoEstado === 'rechazado') {
+              const motivo = prompt('Motivo del rechazo (obligatorio):', 'Datos no autorizados por la institución');
+              if (!motivo || !motivo.trim()) return;
+              if (!confirm('El estudiante no podrá ingresar. ¿Confirmás el rechazo?')) return;
+              const payload = {
+                  estadoCuenta: 'rechazado',
+                  rechazoMotivo: motivo.trim(),
+                  rechazadoEn: new Date().toISOString(),
+                  rechazadoPor: responsable,
+                  bajaMotivo: '',
+                  bajaFecha: null,
+                  bajaPor: ''
+              };
+              const ok = await window.guardarEstadoEstudianteFirebase?.(d.uid, payload);
+              if (!ok) {
+                  alert('No se pudo rechazar la solicitud. Verificá las reglas de Firestore.');
+                  return;
+              }
+              Object.assign(d, payload);
+              renderPanelProfesor();
+              abrirDetalleEstudianteProfesor(indice);
+              return;
+          }
+          if (estadoActual === 'pendiente' && nuevoEstado === 'activo') {
+              if (!confirm('¿Aceptar a este estudiante y habilitar su acceso a las actividades?')) return;
+              const payload = {
+                  estadoCuenta: 'activo',
+                  aprobadoEn: new Date().toISOString(),
+                  aprobadoPor: responsable,
+                  rechazoMotivo: '',
+                  rechazadoEn: null,
+                  rechazadoPor: '',
+                  bajaMotivo: '',
+                  bajaFecha: null,
+                  bajaPor: ''
+              };
+              const ok = await window.guardarEstadoEstudianteFirebase?.(d.uid, payload);
+              if (!ok) {
+                  alert('No se pudo aceptar al estudiante. Verificá las reglas de Firestore.');
+                  return;
+              }
+              Object.assign(d, payload);
+              renderPanelProfesor();
+              abrirDetalleEstudianteProfesor(indice);
               return;
           }
           if (nuevoEstado === 'inactivo') {
@@ -6066,6 +6177,25 @@
           const revision = d.revisionSalidas || {};
           const cronometroIndividualPausado = d.controlCronometroIndividual?.pausado === true;
           const cuentaInactiva = d.estadoCuenta === 'inactivo';
+          const cuentaPendiente = d.estadoCuenta === 'pendiente';
+          const cuentaRechazada = d.estadoCuenta === 'rechazado';
+          const estadoCuentaDetalle = cuentaPendiente ? 'Pendiente de aprobación' :
+              (cuentaRechazada ? 'Rechazada' : (cuentaInactiva ? 'Inactiva' : 'Activa'));
+          const colorCuentaDetalle = cuentaPendiente ? '#fde68a' :
+              ((cuentaRechazada || cuentaInactiva) ? '#fca5a5' : '#6ee7b7');
+          const panelAprobacion = cuentaPendiente ? `
+              <div style="padding:1rem;border:1px solid rgba(245,158,11,.45);border-radius:8px;background:rgba(245,158,11,.08);margin-bottom:1rem">
+                  <strong style="color:#fde68a"><i class="fa-solid fa-user-clock"></i> Solicitud de acceso pendiente</strong>
+                  <div class="btn-group" style="margin-top:.75rem">
+                      <button class="btn btn-success" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'activo')"><i class="fa-solid fa-user-check"></i> Aceptar estudiante</button>
+                      <button class="btn btn-danger" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'rechazado')"><i class="fa-solid fa-user-xmark"></i> Rechazar solicitud</button>
+                  </div>
+              </div>` : (cuentaRechazada ? `
+              <div style="padding:1rem;border:1px solid rgba(239,68,68,.45);border-radius:8px;background:rgba(239,68,68,.08);margin-bottom:1rem">
+                  <strong style="color:#fca5a5"><i class="fa-solid fa-user-xmark"></i> Solicitud rechazada</strong>
+                  <div style="margin-top:.45rem">Motivo: ${escapeHtml(d.rechazoMotivo || 'Sin motivo registrado')}</div>
+                  <button class="btn btn-success" style="margin-top:.75rem" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'activo')"><i class="fa-solid fa-user-check"></i> Habilitar cuenta</button>
+              </div>` : '');
           const fecha = d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : 'Sin fecha';
           document.getElementById('detalleEstudianteProfesorTitle').innerHTML =
               `<i class="fa-solid fa-user-graduate"></i> ${escapeHtml(e.nombre || d.nombreGoogle || 'Estudiante sin nombre')}`;
@@ -6180,6 +6310,7 @@
               </div>`;
 
           document.getElementById('detalleEstudianteProfesorContenido').innerHTML = `
+              ${panelAprobacion}
               <div class="teacher-detail-summary">
                   <div class="teacher-detail-stat"><small>Nombre</small><strong>${escapeHtml(e.nombre || d.nombreGoogle || 'Sin nombre')}</strong></div>
                   <div class="teacher-detail-stat"><small>Email</small><strong>${escapeHtml(d.email || 'Sin email')}</strong></div>
@@ -6188,7 +6319,7 @@
                   <div class="teacher-detail-stat"><small>Progreso</small><strong>${progreso}%</strong></div>
                   <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === '—' ? 'Pendiente' : `${notaDefinitiva}/10`}</strong></div>
-                  <div class="teacher-detail-stat"><small>Estado de cuenta</small><strong style="color:${cuentaInactiva ? '#fca5a5' : '#6ee7b7'}">${cuentaInactiva ? 'Inactiva' : 'Activa'}</strong></div>
+                  <div class="teacher-detail-stat"><small>Estado de cuenta</small><strong style="color:${colorCuentaDetalle}">${estadoCuentaDetalle}</strong></div>
                   <div class="teacher-detail-stat"><small>Salidas de pestaña</small><strong>${Number(d.salidasPestana ?? d.salidasPestaña ?? 0)}</strong></div>
                   <div class="teacher-detail-stat"><small>Última actualización</small><strong>${escapeHtml(fecha)}</strong></div>
               </div>
@@ -6203,7 +6334,7 @@
                       </button>
                   </div>
               </div>
-              <div style="padding:1rem;border:1px solid ${cuentaInactiva ? 'rgba(239,68,68,.35)' : 'rgba(16,185,129,.35)'};border-radius:8px;background:${cuentaInactiva ? 'rgba(239,68,68,.06)' : 'rgba(16,185,129,.06)'};margin-bottom:1rem">
+              <div style="${(cuentaPendiente || cuentaRechazada) ? 'display:none;' : ''}padding:1rem;border:1px solid ${cuentaInactiva ? 'rgba(239,68,68,.35)' : 'rgba(16,185,129,.35)'};border-radius:8px;background:${cuentaInactiva ? 'rgba(239,68,68,.06)' : 'rgba(16,185,129,.06)'};margin-bottom:1rem">
                   <strong>Estado institucional: ${cuentaInactiva ? 'INACTIVA' : 'ACTIVA'}</strong>
                   ${cuentaInactiva ? `<div style="margin-top:.35rem">Motivo: ${escapeHtml(d.bajaMotivo || 'Sin motivo')}<br>Fecha: ${escapeHtml(d.bajaFecha ? new Date(d.bajaFecha).toLocaleString() : 'Sin fecha')}<br>Responsable: ${escapeHtml(d.bajaPor || 'Sin registrar')}</div>` : '<div style="margin-top:.35rem;color:var(--text-muted)">La cuenta puede iniciar sesión normalmente.</div>'}
                   <div style="margin-top:.7rem">
@@ -6309,6 +6440,8 @@
               const trabajando = conectado && progreso < 100;
               const finalizado = progreso >= 100;
               const cuentaInactiva = d.estadoCuenta === 'inactivo';
+              const cuentaPendiente = d.estadoCuenta === 'pendiente';
+              const cuentaRechazada = d.estadoCuenta === 'rechazado';
               const cronometroPausado = d.controlCronometroIndividual?.pausado === true
                   || d.controlCronometros?.pausado === true;
               const salidas = Number(d.salidasPestana ?? d.salidasPestaña ?? 0);
@@ -6342,7 +6475,9 @@
                   || (actualizacionFiltro === 'hoy' && actualizado >= inicioHoy.getTime())
                   || (actualizacionFiltro === '7d' && antiguedad <= 7 * 24 * 60 * 60 * 1000);
               const cumpleEstado = !estadoFiltro
-                || (estadoFiltro === 'activa' && !cuentaInactiva)
+                || (estadoFiltro === 'activa' && !cuentaInactiva && !cuentaPendiente && !cuentaRechazada)
+                || (estadoFiltro === 'solicitudes' && cuentaPendiente)
+                || (estadoFiltro === 'rechazadas' && cuentaRechazada)
                 || (estadoFiltro === 'inactiva' && cuentaInactiva)
                 || (estadoFiltro === 'conectados' && conectado)
                 || (estadoFiltro === 'desconectados' && !conectado)
@@ -6352,7 +6487,7 @@
                 || (estadoFiltro === 'pendientes' && !finalizado)
                 || (estadoFiltro === 'alertas' && alerta.activa)
                 || (estadoFiltro === 'cambios' && tieneCambios);
-              d.__panelMeta = { progreso, nota, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cronometroPausado, tieneCambios, salidas };
+              d.__panelMeta = { progreso, nota, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cuentaPendiente, cuentaRechazada, cronometroPausado, tieneCambios, salidas };
               return (!q || nombre.includes(q))
                   && (!emailFiltro || email.includes(emailFiltro))
                   && (!curso || e.curso===curso)
@@ -6392,10 +6527,11 @@
           const total=rows.length, completos=rows.filter(d=>calcularProgresoEstudiante(d)>=100).length;
           const conectados=rows.filter(d=>d.__panelMeta?.conectado).length;
           const trabajando=rows.filter(d=>d.__panelMeta?.conectado && d.__panelMeta?.progreso<100).length;
+          const solicitudesPendientes=rows.filter(d=>d.estadoCuenta==='pendiente').length;
           const conAlertas=rows.filter(d=>d.__panelMeta?.alerta).length;
           const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='—').map(Number);
           const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'—';
-          document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Conectados',conectados],['Trabajando',trabajando],['Con alertas',conAlertas],['Completaron',completos],['Promedio definitivo',promedio]].map(x=>`<div style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
+          document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Solicitudes pendientes',solicitudesPendientes],['Conectados',conectados],['Trabajando',trabajando],['Con alertas',conAlertas],['Completaron',completos],['Promedio definitivo',promedio]].map(x=>`<div style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
           renderResumenConsultasIAGeneral(rows);
           document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
               const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
@@ -6411,6 +6547,32 @@
                   : '';
               return `<tr style="${alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${inactiva ? '#fca5a5' : '#6ee7b7'}">${inactiva ? 'Inactiva' : 'Activa'}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestaña ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
               }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
+          [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
+              const estudiante = rows[posicion];
+              if (!estudiante) return;
+              const estado = estudiante.estadoCuenta || 'activo';
+              const celdaEstado = fila.children[5];
+              if (celdaEstado) {
+                  const configuracion = {
+                      activo: ['Activa', '#6ee7b7'],
+                      pendiente: ['Pendiente', '#fde68a'],
+                      rechazado: ['Rechazada', '#fca5a5'],
+                      inactivo: ['Inactiva', '#fca5a5']
+                  }[estado] || ['Activa', '#6ee7b7'];
+                  celdaEstado.textContent = configuracion[0];
+                  celdaEstado.style.color = configuracion[1];
+                  celdaEstado.style.fontWeight = '700';
+              }
+              if (estado === 'pendiente') {
+                  fila.style.background = 'rgba(245,158,11,.08)';
+                  const acciones = fila.querySelector('td:last-child > div');
+                  const indiceReal = estudiantesProfesor.indexOf(estudiante);
+                  if (acciones) acciones.insertAdjacentHTML('afterbegin', `
+                      <button class="btn btn-success" style="padding:.4rem .65rem" onclick="cambiarEstadoCuentaEstudiante(${indiceReal}, 'activo')"><i class="fa-solid fa-user-check"></i> Aceptar</button>
+                      <button class="btn btn-danger" style="padding:.4rem .65rem" onclick="cambiarEstadoCuentaEstudiante(${indiceReal}, 'rechazado')"><i class="fa-solid fa-user-xmark"></i> Rechazar</button>
+                  `);
+              }
+          });
           document.querySelectorAll('#tablaProfesorBody td:last-child > div').forEach(contenedor => {
               contenedor.classList.add('teacher-action-buttons');
               contenedor.querySelectorAll('.btn').forEach(boton => {
