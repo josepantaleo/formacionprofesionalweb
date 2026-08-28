@@ -1054,6 +1054,7 @@
         gap: .7rem;
       }
       .pending-request-card {
+        position: relative;
         padding: .85rem;
         border: 1px solid rgba(245, 158, 11, .32);
         border-radius: 8px;
@@ -1063,6 +1064,35 @@
         color: #fff;
         font-size: .95rem;
         margin-bottom: .25rem;
+      }
+      .pending-request-select {
+        position: absolute;
+        top: .8rem;
+        right: .8rem;
+        width: 1.1rem !important;
+        height: 1.1rem;
+      }
+      .pending-request-wait {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        margin-bottom: .55rem;
+        padding: .3rem .5rem;
+        border-radius: 5px;
+        background: rgba(245, 158, 11, .13);
+        color: #fde68a;
+        font-size: .72rem;
+        font-weight: 700;
+      }
+      .pending-request-warning {
+        margin-bottom: .6rem;
+        padding: .5rem .6rem;
+        border: 1px solid rgba(239, 68, 68, .38);
+        border-radius: 6px;
+        background: rgba(239, 68, 68, .09);
+        color: #fecaca;
+        font-size: .73rem;
+        line-height: 1.4;
       }
       .pending-request-card p {
         color: var(--text-muted);
@@ -1597,11 +1627,15 @@
         window.__reinicioSalidasUnsubscribe = onSnapshot(referencia, snapshot => {
           if (!snapshot.exists()) return;
           const datos = snapshot.data();
+          window.ultimoDocumentoEstudianteFirebase = datos;
           window.dispatchEvent(new CustomEvent("estado-cuenta-estudiante", {
             detail: {
               estadoCuenta: datos.estadoCuenta || "activo",
               bajaMotivo: datos.bajaMotivo || "",
-              rechazoMotivo: datos.rechazoMotivo || ""
+              rechazoMotivo: datos.rechazoMotivo || "",
+              estudiante: datos.estudiante || {},
+              aprobadoEn: datos.aprobadoEn || null,
+              aprobadoPor: datos.aprobadoPor || ""
             }
           }));
           const reinicio = datos.reinicioSalidas || null;
@@ -1772,6 +1806,7 @@
             ...payload,
             uid: user.uid,
             email: user.email || "",
+            emailVerificado: user.emailVerified === true,
             nombreGoogle: user.displayName || "",
             fotoGoogle: user.photoURL || "",
             actualizadoEn: serverTimestamp()
@@ -1783,6 +1818,42 @@
             code: error?.code || '',
             message: error?.message || 'Error desconocido'
           };
+          return false;
+        }
+      };
+
+      window.actualizarSolicitudEstudianteFirebase = async function(estudiante, reenviar = false) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db || !estudiante) return false;
+        try {
+          const referencia = doc(db, "estudiantes", user.uid);
+          const snapshot = await getDoc(referencia);
+          if (!snapshot.exists()) return false;
+          const actual = snapshot.data();
+          const payload = {
+            estudiante,
+            emailVerificado: user.emailVerified === true,
+            actualizadoEn: serverTimestamp()
+          };
+          if (reenviar) {
+            const antecedentes = Array.isArray(actual.antecedentesRechazo)
+              ? actual.antecedentesRechazo.slice(-9)
+              : [];
+            if (actual.rechazoMotivo) {
+              antecedentes.push({
+                motivo: actual.rechazoMotivo,
+                rechazadoEn: actual.rechazadoEn || null,
+                rechazadoPor: actual.rechazadoPor || ""
+              });
+            }
+            payload.estadoCuenta = "pendiente";
+            payload.solicitudAprobacionEn = serverTimestamp();
+            payload.antecedentesRechazo = antecedentes;
+          }
+          await setDoc(referencia, payload, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("No se pudo actualizar la solicitud del estudiante:", error);
           return false;
         }
       };
@@ -2218,6 +2289,16 @@
               <i class="fa-solid fa-volume-high"></i> Aviso sonoro
             </label>
           </div>
+          <div id="accionesSolicitudesMasivas" style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-bottom:.8rem">
+            <label class="pending-sound-control" for="seleccionarTodasSolicitudes">
+              <input id="seleccionarTodasSolicitudes" type="checkbox" onchange="seleccionarTodasLasSolicitudes(this.checked)">
+              Seleccionar todas
+            </label>
+            <button id="btnAceptarSolicitudesSeleccionadas" class="btn btn-success" type="button" onclick="aceptarSolicitudesSeleccionadas()" disabled>
+              <i class="fa-solid fa-users"></i> Aceptar seleccionadas
+            </button>
+            <span id="resumenSeleccionSolicitudes" style="color:var(--text-muted);font-size:.78rem">0 seleccionadas</span>
+          </div>
           <div id="listaSolicitudesPendientes" class="pending-requests-grid">
             <p style="color:var(--text-muted);margin:0">No hay solicitudes pendientes.</p>
           </div>
@@ -2649,6 +2730,7 @@
       let claseHabilitada = false;
       let cuentaEstudianteActiva = false;
       let estadoCuentaEstudiante = 'pendiente';
+      let registroFirebaseExistente = false;
 
       function aplicarEstadoInicioClase(iniciada, datos = {}) {
           claseHabilitada = Boolean(iniciada);
@@ -2843,6 +2925,7 @@
       });
       window.addEventListener('estado-cuenta-estudiante', event => {
           const estado = event.detail?.estadoCuenta || 'activo';
+          const estadoAnterior = estadoCuentaEstudiante;
           estadoCuentaEstudiante = estado;
           if (estado === 'inactivo') {
               bloquearCuentaEstudiante(event.detail?.bajaMotivo || '');
@@ -2853,7 +2936,11 @@
               return;
           }
           if (estado === 'activo' && !cuentaEstudianteActiva && window.firebaseCurrentUser) {
-              window.location.reload();
+              if (estadoAnterior === 'pendiente' || estadoAnterior === 'rechazado') {
+                  mostrarAvisoAccesoAprobado(event.detail || {});
+              } else {
+                  window.location.reload();
+              }
           }
       });
       window.addEventListener('profesor-data', e => {
@@ -2906,11 +2993,12 @@
 
           try {
               const payload = { estudiante: { nombre, curso, division, turno } };
-              if (estadoCuentaEstudiante) {
+              if (!registroFirebaseExistente && estadoCuentaEstudiante) {
                   payload.estadoCuenta = estadoCuentaEstudiante;
                   if (estadoCuentaEstudiante === 'pendiente') payload.solicitudAprobacionEn = new Date().toISOString();
               }
               const ok = await window.guardarProgresoFirebase(payload);
+              if (ok) registroFirebaseExistente = true;
               if (ok) mostrarEstadoFirebase('online', 'Datos del estudiante guardados en Firebase');
               return ok;
           } catch (e) {
@@ -3160,6 +3248,9 @@
       }
 
       function bloquearCuentaPorAprobacion(estado = 'pendiente', motivo = '') {
+          if (firebaseStorageUid) {
+              localStorage.setItem(storageKey('app_account_state'), estado);
+          }
           cuentaEstudianteActiva = false;
           firebaseInitialized = false;
           claseHabilitada = false;
@@ -3185,6 +3276,125 @@
           }
           const loginButton = overlay?.querySelector('.btn-google');
           if (loginButton) loginButton.style.display = 'none';
+          mostrarDatosYCorreccionSolicitud(estado);
+      }
+
+      function mostrarDatosYCorreccionSolicitud(estado) {
+          const overlay = document.getElementById('firebaseAuthOverlay');
+          const mensaje = document.getElementById('firebaseAuthMessage');
+          const datos = window.ultimoDocumentoEstudianteFirebase?.estudiante || {};
+          if (mensaje && !mensaje.querySelector('.student-request-summary')) {
+              mensaje.insertAdjacentHTML('beforeend', `
+                  <div class="student-request-summary" style="margin-top:.8rem;padding:.7rem;border:1px solid rgba(148,163,184,.25);border-radius:6px;text-align:left;font-size:.82rem">
+                      <strong>Datos enviados</strong><br>
+                      Nombre: ${escapeHtml(datos.nombre || 'Sin completar')}<br>
+                      Correo: ${escapeHtml(window.firebaseCurrentUser?.email || 'Sin correo')}<br>
+                      Curso: ${escapeHtml(datos.curso || 'Sin completar')}<br>
+                      División: ${escapeHtml(datos.division || 'Sin completar')}<br>
+                      Turno: ${escapeHtml(datos.turno || 'Sin completar')}
+                  </div>`);
+          }
+          let boton = document.getElementById('btnCorregirSolicitudEstudiante');
+          if (!boton && overlay) {
+              boton = document.createElement('button');
+              boton.id = 'btnCorregirSolicitudEstudiante';
+              boton.className = 'btn btn-primary';
+              boton.style.cssText = 'width:100%;justify-content:center;margin-top:.75rem;';
+              const referencia = overlay.querySelector('.btn-warning');
+              referencia?.parentNode?.insertBefore(boton, referencia);
+          }
+          if (boton) {
+              boton.innerHTML = estado === 'rechazado'
+                  ? '<i class="fa-solid fa-paper-plane"></i> Corregir y reenviar solicitud'
+                  : '<i class="fa-solid fa-pen"></i> Corregir datos enviados';
+              boton.onclick = () => abrirCorreccionSolicitudEstudiante(estado === 'rechazado');
+          }
+      }
+
+      function abrirCorreccionSolicitudEstudiante(reenviar = false) {
+          const actual = window.ultimoDocumentoEstudianteFirebase?.estudiante || {};
+          const modal = document.createElement('div');
+          modal.className = 'modal-overlay active';
+          modal.style.zIndex = '8000';
+          const opciones = (valores, actualValor) => valores.map(valor =>
+              `<option ${actualValor === valor ? 'selected' : ''}>${valor}</option>`).join('');
+          modal.innerHTML = `<div class="modal-box" style="max-width:520px;width:92%">
+              <h3><i class="fa-solid fa-user-pen"></i> ${reenviar ? 'Corregir y reenviar solicitud' : 'Corregir datos enviados'}</h3>
+              <p>${reenviar ? 'El rechazo anterior quedará guardado como antecedente.' : 'La solicitud conservará su fecha original.'}</p>
+              <div class="input-group"><label>Nombre y apellido</label><input id="corregirNombre" value="${escapeHtml(actual.nombre || window.firebaseCurrentUser?.displayName || '')}"></div>
+              <div class="input-group"><label>Curso</label><select id="corregirCurso"><option value="">Seleccionar curso</option>${opciones(['1° Año','2° Año','3° Año','4° Año','5° Año','6° Año','7° Año'], actual.curso)}</select></div>
+              <div class="input-group"><label>División</label><select id="corregirDivision"><option value="">Seleccionar división</option>${opciones(['A','B','C','D','E'], actual.division)}</select></div>
+              <div class="input-group"><label>Turno</label><select id="corregirTurno"><option value="">Seleccionar turno</option>${opciones(['Mañana','Tarde','Vespertino','Noche'], actual.turno)}</select></div>
+              <div id="corregirSolicitudError" role="alert" style="display:none;color:#fca5a5;margin-bottom:.7rem"></div>
+              <div class="modal-actions">
+                  <button class="btn btn-secondary" type="button" id="cancelarCorreccionSolicitud">Cancelar</button>
+                  <button class="btn btn-primary" type="button" id="guardarCorreccionSolicitud"><i class="fa-solid fa-cloud-arrow-up"></i> ${reenviar ? 'Reenviar solicitud' : 'Guardar cambios'}</button>
+              </div>
+          </div>`;
+          document.body.appendChild(modal);
+          modal.querySelector('#cancelarCorreccionSolicitud').onclick = () => modal.remove();
+          modal.querySelector('#guardarCorreccionSolicitud').onclick = async () => {
+              const estudiante = {
+                  nombre: modal.querySelector('#corregirNombre').value.trim(),
+                  curso: modal.querySelector('#corregirCurso').value.trim(),
+                  division: modal.querySelector('#corregirDivision').value.trim(),
+                  turno: modal.querySelector('#corregirTurno').value.trim()
+              };
+              const error = modal.querySelector('#corregirSolicitudError');
+              if (Object.values(estudiante).some(valor => !valor)) {
+                  error.textContent = 'Completá nombre, curso, división y turno.';
+                  error.style.display = 'block';
+                  return;
+              }
+              const boton = modal.querySelector('#guardarCorreccionSolicitud');
+              boton.disabled = true;
+              const ok = await window.actualizarSolicitudEstudianteFirebase?.(estudiante, reenviar);
+              if (!ok) {
+                  error.textContent = 'No se pudieron guardar los cambios. Revisá la conexión y los permisos.';
+                  error.style.display = 'block';
+                  boton.disabled = false;
+                  return;
+              }
+              window.ultimoDocumentoEstudianteFirebase = {
+                  ...(window.ultimoDocumentoEstudianteFirebase || {}),
+                  estudiante,
+                  estadoCuenta: reenviar ? 'pendiente' : estadoCuentaEstudiante
+              };
+              if (reenviar) estadoCuentaEstudiante = 'pendiente';
+              modal.remove();
+              bloquearCuentaPorAprobacion(estadoCuentaEstudiante, '');
+          };
+      }
+
+      function mostrarAvisoAccesoAprobado(detalle = {}) {
+          if (firebaseStorageUid) {
+              localStorage.setItem(storageKey('app_account_state'), 'activo');
+          }
+          const overlay = document.getElementById('firebaseAuthOverlay');
+          overlay?.classList.remove('hidden');
+          const titulo = document.getElementById('firebaseAuthTitle');
+          const mensaje = document.getElementById('firebaseAuthMessage');
+          if (titulo) titulo.textContent = 'Tu acceso fue aprobado';
+          if (mensaje) {
+              mensaje.innerHTML =
+                  '<strong>El docente aceptó tu solicitud.</strong><br>' +
+                  'Ya podés ingresar a las actividades.' +
+                  (detalle.aprobadoPor ? `<br><small>Aprobado por: ${escapeHtml(detalle.aprobadoPor)}</small>` : '');
+          }
+          document.getElementById('btnCorregirSolicitudEstudiante')?.remove();
+          const loginButton = overlay?.querySelector('.btn-google');
+          if (loginButton) loginButton.style.display = 'none';
+          let boton = document.getElementById('btnContinuarTrasAprobacion');
+          if (!boton && overlay) {
+              boton = document.createElement('button');
+              boton.id = 'btnContinuarTrasAprobacion';
+              boton.className = 'btn btn-success';
+              boton.style.cssText = 'width:100%;justify-content:center;margin-top:.75rem;';
+              boton.innerHTML = '<i class="fa-solid fa-arrow-right"></i> Continuar a las actividades';
+              boton.onclick = () => window.location.reload();
+              const referencia = overlay.querySelector('.btn-warning');
+              referencia?.parentNode?.insertBefore(boton, referencia);
+          }
       }
 
       async function initApp() {
@@ -3222,6 +3432,8 @@
           }
 
           const datosFirebase = await window.cargarProgresoFirebase();
+          registroFirebaseExistente = Boolean(datosFirebase);
+          window.ultimoDocumentoEstudianteFirebase = datosFirebase || null;
           if (datosFirebase?.estadoCuenta === 'inactivo') {
               bloquearCuentaEstudiante(datosFirebase.bajaMotivo || '');
               return;
@@ -3229,6 +3441,15 @@
           estadoCuentaEstudiante = datosFirebase
               ? (datosFirebase.estadoCuenta || 'activo')
               : 'pendiente';
+          const estadoLocalAnterior = getLocalStorage('app_account_state') || '';
+          if (estadoCuentaEstudiante === 'activo' &&
+              (estadoLocalAnterior === 'pendiente' || estadoLocalAnterior === 'rechazado')) {
+              mostrarAvisoAccesoAprobado({
+                  aprobadoPor: datosFirebase?.aprobadoPor || '',
+                  aprobadoEn: datosFirebase?.aprobadoEn || null
+              });
+              return;
+          }
           if (estadoCuentaEstudiante === 'pendiente' && datosFirebase?.estudiante) {
               window.escucharReinicioSalidasFirebase?.();
               bloquearCuentaPorAprobacion('pendiente');
@@ -5815,6 +6036,134 @@
           }).join('') : '<p style="color:var(--text-muted);margin:0">No hay solicitudes pendientes.</p>';
       }
 
+      function obtenerFechaSolicitudMs(d) {
+          const valor = d?.solicitudAprobacionEn;
+          if (valor?.toMillis) return valor.toMillis();
+          if (valor?.seconds) return Number(valor.seconds) * 1000;
+          const fecha = Date.parse(valor || '');
+          return Number.isFinite(fecha) ? fecha : 0;
+      }
+
+      function formatearAntiguedadSolicitud(d) {
+          const inicio = obtenerFechaSolicitudMs(d);
+          if (!inicio) return 'fecha no disponible';
+          const minutos = Math.max(0, Math.floor((Date.now() - inicio) / 60000));
+          if (minutos < 1) return 'menos de 1 minuto';
+          if (minutos < 60) return `${minutos} min`;
+          const horas = Math.floor(minutos / 60);
+          if (horas < 24) return `${horas} h ${minutos % 60} min`;
+          const dias = Math.floor(horas / 24);
+          return `${dias} día${dias === 1 ? '' : 's'} ${horas % 24} h`;
+      }
+
+      function validarSolicitudEstudiante(d) {
+          const e = d?.estudiante || {};
+          const problemas = [];
+          if (!String(e.nombre || '').trim()) problemas.push('Falta nombre y apellido.');
+          if (!String(e.curso || '').trim()) problemas.push('Falta curso.');
+          if (!String(e.division || '').trim()) problemas.push('Falta división.');
+          if (!String(e.turno || '').trim()) problemas.push('Falta turno.');
+          if (!String(d?.email || '').trim()) problemas.push('Falta correo electrónico.');
+          if (d?.emailVerificado !== true) problemas.push('El correo de Google no figura como verificado.');
+          return problemas;
+      }
+
+      function seleccionarTodasLasSolicitudes(seleccionar) {
+          document.querySelectorAll('.pending-request-select:not(:disabled)').forEach(input => {
+              input.checked = Boolean(seleccionar);
+          });
+          actualizarSeleccionSolicitudes();
+      }
+
+      function actualizarSeleccionSolicitudes() {
+          const habilitadas = [...document.querySelectorAll('.pending-request-select:not(:disabled)')];
+          const seleccionadas = habilitadas.filter(input => input.checked);
+          const boton = document.getElementById('btnAceptarSolicitudesSeleccionadas');
+          const resumen = document.getElementById('resumenSeleccionSolicitudes');
+          const todas = document.getElementById('seleccionarTodasSolicitudes');
+          if (boton) boton.disabled = seleccionadas.length === 0;
+          if (resumen) resumen.textContent = `${seleccionadas.length} seleccionada${seleccionadas.length === 1 ? '' : 's'}`;
+          if (todas) {
+              todas.checked = habilitadas.length > 0 && seleccionadas.length === habilitadas.length;
+              todas.indeterminate = seleccionadas.length > 0 && seleccionadas.length < habilitadas.length;
+          }
+      }
+
+      function renderBandejaSolicitudesPendientes() {
+          const lista = document.getElementById('listaSolicitudesPendientes');
+          const contador = document.getElementById('contadorSolicitudesPendientes');
+          if (!lista || !contador) return;
+          const pendientes = estudiantesProfesor
+              .filter(d => d.estadoCuenta === 'pendiente')
+              .sort((a, b) => obtenerFechaSolicitudMs(a) - obtenerFechaSolicitudMs(b));
+          contador.textContent = String(pendientes.length);
+          lista.innerHTML = pendientes.length ? pendientes.map(d => {
+              const e = d.estudiante || {};
+              const indice = estudiantesProfesor.indexOf(d);
+              const fechaMs = obtenerFechaSolicitudMs(d);
+              const fecha = fechaMs ? new Date(fechaMs).toLocaleString() : 'Sin fecha';
+              const problemas = validarSolicitudEstudiante(d);
+              const seleccionable = problemas.length === 0;
+              const antecedentes = Array.isArray(d.antecedentesRechazo) ? d.antecedentesRechazo : [];
+              return `<article class="pending-request-card">
+                  <input class="pending-request-select" type="checkbox" data-solicitud-uid="${escapeHtml(d.uid || '')}" onchange="actualizarSeleccionSolicitudes()" ${seleccionable ? '' : 'disabled'} aria-label="Seleccionar solicitud">
+                  <h4>${escapeHtml(e.nombre || d.nombreGoogle || 'Estudiante sin nombre')}</h4>
+                  <div class="pending-request-wait"><i class="fa-solid fa-hourglass-half"></i> Espera: ${escapeHtml(formatearAntiguedadSolicitud(d))}</div>
+                  <p>
+                      <strong>Correo:</strong> ${escapeHtml(d.email || 'Sin correo')} ${d.emailVerificado === true ? '· Verificado' : '· No verificado'}<br>
+                      <strong>Curso:</strong> ${escapeHtml(e.curso || 'Sin curso')}<br>
+                      <strong>División:</strong> ${escapeHtml(e.division || 'Sin división')}<br>
+                      <strong>Turno:</strong> ${escapeHtml(e.turno || 'Sin turno')}<br>
+                      <strong>Solicitud:</strong> ${escapeHtml(fecha)}
+                  </p>
+                  ${antecedentes.length ? `<details style="margin-bottom:.6rem;font-size:.73rem;color:var(--text-muted)"><summary style="cursor:pointer;color:#fca5a5">Antecedentes de rechazo (${antecedentes.length})</summary>${antecedentes.map(a => `<div style="margin-top:.35rem">Motivo: ${escapeHtml(a.motivo || 'Sin motivo')}<br>Responsable: ${escapeHtml(a.rechazadoPor || 'Sin registrar')}</div>`).join('')}</details>` : ''}
+                  ${problemas.length ? `<div class="pending-request-warning"><i class="fa-solid fa-triangle-exclamation"></i> No se puede aceptar todavía:<br>${problemas.map(escapeHtml).join('<br>')}</div>` : ''}
+                  <div class="pending-request-actions">
+                      <button class="btn btn-success" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'activo')" ${seleccionable ? '' : 'disabled'}><i class="fa-solid fa-user-check"></i> Aceptar</button>
+                      <button class="btn btn-danger" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'rechazado')"><i class="fa-solid fa-user-xmark"></i> Rechazar</button>
+                  </div>
+              </article>`;
+          }).join('') : '<p style="color:var(--text-muted);margin:0">No hay solicitudes pendientes.</p>';
+          const todas = document.getElementById('seleccionarTodasSolicitudes');
+          if (todas) todas.checked = false;
+          actualizarSeleccionSolicitudes();
+      }
+
+      async function aceptarSolicitudesSeleccionadas() {
+          const ids = [...document.querySelectorAll('.pending-request-select:checked')].map(input => input.dataset.solicitudUid);
+          const solicitudes = ids.map(uid => estudiantesProfesor.find(d => d.uid === uid)).filter(Boolean);
+          if (!solicitudes.length) return;
+          if (solicitudes.some(d => validarSolicitudEstudiante(d).length)) {
+              alert('Hay solicitudes con datos incompletos o correo no verificado.');
+              return;
+          }
+          const nombres = solicitudes.map(d => d.estudiante?.nombre || d.email || 'Estudiante');
+          if (!confirm(`¿Aceptar ${solicitudes.length} solicitud(es)?\n\n${nombres.join('\n')}`)) return;
+          let aceptadas = 0;
+          for (const solicitud of solicitudes) {
+              if (await aceptarSolicitudDocenteDirecta(solicitud)) aceptadas++;
+          }
+          renderPanelProfesor();
+          alert(`Se aceptaron ${aceptadas} de ${solicitudes.length} solicitudes.`);
+      }
+
+      async function aceptarSolicitudDocenteDirecta(d) {
+          if (!d?.uid || validarSolicitudEstudiante(d).length) return false;
+          const responsable = window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email ||
+              window.firebaseTeacherUser?.displayName || window.firebaseCurrentUser?.displayName || '';
+          const payload = {
+              estadoCuenta: 'activo',
+              aprobadoEn: new Date().toISOString(),
+              aprobadoPor: responsable,
+              bajaMotivo: '',
+              bajaFecha: null,
+              bajaPor: ''
+          };
+          const ok = await window.guardarEstadoEstudianteFirebase?.(d.uid, payload);
+          if (ok) Object.assign(d, payload);
+          return Boolean(ok);
+      }
+
       function renderDocentesAutorizados() {
           const contenedor = document.getElementById('listaDocentesAutorizados');
           const cantidad = document.getElementById('cantidadDocentesAutorizados');
@@ -5845,7 +6194,7 @@
           const controlSonido = document.getElementById('sonidoSolicitudesProfesor');
           if (controlSonido) controlSonido.checked = sonidoSolicitudesActivo;
           renderDocentesAutorizados();
-          renderSolicitudesPendientesProfesor();
+          renderBandejaSolicitudesPendientes();
           iniciarPanelProfesorTiempoReal();
       }
       function cerrarPanelProfesor() {
@@ -5928,7 +6277,7 @@
           abrirDetalleEstudianteProfesor(indice);
           alert('Revisión docente guardada.');
       }
-      async function cambiarEstadoCuentaEstudiante(indice, nuevoEstado) {
+      async function cambiarEstadoCuentaEstudiante(indice, nuevoEstado, opciones = {}) {
           const d = estudiantesProfesor[indice];
           const estadoActual = d?.estadoCuenta || 'activo';
           const responsable = window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email ||
@@ -5961,6 +6310,11 @@
               return;
           }
           if (estadoActual === 'pendiente' && nuevoEstado === 'activo') {
+              const problemas = validarSolicitudEstudiante(d);
+              if (problemas.length) {
+                  alert(`No se puede aceptar esta solicitud todavía:\n\n${problemas.join('\n')}`);
+                  return false;
+              }
               if (!confirm('¿Aceptar a este estudiante y habilitar su acceso a las actividades?')) return;
               const payload = {
                   estadoCuenta: 'activo',
@@ -6626,7 +6980,7 @@
           document.getElementById('detalleEstudianteProfesorModal').classList.add('active');
       }
       function renderPanelProfesor() {
-          renderSolicitudesPendientesProfesor();
+          renderBandejaSolicitudesPendientes();
           const q = (document.getElementById('filtroProfesor').value || '').toLowerCase().trim();
           const emailFiltro = (document.getElementById('filtroEmailProfesor')?.value || '').toLowerCase().trim();
           const curso = document.getElementById('filtroCursoProfesor').value;
