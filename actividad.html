@@ -326,13 +326,29 @@
 
       .exercise-keyword {
         display: inline;
-        padding: 0.08rem 0.28rem;
-        border-radius: 4px;
-        background: rgba(56, 189, 248, 0.16);
-        border-bottom: 1px solid rgba(56, 189, 248, 0.65);
-        color: #bae6fd;
-        font-weight: 700;
+        padding: 0.14rem 0.38rem;
+        border-radius: 5px;
+        background: #0ea5e9;
+        border: 1px solid #7dd3fc;
+        box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.35);
+        color: #082f49;
+        font-size: 1.04em;
+        font-weight: 800;
+        letter-spacing: 0.01em;
         white-space: nowrap;
+      }
+
+      .exercise-ai-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin: -0.35rem 0 0.85rem;
+        color: var(--text-muted);
+        font-size: 0.76rem;
+      }
+
+      .exercise-ai-status.ready {
+        color: #86efac;
       }
 
       .code-playground {
@@ -2734,6 +2750,80 @@
           return textoSeguro.replace(patron, '<strong class="exercise-keyword">$1</strong>');
       }
 
+      function resaltarPalabrasClaveIA(texto, palabras) {
+          const escapar = valor => String(valor ?? "")
+              .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const escaparHtml = valor => String(valor ?? "")
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#39;");
+          const lista = [...new Set((Array.isArray(palabras) ? palabras : [])
+              .map(p => String(p).trim())
+              .filter(p => p.length >= 3 && p.length <= 80))]
+              .sort((a, b) => b.length - a.length);
+          if (!lista.length) return resaltarPalabrasClave(texto);
+          const textoSeguro = escaparHtml(texto);
+          const patron = new RegExp(`(${lista.map(escapar).join("|")})`, "gi");
+          return textoSeguro.replace(patron, '<strong class="exercise-keyword">$1</strong>');
+      }
+
+      function palabrasClaveLocales(sec) {
+          return [
+              ...(Array.isArray(sec?.conceptosDetectar) ? sec.conceptosDetectar : []),
+              ...(Array.isArray(sec?.objetivosPedagogicos) ? sec.objetivosPedagogicos : [])
+          ];
+      }
+
+      function extraerPalabrasClaveIA(respuesta) {
+          const texto = String(respuesta || "").trim();
+          const bloque = texto.match(/\[[\s\S]*\]/)?.[0] || texto;
+          try {
+              const datos = JSON.parse(bloque);
+              return Array.isArray(datos)
+                  ? datos.map(x => typeof x === "string" ? x : x?.palabra || x?.termino || "")
+                  : [];
+          } catch (_) {
+              return texto.split(/[,;\n•]+/).map(x => x.replace(/^[-*\d.\s]+/, "").trim());
+          }
+      }
+
+      async function analizarDesafioConIA(sec) {
+          const descripcion = document.getElementById(`exercise-desc-${sec.id}`);
+          const estado = document.getElementById(`exercise-ai-status-${sec.id}`);
+          if (!descripcion) return;
+          const locales = palabrasClaveLocales(sec);
+          descripcion.innerHTML = resaltarPalabrasClaveIA(sec.exerciseDesc, locales);
+          if (estado) estado.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Palabras clave sugeridas por el desafío';
+          if (!window.firebaseAIRealConfigurada || typeof window.consultarTutorIAFirebase !== "function" || !auth?.currentUser) return;
+          try {
+              if (estado) estado.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> La IA está identificando las acciones y conceptos principales...';
+              const respuesta = await window.consultarTutorIAFirebase({
+                  nombreModulo: sec.title || sec.id,
+                  consigna: sec.exerciseDesc || "",
+                  pregunta: "Identificá entre 6 y 14 palabras o frases clave que ayuden a un estudiante a comprender qué debe hacer. Devolvé únicamente un array JSON de strings, sin explicación ni código.",
+                  modo: "identificar_palabras_clave",
+                  conceptos: locales.join(", ")
+              });
+              const palabrasIA = extraerPalabrasClaveIA(respuesta);
+              if (palabrasIA.length) {
+                  descripcion.innerHTML = resaltarPalabrasClaveIA(sec.exerciseDesc, palabrasIA);
+                  if (estado) {
+                      estado.classList.add("ready");
+                      estado.innerHTML = '<i class="fa-solid fa-circle-check"></i> Palabras clave identificadas por IA';
+                  }
+              }
+          } catch (error) {
+              console.warn("No se pudieron identificar palabras clave con IA; se mantienen las sugerencias locales.", error);
+              if (estado) estado.innerHTML = '<i class="fa-solid fa-circle-info"></i> Palabras clave sugeridas localmente';
+          }
+      }
+
+      window.addEventListener("firebase-auth-changed", event => {
+          if (event.detail) seccionesData.forEach(sec => analizarDesafioConIA(sec));
+      });
+
 
       let historialResultados = {};
       let actividadesFinalizadas = {};
@@ -3731,7 +3821,10 @@
 
                   <div class="exercise-box">
                       <h3><i class="fa-solid fa-laptop-code"></i> ${sec.exerciseTitle}</h3>
-                      <p>${resaltarPalabrasClave(sec.exerciseDesc)}</p>
+                      <p id="exercise-desc-${sec.id}">${resaltarPalabrasClave(sec.exerciseDesc)}</p>
+                      <div class="exercise-ai-status" id="exercise-ai-status-${sec.id}" aria-live="polite">
+                          <i class="fa-solid fa-wand-magic-sparkles"></i> Preparando palabras clave...
+                      </div>
 
                       <div class="code-playground">
                           <div class="editor-container">
@@ -3823,6 +3916,7 @@
                   </div>
               `;
               sectionsContainer.appendChild(card);
+              analizarDesafioConIA(sec);
               try {
                   const guardadoChat = JSON.parse(getLocalStorage(`ai_chat_${sec.id}`) || "[]");
                   const chatFirebase = historialChatIA[sec.id];
