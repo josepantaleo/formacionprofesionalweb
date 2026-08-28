@@ -324,6 +324,17 @@
         line-height: 1.5;
       }
 
+      .exercise-keyword {
+        display: inline;
+        padding: 0.08rem 0.28rem;
+        border-radius: 4px;
+        background: rgba(56, 189, 248, 0.16);
+        border-bottom: 1px solid rgba(56, 189, 248, 0.65);
+        color: #bae6fd;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
       .code-playground {
         display: flex;
         flex-direction: column;
@@ -2700,6 +2711,29 @@
           ? window.DESAFIOS_DATA
           : seccionesDataBase;
 
+      function resaltarPalabrasClave(texto) {
+          const palabrasClave = [
+              "console\\.log\\(\\)", "JSON\\.parse\\(\\)", "toLocaleTimeString\\(\\)",
+              "toLowerCase\\(\\)", "trim\\(\\)", "replace\\(\\)", "filter\\(\\)",
+              "reduce\\(\\)", "push\\(\\)", "shift\\(\\)", "innerText", "style\\.color",
+              "style\\.backgroundColor", "LocalStorage", "DOM", "Scope", "try\\.\\.\\.catch\\.\\.\\.finally",
+              "throw new Error\\(\\)", "if/else", "if", "else if", "else", "for", "while",
+              "function", "class", "const", "let", "var", "array", "arreglo", "objeto",
+              "funci[oó]n", "par[aá]metros", "retornar", "declarar", "inicializa",
+              "utiliza", "implementar", "validar", "calcular", "convertir", "almacenar",
+              "recuperar", "mostrar", "imprimir", "evaluar", "generar", "consola"
+          ];
+          const escapar = valor => String(valor ?? "")
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#39;");
+          const textoSeguro = escapar(texto);
+          const patron = new RegExp(`(${palabrasClave.sort((a, b) => b.length - a.length).join("|")})`, "gi");
+          return textoSeguro.replace(patron, '<strong class="exercise-keyword">$1</strong>');
+      }
+
 
       let historialResultados = {};
       let actividadesFinalizadas = {};
@@ -3697,7 +3731,7 @@
 
                   <div class="exercise-box">
                       <h3><i class="fa-solid fa-laptop-code"></i> ${sec.exerciseTitle}</h3>
-                      <p>${sec.exerciseDesc}</p>
+                      <p>${resaltarPalabrasClave(sec.exerciseDesc)}</p>
 
                       <div class="code-playground">
                           <div class="editor-container">
