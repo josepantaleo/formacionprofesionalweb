@@ -1313,6 +1313,44 @@
         display: block;
         margin-bottom: .2rem;
       }
+      .teacher-lock-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .32rem .52rem;
+        border: 1px solid #f87171;
+        border-radius: 6px;
+        background: rgba(127, 29, 29, .72);
+        color: #fff;
+        font-size: .76rem;
+        font-weight: 800;
+        letter-spacing: .02em;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, .16);
+      }
+      .teacher-lock-badge i {
+        color: #fecaca;
+        animation: teacherLockPulse 1.15s ease-in-out infinite;
+      }
+      .teacher-blocked-row {
+        background: rgba(127, 29, 29, .16) !important;
+        box-shadow: inset 4px 0 0 #ef4444;
+      }
+      .teacher-blocked-summary {
+        border-color: rgba(239, 68, 68, .7) !important;
+        background: rgba(127, 29, 29, .28) !important;
+        color: #fecaca;
+      }
+      .teacher-unlock-attention {
+        border: 1px solid #fecaca !important;
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, .2);
+      }
+      @keyframes teacherLockPulse {
+        0%, 100% { transform: scale(1); filter: brightness(1); }
+        50% { transform: scale(1.22); filter: brightness(1.45); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .teacher-lock-badge i { animation: none; }
+      }
       .teacher-activity {
         border: 1px solid rgba(148,163,184,.22);
         border-radius: 8px;
@@ -7403,9 +7441,10 @@
           const trabajando=rows.filter(d=>d.__panelMeta?.conectado && d.__panelMeta?.progreso<100).length;
           const solicitudesPendientes=rows.filter(d=>d.estadoCuenta==='pendiente').length;
           const conAlertas=rows.filter(d=>d.__panelMeta?.alerta).length;
+          const bloqueados=rows.filter(d=>d.pantallaBloqueada===true).length;
           const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='—').map(Number);
           const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'—';
-          document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Solicitudes pendientes',solicitudesPendientes],['Conectados',conectados],['Trabajando',trabajando],['Con alertas',conAlertas],['Completaron',completos],['Promedio definitivo',promedio]].map(x=>`<div style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
+          document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Solicitudes pendientes',solicitudesPendientes],['Bloqueados',bloqueados,'blocked'],['Conectados',conectados],['Trabajando',trabajando],['Con alertas',conAlertas],['Completaron',completos],['Promedio definitivo',promedio]].map(x=>`<div class="${x[2] === 'blocked' && Number(x[1]) > 0 ? 'teacher-blocked-summary' : ''}" style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[2] === 'blocked' ? '<i class="fa-solid fa-lock"></i> ' : ''}${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
           renderResumenConsultasIAGeneral(rows);
           document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
               const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
@@ -7426,14 +7465,20 @@
               const bloqueoDetalle = bloqueado
                   ? `<div style="margin-top:.3rem;color:#fecaca;font-size:.72rem;line-height:1.35">Salidas: ${Number(d.pantallaBloqueadaSalidas || d.salidasPestana || 0)}<br>Sección: ${escapeHtml(d.pantallaBloqueadaSeccion || 'Sin identificar')}<br>${escapeHtml(bloqueoFecha || 'Fecha no registrada')}</div>`
                   : '';
-              return `<tr style="${bloqueado ? 'background:rgba(239,68,68,.08)' : (alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : '')}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td style="color:${colorEstado};font-weight:700"><i class="fa-solid ${bloqueado ? 'fa-lock' : 'fa-circle-check'}"></i> ${estadoVisual}${bloqueoDetalle}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestanas</button><button class="btn btn-danger" onclick="desbloquearPantallaEstudianteProfesor(${indice})" style="padding:.4rem .65rem" title="Desbloquear pantalla del estudiante"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear</button><button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
+              const estadoHtml = bloqueado
+                  ? `<span class="teacher-lock-badge" title="El estudiante requiere desbloqueo docente"><i class="fa-solid fa-lock"></i> BLOQUEADO</span>${bloqueoDetalle}`
+                  : `<span style="color:${colorEstado};font-weight:700"><i class="fa-solid fa-circle-check"></i> ${estadoVisual}</span>`;
+              const botonDesbloqueo = bloqueado
+                  ? `<button class="btn btn-danger teacher-unlock-attention" onclick="desbloquearPantallaEstudianteProfesor(${indice})" style="padding:.4rem .65rem" title="Desbloquear pantalla del estudiante"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear</button>`
+                  : '';
+              return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button>${botonDesbloqueo}<button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
               }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
               if (!estudiante) return;
               const estado = estudiante.estadoCuenta || 'activo';
               const celdaEstado = fila.children[5];
-              if (celdaEstado) {
+              if (celdaEstado && estudiante.pantallaBloqueada !== true) {
                   const configuracion = {
                       activo: ['Activa', '#6ee7b7'],
                       pendiente: ['Pendiente', '#fde68a'],
