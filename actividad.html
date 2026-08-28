@@ -1197,7 +1197,7 @@
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
       import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
       import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
-      import { getAI, getTemplateGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
+      import { getAI, getTemplateGenerativeModel, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
 
       // ============================================================
       // PEGA AQUÍ LA CONFIGURACIÓN DE TU PROYECTO FIREBASE
@@ -1217,6 +1217,7 @@
       // No pegues aquí claves de Gemini, Vertex AI, cuentas de servicio ni secretos.
       const APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY = "6Ld7l5stAAAAABjs2OrNxeDMaKZ6oAGERjopw3U9";
       const FIREBASE_AI_TEMPLATE_ID = "tutor-javascript-ipem146-v1-0-0";
+      const FIREBASE_AI_MODEL_NAME = "gemini-3.7-flash";
 
       const firebaseConfigured = !Object.values(firebaseConfig).some(v => String(v).includes("REEMPLAZAR_"));
       const TEACHER_EMAILS = Object.freeze([
@@ -1228,6 +1229,7 @@
       let auth = null, db = null, googleProvider = null;
       let teacherAuth = null, teacherDb = null, teacherProvider = null;
       let firebaseAITemplateModel = null;
+      let firebaseAIDirectModel = null;
       let teacherPersistenceReady = Promise.resolve();
 
       if (firebaseConfigured) {
@@ -1241,6 +1243,14 @@
           try {
             const ai = getAI(app, { backend: new GoogleAIBackend() });
             firebaseAITemplateModel = getTemplateGenerativeModel(ai);
+            firebaseAIDirectModel = getGenerativeModel(ai, {
+              model: FIREBASE_AI_MODEL_NAME,
+              generationConfig: {
+                temperature: 0.25,
+                topP: 0.85,
+                maxOutputTokens: 700
+              }
+            });
           } catch (error) {
             console.warn("Firebase AI Logic no pudo inicializarse; se usará el tutor local.", error);
           }
@@ -1270,9 +1280,9 @@
         });
       }
 
-      window.firebaseAIRealConfigurada = Boolean(firebaseAITemplateModel);
+      window.firebaseAIRealConfigurada = Boolean(firebaseAITemplateModel || firebaseAIDirectModel);
       window.consultarTutorIAFirebase = async function(payload = {}) {
-        if (!firebaseAITemplateModel) {
+        if (!firebaseAITemplateModel && !firebaseAIDirectModel) {
           throw new Error("Firebase AI Logic todavía no está configurado.");
         }
         const user = auth?.currentUser;
@@ -1280,9 +1290,7 @@
           throw new Error("El estudiante debe iniciar sesión para consultar la IA.");
         }
         const textoSeguro = (valor, limite) => String(valor || "").slice(0, limite);
-        const response = await firebaseAITemplateModel.generateContent(
-          FIREBASE_AI_TEMPLATE_ID,
-          {
+        const parametros = {
             nombreModulo: textoSeguro(payload.nombreModulo, 180),
             consigna: textoSeguro(payload.consigna, 1800),
             pregunta: textoSeguro(payload.pregunta, 500),
@@ -1291,8 +1299,24 @@
             conceptos: textoSeguro(payload.conceptos, 800),
             diagnosticoLocal: textoSeguro(payload.diagnosticoLocal, 1200),
             historialReciente: textoSeguro(payload.historialReciente, 1800)
-          }
-        );
+        };
+        const instrucciones = [
+          "Sos un tutor de JavaScript para estudiantes de nivel secundario.",
+          "Respondé en español rioplatense, con tono claro y respetuoso.",
+          "Ayudá con pistas progresivas; no entregues la solución completa ni código listo para copiar.",
+          "Usá el diagnóstico local y el código del estudiante para señalar un único próximo paso verificable.",
+          `Módulo: ${parametros.nombreModulo}`,
+          `Consigna: ${parametros.consigna}`,
+          `Modo: ${parametros.modo}`,
+          `Pregunta: ${parametros.pregunta}`,
+          `Código del estudiante:\n${parametros.codigo}`,
+          `Conceptos esperados: ${parametros.conceptos}`,
+          `Diagnóstico local: ${parametros.diagnosticoLocal}`,
+          `Historial reciente:\n${parametros.historialReciente}`
+        ].join("\n\n");
+        const response = firebaseAITemplateModel
+          ? await firebaseAITemplateModel.generateContent(FIREBASE_AI_TEMPLATE_ID, parametros)
+          : await firebaseAIDirectModel.generateContent(instrucciones);
         const texto = response?.response?.text?.().trim() || "";
         if (!texto) throw new Error("La IA no devolvió una respuesta utilizable.");
         return texto;
@@ -4722,7 +4746,12 @@
               tieneSalida: /\bconsole\.(log|info|warn|error)\s*\(/.test(fuente),
               tieneDecision: /\b(if|switch)\b/.test(fuente),
               tieneRepeticion: /\b(for|while|do)\b/.test(fuente),
-              tieneFuncion: /\bfunction\b|=>/.test(fuente)
+              tieneFuncion: /\bfunction\b|=>/.test(fuente),
+              asignacionEnCondicion: /\b(if|while)\s*\([^)]*(?<![=!<>])=(?!=)[^)]*\)/.test(fuente),
+              funcionSinRetorno: /\bfunction\b|=>/.test(fuente) && !/\breturn\b/.test(fuente),
+              usaEntradaNoValidada: /\b(prompt|Number|parseInt|parseFloat)\s*\(/.test(fuente) && !/\b(Number\.isFinite|isNaN)\s*\(/.test(fuente),
+              usaVar: /\bvar\b/.test(fuente),
+              lineasMuyLargas: lineas.some(x => x.length > 120)
           };
       }
 
@@ -4863,6 +4892,46 @@
                           ? `Hacé visible en el código el concepto “${pendientes[0]}”.`
                           : "Ejecutá dos casos con datos distintos y compará los resultados esperados.",
                   preguntaSocratica || "¿Qué línea demuestra mejor que tu programa cumple la consigna?"
+              );
+          }
+          if (diagnostico.asignacionEnCondicion || /igual|comparar|comparacion|asignacion/.test(texto)) {
+              if (diagnostico.asignacionEnCondicion) {
+                  return construirRespuestaIA(
+                      "Revisá la condición",
+                      "detecté un signo `=` dentro de un `if` o `while`; eso asigna un valor en vez de comparar.",
+                      "Probá con `===` para comparar valores y ejecutá un caso verdadero y otro falso.",
+                      "¿Qué valor debería tener la expresión antes y después de la comparación?"
+                  );
+              }
+              return construirRespuestaIA(
+                  "Comparaciones",
+                  "una comparación debe expresar con claridad qué dos valores se relacionan.",
+                  "Escribí primero la regla en palabras y elegí entre `===`, `>`, `<`, `>=` o `<=` según esa regla.",
+                  "¿Qué resultado esperás cuando los valores son iguales?"
+              );
+          }
+          if (diagnostico.funcionSinRetorno || /return|retornar|devuelve|devolver/.test(texto)) {
+              if (diagnostico.funcionSinRetorno) {
+                  return construirRespuestaIA(
+                      "Revisá el valor de retorno",
+                      "hay una función, pero no encuentro `return`; si otra parte del programa necesita su resultado, recibirá `undefined`.",
+                      "Decidí qué dato debe devolver la función y colocá `return` en el camino que corresponde.",
+                      "¿La función debe mostrar el resultado o entregarlo para que otra instrucción lo use?"
+                  );
+              }
+              return construirRespuestaIA(
+                  "Funciones y `return`",
+                  "mostrar un valor con `console.log` no es lo mismo que devolverlo.",
+                  "Seguí el recorrido del dato: entrada, procesamiento y valor que la función entrega.",
+                  "¿Qué variable debería recibir el resultado de la llamada?"
+              );
+          }
+          if (diagnostico.usaEntradaNoValidada || /validar|validacion|dato invalido|entrada/.test(texto)) {
+              return construirRespuestaIA(
+                  "Validación de datos",
+                  "tu código recibe o convierte datos, pero no veo una comprobación clara para entradas inválidas.",
+                  "Probá con un valor vacío, texto y un número válido; verificá el resultado antes de continuar.",
+                  "¿Qué debería hacer el programa si el usuario escribe algo que no es un número?"
               );
           }
           if (modo === "ejemplo" || /prueba|caso|ejemplo|dato/.test(texto)) {
