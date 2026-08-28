@@ -340,12 +340,57 @@
         transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
       }
 
+      .exercise-keyword.keyword-action {
+        background: #38bdf8;
+        border-color: #bae6fd;
+        color: #082f49;
+      }
+
+      .exercise-keyword.keyword-concept {
+        background: #c084fc;
+        border-color: #e9d5ff;
+        color: #3b0764;
+      }
+
+      .exercise-keyword.keyword-tool {
+        background: #34d399;
+        border-color: #a7f3d0;
+        color: #052e16;
+      }
+
+      .exercise-keyword.keyword-result {
+        background: #facc15;
+        border-color: #fef08a;
+        color: #422006;
+      }
+
       .exercise-keyword:hover,
       .exercise-keyword:focus-visible {
-        background: #7dd3fc;
+        filter: brightness(1.15);
         box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.32);
         transform: translateY(-1px);
         outline: none;
+      }
+
+      .keyword-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem 0.7rem;
+        margin: 0 0 0.75rem;
+        color: var(--text-muted);
+        font-size: 0.76rem;
+      }
+
+      .keyword-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      .keyword-legend i {
+        width: 0.7rem;
+        height: 0.7rem;
+        border-radius: 2px;
       }
 
       .keyword-help-panel {
@@ -366,6 +411,100 @@
 
       .keyword-help-panel strong {
         color: #7dd3fc;
+      }
+
+      .keyword-help-example {
+        display: block;
+        margin-top: 0.55rem;
+        padding: 0.55rem 0.65rem;
+        border-radius: 5px;
+        background: rgba(2, 6, 23, 0.55);
+        color: #e2e8f0;
+        font-family: "Fira Code", monospace;
+        font-size: 0.8rem;
+        overflow-wrap: anywhere;
+      }
+
+      .comprehension-tools {
+        display: grid;
+        gap: 0.75rem;
+        margin: 0.2rem 0 1rem;
+      }
+
+      .comprehension-panel {
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.58);
+        padding: 0.85rem;
+      }
+
+      .comprehension-panel h4 {
+        margin: 0 0 0.55rem;
+        color: #e2e8f0;
+        font-size: 0.92rem;
+      }
+
+      .steps-panel {
+        display: none;
+        margin-top: 0.7rem;
+      }
+
+      .steps-panel.active {
+        display: block;
+      }
+
+      .steps-panel ol {
+        margin: 0;
+        padding-left: 1.35rem;
+        color: #dbeafe;
+        line-height: 1.55;
+      }
+
+      .comprehension-options,
+      .student-checklist {
+        display: grid;
+        gap: 0.45rem;
+      }
+
+      .comprehension-options label,
+      .student-checklist label {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.48rem 0.55rem;
+        border-radius: 5px;
+        background: rgba(30, 41, 59, 0.65);
+        color: #e2e8f0;
+        line-height: 1.35;
+        cursor: pointer;
+      }
+
+      .comprehension-feedback {
+        display: none;
+        margin-top: 0.6rem;
+        padding: 0.55rem 0.65rem;
+        border-radius: 5px;
+        font-size: 0.82rem;
+      }
+
+      .comprehension-feedback.active {
+        display: block;
+      }
+
+      .comprehension-feedback.correct {
+        background: rgba(16, 185, 129, 0.14);
+        color: #a7f3d0;
+      }
+
+      .comprehension-feedback.incorrect {
+        background: rgba(245, 158, 11, 0.14);
+        color: #fde68a;
+      }
+
+      .checklist-progress {
+        margin-top: 0.55rem;
+        color: var(--text-muted);
+        font-size: 0.78rem;
       }
 
       .support-resource-button {
@@ -3041,6 +3180,107 @@
           "throw new error()": "Crea intencionalmente un error para que pueda ser capturado y tratado."
       };
 
+      const ejemplosPalabrasClave = {
+          "declarar": 'Ejemplo general: let cantidad = 2;',
+          "declara": 'Ejemplo general: const escuela = "IPEM 146";',
+          "definir": 'Ejemplo general: const limite = 10;',
+          "define": 'Ejemplo general: let estado = "activo";',
+          "const": 'Ejemplo general: const curso = "5° Año";',
+          "let": "Ejemplo general: let contador = 0;",
+          "var": 'Ejemplo general: var mensaje = "Hola";',
+          "function": "Ejemplo general: function saludar(nombre) { return `Hola ${nombre}`; }",
+          "función": "Ejemplo general: function duplicar(numero) { return numero * 2; }",
+          "parámetros": "Ejemplo general: function sumar(a, b) { return a + b; }",
+          "retornar": "Ejemplo general: return resultado;",
+          "array": 'Ejemplo general: const colores = ["azul", "verde"];',
+          "arreglo": "Ejemplo general: const numeros = [2, 4, 6];",
+          "objeto": 'Ejemplo general: const libro = { titulo: "Programación", disponible: true };',
+          "if": 'Ejemplo general: if (edad >= 18) { console.log("Mayor"); }',
+          "else if": 'Ejemplo general: else if (nota >= 6) { console.log("Aprobado"); }',
+          "else": 'Ejemplo general: else { console.log("Revisar"); }',
+          "if/else": "Ejemplo general: if (condicion) { /* opción A */ } else { /* opción B */ }",
+          "for": "Ejemplo general: for (let i = 0; i < 3; i++) { console.log(i); }",
+          "while": "Ejemplo general: while (contador < 3) { contador++; }",
+          "class": "Ejemplo general: class Persona { constructor(nombre) { this.nombre = nombre; } }",
+          "console.log()": 'Ejemplo general: console.log("Resultado:", resultado);',
+          "filter()": "Ejemplo general: const pares = numeros.filter(n => n % 2 === 0);",
+          "reduce()": "Ejemplo general: const total = numeros.reduce((suma, n) => suma + n, 0);",
+          "push()": 'Ejemplo general: colores.push("rojo");',
+          "shift()": "Ejemplo general: const primero = colores.shift();",
+          "trim()": "Ejemplo general: const limpio = texto.trim();",
+          "tolowercase()": "Ejemplo general: const minusculas = texto.toLowerCase();",
+          "replace()": 'Ejemplo general: const nuevo = texto.replace("a", "e");',
+          "json.parse()": 'Ejemplo general: const dato = JSON.parse(\'{"activo":true}\');',
+          "tolocaletimestring()": "Ejemplo general: const hora = new Date().toLocaleTimeString();",
+          "innertext": 'Ejemplo general: elemento.innerText = "Nuevo texto";',
+          "style.color": 'Ejemplo general: elemento.style.color = "blue";',
+          "style.backgroundcolor": 'Ejemplo general: elemento.style.backgroundColor = "yellow";',
+          "localstorage": 'Ejemplo general: localStorage.setItem("tema", "oscuro");',
+          "dom": 'Ejemplo general: const titulo = document.querySelector("h1");',
+          "scope": "Ejemplo general: una variable declarada dentro de un bloque solo se usa allí.",
+          "try...catch...finally": "Ejemplo general: try { ejecutar(); } catch (error) { console.log(error); } finally { cerrar(); }",
+          "throw new error()": 'Ejemplo general: throw new Error("Dato inválido");',
+          "calcular": "Ejemplo general: const total = precio * cantidad;",
+          "calcula": "Ejemplo general: const promedio = suma / cantidad;",
+          "mostrar": 'Ejemplo general: console.log("Dato:", dato);',
+          "muestra": 'Ejemplo general: console.log("Estado:", estado);',
+          "imprimir": 'Ejemplo general: console.log("Proceso terminado");',
+          "imprime": 'Ejemplo general: console.log("Valor:", valor);',
+          "almacenar": "Ejemplo general: let resultado = operacion;",
+          "almacena": "Ejemplo general: const registro = { nombre, curso };",
+          "validar": "Ejemplo general: const esValido = valor > 0;",
+          "verifica": "Ejemplo general: if (texto.length >= 3) { /* válido */ }"
+      };
+
+      const palabrasAccion = new Set([
+          "diseña", "crea", "desarrolla", "construye", "escribe", "deberás", "debes",
+          "define", "definir", "declara", "declarar", "inicializa", "utiliza", "usa",
+          "realiza", "implementar", "implementa", "validar", "verifica", "evaluar",
+          "evalúa", "examina", "calcular", "calcula", "convertir", "convierte",
+          "almacenar", "almacena", "recuperar", "recupera", "mostrar", "muestra",
+          "imprimir", "imprime", "generar", "genera", "incorpora", "agrega",
+          "aplica", "guarda", "simula", "retornar"
+      ]);
+
+      const palabrasConcepto = new Set([
+          "function", "función", "parámetros", "class", "array", "arreglo", "objeto",
+          "dom", "scope", "consola", "const", "let", "var", "if", "else if", "else",
+          "if/else", "for", "while", "localstorage"
+      ]);
+
+      function categoriaPalabraClave(termino) {
+          const clave = normalizarTerminoAyuda(termino);
+          if (palabrasAccion.has(clave)) return "action";
+          if (palabrasConcepto.has(clave)) return "concept";
+          if (/[().]/.test(clave) || clave.startsWith("style.")) return "tool";
+          if (/resultado|condici[oó]n|total|promedio|booleano|mensaje|reporte/.test(clave)) return "result";
+          return "concept";
+      }
+
+      function etiquetaCategoriaPalabra(categoria) {
+          return {
+              action: "Acción que tenés que realizar",
+              concept: "Concepto de JavaScript",
+              tool: "Método o herramienta",
+              result: "Condición o resultado esperado"
+          }[categoria] || "Concepto importante";
+      }
+
+      function obtenerEjemploPalabraClave(termino, categoria) {
+          const clave = normalizarTerminoAyuda(termino);
+          if (ejemplosPalabrasClave[clave]) return ejemplosPalabrasClave[clave];
+          if (categoria === "action") {
+              return `Ejemplo general: aplicá la acción “${termino}” sobre datos de prueba antes de resolver el caso del desafío.`;
+          }
+          if (categoria === "tool") {
+              return `Ejemplo general: probá ${termino} con un valor sencillo y observá qué resultado produce.`;
+          }
+          if (categoria === "result") {
+              return 'Ejemplo general: console.log("Resultado:", resultado);';
+          }
+          return `Ejemplo general: creá una prueba pequeña que utilice ${termino} y verificá su funcionamiento.`;
+      }
+
       function normalizarTerminoAyuda(termino) {
           return String(termino || "")
               .trim()
@@ -3065,8 +3305,10 @@
 
       function crearPalabraClaveInteractiva(termino, explicacion = "") {
           const ayuda = obtenerAyudaPalabraClave(termino, explicacion);
+          const categoria = categoriaPalabraClave(termino);
+          const ejemplo = obtenerEjemploPalabraClave(termino, categoria);
           const etiqueta = `Ver ayuda sobre ${termino}`;
-          return `<span class="exercise-keyword" role="button" tabindex="0" data-keyword="${escaparAtributoAyuda(termino)}" data-help="${escaparAtributoAyuda(ayuda)}" title="${escaparAtributoAyuda(etiqueta)}" aria-label="${escaparAtributoAyuda(etiqueta)}">${termino}</span>`;
+          return `<span class="exercise-keyword keyword-${categoria}" role="button" tabindex="0" data-keyword="${escaparAtributoAyuda(termino)}" data-help="${escaparAtributoAyuda(ayuda)}" data-example="${escaparAtributoAyuda(ejemplo)}" data-category="${categoria}" title="${escaparAtributoAyuda(etiqueta)}" aria-label="${escaparAtributoAyuda(etiqueta)}">${termino}</span>`;
       }
 
       function resaltarPalabrasClave(texto) {
@@ -3083,7 +3325,9 @@
               "diseña", "crea", "desarrolla", "construye", "escribe", "deber[aá]s",
               "debes", "define", "declara", "usa", "realiza", "implementa", "verifica",
               "eval[uú]a", "examina", "calcula", "convierte", "almacena", "recupera",
-              "muestra", "imprime", "genera", "incorpora", "agrega", "aplica", "guarda", "simula"
+              "muestra", "imprime", "genera", "incorpora", "agrega", "aplica", "guarda", "simula",
+              "resultado", "costo total", "promedio", "mensaje", "reporte", "booleano",
+              "condiciones", "lista actualizada"
           ];
           const escapar = valor => String(valor ?? "")
               .replace(/&/g, "&amp;")
@@ -3169,19 +3413,243 @@
           }
       }
 
+      function obtenerRegistroAyuda(sectionId) {
+          if (!ayudasComprension[sectionId] || typeof ayudasComprension[sectionId] !== "object") {
+              ayudasComprension[sectionId] = {
+                  palabras: {},
+                  pasosVistos: 0,
+                  materialApoyoVistas: 0,
+                  verificacion: { intentos: 0, correcta: false, respuesta: null, ultimaFecha: "" },
+                  checklist: {}
+              };
+          }
+          const registro = ayudasComprension[sectionId];
+          if (!registro.palabras || typeof registro.palabras !== "object") registro.palabras = {};
+          if (!registro.verificacion || typeof registro.verificacion !== "object") {
+              registro.verificacion = { intentos: 0, correcta: false, respuesta: null, ultimaFecha: "" };
+          }
+          if (!registro.checklist || typeof registro.checklist !== "object") registro.checklist = {};
+          return registro;
+      }
+
+      function guardarRegistroAyuda(sectionId) {
+          const registro = obtenerRegistroAyuda(sectionId);
+          setLocalStorage(`ayudas_comprension_${sectionId}`, JSON.stringify(registro));
+          programarGuardadoFirebase();
+      }
+
+      function cargarRegistroAyudaLocal(sectionId) {
+          if (ayudasComprension[sectionId]) return;
+          try {
+              const local = JSON.parse(getLocalStorage(`ayudas_comprension_${sectionId}`) || "null");
+              if (local && typeof local === "object") ayudasComprension[sectionId] = local;
+          } catch (_) {
+              // Si el dato local quedó incompleto, se crea un registro nuevo.
+          }
+      }
+
+      function registrarPalabraConsultada(sectionId, termino, categoria) {
+          if (!sectionId) return;
+          const registro = obtenerRegistroAyuda(sectionId);
+          const clave = normalizarTerminoAyuda(termino);
+          const actual = registro.palabras[clave] || {
+              termino: String(termino || ""),
+              categoria: categoria || "concept",
+              consultas: 0,
+              ultimaFecha: ""
+          };
+          actual.consultas = Number(actual.consultas || 0) + 1;
+          actual.ultimaFecha = new Date().toISOString();
+          registro.palabras[clave] = actual;
+          guardarRegistroAyuda(sectionId);
+      }
+
+      function generarPasosConsigna(sec) {
+          const texto = String(sec?.exerciseDesc || "")
+              .replace(/\s+/g, " ")
+              .trim();
+          const fragmentos = texto
+              .split(/(?<=[.!?])\s+|(?=\b(?:Luego|Finalmente|Realiza|Utiliza|Aplica|Agrega|Incorpora|Muestra|Imprime|Guarda|Recupera|Convierte|Examina)\b)/i)
+              .map(item => item.trim().replace(/^[,;]\s*/, ""))
+              .filter(item => item.length >= 18);
+          const pasos = [];
+          fragmentos.forEach(fragmento => {
+              if (pasos.length >= 5) return;
+              pasos.push(fragmento.replace(/[.]\s*$/, ""));
+          });
+          if (pasos.length < 2) {
+              pasos.push("Identificá los datos, variables o estructuras que solicita la consigna");
+              pasos.push("Aplicá los conceptos del módulo para construir la solución");
+          }
+          if (!pasos.some(paso => /probar|verificar|ejecutar/i.test(paso))) {
+              pasos.push("Ejecutá el código y verificá que el resultado coincida con lo solicitado");
+          }
+          return pasos.slice(0, 6);
+      }
+
+      function generarChecklistConsigna(sec) {
+          const terminos = [
+              ...(Array.isArray(sec?.conceptosDetectar) ? sec.conceptosDetectar : []),
+              ...(Array.isArray(sec?.objetivosPedagogicos) ? sec.objetivosPedagogicos : [])
+          ].map(item => String(item).trim()).filter(Boolean).slice(0, 3);
+          const items = [
+              "Identifiqué qué datos, variables o estructuras necesito.",
+              "Realicé todas las acciones indicadas en la consigna.",
+              terminos.length
+                  ? `Incluí los conceptos principales: ${terminos.join(", ")}.`
+                  : "Apliqué los conceptos de JavaScript trabajados en este módulo.",
+              "Mostré o devolví el resultado en el lugar solicitado.",
+              "Ejecuté el código y revisé que no tenga errores."
+          ];
+          return items;
+      }
+
+      function generarVerificacionComprension(sec) {
+          const pasos = generarPasosConsigna(sec);
+          const objetivo = pasos[0].replace(/[.]\s*$/, "");
+          return {
+              pregunta: "¿Cuál de estas opciones describe mejor cómo comenzar este desafío?",
+              opciones: [
+                  objetivo,
+                  "Copiar una solución completa sin analizar la consigna.",
+                  "Modificar valores al azar sin identificar el objetivo del programa."
+              ],
+              correcta: 0
+          };
+      }
+
+      function renderPasosConsigna(sec) {
+          return generarPasosConsigna(sec)
+              .map(paso => `<li>${escaparAtributoAyuda(paso)}</li>`)
+              .join("");
+      }
+
+      function renderVerificacionComprension(sec) {
+          const verificacion = generarVerificacionComprension(sec);
+          return verificacion.opciones.map((opcion, indice) => `
+              <label>
+                  <input type="radio" name="comprension-${sec.id}" value="${indice}">
+                  <span>${escaparAtributoAyuda(opcion)}</span>
+              </label>`).join("");
+      }
+
+      function renderChecklistComprension(sec) {
+          return generarChecklistConsigna(sec).map((item, indice) => `
+              <label>
+                  <input type="checkbox" data-check-index="${indice}" onchange="actualizarChecklistComprension('${sec.id}', ${indice}, this.checked)">
+                  <span>${escaparAtributoAyuda(item)}</span>
+              </label>`).join("");
+      }
+
+      function mostrarPasosConsigna(sectionId) {
+          const panel = document.getElementById(`steps-panel-${sectionId}`);
+          const boton = document.getElementById(`btn-steps-${sectionId}`);
+          if (!panel) return;
+          const abrir = !panel.classList.contains("active");
+          panel.classList.toggle("active", abrir);
+          if (boton) {
+              boton.innerHTML = abrir
+                  ? '<i class="fa-solid fa-chevron-up"></i> Ocultar pasos'
+                  : '<i class="fa-solid fa-list-ol"></i> Ver consigna en pasos';
+              boton.setAttribute("aria-expanded", String(abrir));
+          }
+          if (abrir) {
+              const registro = obtenerRegistroAyuda(sectionId);
+              registro.pasosVistos = Number(registro.pasosVistos || 0) + 1;
+              registro.ultimaFecha = new Date().toISOString();
+              guardarRegistroAyuda(sectionId);
+          }
+      }
+
+      function verificarComprensionConsigna(sectionId) {
+          const seleccionado = document.querySelector(`input[name="comprension-${sectionId}"]:checked`);
+          const feedback = document.getElementById(`comprehension-feedback-${sectionId}`);
+          if (!seleccionado || !feedback) {
+              if (feedback) {
+                  feedback.className = "comprehension-feedback active incorrect";
+                  feedback.textContent = "Seleccioná una opción antes de verificar.";
+              }
+              return;
+          }
+          const respuesta = Number(seleccionado.value);
+          const correcta = respuesta === 0;
+          const registro = obtenerRegistroAyuda(sectionId);
+          registro.verificacion.intentos = Number(registro.verificacion.intentos || 0) + 1;
+          registro.verificacion.correcta = correcta;
+          registro.verificacion.respuesta = respuesta;
+          registro.verificacion.ultimaFecha = new Date().toISOString();
+          feedback.className = `comprehension-feedback active ${correcta ? "correct" : "incorrect"}`;
+          feedback.innerHTML = correcta
+              ? '<i class="fa-solid fa-circle-check"></i> Comprensión verificada. Ya podés usar los pasos y la lista de control para resolver.'
+              : '<i class="fa-solid fa-circle-info"></i> Revisá las acciones destacadas y abrí la consigna en pasos antes de volver a intentar.';
+          guardarRegistroAyuda(sectionId);
+      }
+
+      function actualizarChecklistComprension(sectionId, indice, checked) {
+          const registro = obtenerRegistroAyuda(sectionId);
+          registro.checklist[String(indice)] = checked === true;
+          registro.ultimaFecha = new Date().toISOString();
+          actualizarProgresoChecklist(sectionId);
+          guardarRegistroAyuda(sectionId);
+      }
+
+      function actualizarProgresoChecklist(sectionId) {
+          const registro = obtenerRegistroAyuda(sectionId);
+          const total = generarChecklistConsigna(seccionesData.find(sec => sec.id === sectionId)).length;
+          const marcados = Object.values(registro.checklist).filter(Boolean).length;
+          const elemento = document.getElementById(`checklist-progress-${sectionId}`);
+          if (elemento) elemento.textContent = `${marcados} de ${total} comprobaciones marcadas`;
+      }
+
+      function restaurarInterfazAyuda(sectionId) {
+          cargarRegistroAyudaLocal(sectionId);
+          const registro = obtenerRegistroAyuda(sectionId);
+          Object.entries(registro.checklist).forEach(([indice, checked]) => {
+              const input = document.querySelector(`#checklist-${sectionId} [data-check-index="${indice}"]`);
+              if (input) input.checked = checked === true;
+          });
+          const respuesta = Number(registro.verificacion?.respuesta);
+          if (Number.isInteger(respuesta)) {
+              const input = document.querySelector(`input[name="comprension-${sectionId}"][value="${respuesta}"]`);
+              if (input) input.checked = true;
+              const feedback = document.getElementById(`comprehension-feedback-${sectionId}`);
+              if (feedback && Number(registro.verificacion?.intentos || 0) > 0) {
+                  const correcta = registro.verificacion.correcta === true;
+                  feedback.className = `comprehension-feedback active ${correcta ? "correct" : "incorrect"}`;
+                  feedback.textContent = correcta
+                      ? "Comprensión verificada anteriormente."
+                      : "La última respuesta no fue correcta. Revisá los pasos e intentá nuevamente.";
+              }
+          }
+          actualizarProgresoChecklist(sectionId);
+      }
+
       function mostrarAyudaPalabraClave(elemento) {
           const seccion = elemento.closest(".section-card");
           const panel = seccion?.querySelector(".keyword-help-panel");
           if (!panel) return;
           const termino = elemento.dataset.keyword || elemento.textContent || "Palabra clave";
           const ayuda = elemento.dataset.help || obtenerAyudaPalabraClave(termino);
+          const categoria = elemento.dataset.category || categoriaPalabraClave(termino);
+          const ejemplo = elemento.dataset.example || obtenerEjemploPalabraClave(termino, categoria);
           panel.innerHTML = "";
           const titulo = document.createElement("strong");
           titulo.textContent = `${termino}: `;
           panel.appendChild(titulo);
           panel.appendChild(document.createTextNode(ayuda));
+          const tipo = document.createElement("div");
+          tipo.style.cssText = "margin-top:.35rem;color:var(--text-muted);font-size:.76rem";
+          tipo.textContent = etiquetaCategoriaPalabra(categoria);
+          panel.appendChild(tipo);
+          if (ejemplo) {
+              const bloqueEjemplo = document.createElement("code");
+              bloqueEjemplo.className = "keyword-help-example";
+              bloqueEjemplo.textContent = ejemplo;
+              panel.appendChild(bloqueEjemplo);
+          }
           panel.classList.add("active");
           panel.focus();
+          registrarPalabraConsultada(seccion?.id || "", termino, categoria);
       }
 
       document.addEventListener("click", event => {
@@ -3210,6 +3678,12 @@
           if (frame && frame.src === "about:blank") frame.src = SITIO_APOYO_URL;
           modal?.classList.add("active");
           modal?.querySelector("button")?.focus();
+          if (seccionId) {
+              const registro = obtenerRegistroAyuda(seccionId);
+              registro.materialApoyoVistas = Number(registro.materialApoyoVistas || 0) + 1;
+              registro.ultimaFecha = new Date().toISOString();
+              guardarRegistroAyuda(seccionId);
+          }
       }
 
       function cerrarSitioApoyo() {
@@ -3266,6 +3740,7 @@
       let historialResultados = {};
       let actividadesFinalizadas = {};
       let contadorPrevisualizaciones = {};
+      let ayudasComprension = {};
       let totalSalidasPestana = 0;
       let eventosSalidasPestana = [];
       let salidaActivaPestana = null;
@@ -3592,6 +4067,7 @@
               finalizadas: { ...actividadesFinalizadas },
               historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
               chatIA: JSON.parse(JSON.stringify(historialChatIA || {})),
+              ayudasComprension: JSON.parse(JSON.stringify(ayudasComprension || {})),
               contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
               seccionActiva: seccionActivaActual,
               versionApp: '8.0-desafios-externos-editables-ia'
@@ -3764,6 +4240,9 @@
           if (datos.contadorPrevisualizaciones) Object.entries(datos.contadorPrevisualizaciones).forEach(([id,v]) => setLocalStorage(`preview_count_${id}`, Number(v)));
           if (datos.codigos) Object.entries(datos.codigos).forEach(([id,v]) => { if (typeof v === 'string') setLocalStorage(`draft_editor-${id}`, v); });
           historialResultados = datos.historialResultados || {};
+          ayudasComprension = datos.ayudasComprension && typeof datos.ayudasComprension === 'object'
+              ? datos.ayudasComprension
+              : {};
           Object.keys(historialChatIA).forEach(id => delete historialChatIA[id]);
           if (datos.chatIA && typeof datos.chatIA === 'object') {
               Object.entries(datos.chatIA).forEach(([id, mensajes]) => {
@@ -4310,8 +4789,47 @@
                       <div class="exercise-ai-status" id="exercise-ai-status-${sec.id}" aria-live="polite">
                           <i class="fa-solid fa-wand-magic-sparkles"></i> Preparando palabras clave...
                       </div>
+                      <div class="keyword-legend" aria-label="Categorías de palabras clave">
+                          <span><i style="background:#38bdf8"></i> Acción</span>
+                          <span><i style="background:#c084fc"></i> Concepto</span>
+                          <span><i style="background:#34d399"></i> Método o herramienta</span>
+                          <span><i style="background:#facc15"></i> Resultado esperado</span>
+                      </div>
                       <div class="keyword-help-panel" id="keyword-help-${sec.id}" tabindex="-1" aria-live="polite">
                           Seleccioná una palabra resaltada para ver qué significa y qué acción te pide realizar.
+                      </div>
+                      <div class="comprehension-tools">
+                          <div class="comprehension-panel">
+                              <h4><i class="fa-solid fa-list-ol"></i> Consigna organizada</h4>
+                              <button class="btn btn-primary" id="btn-steps-${sec.id}" type="button" aria-expanded="false" onclick="mostrarPasosConsigna('${sec.id}')">
+                                  <i class="fa-solid fa-list-ol"></i> Ver consigna en pasos
+                              </button>
+                              <div class="steps-panel" id="steps-panel-${sec.id}">
+                                  <ol>${renderPasosConsigna(sec)}</ol>
+                              </div>
+                          </div>
+
+                          <div class="comprehension-panel">
+                              <h4><i class="fa-solid fa-circle-question"></i> Verificación de comprensión</h4>
+                              <p style="margin:0 0 .6rem;color:var(--text-muted);font-size:.84rem">
+                                  ${escaparAtributoAyuda(generarVerificacionComprension(sec).pregunta)}
+                              </p>
+                              <div class="comprehension-options">
+                                  ${renderVerificacionComprension(sec)}
+                              </div>
+                              <button class="btn btn-success" type="button" style="margin-top:.65rem" onclick="verificarComprensionConsigna('${sec.id}')">
+                                  <i class="fa-solid fa-check"></i> Verificar
+                              </button>
+                              <div class="comprehension-feedback" id="comprehension-feedback-${sec.id}" aria-live="polite"></div>
+                          </div>
+
+                          <div class="comprehension-panel">
+                              <h4><i class="fa-solid fa-list-check"></i> Lista de control antes de entregar</h4>
+                              <div class="student-checklist" id="checklist-${sec.id}">
+                                  ${renderChecklistComprension(sec)}
+                              </div>
+                              <div class="checklist-progress" id="checklist-progress-${sec.id}">0 comprobaciones marcadas</div>
+                          </div>
                       </div>
                       <button class="btn btn-secondary support-resource-button" type="button" onclick="abrirSitioApoyo('${sec.id}')">
                           <i class="fa-solid fa-book-open-reader"></i> Consultar material de apoyo
@@ -4407,6 +4925,7 @@
                   </div>
               `;
               sectionsContainer.appendChild(card);
+              restaurarInterfazAyuda(sec.id);
               analizarDesafioConIA(sec);
               try {
                   const guardadoChat = JSON.parse(getLocalStorage(`ai_chat_${sec.id}`) || "[]");
@@ -7356,6 +7875,94 @@
           </div>`;
       }
 
+      function resumirAyudasComprensionEstudiante(estudiante) {
+          const ayudas = estudiante?.ayudasComprension && typeof estudiante.ayudasComprension === "object"
+              ? estudiante.ayudasComprension
+              : {};
+          const resumen = {
+              consultasPalabras: 0,
+              palabrasUnicas: new Set(),
+              pasosVistos: 0,
+              materialApoyoVistas: 0,
+              verificacionesCorrectas: 0,
+              verificacionesIntentadas: 0,
+              checklistMarcados: 0,
+              checklistTotal: 0,
+              modulosConAyuda: 0,
+              palabrasFrecuentes: {}
+          };
+          seccionesData.forEach(sec => {
+              const registro = ayudas[sec.id];
+              if (!registro || typeof registro !== "object") return;
+              let tuvoUso = false;
+              Object.values(registro.palabras || {}).forEach(item => {
+                  const consultas = Number(item?.consultas || 0);
+                  if (!consultas) return;
+                  tuvoUso = true;
+                  resumen.consultasPalabras += consultas;
+                  const termino = String(item?.termino || "").trim();
+                  if (termino) {
+                      resumen.palabrasUnicas.add(termino.toLocaleLowerCase("es"));
+                      resumen.palabrasFrecuentes[termino] = Number(resumen.palabrasFrecuentes[termino] || 0) + consultas;
+                  }
+              });
+              resumen.pasosVistos += Number(registro.pasosVistos || 0);
+              resumen.materialApoyoVistas += Number(registro.materialApoyoVistas || 0);
+              if (Number(registro.pasosVistos || 0) || Number(registro.materialApoyoVistas || 0)) tuvoUso = true;
+              const intentos = Number(registro.verificacion?.intentos || 0);
+              if (intentos) {
+                  tuvoUso = true;
+                  resumen.verificacionesIntentadas++;
+                  if (registro.verificacion?.correcta === true) resumen.verificacionesCorrectas++;
+              }
+              const totalChecklist = generarChecklistConsigna(sec).length;
+              const marcados = Object.values(registro.checklist || {}).filter(Boolean).length;
+              resumen.checklistTotal += totalChecklist;
+              resumen.checklistMarcados += Math.min(marcados, totalChecklist);
+              if (marcados) tuvoUso = true;
+              if (tuvoUso) resumen.modulosConAyuda++;
+          });
+          resumen.palabrasUnicasCantidad = resumen.palabrasUnicas.size;
+          resumen.palabrasFrecuentesOrdenadas = Object.entries(resumen.palabrasFrecuentes)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 8);
+          return resumen;
+      }
+
+      function renderResumenAyudasComprensionProfesor(estudiante) {
+          const resumen = resumirAyudasComprensionEstudiante(estudiante);
+          const tieneUso = resumen.consultasPalabras || resumen.pasosVistos ||
+              resumen.materialApoyoVistas || resumen.verificacionesIntentadas ||
+              resumen.checklistMarcados;
+          if (!tieneUso) {
+              return `<div style="padding:1rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.05);margin-bottom:1rem;color:var(--text-muted)">
+                  <strong><i class="fa-solid fa-graduation-cap"></i> Registro de ayudas de comprensión:</strong>
+                  el estudiante todavía no utilizó las ayudas pedagógicas.
+              </div>`;
+          }
+          const frecuentes = resumen.palabrasFrecuentesOrdenadas.length
+              ? resumen.palabrasFrecuentesOrdenadas.map(([termino, cantidad]) =>
+                  `<span style="display:inline-flex;padding:.3rem .45rem;border-radius:5px;background:rgba(139,92,246,.14);margin:.18rem">${escapeHtml(termino)} (${cantidad})</span>`
+                ).join("")
+              : '<span style="color:var(--text-muted)">Sin palabras consultadas.</span>';
+          return `<div style="padding:1rem;border:1px solid rgba(56,189,248,.38);border-radius:8px;background:rgba(56,189,248,.07);margin-bottom:1rem">
+              <h3 style="margin:0 0 .7rem;color:#7dd3fc"><i class="fa-solid fa-graduation-cap"></i> Registro de ayudas de comprensión</h3>
+              <p style="margin:0 0 .75rem;color:var(--text-muted);font-size:.82rem">
+                  Estos datos muestran qué apoyos utilizó el estudiante. No modifican automáticamente la calificación.
+              </p>
+              <div class="teacher-detail-summary">
+                  <div class="teacher-detail-stat"><small>Consultas de palabras</small><strong>${resumen.consultasPalabras}</strong></div>
+                  <div class="teacher-detail-stat"><small>Palabras diferentes</small><strong>${resumen.palabrasUnicasCantidad}</strong></div>
+                  <div class="teacher-detail-stat"><small>Aperturas de pasos</small><strong>${resumen.pasosVistos}</strong></div>
+                  <div class="teacher-detail-stat"><small>Material de apoyo</small><strong>${resumen.materialApoyoVistas}</strong></div>
+                  <div class="teacher-detail-stat"><small>Comprensión verificada</small><strong>${resumen.verificacionesCorrectas}/${resumen.verificacionesIntentadas}</strong></div>
+                  <div class="teacher-detail-stat"><small>Lista de control</small><strong>${resumen.checklistMarcados}/${resumen.checklistTotal}</strong></div>
+                  <div class="teacher-detail-stat"><small>Módulos con ayuda</small><strong>${resumen.modulosConAyuda}</strong></div>
+              </div>
+              <div style="margin-top:.7rem"><strong>Palabras más consultadas:</strong><div style="margin-top:.35rem">${frecuentes}</div></div>
+          </div>`;
+      }
+
       function abrirDetalleEstudianteProfesor(indice) {
           const d = estudiantesProfesor[indice];
           if (!d) return;
@@ -7366,6 +7973,7 @@
           const tiempos = d.tiemposRestantes || {};
           const finalizadas = d.finalizadas || {};
           const previews = d.contadorPrevisualizaciones || {};
+          const ayudas = d.ayudasComprension || {};
           const progreso = calcularProgresoEstudiante(d);
           const promedio = calcularNotaEstudiante(d);
           const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
@@ -7410,6 +8018,16 @@
               const salida = r.salida || '// Sin salida de ejecución guardada';
               const notaFinal = r.notaFinal ?? r.notaIA;
               const evaluacionCodigo = r.evaluacionCodigo || null;
+              const ayudaModulo = ayudas[sec.id] || {};
+              const palabrasModulo = Object.values(ayudaModulo.palabras || {});
+              const consultasPalabrasModulo = palabrasModulo.reduce((total, item) => total + Number(item?.consultas || 0), 0);
+              const palabrasModuloHtml = palabrasModulo
+                  .filter(item => Number(item?.consultas || 0) > 0)
+                  .sort((a, b) => Number(b.consultas || 0) - Number(a.consultas || 0))
+                  .map(item => `${escapeHtml(item.termino || "")} (${Number(item.consultas || 0)})`)
+                  .join(", ");
+              const checklistModuloTotal = generarChecklistConsigna(sec).length;
+              const checklistModuloMarcado = Object.values(ayudaModulo.checklist || {}).filter(Boolean).length;
               const estado = finalizadas[sec.id] ? 'Finalizada' : (r.notaCodigo !== undefined ? 'Preguntas pendientes' : 'En curso');
               const formulaActividad = r.notaCodigo !== undefined && r.notaPreguntas !== undefined
                   ? `(${r.notaCodigo} × 0,70) + (${r.notaPreguntas} × 0,30) = ${notaFinal}`
@@ -7427,6 +8045,14 @@
                       </div>
                       <div style="padding:.65rem;border-radius:6px;background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.25);margin-bottom:.8rem;">
                           <strong>Cálculo de esta actividad:</strong> ${escapeHtml(formulaActividad)}
+                      </div>
+                      <div style="padding:.7rem;border-radius:6px;background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.25);margin-bottom:.8rem;line-height:1.5">
+                          <strong><i class="fa-solid fa-graduation-cap"></i> Ayudas de comprensión:</strong><br>
+                          Palabras consultadas: ${consultasPalabrasModulo}${palabrasModuloHtml ? ` · ${palabrasModuloHtml}` : ""}<br>
+                          Aperturas de pasos: ${Number(ayudaModulo.pasosVistos || 0)} · Material de apoyo: ${Number(ayudaModulo.materialApoyoVistas || 0)}<br>
+                          Verificación: ${Number(ayudaModulo.verificacion?.intentos || 0)
+                              ? (ayudaModulo.verificacion?.correcta === true ? "Correcta" : "Pendiente") + ` (${Number(ayudaModulo.verificacion?.intentos || 0)} intento/s)`
+                              : "Sin realizar"} · Lista: ${checklistModuloMarcado}/${checklistModuloTotal}
                       </div>
                       <h4>Código entregado</h4>
                       <pre class="teacher-code">${escapeHtml(codigo)}</pre>
@@ -7568,6 +8194,7 @@
                   </div>
               </div>
               ${resumenConsultasHtml}
+              ${renderResumenAyudasComprensionProfesor(d)}
               <details class="teacher-activity" open>
                   <summary>Cómo se calculó el promedio final</summary>
                   <div class="teacher-activity-content">
@@ -7754,6 +8381,14 @@
           renderResumenConsultasIAGeneral(rows);
           document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
               const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
+              const resumenAyudasFila = resumirAyudasComprensionEstudiante(d);
+              const ayudasFilaHtml = (resumenAyudasFila.consultasPalabras || resumenAyudasFila.pasosVistos || resumenAyudasFila.verificacionesIntentadas)
+                  ? `<div style="margin-top:.35rem;padding:.3rem .45rem;border-radius:5px;background:rgba(56,189,248,.11);color:#bae6fd;font-size:.7rem;line-height:1.35" title="Registro de ayudas de comprensión">
+                      <i class="fa-solid fa-graduation-cap"></i>
+                      Ayudas: ${resumenAyudasFila.consultasPalabras + resumenAyudasFila.pasosVistos + resumenAyudasFila.materialApoyoVistas}
+                      · Comprensión: ${resumenAyudasFila.verificacionesCorrectas}/${resumenAyudasFila.verificacionesIntentadas}
+                    </div>`
+                  : '';
               const fecha=d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : '—';
               const indice=estudiantesProfesor.indexOf(d);
               const inactiva = d.estadoCuenta === 'inactivo';
@@ -7777,7 +8412,7 @@
               const botonDesbloqueo = bloqueado
                   ? `<button class="btn btn-danger teacher-unlock-attention" onclick="desbloquearPantallaEstudianteProfesor(${indice})" style="padding:.4rem .65rem" title="Desbloquear pantalla del estudiante"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear</button>`
                   : '';
-              return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button>${botonDesbloqueo}<button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
+              return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button>${botonDesbloqueo}<button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
               }).join('') || '<tr><td colspan="11" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
