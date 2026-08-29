@@ -1412,19 +1412,20 @@
          max-width:none !important;
          padding:1rem !important;
        }
-       #panelProfesorModal table{table-layout:fixed}
+       #panelProfesorModal table{table-layout:auto}
        #panelProfesorModal table th,#panelProfesorModal table td{padding:.36rem .3rem;border-bottom:1px solid rgba(148,163,184,.15);text-align:left;font-size:.68rem;line-height:1.25;overflow-wrap:anywhere}
        #panelProfesorModal table th{color:var(--primary);position:sticky;top:0;background:var(--surface,#0f172a)}
-       #panelProfesorModal table th:nth-child(1){width:11%}
-       #panelProfesorModal table th:nth-child(2){width:20%}
-       #panelProfesorModal table th:nth-child(3){width:8%}
-       #panelProfesorModal table th:nth-child(4){width:5%}
-       #panelProfesorModal table th:nth-child(5){width:7%}
-       #panelProfesorModal table th:nth-child(6){width:7%}
-       #panelProfesorModal table th:nth-child(7){width:7%}
-       #panelProfesorModal table th:nth-child(8){width:8%}
-       #panelProfesorModal table th:nth-child(9){width:9%}
-       #panelProfesorModal table th:nth-child(10){width:18%}
+       #panelProfesorModal table th:nth-child(1){min-width:140px}
+       #panelProfesorModal table th:nth-child(2){min-width:220px}
+       #panelProfesorModal table th:nth-child(3){min-width:90px}
+       #panelProfesorModal table th:nth-child(4){min-width:55px}
+       #panelProfesorModal table th:nth-child(5){min-width:80px}
+       #panelProfesorModal table th:nth-child(6){min-width:175px}
+       #panelProfesorModal table th:nth-child(7){min-width:75px}
+       #panelProfesorModal table th:nth-child(8){min-width:105px}
+       #panelProfesorModal table th:nth-child(9){min-width:115px}
+       #panelProfesorModal table th:nth-child(10){min-width:90px}
+       #panelProfesorModal table th:nth-child(11){min-width:150px}
        #panelProfesorModal table thead th:last-child,
        #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child{display:none}
        #panelProfesorModal #tablaProfesorBody > tr.teacher-actions-row > td:last-child{display:table-cell}
@@ -1432,18 +1433,21 @@
        #panelProfesorModal #resumenProfesor{grid-template-columns:repeat(7,minmax(100px,1fr)) !important;gap:.4rem !important;margin-bottom:.55rem !important}
        #panelProfesorModal #resumenProfesor > div{padding:.45rem .55rem !important;border-radius:6px !important}
        #panelProfesorModal #resumenProfesor strong{font-size:1rem !important;margin-top:.1rem !important}
-       #panelProfesorModal table td:last-child > div{flex-wrap:nowrap !important;align-items:center;white-space:nowrap}
-       #panelProfesorModal table td:last-child .btn{flex:0 0 auto;white-space:nowrap;font-size:.7rem;padding:.3rem .42rem;line-height:1.15}
-       #panelProfesorModal .teacher-action-buttons{gap:.25rem !important}
+       #panelProfesorModal table td:last-child > div{align-items:stretch;white-space:normal}
+       #panelProfesorModal table td:last-child .btn{white-space:normal;font-size:.72rem;padding:.5rem .65rem;line-height:1.2}
+       #panelProfesorModal .teacher-action-buttons{gap:.45rem !important}
        #panelProfesorModal .teacher-action-buttons .btn{
-         width:1.8rem;
-         min-width:1.8rem;
-         height:1.8rem;
-         padding:.25rem !important;
+         width:100% !important;
+         min-width:0;
+         min-height:2.35rem;
+         height:auto;
+         padding:.5rem .65rem !important;
          justify-content:center;
-         font-size:0 !important;
+         font-size:.72rem !important;
+         line-height:1.2;
+         gap:.4rem;
        }
-       #panelProfesorModal .teacher-action-buttons .btn i{font-size:.82rem;margin:0}
+       #panelProfesorModal .teacher-action-buttons .btn i{font-size:.85rem;margin:0;flex:0 0 auto}
        #panelProfesorModal .teacher-action-buttons .btn:hover,
        #panelProfesorModal .teacher-action-buttons .btn:focus-visible{transform:translateY(-1px)}
        #panelProfesorModal .modal-box{
@@ -1465,7 +1469,7 @@
          scrollbar-width:auto;
          scrollbar-color:#38bdf8 #0f172a;
        }
-       #panelProfesorModal .teacher-table-scroll table{min-width:0 !important;width:100% !important}
+       #panelProfesorModal .teacher-table-scroll table{min-width:1280px !important;width:100% !important}
        #panelProfesorModal .modal-box > div[style*="overflow:auto"]{
          max-width:100%;
          max-height:52vh;
@@ -1474,7 +1478,7 @@
          scrollbar-width:auto;
          scrollbar-color:#38bdf8 #0f172a;
        }
-       #panelProfesorModal .modal-box > div[style*="overflow:auto"] table{min-width:0 !important;width:100% !important;table-layout:fixed}
+       #panelProfesorModal .modal-box > div[style*="overflow:auto"] table{min-width:1280px !important;width:100% !important;table-layout:auto}
        #panelProfesorModal .teacher-icon-legend{
          position:sticky;
          top:0;
@@ -1507,19 +1511,34 @@
        #panelProfesorModal table tr.teacher-actions-row td{
          padding:.35rem .55rem .55rem;
          border-bottom:1px solid rgba(148,163,184,.15);
+         position:sticky;
+         left:0;
+         z-index:2;
+         background:#0f172a;
        }
        #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons{
-         display:flex !important;
-         width:100%;
-         justify-content:flex-start;
-         align-items:center;
-         flex-wrap:nowrap !important;
+         display:grid !important;
+         grid-template-columns:repeat(auto-fit,minmax(145px,1fr));
+         width:calc(99vw - 3rem) !important;
+         max-width:calc(99vw - 3rem);
+         align-items:stretch;
+         white-space:normal !important;
+       }
+       #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td{
+         vertical-align:top;
+       }
+       @media (max-width:700px){
+         #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons{
+           grid-template-columns:repeat(2,minmax(0,1fr));
+           width:calc(100vw - 2.5rem) !important;
+           max-width:calc(100vw - 2.5rem);
+         }
        }
         #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons .btn:nth-child(4){
-          margin-left:auto;
+          margin-left:0;
         }
         #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons .btn:nth-child(6){
-          margin-left:.25rem;
+          margin-left:0;
         }
        #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons .btn{
          display:inline-flex !important;
@@ -2810,7 +2829,7 @@
         </div>
         <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
         <div id="resumenConsultasIAProfesor" style="margin-bottom:1rem;"></div>
-        <div style="overflow:auto;"><table style="width:100%;border-collapse:collapse;min-width:1140px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Desbloqueos</th><th>Última actualización</th><th>Detalle</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
+        <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse;min-width:1280px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Desbloqueos</th><th>Última actualización</th><th>Detalle</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
         <p id="estadoPanelProfesor" style="margin-top:1rem;color:var(--text-muted);font-size:.8rem;"></p>
       </div>
     </div>
@@ -8613,7 +8632,7 @@
                   botonEliminar.type = 'button';
                   botonEliminar.title = 'Eliminar al estudiante y todo su historial';
                   botonEliminar.setAttribute('aria-label', 'Eliminar estudiante y su historial');
-                  botonEliminar.innerHTML = '<i class="fa-solid fa-trash-can" aria-hidden="true"></i>';
+                  botonEliminar.innerHTML = '<i class="fa-solid fa-trash-can" aria-hidden="true"></i> Eliminar estudiante';
                   const filaActual = contenedor.closest('tr');
                   const registro = filaActual ? rows.find(r => String(r.email || '') === String(filaActual.querySelector('td:nth-child(2)')?.textContent || '')) : null;
                   botonEliminar.onclick = () => eliminarEstudianteProfesor(registro);
@@ -8624,7 +8643,7 @@
                   fila.nextElementSibling?.classList.contains('teacher-actions-row') && fila.nextElementSibling.remove();
                   const filaAcciones = document.createElement('tr');
                   filaAcciones.className = 'teacher-actions-row';
-                  filaAcciones.innerHTML = '<td colspan="11"></td>';
+                  filaAcciones.innerHTML = '<td colspan="12"></td>';
                   filaAcciones.firstElementChild.appendChild(contenedor);
                   fila.parentNode.insertBefore(filaAcciones, fila.nextSibling);
               }
