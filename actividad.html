@@ -1260,6 +1260,16 @@
       #detalleEstudianteProfesorModal {
         z-index: 8000;
       }
+      #accionesEstudianteModal,
+      #historialDesbloqueosModal {
+        z-index: 9000;
+      }
+      #accionesEstudianteModal .modal-box,
+      #historialDesbloqueosModal .modal-box {
+        position: relative;
+        z-index: 1;
+        pointer-events: auto;
+      }
       .class-waiting-card {
         width: min(520px, calc(100vw - 32px)); padding: 2rem;
         background: var(--bg-card); border: 1px solid var(--border);
@@ -1428,9 +1438,6 @@
        #panelProfesorModal table th:nth-child(11){min-width:150px}
        #panelProfesorModal table th:nth-child(12){min-width:150px}
        #panelProfesorModal table th:nth-child(1){min-width:150px}
-       #panelProfesorModal table thead th:last-child,
-       #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child{display:none}
-       #panelProfesorModal #tablaProfesorBody > tr.teacher-actions-row > td:last-child{display:table-cell}
        #panelProfesorModal input,#panelProfesorModal select{width:100%;padding:.45rem .5rem;border-radius:6px;border:1px solid rgba(148,163,184,.25);background:rgba(15,23,42,.65);color:inherit;font-size:.72rem}
        #panelProfesorModal #resumenProfesor{grid-template-columns:repeat(auto-fit,minmax(120px,1fr)) !important;gap:.45rem !important;margin-bottom:.65rem !important}
        #panelProfesorModal #resumenProfesor > div{padding:.45rem .55rem !important;border-radius:6px !important}
@@ -1599,7 +1606,6 @@
            justify-content:flex-start !important;
            text-align:left !important;
          }
-         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child{display:none !important}
          #panelProfesorModal #tablaProfesorBody > tr.teacher-actions-row{
            margin:0 0 .9rem;
            border:1px solid rgba(56,189,248,.25);
@@ -2984,7 +2990,7 @@
         </div>
         <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
         <div id="resumenConsultasIAProfesor" style="margin-bottom:1rem;"></div>
-        <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse;min-width:1280px;"><thead><tr><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Desbloqueos</th><th>Última actualización</th><th>Detalle</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
+        <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse;min-width:1280px;"><thead><tr><th data-actions-column="true">Acciones</th><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Desbloqueos</th><th>Última actualización</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
         <p id="estadoPanelProfesor" style="margin-top:1rem;color:var(--text-muted);font-size:.8rem;"></p>
       </div>
     </div>
@@ -8682,7 +8688,9 @@
       }
 
       function cerrarAccionesEstudiante() {
-          document.getElementById('accionesEstudianteModal')?.classList.remove('active');
+          const modal = document.getElementById('accionesEstudianteModal');
+          modal?.classList.remove('active');
+          modal?.style.removeProperty('display');
       }
 
       if (!window.__accionesEstudianteDelegadas) {
@@ -8709,22 +8717,26 @@
           const bloqueado = d.pantallaBloqueada === true;
           const pausado = d.controlCronometroIndividual?.pausado === true;
           const contenido = document.getElementById('accionesEstudianteContenido');
-          document.getElementById('accionesEstudianteSubtitulo').textContent = `${nombre} · ${d.email || 'Sin email'}`;
+          const subtitulo = document.getElementById('accionesEstudianteSubtitulo');
+          const modal = document.getElementById('accionesEstudianteModal');
+          if (!contenido || !subtitulo || !modal) {
+              alert('No se pudo cargar la ventana de acciones. Actualizá la página e intentá nuevamente.');
+              return;
+          }
+          subtitulo.textContent = `${nombre} · ${d.email || 'Sin email'}`;
           contenido.innerHTML = `
             <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver detalle completo</button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i> Historial de desbloqueos</button>
-            ${bloqueado ? `<button class="btn student-action-highlight" onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear pantalla</button>` : ''}
-            ${!bloqueado ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i> Bloquear pantalla</button>` : ''}
+            <button class="btn btn-danger" ${bloqueado ? 'disabled title="La pantalla ya está bloqueada"' : ''} onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i> Bloquear pantalla</button>
+            <button class="btn student-action-highlight" ${bloqueado ? '' : 'disabled title="La pantalla no está bloqueada"'} onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear pantalla</button>
             <button class="btn ${pausado ? 'btn-success' : 'btn-warning'}" onclick="cerrarAccionesEstudiante();controlarCronometroEstudianteProfesor(${indice}, '${pausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${pausado ? 'fa-play' : 'fa-pause'}"></i> ${pausado ? 'Reanudar' : 'Pausar'} cronómetro</button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')"><i class="fa-solid fa-clock-rotate-left"></i> Reiniciar cronómetro a 40:00</button>
             <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Reiniciar contador de pestañas</button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar consultas IA</button>
             <button class="btn student-action-danger" onclick="cerrarAccionesEstudiante();eliminarEstudianteProfesor(estudiantesProfesor[${indice}])"><i class="fa-solid fa-trash-can"></i> Eliminar estudiante</button>`;
-          const modal = document.getElementById('accionesEstudianteModal');
-          modal?.classList.add('active');
-          if (modal && !modal.classList.contains('active')) {
-              modal.style.display = 'flex';
-          }
+          modal.style.removeProperty('display');
+          modal.classList.add('active');
+          modal.querySelector('button:not([disabled])')?.focus();
       }
       function renderPanelProfesor() {
           renderBandejaSolicitudesPendientes();
@@ -8889,55 +8901,17 @@
               const botonDesbloqueo = bloqueado
                   ? `<button class="btn btn-danger teacher-unlock-attention" onclick="desbloquearPantallaEstudianteProfesor(${indice})" style="padding:.4rem .65rem" title="Desbloquear pantalla del estudiante"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear</button>`
                   : '';
-              return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td><td>${escapeHtml(fecha)}</td><td><div style="display:flex;gap:.35rem;flex-wrap:wrap"><button class="btn btn-primary" style="padding:.4rem .65rem" onclick="abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver todo</button><button class="btn ${cronometroPausado ? 'btn-success' : 'btn-warning'}" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroPausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${cronometroPausado ? 'fa-play' : 'fa-pause'}"></i> ${cronometroPausado ? 'Reanudar' : 'Pausar'}</button><button class="btn btn-secondary" style="padding:.4rem .65rem" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')" title="Reiniciar cronómetro a 40 minutos"><i class="fa-solid fa-clock-rotate-left"></i> 40:00</button><button class="btn btn-danger" style="padding:.4rem .65rem" title="Reiniciar contador de cambios de pestaña" onclick="reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Pestañas</button>${botonDesbloqueo}<button class="btn btn-danger" id="btnBorrarConsultasIAAlumno-${indice}" style="padding:.4rem .65rem" title="Borrar solamente las consultas IA de este alumno" onclick="borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar IA</button></div></td></tr>`;
+              return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn btn-secondary btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="Abrir las nueve acciones del estudiante"><i class="fa-solid fa-sliders"></i> Acciones</button></td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? 0)}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td><td>${escapeHtml(fecha)}</td></tr>`;
               }).join('') || '<tr><td colspan="12" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
               if (!estudiante) return;
-              if (!document.querySelector('#panelProfesorModal thead th[data-actions-column]')) {
-                  const encabezadoAcciones = document.querySelector('#panelProfesorModal thead tr');
-                  if (encabezadoAcciones) {
-                      const thAcciones = document.createElement('th');
-                      thAcciones.dataset.actionsColumn = 'true';
-                      thAcciones.textContent = 'Acciones';
-                      encabezadoAcciones.prepend(thAcciones);
-                      while (encabezadoAcciones.children.length > 12) {
-                          encabezadoAcciones.lastElementChild?.remove();
-                      }
-                  }
-              }
-              if (!fila.querySelector('.acciones-principales-cell')) {
-                  const celdaAcciones = document.createElement('td');
-                  celdaAcciones.className = 'acciones-principales-cell';
-                  fila.prepend(celdaAcciones);
-              }
-              while (fila.children.length > 12) {
-                  fila.lastElementChild?.remove();
-              }
-              const etiquetasColumnas = ['Estudiante','Email','Curso','División','Turno','Estado','Progreso','Nota definitiva','Cambios de pestaña','Desbloqueos','Última actualización','Detalle'];
+              const etiquetasColumnas = ['Acciones','Estudiante','Email','Curso','División','Turno','Estado','Progreso','Nota definitiva','Cambios de pestaña','Desbloqueos','Última actualización'];
               [...fila.children].forEach((celda, indiceCelda) => {
                   if (etiquetasColumnas[indiceCelda]) celda.setAttribute('data-label', etiquetasColumnas[indiceCelda]);
               });
               const estado = estudiante.estadoCuenta || 'activo';
               const celdaEstado = fila.children[6];
-              const celdaAccionesPrincipal = fila.children[0];
-              if (celdaAccionesPrincipal && !celdaAccionesPrincipal.querySelector('.btn-abrir-acciones-estudiante')) {
-                  const indiceEstudiantePrincipal = estudiantesProfesor.indexOf(estudiante);
-                      const botonAcciones = document.createElement('button');
-                      botonAcciones.type = 'button';
-                      botonAcciones.className = 'btn btn-secondary btn-abrir-acciones-estudiante';
-                      botonAcciones.dataset.estudianteIndex = String(indiceEstudiantePrincipal);
-                      botonAcciones.dataset.listenerBound = 'true';
-                      botonAcciones.style.cssText = 'width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem';
-                      botonAcciones.title = 'Abrir acciones del estudiante';
-                      botonAcciones.innerHTML = '<i class="fa-solid fa-sliders"></i> Acciones';
-                      botonAcciones.addEventListener('click', event => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          abrirAccionesEstudiante(indiceEstudiantePrincipal);
-                      });
-                      celdaAccionesPrincipal.appendChild(botonAcciones);
-              }
               if (celdaEstado && estudiante.pantallaBloqueada !== true) {
                   const configuracion = {
                       activo: ['Activa', '#6ee7b7'],
@@ -9003,6 +8977,12 @@
                   const indiceEstudiante = estudiantesProfesor.indexOf(
                       rows.find(r => String(r.email || '') === String(fila.querySelector('td:nth-child(3)')?.textContent || ''))
                   );
+                  fila.nextElementSibling?.classList.contains('teacher-actions-row') && fila.nextElementSibling.remove();
+                  const filaAcciones = document.createElement('tr');
+                  filaAcciones.className = 'teacher-actions-row';
+                  filaAcciones.innerHTML = '<td colspan="12"></td>';
+                  filaAcciones.firstElementChild.appendChild(contenedor);
+                  fila.parentNode.insertBefore(filaAcciones, fila.nextSibling);
               }
           });
       }
