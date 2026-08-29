@@ -1511,6 +1511,12 @@
        .history-event{padding:.8rem;border:1px solid rgba(148,163,184,.22);border-left:4px solid var(--primary);border-radius:7px;background:rgba(15,23,42,.55);margin-bottom:.65rem}
        .history-event strong{color:#e0f2fe}
        .history-event-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.35rem .8rem;margin-top:.45rem;color:#cbd5e1;font-size:.8rem;line-height:1.4}
+       .student-actions-modal-box{width:min(560px,94vw);max-width:560px}
+       .student-actions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}
+       .student-actions-grid .btn{width:100%;min-height:2.65rem;justify-content:flex-start;text-align:left}
+       .student-actions-grid .btn i{width:1.1rem;text-align:center}
+       .student-actions-grid .student-action-danger{grid-column:1 / -1;background:#7f1d1d;color:#fff}
+       .student-actions-grid .student-action-highlight{grid-column:1 / -1;background:#dc2626;color:#fff;border:1px solid #fecaca;box-shadow:0 0 0 2px rgba(239,68,68,.2)}
        @media(max-width:800px){#editorDesafiosFirebaseModal .editor-desafios-layout{grid-template-columns:1fr}#editorDesafiosFirebaseModal .editor-desafios-sidebar{position:static}}
        #panelProfesorModal .teacher-action-buttons{
          margin-top:.4rem;
@@ -1574,7 +1580,12 @@
            font-weight:700;
            content:attr(data-label);
          }
-         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child{display:none}
+         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child{
+           display:block !important;
+           padding-top:.65rem;
+           border-bottom:0;
+         }
+         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child::before{display:none}
          #panelProfesorModal #tablaProfesorBody > tr.teacher-actions-row{
            margin:0 0 .9rem;
            border:1px solid rgba(56,189,248,.25);
@@ -1592,6 +1603,10 @@
          #panelProfesorModal .modal-box > div[style*="overflow:auto"] table{min-width:0 !important}
          .history-modal-box{width:calc(100vw - 1rem);max-width:none;padding:.85rem}
          .history-event-meta{grid-template-columns:1fr}
+         .student-actions-modal-box{width:calc(100vw - 1rem);max-width:none}
+         .student-actions-grid{grid-template-columns:1fr}
+         .student-actions-grid .student-action-danger,
+         .student-actions-grid .student-action-highlight{grid-column:auto}
        }
          #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons{
            grid-template-columns:repeat(2,minmax(0,1fr));
@@ -1607,6 +1622,9 @@
         }
        #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons .btn{
          display:inline-flex !important;
+       }
+       #panelProfesorModal table tr.teacher-actions-row{
+         display:none !important;
        }
       .teacher-detail-summary {
         display: grid;
@@ -2957,6 +2975,19 @@
           <button class="btn btn-secondary" type="button" onclick="cerrarHistorialDesbloqueos()">Cerrar</button>
         </div>
         <div id="historialDesbloqueosContenido"></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="accionesEstudianteModal" role="dialog" aria-modal="true" aria-labelledby="accionesEstudianteTitle">
+      <div class="modal-box student-actions-modal-box">
+        <div class="history-modal-header">
+          <div>
+            <h3 id="accionesEstudianteTitle"><i class="fa-solid fa-sliders"></i> Acciones del estudiante</h3>
+            <p id="accionesEstudianteSubtitulo">Seleccioná una acción.</p>
+          </div>
+          <button class="btn btn-secondary" type="button" onclick="cerrarAccionesEstudiante()">Cerrar</button>
+        </div>
+        <div id="accionesEstudianteContenido" class="student-actions-grid"></div>
       </div>
     </div>
 
@@ -8567,6 +8598,30 @@
                 </div>
               </article>`).join('')}`;
       }
+
+      function cerrarAccionesEstudiante() {
+          document.getElementById('accionesEstudianteModal')?.classList.remove('active');
+      }
+
+      function abrirAccionesEstudiante(indice) {
+          const d = estudiantesProfesor[indice];
+          if (!d) return;
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante';
+          const bloqueado = d.pantallaBloqueada === true;
+          const pausado = d.controlCronometroIndividual?.pausado === true;
+          const contenido = document.getElementById('accionesEstudianteContenido');
+          document.getElementById('accionesEstudianteSubtitulo').textContent = `${nombre} · ${d.email || 'Sin email'}`;
+          contenido.innerHTML = `
+            <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver detalle completo</button>
+            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i> Historial de desbloqueos</button>
+            ${bloqueado ? `<button class="btn student-action-highlight" onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear pantalla</button>` : ''}
+            <button class="btn ${pausado ? 'btn-success' : 'btn-warning'}" onclick="cerrarAccionesEstudiante();controlarCronometroEstudianteProfesor(${indice}, '${pausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${pausado ? 'fa-play' : 'fa-pause'}"></i> ${pausado ? 'Reanudar' : 'Pausar'} cronómetro</button>
+            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')"><i class="fa-solid fa-clock-rotate-left"></i> Reiniciar cronómetro a 40:00</button>
+            <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Reiniciar contador de pestañas</button>
+            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar consultas IA</button>
+            <button class="btn student-action-danger" onclick="cerrarAccionesEstudiante();eliminarEstudianteProfesor(estudiantesProfesor[${indice}])"><i class="fa-solid fa-trash-can"></i> Eliminar estudiante</button>`;
+          document.getElementById('accionesEstudianteModal').classList.add('active');
+      }
       function renderPanelProfesor() {
           renderBandejaSolicitudesPendientes();
           const q = (document.getElementById('filtroProfesor').value || '').toLowerCase().trim();
@@ -8803,6 +8858,14 @@
               }
               const fila = contenedor.closest('tr');
               if (fila) {
+                  const indiceEstudiante = estudiantesProfesor.indexOf(
+                      rows.find(r => String(r.email || '') === String(fila.querySelector('td:nth-child(2)')?.textContent || ''))
+                  );
+                  const celdaDetalle = fila.children[11];
+                  if (celdaDetalle && !celdaDetalle.querySelector('.btn-abrir-acciones-estudiante')) {
+                      celdaDetalle.style.display = 'table-cell';
+                      celdaDetalle.innerHTML = `<button type="button" class="btn btn-primary btn-abrir-acciones-estudiante" style="width:100%;justify-content:center;padding:.55rem .7rem" onclick="abrirAccionesEstudiante(${indiceEstudiante})" title="Abrir acciones del estudiante"><i class="fa-solid fa-sliders"></i> Acciones</button>`;
+                  }
                   fila.nextElementSibling?.classList.contains('teacher-actions-row') && fila.nextElementSibling.remove();
                   const filaAcciones = document.createElement('tr');
                   filaAcciones.className = 'teacher-actions-row';
