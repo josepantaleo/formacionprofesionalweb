@@ -1520,12 +1520,96 @@
        .history-event{padding:.8rem;border:1px solid rgba(148,163,184,.22);border-left:4px solid var(--primary);border-radius:7px;background:rgba(15,23,42,.55);margin-bottom:.65rem}
        .history-event strong{color:#e0f2fe}
        .history-event-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.35rem .8rem;margin-top:.45rem;color:#cbd5e1;font-size:.8rem;line-height:1.4}
-       .student-actions-modal-box{width:min(560px,94vw);max-width:560px}
-       .student-actions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}
-       .student-actions-grid .btn{width:100%;min-height:2.65rem;justify-content:flex-start;text-align:left}
-       .student-actions-grid .btn i{width:1.1rem;text-align:center}
-       .student-actions-grid .student-action-danger{grid-column:1 / -1;background:#7f1d1d;color:#fff}
-       .student-actions-grid .student-action-highlight{grid-column:1 / -1;background:#dc2626;color:#fff;border:1px solid #fecaca;box-shadow:0 0 0 2px rgba(239,68,68,.2)}
+      .student-actions-modal-box{
+        width:min(620px,calc(100vw - 1.5rem));
+        max-width:620px;
+        padding:1.35rem;
+        border-color:rgba(56,189,248,.34);
+        box-shadow:0 24px 70px rgba(0,0,0,.58);
+      }
+      .student-actions-header{
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        gap:1rem;
+        margin-bottom:.85rem;
+      }
+      .student-actions-heading{display:flex;align-items:flex-start;gap:.7rem;min-width:0}
+      .student-actions-heading-icon{
+        display:grid;
+        place-items:center;
+        flex:0 0 2.25rem;
+        width:2.25rem;
+        height:2.25rem;
+        border-radius:7px;
+        background:rgba(56,189,248,.13);
+        color:#38bdf8;
+      }
+      .student-actions-heading h3{margin:0;color:#38bdf8;font-size:1.05rem;line-height:1.3}
+      .student-actions-heading p{margin:.25rem 0 0;color:#cbd5e1;font-size:.78rem;overflow-wrap:anywhere}
+      .student-actions-close{
+        display:grid !important;
+        place-items:center;
+        flex:0 0 2.35rem;
+        width:2.35rem;
+        height:2.35rem;
+        min-height:2.35rem;
+        padding:0 !important;
+        border:1px solid rgba(148,163,184,.35);
+        background:#475569;
+        color:#fff;
+      }
+      .student-actions-close:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
+      .student-actions-status{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:.75rem;
+        padding:.58rem .7rem;
+        margin-bottom:.8rem;
+        border:1px solid rgba(148,163,184,.2);
+        border-radius:7px;
+        background:rgba(15,23,42,.72);
+        color:#cbd5e1;
+        font-size:.75rem;
+      }
+      .student-actions-status strong{display:inline-flex;align-items:center;gap:.4rem}
+      .student-actions-status .is-locked{color:#fca5a5}
+      .student-actions-status .is-unlocked{color:#86efac}
+      .student-actions-count{color:#94a3b8;white-space:nowrap}
+      .student-actions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+      .student-actions-grid .btn{
+        width:100%;
+        min-width:0;
+        min-height:3.15rem;
+        justify-content:flex-start;
+        text-align:left;
+        padding:.65rem .75rem;
+        border:1px solid transparent;
+        border-radius:7px;
+        white-space:normal;
+        line-height:1.22;
+        font-size:.78rem;
+      }
+      .student-actions-grid .btn i{width:1.15rem;text-align:center;flex:0 0 1.15rem}
+      .student-actions-grid .btn:disabled{
+        opacity:.52;
+        cursor:not-allowed;
+        filter:saturate(.45);
+        box-shadow:none;
+        transform:none;
+      }
+      .student-actions-grid .student-action-danger{
+        grid-column:1 / -1;
+        background:#991b1b;
+        color:#fff;
+        border-color:rgba(254,202,202,.2);
+      }
+      .student-actions-grid .student-action-highlight{
+        background:#dc2626;
+        color:#fff;
+        border-color:rgba(254,202,202,.4);
+      }
        @media(max-width:800px){#editorDesafiosFirebaseModal .editor-desafios-layout{grid-template-columns:1fr}#editorDesafiosFirebaseModal .editor-desafios-sidebar{position:static}}
        #panelProfesorModal .teacher-action-buttons{
          margin-top:.4rem;
@@ -1623,8 +1707,12 @@
          #panelProfesorModal .modal-box > div[style*="overflow:auto"] table{min-width:0 !important}
          .history-modal-box{width:calc(100vw - 1rem);max-width:none;padding:.85rem}
          .history-event-meta{grid-template-columns:1fr}
-         .student-actions-modal-box{width:calc(100vw - 1rem);max-width:none}
-         .student-actions-grid{grid-template-columns:1fr}
+        .student-actions-modal-box{width:calc(100vw - .75rem);max-width:none;padding:1rem}
+        .student-actions-header{gap:.6rem}
+        .student-actions-heading-icon{display:none}
+        .student-actions-heading h3{font-size:1rem}
+        .student-actions-status{align-items:flex-start;flex-direction:column;gap:.3rem}
+        .student-actions-grid{grid-template-columns:1fr}
          .student-actions-grid .student-action-danger,
          .student-actions-grid .student-action-highlight{grid-column:auto}
        }
@@ -3037,13 +3125,22 @@
     </div>
 
     <div class="modal-overlay" id="accionesEstudianteModal" role="dialog" aria-modal="true" aria-labelledby="accionesEstudianteTitle">
-      <div class="modal-box student-actions-modal-box">
-        <div class="history-modal-header">
-          <div>
-            <h3 id="accionesEstudianteTitle"><i class="fa-solid fa-sliders"></i> Acciones del estudiante</h3>
-            <p id="accionesEstudianteSubtitulo">Seleccioná una acción.</p>
+      <div class="modal-box student-actions-modal-box" tabindex="-1">
+        <div class="student-actions-header">
+          <div class="student-actions-heading">
+            <span class="student-actions-heading-icon" aria-hidden="true"><i class="fa-solid fa-sliders"></i></span>
+            <div>
+              <h3 id="accionesEstudianteTitle">Acciones del estudiante</h3>
+              <p id="accionesEstudianteSubtitulo">Seleccioná una acción.</p>
+            </div>
           </div>
-          <button class="btn btn-secondary" type="button" onclick="cerrarAccionesEstudiante()">Cerrar</button>
+          <button class="btn student-actions-close" type="button" onclick="cerrarAccionesEstudiante()" aria-label="Cerrar acciones" title="Cerrar">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="student-actions-status" aria-live="polite">
+          <strong id="accionesEstudianteEstado"><i class="fa-solid fa-circle-check"></i> Pantalla habilitada</strong>
+          <span class="student-actions-count">9 acciones disponibles</span>
         </div>
         <div id="accionesEstudianteContenido" class="student-actions-grid"></div>
       </div>
@@ -8718,25 +8815,30 @@
           const pausado = d.controlCronometroIndividual?.pausado === true;
           const contenido = document.getElementById('accionesEstudianteContenido');
           const subtitulo = document.getElementById('accionesEstudianteSubtitulo');
+          const estadoPantalla = document.getElementById('accionesEstudianteEstado');
           const modal = document.getElementById('accionesEstudianteModal');
-          if (!contenido || !subtitulo || !modal) {
+          if (!contenido || !subtitulo || !estadoPantalla || !modal) {
               alert('No se pudo cargar la ventana de acciones. Actualizá la página e intentá nuevamente.');
               return;
           }
           subtitulo.textContent = `${nombre} · ${d.email || 'Sin email'}`;
+          estadoPantalla.className = bloqueado ? 'is-locked' : 'is-unlocked';
+          estadoPantalla.innerHTML = bloqueado
+              ? '<i class="fa-solid fa-lock"></i> Pantalla bloqueada'
+              : '<i class="fa-solid fa-circle-check"></i> Pantalla habilitada';
           contenido.innerHTML = `
-            <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver detalle completo</button>
-            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i> Historial de desbloqueos</button>
-            <button class="btn btn-danger" ${bloqueado ? 'disabled title="La pantalla ya está bloqueada"' : ''} onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i> Bloquear pantalla</button>
-            <button class="btn student-action-highlight" ${bloqueado ? '' : 'disabled title="La pantalla no está bloqueada"'} onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear pantalla</button>
-            <button class="btn ${pausado ? 'btn-success' : 'btn-warning'}" onclick="cerrarAccionesEstudiante();controlarCronometroEstudianteProfesor(${indice}, '${pausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${pausado ? 'fa-play' : 'fa-pause'}"></i> ${pausado ? 'Reanudar' : 'Pausar'} cronómetro</button>
-            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')"><i class="fa-solid fa-clock-rotate-left"></i> Reiniciar cronómetro a 40:00</button>
-            <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Reiniciar contador de pestañas</button>
-            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar consultas IA</button>
-            <button class="btn student-action-danger" onclick="cerrarAccionesEstudiante();eliminarEstudianteProfesor(estudiantesProfesor[${indice}])"><i class="fa-solid fa-trash-can"></i> Eliminar estudiante</button>`;
+            <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i><span>Ver detalle completo</span></button>
+            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial de desbloqueos</span></button>
+            <button class="btn btn-danger" ${bloqueado ? 'disabled title="La pantalla ya está bloqueada"' : ''} onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i><span>Bloquear pantalla</span></button>
+            <button class="btn student-action-highlight" ${bloqueado ? '' : 'disabled title="La pantalla no está bloqueada"'} onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i><span>Desbloquear pantalla</span></button>
+            <button class="btn ${pausado ? 'btn-success' : 'btn-warning'}" onclick="cerrarAccionesEstudiante();controlarCronometroEstudianteProfesor(${indice}, '${pausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${pausado ? 'fa-play' : 'fa-pause'}"></i><span>${pausado ? 'Reanudar' : 'Pausar'} cronómetro</span></button>
+            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')"><i class="fa-solid fa-clock-rotate-left"></i><span>Reiniciar cronómetro a 40:00</span></button>
+            <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i><span>Reiniciar contador de pestañas</span></button>
+            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i><span>Borrar consultas IA</span></button>
+            <button class="btn student-action-danger" onclick="cerrarAccionesEstudiante();eliminarEstudianteProfesor(estudiantesProfesor[${indice}])"><i class="fa-solid fa-trash-can"></i><span>Eliminar estudiante</span></button>`;
           modal.style.removeProperty('display');
           modal.classList.add('active');
-          modal.querySelector('button:not([disabled])')?.focus();
+          modal.querySelector('.student-actions-modal-box')?.focus({ preventScroll: true });
       }
       function renderPanelProfesor() {
           renderBandejaSolicitudesPendientes();
