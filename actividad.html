@@ -1262,12 +1262,14 @@
       }
       #accionesEstudianteModal,
       #historialDesbloqueosModal,
-      #historialDescuentosModal {
+      #historialDescuentosModal,
+      #historialPestanasModal {
         z-index: 9000;
       }
       #accionesEstudianteModal .modal-box,
       #historialDesbloqueosModal .modal-box,
-      #historialDescuentosModal .modal-box {
+      #historialDescuentosModal .modal-box,
+      #historialPestanasModal .modal-box {
         position: relative;
         z-index: 1;
         pointer-events: auto;
@@ -1542,6 +1544,9 @@
        .discount-history-filter input,.discount-history-filter select{width:100%;min-width:0;height:2.45rem;padding:.45rem .55rem;border:1px solid rgba(148,163,184,.35);border-radius:6px;background:#0f172a;color:#e2e8f0}
        .discount-history-filter input:focus,.discount-history-filter select:focus{outline:2px solid rgba(56,189,248,.5);outline-offset:1px;border-color:#38bdf8}
        .discount-history-filter-clear{height:2.45rem;white-space:nowrap}
+       .tab-history-domain{display:inline-flex;align-items:center;gap:.35rem;padding:.28rem .48rem;border-radius:999px;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.28);color:#7dd3fc;font-size:.72rem;font-weight:700}
+       .tab-history-title{display:block;margin-top:.55rem;color:#e2e8f0;font-size:.88rem;line-height:1.4;overflow-wrap:anywhere}
+       .tab-history-duration{color:#fbbf24;font-weight:800}
        @media(max-width:620px){
          .history-modal-box{width:calc(100vw - 1rem);max-height:94vh;padding:.9rem}
          .history-modal-header{align-items:center}
@@ -3032,7 +3037,8 @@
           const database = contexto.database;
           const subcoleccionesEstudiante = [
             "historialDesbloqueos",
-            "historialDescuentos"
+            "historialDescuentos",
+            "historialPestanas"
           ];
           let documentosAsociadosEliminados = 0;
 
@@ -3299,6 +3305,69 @@
         } catch (error) {
           console.error("Error consultando historial de descuentos:", error);
           window.ultimoErrorHistorialDescuentos = {
+            code: error?.code || "",
+            message: error?.message || "Error desconocido"
+          };
+          return [];
+        }
+      };
+
+      window.guardarEventoPestanaExternaFirebase = async function(evento) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db || !evento?.id) return false;
+        const texto = (valor, maximo) => String(valor || "").trim().slice(0, maximo);
+        const salidaEn = texto(evento.salidaEn, 40);
+        const regresoEn = texto(evento.regresoEn, 40);
+        const salidaFecha = new Date(salidaEn);
+        const regresoFecha = new Date(regresoEn);
+        if (
+          Number.isNaN(salidaFecha.getTime()) ||
+          Number.isNaN(regresoFecha.getTime()) ||
+          regresoFecha < salidaFecha
+        ) return false;
+        const eventoId = texto(evento.id, 160).replace(/[^a-zA-Z0-9._-]/g, "_");
+        if (!eventoId) return false;
+        try {
+          await setDoc(doc(db, "estudiantes", user.uid, "historialPestanas", eventoId), {
+            id: eventoId,
+            estudianteUid: user.uid,
+            estudianteEmail: user.email || "",
+            claseId: texto(evento.claseId, 120),
+            tituloOrigen: texto(evento.tituloOrigen, 300),
+            seccionOrigen: texto(evento.seccionOrigen, 120),
+            seccionTitulo: texto(evento.seccionTitulo, 200),
+            tituloDestino: texto(evento.tituloDestino || "Sin título", 300),
+            dominioDestino: texto(evento.dominioDestino || "desconocido", 120),
+            salidaEn,
+            regresoEn,
+            duracionSegundos: Math.max(0, Math.min(86400, Number(evento.duracionSegundos) || 0)),
+            extensionVersion: texto(evento.extensionVersion, 30),
+            registradoEn: serverTimestamp()
+          });
+          return true;
+        } catch (error) {
+          console.error("Error guardando historial de pestañas:", error);
+          window.ultimoErrorHistorialPestanas = {
+            code: error?.code || "",
+            message: error?.message || "Error desconocido"
+          };
+          return false;
+        }
+      };
+
+      window.obtenerHistorialPestanasFirebase = async function(uid) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !(await verificarUsuarioDocente(user))) return [];
+        try {
+          const referencia = collection(database, "estudiantes", uid, "historialPestanas");
+          const snapshot = await getDocs(referencia);
+          return snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
+            .sort((a, b) => new Date(b.salidaEn || 0).getTime() - new Date(a.salidaEn || 0).getTime());
+        } catch (error) {
+          console.error("Error consultando historial de pestañas:", error);
+          window.ultimoErrorHistorialPestanas = {
             code: error?.code || "",
             message: error?.message || "Error desconocido"
           };
@@ -3779,6 +3848,19 @@
       </div>
     </div>
 
+    <div class="modal-overlay" id="historialPestanasModal" role="dialog" aria-modal="true" aria-labelledby="historialPestanasTitle">
+      <div class="modal-box history-modal-box">
+        <div class="history-modal-header">
+          <div>
+            <h3 id="historialPestanasTitle"><i class="fa-solid fa-window-restore"></i> Historial de pestañas</h3>
+            <p id="historialPestanasSubtitulo">Títulos, dominios y duración registrados por la extensión.</p>
+          </div>
+          <button class="btn btn-secondary" type="button" onclick="cerrarHistorialPestanas()"><i class="fa-solid fa-xmark"></i> Cerrar</button>
+        </div>
+        <div id="historialPestanasContenido"></div>
+      </div>
+    </div>
+
     <div class="modal-overlay" id="accionesEstudianteModal" role="dialog" aria-modal="true" aria-labelledby="accionesEstudianteTitle">
       <div class="modal-box student-actions-modal-box" tabindex="-1">
         <div class="student-actions-header">
@@ -3795,7 +3877,7 @@
         </div>
         <div class="student-actions-status" aria-live="polite">
           <strong id="accionesEstudianteEstado"><i class="fa-solid fa-circle-check"></i> Pantalla habilitada</strong>
-          <span class="student-actions-count">11 acciones disponibles</span>
+          <span class="student-actions-count">12 acciones disponibles</span>
         </div>
         <div class="student-actions-legend" role="note" aria-label="Leyenda de acciones">
           <span><i class="fa-solid fa-eye"></i> Información</span>
@@ -4841,6 +4923,126 @@
       let cuentaEstudianteActiva = false;
       let estadoCuentaEstudiante = 'pendiente';
       let registroFirebaseExistente = false;
+      let estadoExtensionSeguimiento = {
+          instalada: false,
+          activa: false,
+          version: '',
+          pendientes: 0
+      };
+      const eventosPestanasEnProceso = new Set();
+
+      function idClaseSeguimientoPestanas() {
+          const partes = new Intl.DateTimeFormat('en-US', {
+              timeZone: 'America/Argentina/Buenos_Aires',
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit'
+          }).formatToParts(new Date());
+          const valores = Object.fromEntries(partes.map(parte => [parte.type, parte.value]));
+          return `${valores.year}-${valores.month}-${valores.day}`;
+      }
+
+      function tituloSeccionSeguimientoPestanas() {
+          return seccionesData.find(seccion => seccion.id === seccionActivaActual)?.title || seccionActivaActual || '';
+      }
+
+      function esSesionEstudianteParaSeguimiento() {
+          const user = window.firebaseCurrentUser;
+          const email = String(user?.email || '').trim().toLowerCase();
+          const docentes = Array.isArray(window.TEACHER_EMAILS)
+              ? window.TEACHER_EMAILS.map(item => String(item).toLowerCase())
+              : [];
+          return Boolean(
+              user?.uid &&
+              !docentes.includes(email) &&
+              cuentaEstudianteActiva &&
+              estadoCuentaEstudiante === 'activo'
+          );
+      }
+
+      function enviarMensajeExtensionSeguimiento(tipo, datos = {}) {
+          window.postMessage({
+              source: 'ipem146-activity',
+              type: tipo,
+              ...datos
+          }, window.location.origin);
+      }
+
+      function sincronizarExtensionSeguimientoPestanas() {
+          const user = window.firebaseCurrentUser;
+          if (claseHabilitada && esSesionEstudianteParaSeguimiento()) {
+              enviarMensajeExtensionSeguimiento('START_TRACKING', {
+                  studentUid: user.uid,
+                  studentEmail: user.email || '',
+                  classId: idClaseSeguimientoPestanas(),
+                  activityTitle: document.title,
+                  sectionId: seccionActivaActual,
+                  sectionTitle: tituloSeccionSeguimientoPestanas()
+              });
+              return;
+          }
+          enviarMensajeExtensionSeguimiento('STOP_TRACKING', {
+              reason: claseHabilitada ? 'student-not-authorized' : 'class-ended'
+          });
+      }
+
+      function actualizarContextoExtensionSeguimiento() {
+          if (!claseHabilitada || !esSesionEstudianteParaSeguimiento()) return;
+          enviarMensajeExtensionSeguimiento('UPDATE_CONTEXT', {
+              activityTitle: document.title,
+              sectionId: seccionActivaActual,
+              sectionTitle: tituloSeccionSeguimientoPestanas()
+          });
+      }
+
+      window.addEventListener('message', event => {
+          if (event.source !== window || event.origin !== window.location.origin) return;
+          const mensaje = event.data;
+          if (!mensaje || mensaje.source !== 'ipem146-tab-tracker') return;
+
+          if (mensaje.type === 'EXTENSION_READY') {
+              estadoExtensionSeguimiento.instalada = true;
+              estadoExtensionSeguimiento.version = String(mensaje.version || '');
+              sincronizarExtensionSeguimientoPestanas();
+              return;
+          }
+
+          if (mensaje.type === 'EXTENSION_STATUS') {
+              const status = mensaje.response?.status || {};
+              estadoExtensionSeguimiento = {
+                  instalada: mensaje.response?.ok !== false,
+                  activa: status.active === true,
+                  version: String(status.version || estadoExtensionSeguimiento.version || ''),
+                  pendientes: Number(status.pendingCount || 0)
+              };
+              return;
+          }
+
+          if (mensaje.type === 'TAB_VISIT_COMPLETED') {
+              const evento = mensaje.event || {};
+              const user = window.firebaseCurrentUser;
+              if (!user?.uid || evento.estudianteUid !== user.uid || !evento.id) return;
+              if (eventosPestanasEnProceso.has(evento.id)) return;
+              eventosPestanasEnProceso.add(evento.id);
+              void (async () => {
+                  const guardado = await window.guardarEventoPestanaExternaFirebase?.(evento);
+                  if (guardado) {
+                      enviarMensajeExtensionSeguimiento('EVENT_STORED', { eventId: evento.id });
+                  }
+                  eventosPestanasEnProceso.delete(evento.id);
+              })();
+          }
+      });
+
+      window.addEventListener('firebase-auth-changed', () => {
+          setTimeout(sincronizarExtensionSeguimientoPestanas, 250);
+      });
+
+      setTimeout(() => {
+          enviarMensajeExtensionSeguimiento('GET_STATUS', {
+              studentUid: window.firebaseCurrentUser?.uid || ''
+          });
+      }, 1200);
 
       function normalizarCantidadSalidas(valor) {
           const numero = Number.parseInt(valor, 10);
@@ -4884,7 +5086,7 @@
           if (!pantallaBloqueada) return;
           const destino = evento.target;
           const permitido = destino?.closest?.(
-              '#screenLockOverlay, #passwordModal, #firebaseAuthOverlay, #panelProfesorModal, #accionesEstudianteModal, #historialDesbloqueosModal, #historialDescuentosModal, #detalleEstudianteProfesorModal, #confirmacionDocenteModal, #editarDescuentoEstudianteModal'
+              '#screenLockOverlay, #passwordModal, #firebaseAuthOverlay, #panelProfesorModal, #accionesEstudianteModal, #historialDesbloqueosModal, #historialDescuentosModal, #historialPestanasModal, #detalleEstudianteProfesorModal, #confirmacionDocenteModal, #editarDescuentoEstudianteModal'
           );
           if (permitido) return;
           evento.preventDefault();
@@ -5045,6 +5247,7 @@
               });
               moduloCronometroEnCurso = null;
           }
+          sincronizarExtensionSeguimientoPestanas();
       }
 
       window.addEventListener('estado-inicio-clase', event => {
@@ -5524,6 +5727,7 @@
           cuentaEstudianteActiva = false;
           firebaseInitialized = false;
           claseHabilitada = false;
+          sincronizarExtensionSeguimientoPestanas();
           clearTimeout(firebaseSaveTimer);
           clearInterval(window.__firebaseAutoSaveInterval);
           Object.keys(cronometrosActivos).forEach(id => {
@@ -5555,6 +5759,7 @@
           cuentaEstudianteActiva = false;
           firebaseInitialized = false;
           claseHabilitada = false;
+          sincronizarExtensionSeguimientoPestanas();
           clearTimeout(firebaseSaveTimer);
           clearInterval(window.__firebaseAutoSaveInterval);
           Object.keys(cronometrosActivos).forEach(id => {
@@ -6744,6 +6949,7 @@
               const data = seccionesData.find(s => s.id === sectionId);
               if (data) document.getElementById('currentTitle').innerText = data.title;
           }
+          actualizarContextoExtensionSeguimiento();
           programarGuardadoFirebase();
       }
 
@@ -9754,6 +9960,76 @@
           aplicarFiltrosHistorialDescuentos();
       }
 
+      function cerrarHistorialPestanas() {
+          document.getElementById('historialPestanasModal')?.classList.remove('active');
+      }
+
+      function formatearDuracionHistorialPestanas(segundos) {
+          const total = Math.max(0, Math.round(Number(segundos) || 0));
+          const horas = Math.floor(total / 3600);
+          const minutos = Math.floor((total % 3600) / 60);
+          const restantes = total % 60;
+          if (horas) return `${horas} h ${minutos} min ${restantes} s`;
+          if (minutos) return `${minutos} min ${restantes} s`;
+          return `${restantes} s`;
+      }
+
+      async function abrirHistorialPestanas(indice) {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) return;
+          const autorizado = await window.autorizarDocenteFirebase?.();
+          if (!autorizado) {
+              alert('Solo una cuenta docente autorizada puede consultar el historial de pestañas.');
+              return;
+          }
+          const modal = document.getElementById('historialPestanasModal');
+          const contenido = document.getElementById('historialPestanasContenido');
+          const subtitulo = document.getElementById('historialPestanasSubtitulo');
+          if (!modal || !contenido || !subtitulo) return;
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante';
+          subtitulo.textContent = `${nombre} · ${d.email || 'Sin email'}`;
+          modal.classList.add('active');
+          contenido.innerHTML = '<p style="color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> Cargando historial...</p>';
+          window.ultimoErrorHistorialPestanas = null;
+          const historial = await window.obtenerHistorialPestanasFirebase?.(d.uid) || [];
+          if (!historial.length) {
+              const huboError = Boolean(window.ultimoErrorHistorialPestanas);
+              contenido.innerHTML = `<div class="history-event">
+                <strong><i class="fa-solid ${huboError ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i> ${huboError ? 'No se pudo cargar el historial.' : 'No hay pestañas externas registradas.'}</strong>
+                <div style="margin-top:.35rem;color:var(--text-muted)">${huboError ? 'Verificá la conexión y publicá las reglas actualizadas de Firestore.' : 'Instalá la extensión en el navegador del estudiante e iniciá una clase para comenzar el registro.'}</div>
+              </div>`;
+              return;
+          }
+          const fecha = valor => {
+              const objeto = new Date(valor || '');
+              return Number.isNaN(objeto.getTime()) ? 'Sin fecha' : objeto.toLocaleString('es-AR');
+          };
+          const tiempoTotal = historial.reduce((suma, evento) => suma + Math.max(0, Number(evento.duracionSegundos) || 0), 0);
+          const dominios = new Set(historial.map(evento => evento.dominioDestino).filter(Boolean));
+          contenido.innerHTML = `
+            <div class="teacher-detail-summary" style="margin:0 0 1rem">
+              <div class="teacher-detail-stat"><small>Visitas registradas</small><strong>${historial.length}</strong></div>
+              <div class="teacher-detail-stat"><small>Dominios distintos</small><strong>${dominios.size}</strong></div>
+              <div class="teacher-detail-stat"><small>Tiempo total fuera</small><strong>${escapeHtml(formatearDuracionHistorialPestanas(tiempoTotal))}</strong></div>
+            </div>
+            ${historial.map((evento, posicion) => `
+              <article class="history-event">
+                <strong><i class="fa-solid fa-arrow-up-right-from-square"></i> Visita ${historial.length - posicion}</strong>
+                <span class="tab-history-title">${escapeHtml(evento.tituloDestino || 'Sin título')}</span>
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:.6rem;flex-wrap:wrap;margin-top:.55rem">
+                  <span class="tab-history-domain"><i class="fa-solid fa-globe"></i> ${escapeHtml(evento.dominioDestino || 'desconocido')}</span>
+                  <span class="tab-history-duration"><i class="fa-solid fa-stopwatch"></i> ${escapeHtml(formatearDuracionHistorialPestanas(evento.duracionSegundos))}</span>
+                </div>
+                <div class="history-event-meta">
+                  <span><b>Salida:</b> ${escapeHtml(fecha(evento.salidaEn))}</span>
+                  <span><b>Regreso:</b> ${escapeHtml(fecha(evento.regresoEn))}</span>
+                  <span><b>Sección:</b> ${escapeHtml(evento.seccionTitulo || evento.seccionOrigen || 'Sin identificar')}</span>
+                  <span><b>Clase:</b> ${escapeHtml(evento.claseId || 'Sin identificar')}</span>
+                  <span><b>Extensión:</b> ${escapeHtml(evento.extensionVersion || 'Sin versión')}</span>
+                </div>
+              </article>`).join('')}`;
+      }
+
       let confirmacionDocentePendiente = null;
 
       function cerrarConfirmacionDocente(resultado = { confirmado: false, valor: '' }) {
@@ -9974,6 +10250,7 @@
             <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i><span>Ver detalle completo</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial de desbloqueos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDescuentos(${indice})"><i class="fa-solid fa-file-invoice-dollar"></i><span>Historial de descuentos</span></button>
+            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialPestanas(${indice})"><i class="fa-solid fa-window-restore"></i><span>Historial de pestañas</span></button>
             <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();abrirEditorDescuentoEstudiante(${indice})"><i class="fa-solid fa-circle-minus"></i><span>Editar descuento y motivo</span></button>
             <button class="btn btn-danger" ${bloqueado ? 'disabled title="La pantalla ya está bloqueada"' : ''} onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i><span>Bloquear pantalla</span></button>
             <button class="btn student-action-highlight" ${bloqueado ? '' : 'disabled title="La pantalla no está bloqueada"'} onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i><span>Desbloquear pantalla</span></button>
@@ -10175,7 +10452,7 @@
                   ? `${cantidadSalidas} cambios: alcanzó el límite de bloqueo`
                   : (cantidadSalidas > 0 ? `${cantidadSalidas} cambio(s) de pestaña` : 'Sin cambios de pestaña');
               const salidasHtml = `<span class="teacher-tab-badge ${salidasClase}" title="${salidasTitulo}"><i class="fa-solid ${salidasIcono}"></i> ${cantidadSalidas}</span>`;
-              return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn btn-secondary btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="Abrir las nueve acciones del estudiante"><i class="fa-solid fa-sliders"></i> Acciones</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td><td>${escapeHtml(fecha)}</td></tr>`;
+          return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn btn-secondary btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="Abrir acciones del estudiante"><i class="fa-solid fa-sliders"></i> Acciones</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td><td>${escapeHtml(fecha)}</td></tr>`;
               }).join('') || '<tr><td colspan="13" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
@@ -10274,7 +10551,7 @@
               mensaje: `Se eliminará definitivamente a ${nombre}.`,
               detalles: [
                   'Se borrará el documento completo: identidad, progreso, códigos, respuestas, notas, cronómetros, bloqueos y consultas IA.',
-                  'Se eliminarán todos los eventos del historial de desbloqueos antes de borrar al estudiante.',
+                  'Se eliminarán los historiales de desbloqueos, descuentos y pestañas antes de borrar al estudiante.',
                   'La cuenta externa de Google no se elimina; se borran todos los datos almacenados por esta aplicación.',
                   'Esta acción no se puede deshacer.'
               ],
