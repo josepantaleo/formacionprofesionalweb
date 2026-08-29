@@ -1427,6 +1427,7 @@
        #panelProfesorModal table th:nth-child(10){min-width:90px}
        #panelProfesorModal table th:nth-child(11){min-width:150px}
        #panelProfesorModal table th:nth-child(12){min-width:150px}
+       #panelProfesorModal table th:nth-child(1){min-width:150px}
        #panelProfesorModal table thead th:last-child,
        #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child{display:none}
        #panelProfesorModal #tablaProfesorBody > tr.teacher-actions-row > td:last-child{display:table-cell}
@@ -1581,15 +1582,15 @@
            font-weight:700;
            content:attr(data-label);
          }
-         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child{
+         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:first-child{
            display:block !important;
            width:100% !important;
            min-width:100% !important;
            padding-top:.65rem;
            border-bottom:0;
          }
-         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child::before{display:none}
-         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child .btn-abrir-acciones-estudiante{
+         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:first-child::before{display:none}
+         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:first-child .btn-abrir-acciones-estudiante{
            display:flex !important;
            width:100% !important;
            min-width:0 !important;
@@ -1598,6 +1599,7 @@
            justify-content:flex-start !important;
            text-align:left !important;
          }
+         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child{display:none !important}
          #panelProfesorModal #tablaProfesorBody > tr.teacher-actions-row{
            margin:0 0 .9rem;
            border:1px solid rgba(56,189,248,.25);
@@ -8871,12 +8873,26 @@
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
               if (!estudiante) return;
+              if (!document.querySelector('#panelProfesorModal thead th[data-actions-column]')) {
+                  const encabezadoAcciones = document.querySelector('#panelProfesorModal thead tr');
+                  if (encabezadoAcciones) {
+                      const thAcciones = document.createElement('th');
+                      thAcciones.dataset.actionsColumn = 'true';
+                      thAcciones.textContent = 'Acciones';
+                      encabezadoAcciones.prepend(thAcciones);
+                  }
+              }
+              if (!fila.querySelector('.acciones-principales-cell')) {
+                  const celdaAcciones = document.createElement('td');
+                  celdaAcciones.className = 'acciones-principales-cell';
+                  fila.prepend(celdaAcciones);
+              }
               const etiquetasColumnas = ['Estudiante','Email','Curso','División','Turno','Estado','Progreso','Nota definitiva','Cambios de pestaña','Desbloqueos','Última actualización','Detalle'];
               [...fila.children].forEach((celda, indiceCelda) => {
                   if (etiquetasColumnas[indiceCelda]) celda.setAttribute('data-label', etiquetasColumnas[indiceCelda]);
               });
               const estado = estudiante.estadoCuenta || 'activo';
-              const celdaEstado = fila.children[5];
+              const celdaEstado = fila.children[6];
               if (celdaEstado && estudiante.pantallaBloqueada !== true) {
                   const configuracion = {
                       activo: ['Activa', '#6ee7b7'],
@@ -8922,7 +8938,7 @@
                   botonEliminar.setAttribute('aria-label', 'Eliminar estudiante y su historial');
                   botonEliminar.innerHTML = '<i class="fa-solid fa-trash-can" aria-hidden="true"></i> Eliminar estudiante';
                   const filaActual = contenedor.closest('tr');
-                  const registro = filaActual ? rows.find(r => String(r.email || '') === String(filaActual.querySelector('td:nth-child(2)')?.textContent || '')) : null;
+                  const registro = filaActual ? rows.find(r => String(r.email || '') === String(filaActual.querySelector('td:nth-child(3)')?.textContent || '')) : null;
                   botonEliminar.onclick = () => eliminarEstudianteProfesor(registro);
                   contenedor.appendChild(botonEliminar);
               }
@@ -8933,16 +8949,16 @@
                   botonHistorial.title = 'Ver historial completo de desbloqueos';
                   botonHistorial.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Historial desbloqueos';
                   const filaHistorial = contenedor.closest('tr');
-                  const registroHistorial = filaHistorial ? rows.find(r => String(r.email || '') === String(filaHistorial.querySelector('td:nth-child(2)')?.textContent || '')) : null;
+                  const registroHistorial = filaHistorial ? rows.find(r => String(r.email || '') === String(filaHistorial.querySelector('td:nth-child(3)')?.textContent || '')) : null;
                   botonHistorial.onclick = () => abrirHistorialDesbloqueos(estudiantesProfesor.indexOf(registroHistorial));
                   contenedor.appendChild(botonHistorial);
               }
               const fila = contenedor.closest('tr');
               if (fila) {
                   const indiceEstudiante = estudiantesProfesor.indexOf(
-                      rows.find(r => String(r.email || '') === String(fila.querySelector('td:nth-child(2)')?.textContent || ''))
+                      rows.find(r => String(r.email || '') === String(fila.querySelector('td:nth-child(3)')?.textContent || ''))
                   );
-                  const celdaDetalle = fila.children[11];
+                  const celdaDetalle = fila.children[12];
                   if (celdaDetalle && !celdaDetalle.querySelector('.btn-abrir-acciones-estudiante')) {
                       const vistaMovil = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
                       celdaDetalle.style.display = vistaMovil ? 'block' : 'table-cell';
