@@ -1506,6 +1506,11 @@
        #editorDesafiosFirebaseModal .editor-desafios-sidebar{position:sticky;top:0;align-self:start}
        #editorDesafiosFirebaseModal textarea{width:100%;resize:vertical;line-height:1.4}
        #editorDesafiosFirebaseModal .editor-save-status{display:inline-flex;align-items:center;gap:.35rem;font-size:.78rem;color:var(--text-muted)}
+       .history-modal-box{max-width:900px;width:min(94vw,900px);max-height:90vh;overflow:auto}
+       .history-modal-header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+       .history-event{padding:.8rem;border:1px solid rgba(148,163,184,.22);border-left:4px solid var(--primary);border-radius:7px;background:rgba(15,23,42,.55);margin-bottom:.65rem}
+       .history-event strong{color:#e0f2fe}
+       .history-event-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.35rem .8rem;margin-top:.45rem;color:#cbd5e1;font-size:.8rem;line-height:1.4}
        @media(max-width:800px){#editorDesafiosFirebaseModal .editor-desafios-layout{grid-template-columns:1fr}#editorDesafiosFirebaseModal .editor-desafios-sidebar{position:static}}
        #panelProfesorModal .teacher-action-buttons{
          margin-top:.4rem;
@@ -1542,6 +1547,52 @@
          font-weight:700;
        }
        @media (max-width:700px){
+         #panelProfesorModal .modal-box{width:100vw !important;max-width:100vw !important;padding:.75rem !important}
+         #panelProfesorModal .teacher-table-scroll{overflow-x:hidden !important;max-height:none}
+         #panelProfesorModal .teacher-table-scroll table,
+         #panelProfesorModal .teacher-table-scroll thead,
+         #panelProfesorModal .teacher-table-scroll tbody,
+         #panelProfesorModal .teacher-table-scroll tr,
+         #panelProfesorModal .teacher-table-scroll td{display:block;width:100% !important;min-width:0 !important}
+         #panelProfesorModal .teacher-table-scroll thead{display:none}
+         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row){
+           margin:.75rem 0 0;
+           padding:.35rem;
+           border:1px solid rgba(56,189,248,.25);
+           border-radius:8px;
+           background:rgba(15,23,42,.6);
+         }
+         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td{
+           display:grid;
+           grid-template-columns:42% 58%;
+           gap:.45rem;
+           padding:.45rem .5rem;
+           border-bottom:1px solid rgba(148,163,184,.12);
+         }
+         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td::before{
+           color:#7dd3fc;
+           font-weight:700;
+           content:attr(data-label);
+         }
+         #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child{display:none}
+         #panelProfesorModal #tablaProfesorBody > tr.teacher-actions-row{
+           margin:0 0 .9rem;
+           border:1px solid rgba(56,189,248,.25);
+           border-top:0;
+         }
+         #panelProfesorModal table tr.teacher-actions-row td{position:static;padding:.55rem;background:#111c31}
+         #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons{
+           width:100% !important;
+           max-width:none;
+           grid-template-columns:repeat(2,minmax(0,1fr));
+         }
+         #panelProfesorModal .teacher-actions-label{font-size:.78rem}
+         #panelProfesorModal #resumenProfesor{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+         #panelProfesorModal .modal-box > div[style*="overflow:auto"]{overflow-x:hidden !important;max-height:none}
+         #panelProfesorModal .modal-box > div[style*="overflow:auto"] table{min-width:0 !important}
+         .history-modal-box{width:calc(100vw - 1rem);max-width:none;padding:.85rem}
+         .history-event-meta{grid-template-columns:1fr}
+       }
          #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons{
            grid-template-columns:repeat(2,minmax(0,1fr));
            width:calc(100vw - 2.5rem) !important;
@@ -2466,6 +2517,26 @@
         }
       };
 
+      window.obtenerHistorialDesbloqueosFirebase = async function(uid) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !(await verificarUsuarioDocente(user))) return [];
+        try {
+          const referencia = collection(database, "estudiantes", uid, "historialDesbloqueos");
+          const snapshot = await getDocs(referencia);
+          return snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
+            .sort((a, b) => {
+              const fechaA = a.desbloqueadoEn?.toDate ? a.desbloqueadoEn.toDate().getTime() : new Date(a.desbloqueadoEn || 0).getTime();
+              const fechaB = b.desbloqueadoEn?.toDate ? b.desbloqueadoEn.toDate().getTime() : new Date(b.desbloqueadoEn || 0).getTime();
+              return fechaB - fechaA;
+            });
+        } catch (error) {
+          console.error("Error consultando historial de desbloqueos:", error);
+          return [];
+        }
+      };
+
       window.borrarConsultasIAEstudiantesFirebase = async function(uids) {
         const autorizado = await window.autorizarDocenteFirebase?.();
         if (!autorizado) return false;
@@ -2873,6 +2944,19 @@
           <button class="btn btn-secondary" onclick="cerrarDetalleEstudianteProfesor()">Cerrar</button>
         </div>
         <div id="detalleEstudianteProfesorContenido"></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="historialDesbloqueosModal" role="dialog" aria-modal="true" aria-labelledby="historialDesbloqueosTitle">
+      <div class="modal-box history-modal-box">
+        <div class="history-modal-header">
+          <div>
+            <h3 id="historialDesbloqueosTitle"><i class="fa-solid fa-clock-rotate-left"></i> Historial de desbloqueos</h3>
+            <p id="historialDesbloqueosSubtitulo">Auditoría completa del estudiante.</p>
+          </div>
+          <button class="btn btn-secondary" type="button" onclick="cerrarHistorialDesbloqueos()">Cerrar</button>
+        </div>
+        <div id="historialDesbloqueosContenido"></div>
       </div>
     </div>
 
@@ -3841,7 +3925,7 @@
       let pantallaBloqueada = false;
       let pantallaBloqueadaEn = "";
       let pantallaBloqueadaSeccion = "";
-      const LIMITE_SALIDAS_PARA_BLOQUEO = 1;
+      const LIMITE_SALIDAS_PARA_BLOQUEO = 5;
       let ultimoEventoVisibilidad = 0;
       let temporizadorPerdidaFoco = null;
       let monitorSalidasInicializado = false;
@@ -8441,6 +8525,48 @@
               ${actividadesHtml}`;
           document.getElementById('detalleEstudianteProfesorModal').classList.add('active');
       }
+
+      function cerrarHistorialDesbloqueos() {
+          document.getElementById('historialDesbloqueosModal')?.classList.remove('active');
+      }
+
+      async function abrirHistorialDesbloqueos(indice) {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) return;
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante';
+          const contenido = document.getElementById('historialDesbloqueosContenido');
+          document.getElementById('historialDesbloqueosSubtitulo').textContent = `${nombre} · ${d.email || 'Sin email'}`;
+          document.getElementById('historialDesbloqueosModal').classList.add('active');
+          contenido.innerHTML = '<p style="color:var(--text-muted)">Cargando historial...</p>';
+          const historial = await window.obtenerHistorialDesbloqueosFirebase?.(d.uid) || [];
+          if (!historial.length) {
+              contenido.innerHTML = '<div class="history-event"><strong>No hay desbloqueos registrados.</strong><div style="margin-top:.35rem;color:var(--text-muted)">El contador actual es 0.</div></div>';
+              return;
+          }
+          const formatoFecha = valor => {
+              if (!valor) return 'Sin fecha';
+              if (valor.toDate) return valor.toDate().toLocaleString('es-AR');
+              const fecha = new Date(valor);
+              return Number.isNaN(fecha.getTime()) ? 'Sin fecha' : fecha.toLocaleString('es-AR');
+          };
+          contenido.innerHTML = `
+            <div class="teacher-detail-summary" style="margin:0 0 1rem">
+              <div class="teacher-detail-stat"><small>Total de desbloqueos</small><strong>${historial.length}</strong></div>
+              <div class="teacher-detail-stat"><small>Contador guardado</small><strong>${Number(d.cantidadDesbloqueos || historial.length)}</strong></div>
+            </div>
+            ${historial.map((evento, posicion) => `
+              <article class="history-event">
+                <strong><i class="fa-solid fa-unlock-keyhole"></i> Desbloqueo ${historial.length - posicion}</strong>
+                <div class="history-event-meta">
+                  <span><b>Fecha:</b> ${escapeHtml(formatoFecha(evento.desbloqueadoEn))}</span>
+                  <span><b>Docente:</b> ${escapeHtml(evento.desbloqueadoPor || 'Sin registrar')}</span>
+                  <span><b>Motivo:</b> ${escapeHtml(evento.motivo || 'Sin motivo registrado')}</span>
+                  <span><b>Salidas:</b> ${Number(evento.bloqueoSalidas || 0)}</span>
+                  <span><b>Sección:</b> ${escapeHtml(evento.bloqueoSeccion || 'Sin identificar')}</span>
+                  <span><b>Bloqueo original:</b> ${escapeHtml(formatoFecha(evento.bloqueoEn))}</span>
+                </div>
+              </article>`).join('')}`;
+      }
       function renderPanelProfesor() {
           renderBandejaSolicitudesPendientes();
           const q = (document.getElementById('filtroProfesor').value || '').toLowerCase().trim();
@@ -8609,6 +8735,10 @@
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
               if (!estudiante) return;
+              const etiquetasColumnas = ['Estudiante','Email','Curso','División','Turno','Estado','Progreso','Nota definitiva','Cambios de pestaña','Desbloqueos','Última actualización','Detalle'];
+              [...fila.children].forEach((celda, indiceCelda) => {
+                  if (etiquetasColumnas[indiceCelda]) celda.setAttribute('data-label', etiquetasColumnas[indiceCelda]);
+              });
               const estado = estudiante.estadoCuenta || 'activo';
               const celdaEstado = fila.children[5];
               if (celdaEstado && estudiante.pantallaBloqueada !== true) {
@@ -8659,6 +8789,17 @@
                   const registro = filaActual ? rows.find(r => String(r.email || '') === String(filaActual.querySelector('td:nth-child(2)')?.textContent || '')) : null;
                   botonEliminar.onclick = () => eliminarEstudianteProfesor(registro);
                   contenedor.appendChild(botonEliminar);
+              }
+              if (!contenedor.querySelector('.btn-historial-desbloqueos')) {
+                  const botonHistorial = document.createElement('button');
+                  botonHistorial.className = 'btn btn-secondary btn-historial-desbloqueos';
+                  botonHistorial.type = 'button';
+                  botonHistorial.title = 'Ver historial completo de desbloqueos';
+                  botonHistorial.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Historial desbloqueos';
+                  const filaHistorial = contenedor.closest('tr');
+                  const registroHistorial = filaHistorial ? rows.find(r => String(r.email || '') === String(filaHistorial.querySelector('td:nth-child(2)')?.textContent || '')) : null;
+                  botonHistorial.onclick = () => abrirHistorialDesbloqueos(estudiantesProfesor.indexOf(registroHistorial));
+                  contenedor.appendChild(botonHistorial);
               }
               const fila = contenedor.closest('tr');
               if (fila) {
