@@ -1261,11 +1261,13 @@
         z-index: 8000;
       }
       #accionesEstudianteModal,
-      #historialDesbloqueosModal {
+      #historialDesbloqueosModal,
+      #historialDescuentosModal {
         z-index: 9000;
       }
       #accionesEstudianteModal .modal-box,
-      #historialDesbloqueosModal .modal-box {
+      #historialDesbloqueosModal .modal-box,
+      #historialDescuentosModal .modal-box {
         position: relative;
         z-index: 1;
         pointer-events: auto;
@@ -1520,6 +1522,21 @@
        .history-event{padding:.8rem;border:1px solid rgba(148,163,184,.22);border-left:4px solid var(--primary);border-radius:7px;background:rgba(15,23,42,.55);margin-bottom:.65rem}
        .history-event strong{color:#e0f2fe}
        .history-event-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.35rem .8rem;margin-top:.45rem;color:#cbd5e1;font-size:.8rem;line-height:1.4}
+       .discount-history-change{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;margin:.65rem 0 .25rem}
+       .discount-history-value{display:inline-flex;align-items:center;gap:.35rem;padding:.38rem .55rem;border-radius:6px;font-weight:800;font-size:.82rem}
+       .discount-history-value.old{background:rgba(148,163,184,.13);color:#cbd5e1;border:1px solid rgba(148,163,184,.28)}
+       .discount-history-value.new{background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.32)}
+       .discount-history-value.cleared{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.3)}
+       .discount-history-arrow{color:#7dd3fc}
+       .discount-history-reasons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;margin-top:.7rem}
+       .discount-history-reason{padding:.6rem;border-radius:6px;background:rgba(30,41,59,.68);color:#cbd5e1;font-size:.78rem;line-height:1.45;overflow-wrap:anywhere}
+       .discount-history-reason small{display:block;margin-bottom:.25rem;color:#94a3b8;font-weight:700;text-transform:uppercase}
+       @media(max-width:620px){
+         .history-modal-box{width:calc(100vw - 1rem);max-height:94vh;padding:.9rem}
+         .history-modal-header{align-items:center}
+         .history-modal-header .btn{width:100%}
+         .history-event-meta,.discount-history-reasons{grid-template-columns:1fr}
+       }
       .student-actions-modal-box{
         width:min(620px,calc(100vw - 1.5rem));
         max-width:620px;
@@ -3248,6 +3265,30 @@
         }
       };
 
+      window.obtenerHistorialDescuentosFirebase = async function(uid) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !(await verificarUsuarioDocente(user))) return [];
+        try {
+          const referencia = collection(database, "estudiantes", uid, "historialDescuentos");
+          const snapshot = await getDocs(referencia);
+          return snapshot.docs.map(item => ({ id: item.id, ...item.data() }))
+            .sort((a, b) => {
+              const fechaA = a.cambiadoEn?.toDate ? a.cambiadoEn.toDate().getTime() : new Date(a.cambiadoEn || 0).getTime();
+              const fechaB = b.cambiadoEn?.toDate ? b.cambiadoEn.toDate().getTime() : new Date(b.cambiadoEn || 0).getTime();
+              return fechaB - fechaA;
+            });
+        } catch (error) {
+          console.error("Error consultando historial de descuentos:", error);
+          window.ultimoErrorHistorialDescuentos = {
+            code: error?.code || "",
+            message: error?.message || "Error desconocido"
+          };
+          return [];
+        }
+      };
+
       window.borrarConsultasIAEstudiantesFirebase = async function(uids) {
         const autorizado = await window.autorizarDocenteFirebase?.();
         if (!autorizado) return false;
@@ -3685,6 +3726,19 @@
       </div>
     </div>
 
+    <div class="modal-overlay" id="historialDescuentosModal" role="dialog" aria-modal="true" aria-labelledby="historialDescuentosTitle">
+      <div class="modal-box history-modal-box">
+        <div class="history-modal-header">
+          <div>
+            <h3 id="historialDescuentosTitle"><i class="fa-solid fa-file-invoice-dollar"></i> Historial de descuentos</h3>
+            <p id="historialDescuentosSubtitulo">Auditoría completa de cambios de puntos.</p>
+          </div>
+          <button class="btn btn-secondary" type="button" onclick="cerrarHistorialDescuentos()"><i class="fa-solid fa-xmark"></i> Cerrar</button>
+        </div>
+        <div id="historialDescuentosContenido"></div>
+      </div>
+    </div>
+
     <div class="modal-overlay" id="accionesEstudianteModal" role="dialog" aria-modal="true" aria-labelledby="accionesEstudianteTitle">
       <div class="modal-box student-actions-modal-box" tabindex="-1">
         <div class="student-actions-header">
@@ -3701,7 +3755,7 @@
         </div>
         <div class="student-actions-status" aria-live="polite">
           <strong id="accionesEstudianteEstado"><i class="fa-solid fa-circle-check"></i> Pantalla habilitada</strong>
-          <span class="student-actions-count">10 acciones disponibles</span>
+          <span class="student-actions-count">11 acciones disponibles</span>
         </div>
         <div class="student-actions-legend" role="note" aria-label="Leyenda de acciones">
           <span><i class="fa-solid fa-eye"></i> Información</span>
@@ -4790,7 +4844,7 @@
           if (!pantallaBloqueada) return;
           const destino = evento.target;
           const permitido = destino?.closest?.(
-              '#screenLockOverlay, #passwordModal, #firebaseAuthOverlay, #panelProfesorModal, #accionesEstudianteModal, #historialDesbloqueosModal, #detalleEstudianteProfesorModal, #confirmacionDocenteModal, #editarDescuentoEstudianteModal'
+              '#screenLockOverlay, #passwordModal, #firebaseAuthOverlay, #panelProfesorModal, #accionesEstudianteModal, #historialDesbloqueosModal, #historialDescuentosModal, #detalleEstudianteProfesorModal, #confirmacionDocenteModal, #editarDescuentoEstudianteModal'
           );
           if (permitido) return;
           evento.preventDefault();
@@ -9485,6 +9539,73 @@
               </article>`).join('')}`;
       }
 
+      function cerrarHistorialDescuentos() {
+          document.getElementById('historialDescuentosModal')?.classList.remove('active');
+      }
+
+      async function abrirHistorialDescuentos(indice) {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) return;
+          const autorizado = await window.autorizarDocenteFirebase?.();
+          if (!autorizado) {
+              alert('Solo una cuenta docente autorizada puede consultar el historial de descuentos.');
+              return;
+          }
+          const modal = document.getElementById('historialDescuentosModal');
+          const contenido = document.getElementById('historialDescuentosContenido');
+          const subtitulo = document.getElementById('historialDescuentosSubtitulo');
+          if (!modal || !contenido || !subtitulo) return;
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante';
+          subtitulo.textContent = `${nombre} · ${d.email || 'Sin email'}`;
+          modal.classList.add('active');
+          contenido.innerHTML = '<p style="color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> Cargando historial...</p>';
+          window.ultimoErrorHistorialDescuentos = null;
+          const historial = await window.obtenerHistorialDescuentosFirebase?.(d.uid) || [];
+          if (!historial.length) {
+              const huboError = Boolean(window.ultimoErrorHistorialDescuentos);
+              contenido.innerHTML = `<div class="history-event">
+                <strong><i class="fa-solid ${huboError ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i> ${huboError ? 'No se pudo cargar el historial.' : 'No hay cambios de descuento registrados.'}</strong>
+                <div style="margin-top:.35rem;color:var(--text-muted)">${huboError ? 'Verificá la conexión y que las reglas de Firestore estén publicadas.' : 'Los próximos cambios de valor o motivo aparecerán en esta ventana.'}</div>
+              </div>`;
+              return;
+          }
+          const formatoFecha = valor => {
+              if (!valor) return 'Sin fecha';
+              if (valor.toDate) return valor.toDate().toLocaleString('es-AR');
+              const fecha = new Date(valor);
+              return Number.isNaN(fecha.getTime()) ? 'Sin fecha' : fecha.toLocaleString('es-AR');
+          };
+          const formatoPuntos = valor => Number(valor || 0).toFixed(1);
+          const descuentoActual = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
+          contenido.innerHTML = `
+            <div class="teacher-detail-summary" style="margin:0 0 1rem">
+              <div class="teacher-detail-stat"><small>Total de cambios</small><strong>${historial.length}</strong></div>
+              <div class="teacher-detail-stat"><small>Descuento actual</small><strong>${formatoPuntos(descuentoActual)} puntos</strong></div>
+            </div>
+            ${historial.map((evento, posicion) => {
+              const valorNuevo = Number(evento.valorNuevo || 0);
+              const motivoAnterior = evento.motivoAnterior || 'Sin motivo';
+              const motivoNuevo = evento.motivoNuevo || 'Sin motivo';
+              return `
+                <article class="history-event">
+                  <strong><i class="fa-solid fa-pen-to-square"></i> Cambio ${historial.length - posicion}</strong>
+                  <div class="discount-history-change">
+                    <span class="discount-history-value old"><i class="fa-solid fa-minus"></i> ${formatoPuntos(evento.valorAnterior)} puntos</span>
+                    <i class="fa-solid fa-arrow-right discount-history-arrow" aria-hidden="true"></i>
+                    <span class="discount-history-value new ${valorNuevo === 0 ? 'cleared' : ''}"><i class="fa-solid ${valorNuevo === 0 ? 'fa-circle-check' : 'fa-minus'}"></i> ${formatoPuntos(valorNuevo)} puntos</span>
+                  </div>
+                  <div class="history-event-meta">
+                    <span><b>Fecha:</b> ${escapeHtml(formatoFecha(evento.cambiadoEn))}</span>
+                    <span><b>Docente:</b> ${escapeHtml(evento.docente || 'Sin registrar')}</span>
+                  </div>
+                  <div class="discount-history-reasons">
+                    <div class="discount-history-reason"><small>Motivo anterior</small>${escapeHtml(motivoAnterior)}</div>
+                    <div class="discount-history-reason"><small>Motivo nuevo</small>${escapeHtml(motivoNuevo)}</div>
+                  </div>
+                </article>`;
+            }).join('')}`;
+      }
+
       let confirmacionDocentePendiente = null;
 
       function cerrarConfirmacionDocente(resultado = { confirmado: false, valor: '' }) {
@@ -9704,6 +9825,7 @@
           contenido.innerHTML = `
             <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i><span>Ver detalle completo</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial de desbloqueos</span></button>
+            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDescuentos(${indice})"><i class="fa-solid fa-file-invoice-dollar"></i><span>Historial de descuentos</span></button>
             <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();abrirEditorDescuentoEstudiante(${indice})"><i class="fa-solid fa-circle-minus"></i><span>Editar descuento y motivo</span></button>
             <button class="btn btn-danger" ${bloqueado ? 'disabled title="La pantalla ya está bloqueada"' : ''} onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i><span>Bloquear pantalla</span></button>
             <button class="btn student-action-highlight" ${bloqueado ? '' : 'disabled title="La pantalla no está bloqueada"'} onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i><span>Desbloquear pantalla</span></button>
