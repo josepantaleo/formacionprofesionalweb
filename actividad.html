@@ -2906,17 +2906,60 @@
         const database = contexto.database;
         if (!user || !database || !uid || !revision) return false;
         try {
-          await setDoc(doc(database, "estudiantes", uid), {
-            revisionSalidas: {
-              ...revision,
-              revisadoPor: user.email || user.displayName || user.uid,
-              revisadoEn: serverTimestamp()
-            },
-            actualizadoEn: serverTimestamp()
-          }, { merge: true });
+          if (!(await verificarUsuarioDocente(user))) {
+            window.ultimoErrorRevisionDocente = { code: "teacher-not-authorized", message: "La cuenta no está autorizada como docente." };
+            return false;
+          }
+          const estudianteRef = doc(database, "estudiantes", uid);
+          const historialId = `${Date.now()}-${uid}`;
+          const historialRef = doc(collection(database, "estudiantes", uid, "historialDescuentos"), historialId);
+          const responsable = user.email || user.displayName || user.uid;
+          const penalizacionNueva = Math.max(0, Math.min(10, Number(revision.penalizacion) || 0));
+          const motivoNuevo = String(revision.motivo || "").trim();
+          const estadoNuevo = String(revision.estado || (penalizacionNueva > 0 ? "penalizacion" : "sin_observaciones"));
+          await runTransaction(database, async transaction => {
+            const snapshot = await transaction.get(estudianteRef);
+            if (!snapshot.exists()) throw new Error("student-not-found");
+            const datos = snapshot.data();
+            const revisionAnterior = datos.revisionSalidas || {};
+            const penalizacionAnterior = Math.max(0, Math.min(10, Number(revisionAnterior.penalizacion) || 0));
+            const motivoAnterior = String(revisionAnterior.motivo || "").trim();
+            const descuentoModificado =
+              penalizacionAnterior !== penalizacionNueva ||
+              motivoAnterior !== motivoNuevo;
+            transaction.set(estudianteRef, {
+              revisionSalidas: {
+                estado: estadoNuevo,
+                penalizacion: penalizacionNueva,
+                motivo: motivoNuevo,
+                revisadoPor: responsable,
+                revisadoPorUid: user.uid,
+                revisadoEn: serverTimestamp()
+              },
+              actualizadoEn: serverTimestamp()
+            }, { merge: true });
+            if (descuentoModificado) {
+              transaction.set(historialRef, {
+                id: historialId,
+                estudianteUid: uid,
+                estudianteNombre: datos.estudiante?.nombre || datos.nombreGoogle || "",
+                estudianteEmail: datos.email || "",
+                docente: responsable,
+                docenteUid: user.uid,
+                cambiadoEn: serverTimestamp(),
+                valorAnterior: penalizacionAnterior,
+                valorNuevo: penalizacionNueva,
+                motivoAnterior,
+                motivoNuevo,
+                estadoAnterior: revisionAnterior.estado || "pendiente",
+                estadoNuevo
+              });
+            }
+          });
           return true;
         } catch (error) {
           console.error("Error guardando revisión docente:", error);
+          window.ultimoErrorRevisionDocente = { code: error?.code || "", message: error?.message || "Error desconocido" };
           return false;
         }
       };
@@ -2954,7 +2997,8 @@
           if (!(await verificarUsuarioDocente(user))) return false;
           const database = contexto.database;
           const subcoleccionesEstudiante = [
-            "historialDesbloqueos"
+            "historialDesbloqueos",
+            "historialDescuentos"
           ];
           let documentosAsociadosEliminados = 0;
 
@@ -8451,6 +8495,11 @@
               alert('No se encontró el identificador Firebase del estudiante.');
               return;
           }
+          const autorizado = await window.autorizarDocenteFirebase?.();
+          if (!autorizado) {
+              alert('Solo una cuenta docente autorizada puede editar el descuento de puntos.');
+              return;
+          }
           const penalizacion = Math.max(0, Math.min(10, Number(document.getElementById('penalizacionRevisionProfesor')?.value) || 0));
           const estado = document.getElementById('estadoRevisionProfesor')?.value || 'pendiente';
           const motivo = document.getElementById('motivoRevisionProfesor')?.value.trim() || '';
@@ -9570,6 +9619,13 @@
           const indice = indiceEditorDescuentoEstudiante;
           const d = Number.isInteger(indice) ? estudiantesProfesor[indice] : null;
           if (!d?.uid) return;
+          const autorizado = await window.autorizarDocenteFirebase?.();
+          if (!autorizado) {
+              const errorAutorizacion = document.getElementById('editarDescuentoError');
+              errorAutorizacion.textContent = 'Solo una cuenta docente autorizada puede editar el descuento.';
+              errorAutorizacion.style.display = 'block';
+              return;
+          }
           const puntos = Math.max(0, Math.min(10, Number(document.getElementById('editarDescuentoPuntos')?.value) || 0));
           const motivo = String(document.getElementById('editarDescuentoMotivo')?.value || '').trim();
           const error = document.getElementById('editarDescuentoError');
