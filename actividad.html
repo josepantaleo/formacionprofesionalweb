@@ -1413,10 +1413,10 @@
          padding:1rem !important;
        }
        #panelProfesorModal table{table-layout:auto}
-       #panelProfesorModal table th,#panelProfesorModal table td{padding:.36rem .3rem;border-bottom:1px solid rgba(148,163,184,.15);text-align:left;font-size:.68rem;line-height:1.25;overflow-wrap:anywhere}
+       #panelProfesorModal table th,#panelProfesorModal table td{padding:.5rem .42rem;border-bottom:1px solid rgba(148,163,184,.15);text-align:left;font-size:.72rem;line-height:1.3;overflow-wrap:anywhere}
        #panelProfesorModal table th{color:var(--primary);position:sticky;top:0;background:var(--surface,#0f172a)}
        #panelProfesorModal table th:nth-child(1){min-width:140px}
-       #panelProfesorModal table th:nth-child(2){min-width:220px}
+       #panelProfesorModal table th:nth-child(2){min-width:265px}
        #panelProfesorModal table th:nth-child(3){min-width:90px}
        #panelProfesorModal table th:nth-child(4){min-width:55px}
        #panelProfesorModal table th:nth-child(5){min-width:80px}
@@ -1430,7 +1430,7 @@
        #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td:last-child{display:none}
        #panelProfesorModal #tablaProfesorBody > tr.teacher-actions-row > td:last-child{display:table-cell}
        #panelProfesorModal input,#panelProfesorModal select{width:100%;padding:.45rem .5rem;border-radius:6px;border:1px solid rgba(148,163,184,.25);background:rgba(15,23,42,.65);color:inherit;font-size:.72rem}
-       #panelProfesorModal #resumenProfesor{grid-template-columns:repeat(7,minmax(100px,1fr)) !important;gap:.4rem !important;margin-bottom:.55rem !important}
+       #panelProfesorModal #resumenProfesor{grid-template-columns:repeat(auto-fit,minmax(120px,1fr)) !important;gap:.45rem !important;margin-bottom:.65rem !important}
        #panelProfesorModal #resumenProfesor > div{padding:.45rem .55rem !important;border-radius:6px !important}
        #panelProfesorModal #resumenProfesor strong{font-size:1rem !important;margin-top:.1rem !important}
        #panelProfesorModal table td:last-child > div{align-items:stretch;white-space:normal}
@@ -1450,6 +1450,9 @@
        #panelProfesorModal .teacher-action-buttons .btn i{font-size:.85rem;margin:0;flex:0 0 auto}
        #panelProfesorModal .teacher-action-buttons .btn:hover,
        #panelProfesorModal .teacher-action-buttons .btn:focus-visible{transform:translateY(-1px)}
+       #panelProfesorModal .teacher-action-buttons .btn:nth-child(4){background:var(--accent);color:#0f172a}
+       #panelProfesorModal .teacher-action-buttons .btn:nth-child(5){background:#475569;color:#fff}
+       #panelProfesorModal .teacher-action-buttons .btn:nth-child(6){background:#64748b;color:#fff}
        #panelProfesorModal .modal-box{
          overflow:auto;
          scrollbar-width:auto;
@@ -1469,7 +1472,7 @@
          scrollbar-width:auto;
          scrollbar-color:#38bdf8 #0f172a;
        }
-       #panelProfesorModal .teacher-table-scroll table{min-width:1280px !important;width:100% !important}
+       #panelProfesorModal .teacher-table-scroll table{min-width:1340px !important;width:100% !important}
        #panelProfesorModal .modal-box > div[style*="overflow:auto"]{
          max-width:100%;
          max-height:52vh;
@@ -1509,12 +1512,12 @@
          justify-content:flex-start;
        }
        #panelProfesorModal table tr.teacher-actions-row td{
-         padding:.35rem .55rem .55rem;
+         padding:.42rem .55rem .65rem;
          border-bottom:1px solid rgba(148,163,184,.15);
          position:sticky;
          left:0;
          z-index:2;
-         background:#0f172a;
+         background:#111c31;
        }
        #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons{
          display:grid !important;
@@ -1526,6 +1529,17 @@
        }
        #panelProfesorModal #tablaProfesorBody > tr:not(.teacher-actions-row) > td{
          vertical-align:top;
+       }
+       #panelProfesorModal .teacher-actions-label{
+         grid-column:1 / -1;
+         display:flex;
+         align-items:center;
+         gap:.4rem;
+         min-height:1.5rem;
+         padding:.1rem .15rem .25rem;
+         color:#bae6fd;
+         font-size:.72rem;
+         font-weight:700;
        }
        @media (max-width:700px){
          #panelProfesorModal table tr.teacher-actions-row .teacher-action-buttons{
@@ -8620,6 +8634,14 @@
           });
           document.querySelectorAll('#tablaProfesorBody td:last-child > div').forEach(contenedor => {
               contenedor.classList.add('teacher-action-buttons');
+              if (!contenedor.querySelector('.teacher-actions-label')) {
+                  const filaOrigen = contenedor.closest('tr');
+                  const nombreVisible = filaOrigen?.querySelector('td:first-child')?.textContent?.trim().split('Ayudas:')[0].trim() || 'estudiante';
+                  const etiqueta = document.createElement('div');
+                  etiqueta.className = 'teacher-actions-label';
+                  etiqueta.innerHTML = `<i class="fa-solid fa-sliders"></i> Acciones: ${escapeHtml(nombreVisible)}`;
+                  contenedor.prepend(etiqueta);
+              }
               contenedor.querySelectorAll('.btn').forEach(boton => {
                   if (boton.title) return;
                   const texto = boton.textContent.trim().toLowerCase();
