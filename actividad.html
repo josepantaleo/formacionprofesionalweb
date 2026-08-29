@@ -2168,6 +2168,88 @@
         .teacher-confirm-actions{display:grid;grid-template-columns:1fr 1fr}
         .teacher-confirm-actions .btn{width:100%;min-width:0}
       }
+      #panelProfesorModal .teacher-table-scroll{
+        max-height:none;
+        overflow-x:auto;
+        overflow-y:visible;
+      }
+      #panelProfesorModal .teacher-table-scroll table{
+        width:100% !important;
+        min-width:1250px !important;
+        height:auto !important;
+        table-layout:auto;
+      }
+      #panelProfesorModal #tablaProfesorBody,
+      #panelProfesorModal #tablaProfesorBody tr{height:auto !important}
+      #panelProfesorModal #tablaProfesorBody > tr > td{vertical-align:middle}
+      #panelProfesorModal table th{min-width:0 !important}
+      #panelProfesorModal table th:nth-child(1){min-width:125px !important}
+      #panelProfesorModal table th:nth-child(2){min-width:92px !important}
+      #panelProfesorModal table th:nth-child(3){min-width:185px !important}
+      #panelProfesorModal table th:nth-child(4){min-width:190px !important}
+      #panelProfesorModal table th:nth-child(5){min-width:72px !important}
+      #panelProfesorModal table th:nth-child(6){min-width:52px !important}
+      #panelProfesorModal table th:nth-child(7){min-width:72px !important}
+      #panelProfesorModal table th:nth-child(8){min-width:92px !important}
+      #panelProfesorModal table th:nth-child(9){min-width:96px !important}
+      #panelProfesorModal table th:nth-child(10){min-width:105px !important}
+      #panelProfesorModal table th:nth-child(11){min-width:105px !important}
+      #panelProfesorModal table th:nth-child(12){min-width:82px !important}
+      #panelProfesorModal table th:nth-child(13){min-width:145px !important}
+      @media(min-width:1451px){
+        #panelProfesorModal table th:nth-child(1),
+        #panelProfesorModal table td:nth-child(1){
+          position:sticky;
+          left:0;
+          z-index:6;
+          background:#111c31;
+        }
+        #panelProfesorModal table th:nth-child(2),
+        #panelProfesorModal table td:nth-child(2){
+          position:sticky;
+          left:125px;
+          z-index:5;
+          background:#111c31;
+          box-shadow:5px 0 8px rgba(0,0,0,.2);
+        }
+      }
+      @media(min-width:701px) and (max-width:1450px){
+        #panelProfesorModal .teacher-table-scroll table{
+          min-width:0 !important;
+          table-layout:fixed;
+        }
+        #panelProfesorModal table th:nth-child(4),
+        #panelProfesorModal table td:nth-child(4),
+        #panelProfesorModal table th:nth-child(6),
+        #panelProfesorModal table td:nth-child(6),
+        #panelProfesorModal table th:nth-child(7),
+        #panelProfesorModal table td:nth-child(7),
+        #panelProfesorModal table th:nth-child(13),
+        #panelProfesorModal table td:nth-child(13){
+          display:none;
+        }
+        #panelProfesorModal table th:nth-child(1){width:120px}
+        #panelProfesorModal table th:nth-child(2){width:92px}
+        #panelProfesorModal table th:nth-child(3){width:20%}
+        #panelProfesorModal table th:nth-child(5){width:8%}
+        #panelProfesorModal table th:nth-child(8){width:11%}
+        #panelProfesorModal table th:nth-child(9){width:11%}
+        #panelProfesorModal table th:nth-child(10){width:11%}
+        #panelProfesorModal table th:nth-child(11){width:12%}
+        #panelProfesorModal table th:nth-child(12){width:9%}
+      }
+      @media(max-width:700px){
+        #panelProfesorModal .teacher-table-scroll table{
+          min-width:0 !important;
+          table-layout:auto;
+        }
+        #panelProfesorModal .descuento-puntos-cell{
+          order:-1;
+          border:1px solid rgba(248,113,113,.18);
+          border-radius:6px;
+          background:rgba(15,23,42,.5);
+        }
+      }
 </style>
 
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
@@ -3450,7 +3532,7 @@
         </div>
         <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
         <div id="resumenConsultasIAProfesor" style="margin-bottom:1rem;"></div>
-        <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse;min-width:1320px;"><thead><tr><th data-actions-column="true">Acciones</th><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Descuento</th><th>Cambios de pestaña</th><th>Desbloqueos</th><th>Última actualización</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
+        <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse;"><thead><tr><th data-actions-column="true">Acciones</th><th>Descuento</th><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Desbloqueos</th><th>Última actualización</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
         <p id="estadoPanelProfesor" style="margin-top:1rem;color:var(--text-muted);font-size:.8rem;"></p>
         </div>
       </div>
@@ -9564,17 +9646,17 @@
                   ? `${cantidadSalidas} cambios: alcanzó el límite de bloqueo`
                   : (cantidadSalidas > 0 ? `${cantidadSalidas} cambio(s) de pestaña` : 'Sin cambios de pestaña');
               const salidasHtml = `<span class="teacher-tab-badge ${salidasClase}" title="${salidasTitulo}"><i class="fa-solid ${salidasIcono}"></i> ${cantidadSalidas}</span>`;
-              return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn btn-secondary btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="Abrir las nueve acciones del estudiante"><i class="fa-solid fa-sliders"></i> Acciones</button></td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${descuentoHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td><td>${escapeHtml(fecha)}</td></tr>`;
+              return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn btn-secondary btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="Abrir las nueve acciones del estudiante"><i class="fa-solid fa-sliders"></i> Acciones</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td><td>${escapeHtml(fecha)}</td></tr>`;
               }).join('') || '<tr><td colspan="13" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
               if (!estudiante) return;
-              const etiquetasColumnas = ['Acciones','Estudiante','Email','Curso','División','Turno','Estado','Progreso','Nota definitiva','Descuento de puntos','Cambios de pestaña','Desbloqueos','Última actualización'];
+              const etiquetasColumnas = ['Acciones','Descuento de puntos','Estudiante','Email','Curso','División','Turno','Estado','Progreso','Nota definitiva','Cambios de pestaña','Desbloqueos','Última actualización'];
               [...fila.children].forEach((celda, indiceCelda) => {
                   if (etiquetasColumnas[indiceCelda]) celda.setAttribute('data-label', etiquetasColumnas[indiceCelda]);
               });
               const estado = estudiante.estadoCuenta || 'activo';
-              const celdaEstado = fila.children[6];
+              const celdaEstado = fila.children[7];
               if (celdaEstado && estudiante.pantallaBloqueada !== true) {
                   const configuracion = {
                       activo: ['Activa', '#6ee7b7'],
@@ -9631,14 +9713,14 @@
                   botonHistorial.title = 'Ver historial completo de desbloqueos';
                   botonHistorial.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Historial desbloqueos';
                   const filaHistorial = contenedor.closest('tr');
-                  const registroHistorial = filaHistorial ? rows.find(r => String(r.email || '') === String(filaHistorial.querySelector('td:nth-child(3)')?.textContent || '')) : null;
+                  const registroHistorial = filaHistorial ? rows.find(r => String(r.email || '') === String(filaHistorial.querySelector('td:nth-child(4)')?.textContent || '')) : null;
                   botonHistorial.onclick = () => abrirHistorialDesbloqueos(estudiantesProfesor.indexOf(registroHistorial));
                   contenedor.appendChild(botonHistorial);
               }
               const fila = contenedor.closest('tr');
               if (fila) {
                   const indiceEstudiante = estudiantesProfesor.indexOf(
-                      rows.find(r => String(r.email || '') === String(fila.querySelector('td:nth-child(3)')?.textContent || ''))
+                      rows.find(r => String(r.email || '') === String(fila.querySelector('td:nth-child(4)')?.textContent || ''))
                   );
                   fila.nextElementSibling?.classList.contains('teacher-actions-row') && fila.nextElementSibling.remove();
                   const filaAcciones = document.createElement('tr');
