@@ -1982,7 +1982,7 @@
         border-radius:8px;
         background:rgba(15,23,42,.4);
       }
-      #panelProfesorModal .teacher-table-scroll table{min-width:1220px !important}
+      #panelProfesorModal .teacher-table-scroll table{min-width:1320px !important}
       #panelProfesorModal table th{
         z-index:3;
         padding:.65rem .55rem;
@@ -2062,6 +2062,24 @@
       .teacher-grade-badge.grade-high{background:rgba(22,101,52,.32);border-color:rgba(74,222,128,.35);color:#86efac}
       .teacher-grade-badge.grade-medium{background:rgba(161,98,7,.28);border-color:rgba(251,191,36,.35);color:#fde68a}
       .teacher-grade-badge.grade-low{background:rgba(153,27,27,.3);border-color:rgba(248,113,113,.4);color:#fca5a5}
+      .teacher-discount-badge{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        gap:.35rem;
+        min-width:4.8rem;
+        padding:.34rem .48rem;
+        border:1px solid rgba(74,222,128,.3);
+        border-radius:6px;
+        background:rgba(22,101,52,.24);
+        color:#86efac;
+        font-weight:900;
+      }
+      .teacher-discount-badge.has-discount{
+        border-color:rgba(248,113,113,.46);
+        background:rgba(153,27,27,.34);
+        color:#fca5a5;
+      }
       .teacher-tab-badge{
         display:inline-flex;
         align-items:center;
@@ -3432,7 +3450,7 @@
         </div>
         <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
         <div id="resumenConsultasIAProfesor" style="margin-bottom:1rem;"></div>
-        <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse;min-width:1280px;"><thead><tr><th data-actions-column="true">Acciones</th><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Desbloqueos</th><th>Última actualización</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
+        <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse;min-width:1320px;"><thead><tr><th data-actions-column="true">Acciones</th><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Descuento</th><th>Cambios de pestaña</th><th>Desbloqueos</th><th>Última actualización</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
         <p id="estadoPanelProfesor" style="margin-top:1rem;color:var(--text-muted);font-size:.8rem;"></p>
         </div>
       </div>
@@ -9533,6 +9551,12 @@
               const notaClase = !Number.isFinite(notaNumero) ? '' : (notaNumero >= 7 ? 'grade-high' : (notaNumero >= 6 ? 'grade-medium' : 'grade-low'));
               const notaIcono = !Number.isFinite(notaNumero) ? 'fa-minus' : (notaNumero >= 7 ? 'fa-star' : (notaNumero >= 6 ? 'fa-circle-half-stroke' : 'fa-triangle-exclamation'));
               const notaHtml = `<span class="teacher-grade-badge ${notaClase}" title="${Number.isFinite(notaNumero) ? `Nota definitiva: ${n}` : 'Sin nota definitiva'}"><i class="fa-solid ${notaIcono}"></i> ${n}</span>`;
+              const descuentoPuntos = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
+              const descuentoMotivo = String(d.revisionSalidas?.motivo || '').trim();
+              const descuentoTitulo = descuentoPuntos > 0
+                  ? `Descuento aplicado: ${descuentoPuntos.toFixed(1)} punto(s)${descuentoMotivo ? `. Motivo: ${descuentoMotivo}` : ''}`
+                  : 'Sin descuento de puntos';
+              const descuentoHtml = `<span class="teacher-discount-badge ${descuentoPuntos > 0 ? 'has-discount' : ''}" title="${escapeHtml(descuentoTitulo)}"><i class="fa-solid ${descuentoPuntos > 0 ? 'fa-circle-minus' : 'fa-circle-check'}"></i> ${descuentoPuntos > 0 ? `-${descuentoPuntos.toFixed(1)}` : '0.0'}</span>`;
               const cantidadSalidas = Number(d.salidasPestana ?? 0);
               const salidasClase = cantidadSalidas >= LIMITE_SALIDAS_PARA_BLOQUEO ? 'tabs-danger' : (cantidadSalidas > 0 ? 'tabs-warning' : '');
               const salidasIcono = cantidadSalidas >= LIMITE_SALIDAS_PARA_BLOQUEO ? 'fa-triangle-exclamation' : (cantidadSalidas > 0 ? 'fa-arrow-up-right-from-square' : 'fa-circle-check');
@@ -9540,12 +9564,12 @@
                   ? `${cantidadSalidas} cambios: alcanzó el límite de bloqueo`
                   : (cantidadSalidas > 0 ? `${cantidadSalidas} cambio(s) de pestaña` : 'Sin cambios de pestaña');
               const salidasHtml = `<span class="teacher-tab-badge ${salidasClase}" title="${salidasTitulo}"><i class="fa-solid ${salidasIcono}"></i> ${cantidadSalidas}</span>`;
-              return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn btn-secondary btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="Abrir las nueve acciones del estudiante"><i class="fa-solid fa-sliders"></i> Acciones</button></td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td><td>${escapeHtml(fecha)}</td></tr>`;
-              }).join('') || '<tr><td colspan="12" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
+              return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn btn-secondary btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="Abrir las nueve acciones del estudiante"><i class="fa-solid fa-sliders"></i> Acciones</button></td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${descuentoHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td><td>${escapeHtml(fecha)}</td></tr>`;
+              }).join('') || '<tr><td colspan="13" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
               if (!estudiante) return;
-              const etiquetasColumnas = ['Acciones','Estudiante','Email','Curso','División','Turno','Estado','Progreso','Nota definitiva','Cambios de pestaña','Desbloqueos','Última actualización'];
+              const etiquetasColumnas = ['Acciones','Estudiante','Email','Curso','División','Turno','Estado','Progreso','Nota definitiva','Descuento de puntos','Cambios de pestaña','Desbloqueos','Última actualización'];
               [...fila.children].forEach((celda, indiceCelda) => {
                   if (etiquetasColumnas[indiceCelda]) celda.setAttribute('data-label', etiquetasColumnas[indiceCelda]);
               });
@@ -9619,7 +9643,7 @@
                   fila.nextElementSibling?.classList.contains('teacher-actions-row') && fila.nextElementSibling.remove();
                   const filaAcciones = document.createElement('tr');
                   filaAcciones.className = 'teacher-actions-row';
-                  filaAcciones.innerHTML = '<td colspan="12"></td>';
+                  filaAcciones.innerHTML = '<td colspan="13"></td>';
                   filaAcciones.firstElementChild.appendChild(contenedor);
                   fila.parentNode.insertBefore(filaAcciones, fila.nextSibling);
               }
