@@ -2156,7 +2156,7 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, onSnapshot, getDocs, increment, runTransaction } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, onSnapshot, getDocs, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
       import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
       import { getAI, getTemplateGenerativeModel, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
 
@@ -2798,10 +2798,45 @@
         if (!user || !contexto.database || !uid) return false;
         try {
           if (!(await verificarUsuarioDocente(user))) return false;
-          await deleteDoc(doc(contexto.database, "estudiantes", uid));
+          const database = contexto.database;
+          const subcoleccionesEstudiante = [
+            "historialDesbloqueos"
+          ];
+          let documentosAsociadosEliminados = 0;
+
+          for (const nombreSubcoleccion of subcoleccionesEstudiante) {
+            const referencia = collection(database, "estudiantes", uid, nombreSubcoleccion);
+            const snapshot = await getDocs(referencia);
+            const documentos = snapshot.docs;
+
+            for (let inicio = 0; inicio < documentos.length; inicio += 450) {
+              const lote = writeBatch(database);
+              documentos.slice(inicio, inicio + 450).forEach(documento => {
+                lote.delete(documento.ref);
+              });
+              await lote.commit();
+            }
+            documentosAsociadosEliminados += documentos.length;
+          }
+
+          await deleteDoc(doc(database, "estudiantes", uid));
+          window.ultimoResumenEliminacionEstudiante = {
+            uid,
+            documentoPrincipalEliminado: true,
+            documentosAsociadosEliminados,
+            subcoleccionesEliminadas: [...subcoleccionesEstudiante],
+            eliminadoPor: user.email || user.displayName || user.uid,
+            eliminadoEn: new Date().toISOString()
+          };
           return true;
         } catch (error) {
           console.error("Error eliminando estudiante:", error);
+          window.ultimoResumenEliminacionEstudiante = {
+            uid,
+            documentoPrincipalEliminado: false,
+            error: error?.message || "Error desconocido",
+            codigo: error?.code || ""
+          };
           return false;
         }
       };
@@ -9603,8 +9638,9 @@
               titulo: 'Eliminar estudiante',
               mensaje: `Se eliminará definitivamente a ${nombre}.`,
               detalles: [
-                  'Se borrarán progreso, respuestas y calificaciones.',
-                  'Se borrarán el historial de desbloqueos y las consultas IA.',
+                  'Se borrará el documento completo: identidad, progreso, códigos, respuestas, notas, cronómetros, bloqueos y consultas IA.',
+                  'Se eliminarán todos los eventos del historial de desbloqueos antes de borrar al estudiante.',
+                  'La cuenta externa de Google no se elimina; se borran todos los datos almacenados por esta aplicación.',
                   'Esta acción no se puede deshacer.'
               ],
               campoLabel: 'Escribí ELIMINAR para confirmar',
@@ -9618,12 +9654,14 @@
           if (!confirmacion.confirmado) return;
           const ok = await window.eliminarEstudianteFirebase?.(estudiante.uid);
           if (!ok) {
-              alert('No se pudo eliminar el estudiante. Verificá que tu cuenta tenga autorización docente.');
+              const detalleError = window.ultimoResumenEliminacionEstudiante?.error || '';
+              alert(`No se pudo completar la eliminación total. Verificá la autorización docente y que las reglas de Firebase estén publicadas.${detalleError ? `\n\nDetalle: ${detalleError}` : ''}`);
               return;
           }
+          const resumenEliminacion = window.ultimoResumenEliminacionEstudiante || {};
           estudiantesProfesor = estudiantesProfesor.filter(item => item.uid !== estudiante.uid);
           renderPanelProfesor();
-          alert('Estudiante e historial eliminados correctamente.');
+          alert(`Estudiante y todos sus datos almacenados fueron eliminados correctamente.\n\nRegistros asociados eliminados: ${Number(resumenEliminacion.documentosAsociadosEliminados || 0)}.`);
       }
       async function iniciarPanelProfesorTiempoReal() {
           if (profesorUnsubscribe) profesorUnsubscribe();
