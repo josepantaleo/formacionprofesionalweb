@@ -8893,6 +8893,11 @@
               });
               const estado = estudiante.estadoCuenta || 'activo';
               const celdaEstado = fila.children[6];
+              const celdaAccionesPrincipal = fila.children[0];
+              if (celdaAccionesPrincipal && !celdaAccionesPrincipal.querySelector('.btn-abrir-acciones-estudiante')) {
+                  const indiceEstudiantePrincipal = estudiantesProfesor.indexOf(estudiante);
+                  celdaAccionesPrincipal.innerHTML = `<button type="button" class="btn btn-secondary btn-abrir-acciones-estudiante" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" onclick="abrirAccionesEstudiante(${indiceEstudiantePrincipal})" title="Abrir acciones del estudiante"><i class="fa-solid fa-sliders"></i> Acciones</button>`;
+              }
               if (celdaEstado && estudiante.pantallaBloqueada !== true) {
                   const configuracion = {
                       activo: ['Activa', '#6ee7b7'],
