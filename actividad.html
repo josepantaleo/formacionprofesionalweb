@@ -3498,6 +3498,14 @@
             <option value="10">10 o más</option>
           </select>
           <select id="filtroNotaProfesor" aria-label="Filtrar por nota definitiva"><option value="">Todas las notas</option><option value="sin-nota">Sin calificación</option><option value="0-3.9">0–3,9</option><option value="4-5.9">4–5,9</option><option value="6-6.9">6–6,9</option><option value="7-8.9">7–8,9</option><option value="9-10">9–10</option></select>
+          <select id="filtroDescuentoProfesor" aria-label="Filtrar por descuento de puntos">
+            <option value="">Todos los descuentos</option>
+            <option value="con-descuento">Con descuento</option>
+            <option value="sin-descuento">Sin descuento</option>
+            <option value="1">Descuento de 1 punto o más</option>
+            <option value="2">Descuento de 2 puntos o más</option>
+            <option value="3">Descuento de 3 puntos o más</option>
+          </select>
           <select id="filtroActualizacionProfesor" aria-label="Filtrar por última actualización"><option value="">Cualquier actualización</option><option value="5m">Últimos 5 minutos</option><option value="15m">Últimos 15 minutos</option><option value="1h">Última hora</option><option value="hoy">Hoy</option><option value="7d">Últimos 7 días</option><option value="sin-fecha">Sin fecha</option></select>
           <select id="ordenProfesor" aria-label="Ordenar tabla">
             <option value="actualizacion-desc">Última actualización: reciente</option>
@@ -3522,7 +3530,7 @@
             <option value="salidas-desc">Pestanas: mayor primero</option>
             <option value="alertas-desc">Alertas primero</option>
           </select>
-          <button class="btn btn-secondary" type="button" onclick="limpiarFiltrosProfesor()" title="Restablecer todos los filtros"><i class="fa-solid fa-filter-circle-xmark"></i> Limpiar</button>
+          <button class="btn btn-secondary" id="btnLimpiarFiltrosProfesor" type="button" onclick="limpiarFiltrosProfesor()" title="Restablecer todos los filtros y el orden"><i class="fa-solid fa-filter-circle-xmark"></i> Limpiar filtros</button>
         </div>
         <div style="padding:.75rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06);margin-bottom:1rem;font-size:.82rem;line-height:1.5;">
           <strong>Cómo se calcula:</strong> cada actividad obtiene
@@ -5015,7 +5023,7 @@
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
       window.addEventListener('load', () => {
         actualizarVisibilidadDocente();
-          ['filtroProfesor','filtroEmailProfesor','filtroCursoProfesor','filtroDivisionProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroBloqueoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','filtroNotaProfesor','filtroActualizacionProfesor','ordenProfesor'].forEach(id => {
+          ['filtroProfesor','filtroEmailProfesor','filtroCursoProfesor','filtroDivisionProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroBloqueoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','filtroNotaProfesor','filtroDescuentoProfesor','filtroActualizacionProfesor','ordenProfesor'].forEach(id => {
               document.getElementById(id)?.addEventListener('input', renderPanelProfesor);
               document.getElementById(id)?.addEventListener('change', renderPanelProfesor);
           });
@@ -8270,6 +8278,41 @@
           if (profesorUnsubscribe) { profesorUnsubscribe(); profesorUnsubscribe = null; }
           if (window.__profesorUnsubscribe) { window.__profesorUnsubscribe(); window.__profesorUnsubscribe = null; }
       }
+
+      function limpiarFiltrosProfesor() {
+          const valoresIniciales = {
+              filtroProfesor: '',
+              filtroEmailProfesor: '',
+              filtroCursoProfesor: '',
+              filtroDivisionProfesor: '',
+              filtroTurnoProfesor: '',
+              filtroEstadoProfesor: '',
+              filtroBloqueoProfesor: '',
+              filtroProgresoProfesor: '',
+              filtroSalidasProfesor: '',
+              filtroNotaProfesor: '',
+              filtroDescuentoProfesor: '',
+              filtroActualizacionProfesor: '',
+              ordenProfesor: 'actualizacion-desc'
+          };
+
+          Object.entries(valoresIniciales).forEach(([id, valor]) => {
+              const control = document.getElementById(id);
+              if (!control) return;
+              control.value = valor;
+              if (control.value !== valor && control.options?.length) {
+                  control.selectedIndex = 0;
+              }
+              control.classList.remove('teacher-filter-active');
+          });
+
+          const contenedor = document.getElementById('filtrosPanelProfesor');
+          contenedor?.classList.remove('has-active-filters');
+          renderPanelProfesor();
+
+          document.getElementById('btnLimpiarFiltrosProfesor')?.focus({ preventScroll: true });
+      }
+
       function calcularProgresoEstudiante(d) {
           const finalizadas = d.finalizadas || {};
           const total = seccionesData.length || 1;
@@ -9475,6 +9518,7 @@
           const progresoFiltro = document.getElementById('filtroProgresoProfesor')?.value || '';
           const salidasFiltro = document.getElementById('filtroSalidasProfesor')?.value || '';
           const notaFiltro = document.getElementById('filtroNotaProfesor')?.value || '';
+          const descuentoFiltro = document.getElementById('filtroDescuentoProfesor')?.value || '';
           const actualizacionFiltro = document.getElementById('filtroActualizacionProfesor')?.value || '';
           const orden = document.getElementById('ordenProfesor')?.value || 'actualizacion-desc';
           const rows = estudiantesProfesor.filter(d => {
@@ -9484,6 +9528,7 @@
               const progreso = calcularProgresoEstudiante(d);
               const notaTexto = calcularNotaDefinitivaEstudiante(d);
               const nota = notaTexto === '—' ? NaN : Number(notaTexto);
+              const descuento = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
               const alerta = obtenerAlertaConsultasIA(d);
               const actualizado = d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().getTime() : 0;
               const conectado = actualizado > 0 && Date.now() - actualizado < 5 * 60 * 1000;
@@ -9515,6 +9560,10 @@
                       const [min, max] = notaFiltro.split('-').map(Number);
                       return nota >= min && nota <= max;
                   })());
+              const cumpleDescuento = !descuentoFiltro
+                  || (descuentoFiltro === 'con-descuento' && descuento > 0)
+                  || (descuentoFiltro === 'sin-descuento' && descuento === 0)
+                  || (['1','2','3'].includes(descuentoFiltro) && descuento >= Number(descuentoFiltro));
               const antiguedad = actualizado ? Date.now() - actualizado : Infinity;
               const inicioHoy = new Date();
               inicioHoy.setHours(0,0,0,0);
@@ -9548,7 +9597,7 @@
                   && (!curso || e.curso===curso)
                   && (!division || e.division===division)
                   && (!turno || e.turno===turno)
-              && cumpleEstado && cumpleBloqueo && cumpleProgreso && cumpleSalidas && cumpleNota && cumpleActualizacion;
+              && cumpleEstado && cumpleBloqueo && cumpleProgreso && cumpleSalidas && cumpleNota && cumpleDescuento && cumpleActualizacion;
           }).sort((a,b) => {
               const am=a.__panelMeta||{}, bm=b.__panelMeta||{};
               const texto = (valorA, valorB, direccion='asc') => {
