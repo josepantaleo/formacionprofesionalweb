@@ -1577,6 +1577,28 @@
       .student-actions-status .is-locked{color:#fca5a5}
       .student-actions-status .is-unlocked{color:#86efac}
       .student-actions-count{color:#94a3b8;white-space:nowrap}
+      .student-actions-legend{
+        display:grid;
+        grid-template-columns:repeat(4,minmax(0,1fr));
+        gap:.4rem;
+        margin-bottom:.8rem;
+      }
+      .student-actions-legend span{
+        display:flex;
+        align-items:center;
+        gap:.35rem;
+        min-width:0;
+        padding:.38rem .45rem;
+        border-radius:6px;
+        background:rgba(30,41,59,.72);
+        color:#cbd5e1;
+        font-size:.67rem;
+        line-height:1.15;
+      }
+      .student-actions-legend i{width:.85rem;text-align:center;color:#7dd3fc;flex:0 0 .85rem}
+      .student-actions-legend .legend-control i{color:#fbbf24}
+      .student-actions-legend .legend-screen i{color:#f87171}
+      .student-actions-legend .legend-danger i{color:#fca5a5}
       .student-actions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
       .student-actions-grid .btn{
         width:100%;
@@ -1712,6 +1734,7 @@
         .student-actions-heading-icon{display:none}
         .student-actions-heading h3{font-size:1rem}
         .student-actions-status{align-items:flex-start;flex-direction:column;gap:.3rem}
+        .student-actions-legend{grid-template-columns:repeat(2,minmax(0,1fr))}
         .student-actions-grid{grid-template-columns:1fr}
          .student-actions-grid .student-action-danger,
          .student-actions-grid .student-action-highlight{grid-column:auto}
@@ -1836,6 +1859,185 @@
       body.teacher-authorized .teacher-only { display: inline-flex !important; }
       body.teacher-authorized .teacher-only.teacher-session-only { display: none !important; }
       body.teacher-temporary .teacher-only.teacher-session-only { display: inline-flex !important; }
+      #panelProfesorModal{padding:.65rem}
+      #panelProfesorModal .teacher-panel-box{
+        width:min(1500px,calc(100vw - 1.3rem)) !important;
+        max-width:1500px !important;
+        max-height:calc(100vh - 1.3rem) !important;
+        padding:0 !important;
+        overflow:auto;
+        border-color:rgba(56,189,248,.28);
+        box-shadow:0 26px 80px rgba(0,0,0,.62);
+      }
+      .teacher-panel-header{
+        position:sticky;
+        top:0;
+        z-index:12;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:1rem;
+        padding:1rem 1.15rem;
+        border-bottom:1px solid rgba(148,163,184,.18);
+        background:rgba(15,23,42,.97);
+        backdrop-filter:blur(12px);
+      }
+      .teacher-panel-heading{display:flex;align-items:center;gap:.75rem;min-width:0}
+      .teacher-panel-heading-icon{
+        display:grid;
+        place-items:center;
+        flex:0 0 2.55rem;
+        width:2.55rem;
+        height:2.55rem;
+        border-radius:7px;
+        background:rgba(56,189,248,.14);
+        color:#38bdf8;
+        font-size:1.05rem;
+      }
+      .teacher-panel-heading h3{margin:0;color:#e0f2fe;font-size:1.15rem}
+      .teacher-panel-heading p{margin:.2rem 0 0;color:#94a3b8;font-size:.76rem}
+      .teacher-panel-toolbar{display:flex;align-items:center;justify-content:flex-end;gap:.4rem;flex-wrap:wrap}
+      .teacher-panel-toolbar .btn{min-height:2.25rem;padding:.48rem .65rem;font-size:.72rem;border-radius:6px}
+      .teacher-panel-close{
+        display:grid !important;
+        place-items:center;
+        width:2.25rem;
+        min-width:2.25rem;
+        padding:0 !important;
+      }
+      .teacher-panel-content{padding:1rem 1.15rem 1.2rem}
+      #panelProfesorModal #estadoClaseProfesor{
+        margin-top:0 !important;
+        display:flex;
+        align-items:center;
+        gap:.55rem;
+        border-radius:7px !important;
+      }
+      .teacher-section-title{
+        display:flex;
+        align-items:center;
+        gap:.45rem;
+        margin:.95rem 0 .55rem;
+        color:#bae6fd;
+        font-size:.78rem;
+        font-weight:800;
+        letter-spacing:0;
+      }
+      #panelProfesorModal .teacher-icon-legend{
+        position:static;
+        display:grid;
+        grid-template-columns:auto repeat(6,minmax(0,1fr));
+        margin:.8rem 0;
+        padding:.55rem .65rem;
+        gap:.4rem;
+      }
+      #panelProfesorModal .teacher-icon-legend span{
+        justify-content:center;
+        min-width:0;
+        padding:.3rem;
+        border-radius:5px;
+        background:rgba(30,41,59,.7);
+        text-align:center;
+      }
+      #panelProfesorModal #filtrosPanelProfesor{
+        display:grid !important;
+        grid-template-columns:repeat(auto-fit,minmax(155px,1fr));
+        gap:.5rem !important;
+        margin:.55rem 0 1rem !important;
+        padding:.7rem;
+        border:1px solid rgba(148,163,184,.18);
+        border-radius:8px;
+        background:rgba(15,23,42,.5);
+      }
+      #panelProfesorModal #filtrosPanelProfesor input,
+      #panelProfesorModal #filtrosPanelProfesor select,
+      #panelProfesorModal #filtrosPanelProfesor .btn{
+        width:100%;
+        min-width:0 !important;
+        min-height:2.35rem;
+      }
+      #panelProfesorModal #resumenProfesor > .teacher-summary-card{
+        position:relative;
+        min-height:5.2rem;
+        padding:.72rem .78rem .7rem 2.85rem !important;
+        border-radius:7px !important;
+        background:rgba(15,23,42,.68);
+      }
+      .teacher-summary-icon{
+        position:absolute;
+        left:.72rem;
+        top:.72rem;
+        display:grid;
+        place-items:center;
+        width:1.65rem;
+        height:1.65rem;
+        border-radius:6px;
+        background:rgba(56,189,248,.13);
+        color:#7dd3fc;
+      }
+      #panelProfesorModal #resumenProfesor small{display:block;color:#94a3b8;line-height:1.2}
+      #panelProfesorModal #resumenProfesor strong{color:#e2e8f0}
+      #panelProfesorModal .teacher-table-scroll{
+        border:1px solid rgba(148,163,184,.2);
+        border-radius:8px;
+        background:rgba(15,23,42,.4);
+      }
+      #panelProfesorModal .teacher-table-scroll table{min-width:1220px !important}
+      #panelProfesorModal table th{
+        z-index:3;
+        padding:.65rem .55rem;
+        background:#111c31;
+        color:#7dd3fc;
+        font-size:.69rem;
+        text-transform:uppercase;
+      }
+      #panelProfesorModal table td{padding:.62rem .55rem;font-size:.74rem}
+      #panelProfesorModal table tbody tr:hover{background:rgba(56,189,248,.055)}
+      #panelProfesorModal table th:first-child,
+      #panelProfesorModal table td:first-child{
+        position:sticky;
+        left:0;
+        z-index:4;
+        background:#111c31;
+      }
+      #panelProfesorModal .acciones-principales-cell .btn{
+        background:#475569;
+        color:#fff;
+        border:1px solid rgba(148,163,184,.3);
+      }
+      #panelProfesorModal .teacher-lock-badge{
+        padding:.3rem .5rem;
+        border-radius:5px;
+        background:#b91c1c;
+        border-color:#ef4444;
+        box-shadow:none;
+        animation:none;
+      }
+      #panelProfesorModal .teacher-lock-badge i{animation:none;color:#fff}
+      @media(max-width:900px){
+        #panelProfesorModal{padding:0}
+        #panelProfesorModal .teacher-panel-box{
+          width:100vw !important;
+          max-width:100vw !important;
+          max-height:100vh !important;
+          border-radius:0;
+        }
+        .teacher-panel-header{align-items:flex-start;padding:.8rem;flex-direction:column}
+        .teacher-panel-toolbar{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+        .teacher-panel-toolbar .btn{width:100%;min-width:0;justify-content:center}
+        .teacher-panel-close{width:100% !important}
+        .teacher-panel-content{padding:.75rem}
+        #panelProfesorModal .teacher-icon-legend{grid-template-columns:repeat(2,minmax(0,1fr))}
+        #panelProfesorModal .teacher-icon-legend strong{grid-column:1 / -1}
+        #panelProfesorModal table th:first-child,
+        #panelProfesorModal table td:first-child{position:static}
+      }
+      @media(max-width:560px){
+        .teacher-panel-heading-icon{display:none}
+        .teacher-panel-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}
+        #panelProfesorModal #filtrosPanelProfesor{grid-template-columns:1fr}
+        #panelProfesorModal #resumenProfesor{grid-template-columns:repeat(2,minmax(0,1fr)) !important}
+      }
 </style>
 
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
@@ -2939,20 +3141,24 @@
 
     <!-- Panel docente en tiempo real -->
     <div class="modal-overlay" id="panelProfesorModal" role="dialog" aria-modal="true" aria-labelledby="panelProfesorTitle">
-      <div class="modal-box" style="max-width:1100px;width:95vw;max-height:90vh;overflow:auto;">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
-          <div><h3 id="panelProfesorTitle"><i class="fa-solid fa-chalkboard-user"></i> Panel del Profesor</h3><p>Estudiantes y progreso sincronizados en tiempo real.</p></div>
-          <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+      <div class="modal-box teacher-panel-box">
+        <div class="teacher-panel-header">
+          <div class="teacher-panel-heading">
+            <span class="teacher-panel-heading-icon" aria-hidden="true"><i class="fa-solid fa-chalkboard-user"></i></span>
+            <div><h3 id="panelProfesorTitle">Panel del Profesor</h3><p>Estudiantes y progreso sincronizados en tiempo real.</p></div>
+          </div>
+          <div class="teacher-panel-toolbar">
             <button class="btn btn-success" onclick="iniciarClaseDesdeInterfaz(this)"><i class="fa-solid fa-play"></i> Iniciar clase</button>
             <button class="btn btn-danger" onclick="finalizarClaseDesdeInterfaz(this)"><i class="fa-solid fa-stop"></i> Finalizar clase</button>
             <button class="btn btn-warning" id="btnPausarCronometrosProfesor" onclick="pausarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-pause"></i> Pausar cronómetros</button>
             <button class="btn btn-secondary" onclick="reiniciarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00</button>
             <button class="btn btn-primary" onclick="abrirEditorDesafiosFirebase()"><i class="fa-solid fa-puzzle-piece"></i> Editar desafíos</button>
-            <button class="btn btn-secondary" onclick="cerrarPanelProfesor()">Cerrar panel</button>
+            <button class="btn btn-secondary teacher-panel-close" onclick="cerrarPanelProfesor()" aria-label="Cerrar panel" title="Cerrar panel"><i class="fa-solid fa-xmark"></i></button>
           </div>
         </div>
+        <div class="teacher-panel-content">
         <div id="estadoClaseProfesor" style="margin-top:1rem;padding:.75rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06);color:#bae6fd;font-size:.85rem;">
-          Usá “Iniciar clase” para habilitar las actividades de todos los alumnos conectados.
+          <i class="fa-solid fa-circle-info"></i> Usá “Iniciar clase” para habilitar las actividades de todos los alumnos conectados.
         </div>
         <div id="alertaNuevaSolicitud" class="new-request-alert" role="alert" aria-live="assertive">
           <div><i class="fa-solid fa-bell"></i> <strong id="textoAlertaNuevaSolicitud">Nueva solicitud de estudiante.</strong></div>
@@ -3000,6 +3206,7 @@
           <span><i class="fa-solid fa-comments" aria-hidden="true"></i> Borrar IA</span>
           <span><i class="fa-solid fa-trash-can" aria-hidden="true"></i> Eliminar estudiante</span>
         </div>
+        <div class="teacher-section-title"><i class="fa-solid fa-filter"></i> Filtros y orden</div>
         <div id="filtrosPanelProfesor" style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
           <input id="filtroProfesor" placeholder="Estudiante" aria-label="Filtrar por estudiante" style="flex:1;min-width:150px;">
           <input id="filtroEmailProfesor" placeholder="Email" aria-label="Filtrar por email" style="flex:1;min-width:180px;">
@@ -3080,6 +3287,7 @@
         <div id="resumenConsultasIAProfesor" style="margin-bottom:1rem;"></div>
         <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse;min-width:1280px;"><thead><tr><th data-actions-column="true">Acciones</th><th>Estudiante</th><th>Email</th><th>Curso</th><th>Div.</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota definitiva</th><th>Cambios de pestaña</th><th>Desbloqueos</th><th>Última actualización</th></tr></thead><tbody id="tablaProfesorBody"></tbody></table></div>
         <p id="estadoPanelProfesor" style="margin-top:1rem;color:var(--text-muted);font-size:.8rem;"></p>
+        </div>
       </div>
     </div>
 
@@ -3141,6 +3349,12 @@
         <div class="student-actions-status" aria-live="polite">
           <strong id="accionesEstudianteEstado"><i class="fa-solid fa-circle-check"></i> Pantalla habilitada</strong>
           <span class="student-actions-count">9 acciones disponibles</span>
+        </div>
+        <div class="student-actions-legend" role="note" aria-label="Leyenda de acciones">
+          <span><i class="fa-solid fa-eye"></i> Información</span>
+          <span class="legend-control"><i class="fa-solid fa-clock"></i> Cronómetro</span>
+          <span class="legend-screen"><i class="fa-solid fa-shield-halved"></i> Pantalla</span>
+          <span class="legend-danger"><i class="fa-solid fa-triangle-exclamation"></i> Acción crítica</span>
         </div>
         <div id="accionesEstudianteContenido" class="student-actions-grid"></div>
       </div>
@@ -8965,7 +9179,17 @@
           const desbloqueosTotales=rows.reduce((total,d)=>total+Number(d.cantidadDesbloqueos||0),0);
           const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='—').map(Number);
           const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'—';
-          document.getElementById('resumenProfesor').innerHTML=[['Estudiantes',total],['Solicitudes pendientes',solicitudesPendientes],['Bloqueados',bloqueados,'blocked'],['Desbloqueos registrados',desbloqueosTotales],['Conectados',conectados],['Trabajando',trabajando],['Con alertas',conAlertas],['Completaron',completos],['Promedio definitivo',promedio]].map(x=>`<div class="${x[2] === 'blocked' && Number(x[1]) > 0 ? 'teacher-blocked-summary' : ''}" style="padding:.8rem;border:1px solid rgba(148,163,184,.2);border-radius:12px;"><small>${x[2] === 'blocked' ? '<i class="fa-solid fa-lock"></i> ' : ''}${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
+          document.getElementById('resumenProfesor').innerHTML=[
+              ['Estudiantes',total,'','fa-users'],
+              ['Solicitudes pendientes',solicitudesPendientes,'','fa-user-clock'],
+              ['Bloqueados',bloqueados,'blocked','fa-lock'],
+              ['Desbloqueos registrados',desbloqueosTotales,'','fa-unlock-keyhole'],
+              ['Conectados',conectados,'','fa-wifi'],
+              ['Trabajando',trabajando,'','fa-laptop-code'],
+              ['Con alertas',conAlertas,'','fa-triangle-exclamation'],
+              ['Completaron',completos,'','fa-circle-check'],
+              ['Promedio definitivo',promedio,'','fa-chart-line']
+          ].map(x=>`<div class="teacher-summary-card ${x[2] === 'blocked' && Number(x[1]) > 0 ? 'teacher-blocked-summary' : ''}" style="border:1px solid rgba(148,163,184,.2);"><span class="teacher-summary-icon"><i class="fa-solid ${x[3]}"></i></span><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
           renderResumenConsultasIAGeneral(rows);
           document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
               const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
@@ -8990,19 +9214,9 @@
               const bloqueado = d.pantallaBloqueada === true;
               const estadoVisual = bloqueado ? 'Bloqueado' : (inactiva ? 'Inactiva' : 'Activa');
               const colorEstado = bloqueado ? '#fca5a5' : (inactiva ? '#fca5a5' : '#6ee7b7');
-              const bloqueoFecha = d.pantallaBloqueadaEn ? new Date(d.pantallaBloqueadaEn).toLocaleString() : '';
-              const bloqueoDetalle = bloqueado
-                  ? `<div style="margin-top:.3rem;color:#fecaca;font-size:.72rem;line-height:1.35">Salidas: ${Number(d.pantallaBloqueadaSalidas || d.salidasPestana || 0)}<br>Desbloqueos anteriores: ${Number(d.cantidadDesbloqueos || 0)}<br>Sección: ${escapeHtml(d.pantallaBloqueadaSeccion || 'Sin identificar')}<br>${escapeHtml(bloqueoFecha || 'Fecha no registrada')}</div>`
-                  : '';
-              const botonDesbloqueoEstado = bloqueado
-                  ? `<button class="btn btn-danger teacher-unlock-attention" onclick="desbloquearPantallaEstudianteProfesor(${indice})" style="margin-top:.45rem;padding:.4rem .65rem;width:100%;justify-content:center" title="Desbloquear pantalla del estudiante"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear</button>`
-                  : '';
               const estadoHtml = bloqueado
-                  ? `<span class="teacher-lock-badge" title="El estudiante requiere desbloqueo docente"><i class="fa-solid fa-lock"></i> BLOQUEADO</span>${bloqueoDetalle}${botonDesbloqueoEstado}`
+                  ? `<span class="teacher-lock-badge" title="Abrí Acciones para administrar el bloqueo"><i class="fa-solid fa-lock"></i> BLOQUEADO</span>`
                   : `<span style="color:${colorEstado};font-weight:700"><i class="fa-solid fa-circle-check"></i> ${estadoVisual}</span>`;
-              const botonDesbloqueo = bloqueado
-                  ? `<button class="btn btn-danger teacher-unlock-attention" onclick="desbloquearPantallaEstudianteProfesor(${indice})" style="padding:.4rem .65rem" title="Desbloquear pantalla del estudiante"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear</button>`
-                  : '';
               return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn btn-secondary btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="Abrir las nueve acciones del estudiante"><i class="fa-solid fa-sliders"></i> Acciones</button></td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${p}%</td><td>${n}</td><td>${Number(d.salidasPestana ?? 0)}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td><td>${escapeHtml(fecha)}</td></tr>`;
               }).join('') || '<tr><td colspan="12" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
