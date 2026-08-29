@@ -2163,10 +2163,64 @@
       .teacher-confirm-error{display:none;margin-top:.55rem;color:#fca5a5;font-size:.74rem}
       .teacher-confirm-actions{display:flex;justify-content:flex-end;gap:.55rem;margin-top:1rem}
       .teacher-confirm-actions .btn{min-width:7.5rem;justify-content:center}
+      #editarDescuentoEstudianteModal{z-index:10000}
+      .teacher-discount-edit-box{
+        width:min(500px,calc(100vw - 1rem));
+        max-width:500px;
+        padding:1.25rem;
+        border-color:rgba(245,158,11,.42);
+        box-shadow:0 28px 80px rgba(0,0,0,.68);
+      }
+      .teacher-discount-edit-header{display:flex;align-items:flex-start;gap:.75rem;margin-bottom:.9rem}
+      .teacher-discount-edit-icon{
+        display:grid;
+        place-items:center;
+        flex:0 0 2.55rem;
+        width:2.55rem;
+        height:2.55rem;
+        border-radius:8px;
+        background:rgba(245,158,11,.14);
+        color:#fbbf24;
+      }
+      .teacher-discount-edit-header h3{margin:0;color:#fde68a;font-size:1.05rem}
+      .teacher-discount-edit-header p{margin:.25rem 0 0;color:#94a3b8;font-size:.78rem;line-height:1.4}
+      .teacher-discount-edit-summary{
+        display:flex;
+        justify-content:space-between;
+        gap:.7rem;
+        padding:.65rem .75rem;
+        margin-bottom:.85rem;
+        border:1px solid rgba(148,163,184,.2);
+        border-radius:7px;
+        background:rgba(15,23,42,.58);
+        color:#cbd5e1;
+        font-size:.76rem;
+      }
+      .teacher-discount-edit-field{margin-top:.75rem}
+      .teacher-discount-edit-field label{display:block;margin-bottom:.35rem;color:#bae6fd;font-size:.74rem;font-weight:800}
+      .teacher-discount-edit-field input,
+      .teacher-discount-edit-field textarea{
+        width:100%;
+        padding:.65rem .7rem;
+        border:1px solid rgba(148,163,184,.3);
+        border-radius:7px;
+        background:rgba(15,23,42,.82);
+        color:#f8fafc;
+        font:inherit;
+      }
+      .teacher-discount-edit-field input{max-width:170px}
+      .teacher-discount-edit-field textarea{min-height:5.5rem;resize:vertical}
+      .teacher-discount-edit-help{margin-top:.35rem;color:#94a3b8;font-size:.7rem;line-height:1.35}
+      .teacher-discount-edit-error{display:none;margin-top:.55rem;color:#fca5a5;font-size:.74rem}
+      .teacher-discount-edit-actions{display:flex;justify-content:flex-end;gap:.55rem;margin-top:1rem}
+      .teacher-discount-edit-actions .btn{min-width:7.5rem;justify-content:center}
       @media(max-width:560px){
         .teacher-confirm-box{padding:1rem}
         .teacher-confirm-actions{display:grid;grid-template-columns:1fr 1fr}
         .teacher-confirm-actions .btn{width:100%;min-width:0}
+        .teacher-discount-edit-box{padding:1rem}
+        .teacher-discount-edit-actions{display:grid;grid-template-columns:1fr 1fr}
+        .teacher-discount-edit-actions .btn{width:100%;min-width:0}
       }
       #panelProfesorModal .teacher-table-scroll{
         max-height:none;
@@ -3603,7 +3657,7 @@
         </div>
         <div class="student-actions-status" aria-live="polite">
           <strong id="accionesEstudianteEstado"><i class="fa-solid fa-circle-check"></i> Pantalla habilitada</strong>
-          <span class="student-actions-count">9 acciones disponibles</span>
+          <span class="student-actions-count">10 acciones disponibles</span>
         </div>
         <div class="student-actions-legend" role="note" aria-label="Leyenda de acciones">
           <span><i class="fa-solid fa-eye"></i> Información</span>
@@ -3612,6 +3666,36 @@
           <span class="legend-danger"><i class="fa-solid fa-triangle-exclamation"></i> Acción crítica</span>
         </div>
         <div id="accionesEstudianteContenido" class="student-actions-grid"></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="editarDescuentoEstudianteModal" role="dialog" aria-modal="true" aria-labelledby="editarDescuentoTitulo">
+      <div class="modal-box teacher-discount-edit-box" tabindex="-1">
+        <div class="teacher-discount-edit-header">
+          <span class="teacher-discount-edit-icon" aria-hidden="true"><i class="fa-solid fa-circle-minus"></i></span>
+          <div>
+            <h3 id="editarDescuentoTitulo">Editar descuento de puntos</h3>
+            <p id="editarDescuentoSubtitulo">Actualizá la penalización y su motivo.</p>
+          </div>
+        </div>
+        <div class="teacher-discount-edit-summary">
+          <span>Nota actual</span>
+          <strong id="editarDescuentoNotaActual">Pendiente</strong>
+        </div>
+        <div class="teacher-discount-edit-field">
+          <label for="editarDescuentoPuntos">Puntos a descontar</label>
+          <input id="editarDescuentoPuntos" type="number" min="0" max="10" step="0.1" value="0">
+          <div class="teacher-discount-edit-help">Usá 0 para quitar el descuento.</div>
+        </div>
+        <div class="teacher-discount-edit-field">
+          <label for="editarDescuentoMotivo">Motivo</label>
+          <textarea id="editarDescuentoMotivo" maxlength="500" placeholder="Explicá el motivo del descuento."></textarea>
+        </div>
+        <p id="editarDescuentoError" class="teacher-discount-edit-error" role="alert"></p>
+        <div class="teacher-discount-edit-actions">
+          <button class="btn btn-secondary" type="button" onclick="cerrarEditorDescuentoEstudiante()"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+          <button class="btn btn-warning" id="btnGuardarDescuentoEstudiante" type="button" onclick="guardarEditorDescuentoEstudiante()"><i class="fa-solid fa-floppy-disk"></i> Guardar descuento</button>
+        </div>
       </div>
     </div>
 
@@ -4662,7 +4746,7 @@
           if (!pantallaBloqueada) return;
           const destino = evento.target;
           const permitido = destino?.closest?.(
-              '#screenLockOverlay, #passwordModal, #firebaseAuthOverlay, #panelProfesorModal, #accionesEstudianteModal, #historialDesbloqueosModal, #detalleEstudianteProfesorModal, #confirmacionDocenteModal'
+              '#screenLockOverlay, #passwordModal, #firebaseAuthOverlay, #panelProfesorModal, #accionesEstudianteModal, #historialDesbloqueosModal, #detalleEstudianteProfesorModal, #confirmacionDocenteModal, #editarDescuentoEstudianteModal'
           );
           if (permitido) return;
           evento.preventDefault();
@@ -9456,6 +9540,75 @@
           modal?.style.removeProperty('display');
       }
 
+      let indiceEditorDescuentoEstudiante = null;
+
+      function cerrarEditorDescuentoEstudiante() {
+          document.getElementById('editarDescuentoEstudianteModal')?.classList.remove('active');
+          indiceEditorDescuentoEstudiante = null;
+      }
+
+      function abrirEditorDescuentoEstudiante(indice) {
+          const d = estudiantesProfesor[indice];
+          const modal = document.getElementById('editarDescuentoEstudianteModal');
+          if (!d || !modal) return;
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante';
+          const revision = d.revisionSalidas || {};
+          const nota = calcularNotaDefinitivaEstudiante(d);
+          indiceEditorDescuentoEstudiante = indice;
+          document.getElementById('editarDescuentoSubtitulo').textContent = `${nombre} · ${d.email || 'Sin email'}`;
+          document.getElementById('editarDescuentoNotaActual').textContent = nota === '—' ? 'Pendiente' : `${nota}/10`;
+          document.getElementById('editarDescuentoPuntos').value = Number(revision.penalizacion || 0).toFixed(1);
+          document.getElementById('editarDescuentoMotivo').value = revision.motivo || '';
+          const error = document.getElementById('editarDescuentoError');
+          error.textContent = '';
+          error.style.display = 'none';
+          modal.classList.add('active');
+          setTimeout(() => document.getElementById('editarDescuentoPuntos')?.focus(), 0);
+      }
+
+      async function guardarEditorDescuentoEstudiante() {
+          const indice = indiceEditorDescuentoEstudiante;
+          const d = Number.isInteger(indice) ? estudiantesProfesor[indice] : null;
+          if (!d?.uid) return;
+          const puntos = Math.max(0, Math.min(10, Number(document.getElementById('editarDescuentoPuntos')?.value) || 0));
+          const motivo = String(document.getElementById('editarDescuentoMotivo')?.value || '').trim();
+          const error = document.getElementById('editarDescuentoError');
+          if (puntos > 0 && !motivo) {
+              error.textContent = 'Escribí un motivo para aplicar un descuento.';
+              error.style.display = 'block';
+              document.getElementById('editarDescuentoMotivo')?.focus();
+              return;
+          }
+          const boton = document.getElementById('btnGuardarDescuentoEstudiante');
+          const original = boton?.innerHTML || '';
+          if (boton) {
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+          }
+          const revisionAnterior = d.revisionSalidas || {};
+          const revision = {
+              estado: puntos > 0 ? (revisionAnterior.estado === 'pendiente' ? 'penalizacion' : (revisionAnterior.estado || 'penalizacion')) : (revisionAnterior.estado || 'sin_observaciones'),
+              penalizacion: puntos,
+              motivo
+          };
+          const ok = await window.guardarRevisionDocenteFirebase?.(d.uid, revision);
+          if (boton) {
+              boton.disabled = false;
+              boton.innerHTML = original;
+          }
+          if (!ok) {
+              error.textContent = 'No se pudo guardar el descuento. Verificá los permisos de Firebase.';
+              error.style.display = 'block';
+              return;
+          }
+          d.revisionSalidas = {
+              ...revision,
+              revisadoPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || ''
+          };
+          cerrarEditorDescuentoEstudiante();
+          renderPanelProfesor();
+      }
+
       if (!window.__accionesEstudianteDelegadas) {
           window.__accionesEstudianteDelegadas = true;
           document.addEventListener('click', event => {
@@ -9495,6 +9648,7 @@
           contenido.innerHTML = `
             <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i><span>Ver detalle completo</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial de desbloqueos</span></button>
+            <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();abrirEditorDescuentoEstudiante(${indice})"><i class="fa-solid fa-circle-minus"></i><span>Editar descuento y motivo</span></button>
             <button class="btn btn-danger" ${bloqueado ? 'disabled title="La pantalla ya está bloqueada"' : ''} onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i><span>Bloquear pantalla</span></button>
             <button class="btn student-action-highlight" ${bloqueado ? '' : 'disabled title="La pantalla no está bloqueada"'} onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i><span>Desbloquear pantalla</span></button>
             <button class="btn ${pausado ? 'btn-success' : 'btn-warning'}" onclick="cerrarAccionesEstudiante();controlarCronometroEstudianteProfesor(${indice}, '${pausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${pausado ? 'fa-play' : 'fa-pause'}"></i><span>${pausado ? 'Reanudar' : 'Pausar'} cronómetro</span></button>
