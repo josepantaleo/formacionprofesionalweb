@@ -8880,12 +8880,18 @@
                       thAcciones.dataset.actionsColumn = 'true';
                       thAcciones.textContent = 'Acciones';
                       encabezadoAcciones.prepend(thAcciones);
+                      while (encabezadoAcciones.children.length > 12) {
+                          encabezadoAcciones.lastElementChild?.remove();
+                      }
                   }
               }
               if (!fila.querySelector('.acciones-principales-cell')) {
                   const celdaAcciones = document.createElement('td');
                   celdaAcciones.className = 'acciones-principales-cell';
                   fila.prepend(celdaAcciones);
+              }
+              while (fila.children.length > 12) {
+                  fila.lastElementChild?.remove();
               }
               const etiquetasColumnas = ['Estudiante','Email','Curso','División','Turno','Estado','Progreso','Nota definitiva','Cambios de pestaña','Desbloqueos','Última actualización','Detalle'];
               [...fila.children].forEach((celda, indiceCelda) => {
@@ -8963,14 +8969,6 @@
                   const indiceEstudiante = estudiantesProfesor.indexOf(
                       rows.find(r => String(r.email || '') === String(fila.querySelector('td:nth-child(3)')?.textContent || ''))
                   );
-                  const celdaDetalle = fila.children[12];
-                  if (celdaDetalle && !celdaDetalle.querySelector('.btn-abrir-acciones-estudiante')) {
-                      const vistaMovil = window.matchMedia && window.matchMedia('(max-width: 700px)').matches;
-                      celdaDetalle.style.display = vistaMovil ? 'block' : 'table-cell';
-                      celdaDetalle.style.width = vistaMovil ? '100%' : '';
-                      celdaDetalle.style.minWidth = vistaMovil ? '100%' : '';
-                      celdaDetalle.innerHTML = `<button type="button" class="btn btn-secondary btn-abrir-acciones-estudiante" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" onclick="abrirAccionesEstudiante(${indiceEstudiante})" title="Abrir acciones del estudiante"><i class="fa-solid fa-sliders"></i> Acciones</button>`;
-                  }
                   fila.nextElementSibling?.classList.contains('teacher-actions-row') && fila.nextElementSibling.remove();
                   const filaAcciones = document.createElement('tr');
                   filaAcciones.className = 'teacher-actions-row';
