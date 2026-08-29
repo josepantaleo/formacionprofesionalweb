@@ -8685,9 +8685,26 @@
           document.getElementById('accionesEstudianteModal')?.classList.remove('active');
       }
 
+      if (!window.__accionesEstudianteDelegadas) {
+          window.__accionesEstudianteDelegadas = true;
+          document.addEventListener('click', event => {
+              const boton = event.target.closest?.('.btn-abrir-acciones-estudiante');
+              if (!boton || boton.dataset.listenerBound === 'true') return;
+              const indice = Number(boton.dataset.estudianteIndex);
+              if (Number.isInteger(indice)) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  abrirAccionesEstudiante(indice);
+              }
+          });
+      }
+
       function abrirAccionesEstudiante(indice) {
           const d = estudiantesProfesor[indice];
-          if (!d) return;
+          if (!d) {
+              alert('No se pudo identificar al estudiante seleccionado.');
+              return;
+          }
           const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante';
           const bloqueado = d.pantallaBloqueada === true;
           const pausado = d.controlCronometroIndividual?.pausado === true;
@@ -8703,7 +8720,11 @@
             <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Reiniciar contador de pestañas</button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i> Borrar consultas IA</button>
             <button class="btn student-action-danger" onclick="cerrarAccionesEstudiante();eliminarEstudianteProfesor(estudiantesProfesor[${indice}])"><i class="fa-solid fa-trash-can"></i> Eliminar estudiante</button>`;
-          document.getElementById('accionesEstudianteModal').classList.add('active');
+          const modal = document.getElementById('accionesEstudianteModal');
+          modal?.classList.add('active');
+          if (modal && !modal.classList.contains('active')) {
+              modal.style.display = 'flex';
+          }
       }
       function renderPanelProfesor() {
           renderBandejaSolicitudesPendientes();
@@ -8902,7 +8923,20 @@
               const celdaAccionesPrincipal = fila.children[0];
               if (celdaAccionesPrincipal && !celdaAccionesPrincipal.querySelector('.btn-abrir-acciones-estudiante')) {
                   const indiceEstudiantePrincipal = estudiantesProfesor.indexOf(estudiante);
-                  celdaAccionesPrincipal.innerHTML = `<button type="button" class="btn btn-secondary btn-abrir-acciones-estudiante" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" onclick="abrirAccionesEstudiante(${indiceEstudiantePrincipal})" title="Abrir acciones del estudiante"><i class="fa-solid fa-sliders"></i> Acciones</button>`;
+                      const botonAcciones = document.createElement('button');
+                      botonAcciones.type = 'button';
+                      botonAcciones.className = 'btn btn-secondary btn-abrir-acciones-estudiante';
+                      botonAcciones.dataset.estudianteIndex = String(indiceEstudiantePrincipal);
+                      botonAcciones.dataset.listenerBound = 'true';
+                      botonAcciones.style.cssText = 'width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem';
+                      botonAcciones.title = 'Abrir acciones del estudiante';
+                      botonAcciones.innerHTML = '<i class="fa-solid fa-sliders"></i> Acciones';
+                      botonAcciones.addEventListener('click', event => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          abrirAccionesEstudiante(indiceEstudiantePrincipal);
+                      });
+                      celdaAccionesPrincipal.appendChild(botonAcciones);
               }
               if (celdaEstado && estudiante.pantallaBloqueada !== true) {
                   const configuracion = {
