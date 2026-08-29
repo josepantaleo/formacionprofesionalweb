@@ -2477,6 +2477,44 @@
         }
       };
 
+      window.bloquearPantallaEstudianteFirebase = async function(uid, detalle = {}) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !(await verificarUsuarioDocente(user))) return false;
+        try {
+          const estudianteRef = doc(database, "estudiantes", uid);
+          const responsable = user.email || user.displayName || user.uid;
+          const motivo = String(detalle.motivo || "Bloqueo manual solicitado por el docente").trim();
+          const bloqueoId = `${Date.now()}-${uid}`;
+          const bloqueado = await runTransaction(database, async transaction => {
+            const snapshot = await transaction.get(estudianteRef);
+            if (!snapshot.exists() || snapshot.data().pantallaBloqueada === true) return false;
+            const datos = snapshot.data();
+            transaction.set(estudianteRef, {
+              pantallaBloqueada: true,
+              pantallaBloqueadaEn: new Date().toISOString(),
+              pantallaBloqueadaSalidas: Number(datos.salidasPestana || 0),
+              pantallaBloqueadaSeccion: String(detalle.seccion || datos.seccionActiva || ""),
+              bloqueoManual: true,
+              ultimoBloqueoManual: {
+                id: bloqueoId,
+                por: responsable,
+                porUid: user.uid,
+                motivo,
+                en: serverTimestamp()
+              },
+              actualizadoEn: serverTimestamp()
+            }, { merge: true });
+            return true;
+          });
+          return bloqueado === true;
+        } catch (error) {
+          console.error("Error bloqueando manualmente la pantalla:", error);
+          return false;
+        }
+      };
+
       window.desbloquearPantallaEstudianteFirebase = async function(uid, detalle = {}) {
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
@@ -7902,6 +7940,36 @@
           alert('Pantalla desbloqueada y evento registrado en el historial.');
       }
 
+      async function bloquearPantallaEstudianteProfesor(indice) {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) { alert('No se encontró el identificador Firebase del estudiante.'); return; }
+          if (d.pantallaBloqueada === true) {
+              alert('Este estudiante ya se encuentra bloqueado.');
+              return;
+          }
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'este estudiante';
+          if (!confirm(`¿Bloquear manualmente la pantalla de ${nombre}?`)) return;
+          const motivoIngresado = prompt(
+              'Indicá el motivo del bloqueo manual:',
+              'Bloqueo preventivo solicitado por el docente'
+          );
+          if (motivoIngresado === null) return;
+          const motivo = motivoIngresado.trim() || 'Bloqueo preventivo solicitado por el docente';
+          const ok = await window.bloquearPantallaEstudianteFirebase?.(d.uid, {
+              motivo,
+              seccion: d.seccionActiva || ''
+          });
+          if (!ok) {
+              alert('No se pudo bloquear la pantalla. Verificá la autorización docente y las reglas de Firestore.');
+              return;
+          }
+          d.pantallaBloqueada = true;
+          d.bloqueoManual = true;
+          d.pantallaBloqueadaEn = new Date().toISOString();
+          renderPanelProfesor();
+          alert('Pantalla bloqueada y registrada correctamente.');
+      }
+
       function renderPreguntaProfesor(p, indice) {
           const seleccionadas = Array.isArray(p?.seleccionadas) ? p.seleccionadas : [];
           const opciones = Array.isArray(p?.opciones) ? p.opciones : [];
@@ -8615,6 +8683,7 @@
             <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i> Ver detalle completo</button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i> Historial de desbloqueos</button>
             ${bloqueado ? `<button class="btn student-action-highlight" onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear pantalla</button>` : ''}
+            ${!bloqueado ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i> Bloquear pantalla</button>` : ''}
             <button class="btn ${pausado ? 'btn-success' : 'btn-warning'}" onclick="cerrarAccionesEstudiante();controlarCronometroEstudianteProfesor(${indice}, '${pausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${pausado ? 'fa-play' : 'fa-pause'}"></i> ${pausado ? 'Reanudar' : 'Pausar'} cronómetro</button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')"><i class="fa-solid fa-clock-rotate-left"></i> Reiniciar cronómetro a 40:00</button>
             <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i> Reiniciar contador de pestañas</button>
