@@ -1531,11 +1531,28 @@
        .discount-history-reasons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;margin-top:.7rem}
        .discount-history-reason{padding:.6rem;border-radius:6px;background:rgba(30,41,59,.68);color:#cbd5e1;font-size:.78rem;line-height:1.45;overflow-wrap:anywhere}
        .discount-history-reason small{display:block;margin-bottom:.25rem;color:#94a3b8;font-weight:700;text-transform:uppercase}
+       .discount-history-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:.65rem;align-items:end;margin-bottom:1rem;padding:.8rem;border:1px solid rgba(56,189,248,.22);border-radius:7px;background:rgba(15,23,42,.64)}
+       .discount-history-filters[hidden]{display:none}
+       .discount-history-quick-filters{grid-column:1 / -1;display:flex;align-items:center;gap:.45rem;flex-wrap:wrap;padding-bottom:.65rem;border-bottom:1px solid rgba(148,163,184,.18)}
+       .discount-history-quick-filters span{margin-right:.2rem;color:#94a3b8;font-size:.72rem;font-weight:700}
+       .discount-history-quick-filter{min-height:2.15rem;padding:.4rem .65rem !important;border-color:rgba(56,189,248,.28) !important;background:rgba(30,41,59,.78);color:#cbd5e1}
+       .discount-history-quick-filter.is-active{background:#0369a1;color:#fff;border-color:#38bdf8 !important;box-shadow:0 0 0 2px rgba(56,189,248,.14)}
+       .discount-history-filter{display:flex;flex-direction:column;gap:.3rem;min-width:0}
+       .discount-history-filter label{color:#cbd5e1;font-size:.72rem;font-weight:700}
+       .discount-history-filter input,.discount-history-filter select{width:100%;min-width:0;height:2.45rem;padding:.45rem .55rem;border:1px solid rgba(148,163,184,.35);border-radius:6px;background:#0f172a;color:#e2e8f0}
+       .discount-history-filter input:focus,.discount-history-filter select:focus{outline:2px solid rgba(56,189,248,.5);outline-offset:1px;border-color:#38bdf8}
+       .discount-history-filter-clear{height:2.45rem;white-space:nowrap}
        @media(max-width:620px){
          .history-modal-box{width:calc(100vw - 1rem);max-height:94vh;padding:.9rem}
          .history-modal-header{align-items:center}
          .history-modal-header .btn{width:100%}
          .history-event-meta,.discount-history-reasons{grid-template-columns:1fr}
+         .discount-history-filters{grid-template-columns:1fr 1fr}
+         .discount-history-quick-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+         .discount-history-quick-filters span{grid-column:1 / -1}
+         .discount-history-quick-filter{width:100%;min-width:0;padding:.4rem .25rem !important}
+         .discount-history-filter.teacher{grid-column:1 / -1}
+         .discount-history-filter-clear{grid-column:1 / -1;width:100%}
        }
       .student-actions-modal-box{
         width:min(620px,calc(100vw - 1.5rem));
@@ -3734,6 +3751,29 @@
             <p id="historialDescuentosSubtitulo">Auditoría completa de cambios de puntos.</p>
           </div>
           <button class="btn btn-secondary" type="button" onclick="cerrarHistorialDescuentos()"><i class="fa-solid fa-xmark"></i> Cerrar</button>
+        </div>
+        <div id="historialDescuentosFiltros" class="discount-history-filters" hidden>
+          <div class="discount-history-quick-filters" aria-label="Filtros rápidos por fecha">
+            <span><i class="fa-solid fa-bolt"></i> Períodos rápidos</span>
+            <button class="btn discount-history-quick-filter" type="button" data-dias="1" onclick="aplicarFiltroRapidoHistorialDescuentos(1)" title="Mostrar solamente los cambios de hoy">Hoy</button>
+            <button class="btn discount-history-quick-filter" type="button" data-dias="7" onclick="aplicarFiltroRapidoHistorialDescuentos(7)" title="Mostrar los cambios de hoy y los seis días anteriores">7 días</button>
+            <button class="btn discount-history-quick-filter" type="button" data-dias="30" onclick="aplicarFiltroRapidoHistorialDescuentos(30)" title="Mostrar los cambios de hoy y los veintinueve días anteriores">30 días</button>
+          </div>
+          <div class="discount-history-filter">
+            <label for="historialDescuentosDesde">Desde</label>
+            <input id="historialDescuentosDesde" type="date" onchange="aplicarFiltrosHistorialDescuentos()">
+          </div>
+          <div class="discount-history-filter">
+            <label for="historialDescuentosHasta">Hasta</label>
+            <input id="historialDescuentosHasta" type="date" onchange="aplicarFiltrosHistorialDescuentos()">
+          </div>
+          <div class="discount-history-filter teacher">
+            <label for="historialDescuentosDocente">Docente</label>
+            <select id="historialDescuentosDocente" onchange="aplicarFiltrosHistorialDescuentos()">
+              <option value="">Todos los docentes</option>
+            </select>
+          </div>
+          <button class="btn btn-secondary discount-history-filter-clear" type="button" onclick="limpiarFiltrosHistorialDescuentos()"><i class="fa-solid fa-filter-circle-xmark"></i> Limpiar</button>
         </div>
         <div id="historialDescuentosContenido"></div>
       </div>
@@ -9539,8 +9579,133 @@
               </article>`).join('')}`;
       }
 
+      let historialDescuentosActual = [];
+      let estudianteHistorialDescuentosActual = null;
+
+      function fechaHistorialDescuento(valor) {
+          if (!valor) return null;
+          const fecha = valor.toDate ? valor.toDate() : new Date(valor);
+          return Number.isNaN(fecha.getTime()) ? null : fecha;
+      }
+
+      function formatoFechaHistorialDescuento(valor) {
+          const fecha = fechaHistorialDescuento(valor);
+          return fecha ? fecha.toLocaleString('es-AR') : 'Sin fecha';
+      }
+
+      function formatoPuntosHistorialDescuento(valor) {
+          return Number(valor || 0).toFixed(1);
+      }
+
+      function fechaLocalParaInput(fecha) {
+          const anio = fecha.getFullYear();
+          const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+          const dia = String(fecha.getDate()).padStart(2, '0');
+          return `${anio}-${mes}-${dia}`;
+      }
+
+      function actualizarFiltroRapidoActivoHistorialDescuentos() {
+          const valorDesde = document.getElementById('historialDescuentosDesde')?.value || '';
+          const valorHasta = document.getElementById('historialDescuentosHasta')?.value || '';
+          const hoy = new Date();
+          hoy.setHours(0, 0, 0, 0);
+          const hastaEsperado = fechaLocalParaInput(hoy);
+          document.querySelectorAll('.discount-history-quick-filter').forEach(boton => {
+              const dias = Number(boton.dataset.dias || 0);
+              const desdeEsperado = new Date(hoy);
+              desdeEsperado.setDate(desdeEsperado.getDate() - Math.max(0, dias - 1));
+              const activo = dias > 0 &&
+                  valorDesde === fechaLocalParaInput(desdeEsperado) &&
+                  valorHasta === hastaEsperado;
+              boton.classList.toggle('is-active', activo);
+              boton.setAttribute('aria-pressed', activo ? 'true' : 'false');
+          });
+      }
+
+      function aplicarFiltroRapidoHistorialDescuentos(dias) {
+          const cantidadDias = Math.max(1, Number(dias) || 1);
+          const hasta = new Date();
+          hasta.setHours(0, 0, 0, 0);
+          const desde = new Date(hasta);
+          desde.setDate(desde.getDate() - (cantidadDias - 1));
+          const campoDesde = document.getElementById('historialDescuentosDesde');
+          const campoHasta = document.getElementById('historialDescuentosHasta');
+          if (campoDesde) campoDesde.value = fechaLocalParaInput(desde);
+          if (campoHasta) campoHasta.value = fechaLocalParaInput(hasta);
+          aplicarFiltrosHistorialDescuentos();
+      }
+
       function cerrarHistorialDescuentos() {
           document.getElementById('historialDescuentosModal')?.classList.remove('active');
+          historialDescuentosActual = [];
+          estudianteHistorialDescuentosActual = null;
+      }
+
+      function limpiarFiltrosHistorialDescuentos() {
+          const desde = document.getElementById('historialDescuentosDesde');
+          const hasta = document.getElementById('historialDescuentosHasta');
+          const docente = document.getElementById('historialDescuentosDocente');
+          if (desde) desde.value = '';
+          if (hasta) hasta.value = '';
+          if (docente) docente.value = '';
+          aplicarFiltrosHistorialDescuentos();
+      }
+
+      function aplicarFiltrosHistorialDescuentos() {
+          const contenido = document.getElementById('historialDescuentosContenido');
+          if (!contenido || !estudianteHistorialDescuentosActual) return;
+          const valorDesde = document.getElementById('historialDescuentosDesde')?.value || '';
+          const valorHasta = document.getElementById('historialDescuentosHasta')?.value || '';
+          const docenteSeleccionado = document.getElementById('historialDescuentosDocente')?.value || '';
+          const fechaDesde = valorDesde ? new Date(`${valorDesde}T00:00:00`) : null;
+          const fechaHasta = valorHasta ? new Date(`${valorHasta}T23:59:59.999`) : null;
+          actualizarFiltroRapidoActivoHistorialDescuentos();
+          const filtrados = historialDescuentosActual.filter(evento => {
+              const fecha = fechaHistorialDescuento(evento.cambiadoEn);
+              const docente = String(evento.docente || 'Sin registrar');
+              if (docenteSeleccionado && docente !== docenteSeleccionado) return false;
+              if (fechaDesde && (!fecha || fecha < fechaDesde)) return false;
+              if (fechaHasta && (!fecha || fecha > fechaHasta)) return false;
+              return true;
+          });
+          const d = estudianteHistorialDescuentosActual;
+          const descuentoActual = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
+          const resumen = `
+            <div class="teacher-detail-summary" style="margin:0 0 1rem">
+              <div class="teacher-detail-stat"><small>Coincidencias</small><strong>${filtrados.length}</strong></div>
+              <div class="teacher-detail-stat"><small>Total de cambios</small><strong>${historialDescuentosActual.length}</strong></div>
+              <div class="teacher-detail-stat"><small>Descuento actual</small><strong>${formatoPuntosHistorialDescuento(descuentoActual)} puntos</strong></div>
+            </div>`;
+          if (!filtrados.length) {
+              contenido.innerHTML = `${resumen}<div class="history-event">
+                <strong><i class="fa-solid fa-filter-circle-xmark"></i> No hay cambios que coincidan con los filtros.</strong>
+                <div style="margin-top:.35rem;color:var(--text-muted)">Modificá las fechas, elegí otro docente o limpiá los filtros.</div>
+              </div>`;
+              return;
+          }
+          contenido.innerHTML = `${resumen}${filtrados.map(evento => {
+              const valorNuevo = Number(evento.valorNuevo || 0);
+              const motivoAnterior = evento.motivoAnterior || 'Sin motivo';
+              const motivoNuevo = evento.motivoNuevo || 'Sin motivo';
+              const numeroCambio = historialDescuentosActual.length - historialDescuentosActual.indexOf(evento);
+              return `
+                <article class="history-event">
+                  <strong><i class="fa-solid fa-pen-to-square"></i> Cambio ${numeroCambio}</strong>
+                  <div class="discount-history-change">
+                    <span class="discount-history-value old"><i class="fa-solid fa-minus"></i> ${formatoPuntosHistorialDescuento(evento.valorAnterior)} puntos</span>
+                    <i class="fa-solid fa-arrow-right discount-history-arrow" aria-hidden="true"></i>
+                    <span class="discount-history-value new ${valorNuevo === 0 ? 'cleared' : ''}"><i class="fa-solid ${valorNuevo === 0 ? 'fa-circle-check' : 'fa-minus'}"></i> ${formatoPuntosHistorialDescuento(valorNuevo)} puntos</span>
+                  </div>
+                  <div class="history-event-meta">
+                    <span><b>Fecha:</b> ${escapeHtml(formatoFechaHistorialDescuento(evento.cambiadoEn))}</span>
+                    <span><b>Docente:</b> ${escapeHtml(evento.docente || 'Sin registrar')}</span>
+                  </div>
+                  <div class="discount-history-reasons">
+                    <div class="discount-history-reason"><small>Motivo anterior</small>${escapeHtml(motivoAnterior)}</div>
+                    <div class="discount-history-reason"><small>Motivo nuevo</small>${escapeHtml(motivoNuevo)}</div>
+                  </div>
+                </article>`;
+          }).join('')}`;
       }
 
       async function abrirHistorialDescuentos(indice) {
@@ -9554,10 +9719,12 @@
           const modal = document.getElementById('historialDescuentosModal');
           const contenido = document.getElementById('historialDescuentosContenido');
           const subtitulo = document.getElementById('historialDescuentosSubtitulo');
-          if (!modal || !contenido || !subtitulo) return;
+          const filtros = document.getElementById('historialDescuentosFiltros');
+          if (!modal || !contenido || !subtitulo || !filtros) return;
           const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante';
           subtitulo.textContent = `${nombre} · ${d.email || 'Sin email'}`;
           modal.classList.add('active');
+          filtros.hidden = true;
           contenido.innerHTML = '<p style="color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> Cargando historial...</p>';
           window.ultimoErrorHistorialDescuentos = null;
           const historial = await window.obtenerHistorialDescuentosFirebase?.(d.uid) || [];
@@ -9569,41 +9736,22 @@
               </div>`;
               return;
           }
-          const formatoFecha = valor => {
-              if (!valor) return 'Sin fecha';
-              if (valor.toDate) return valor.toDate().toLocaleString('es-AR');
-              const fecha = new Date(valor);
-              return Number.isNaN(fecha.getTime()) ? 'Sin fecha' : fecha.toLocaleString('es-AR');
-          };
-          const formatoPuntos = valor => Number(valor || 0).toFixed(1);
-          const descuentoActual = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
-          contenido.innerHTML = `
-            <div class="teacher-detail-summary" style="margin:0 0 1rem">
-              <div class="teacher-detail-stat"><small>Total de cambios</small><strong>${historial.length}</strong></div>
-              <div class="teacher-detail-stat"><small>Descuento actual</small><strong>${formatoPuntos(descuentoActual)} puntos</strong></div>
-            </div>
-            ${historial.map((evento, posicion) => {
-              const valorNuevo = Number(evento.valorNuevo || 0);
-              const motivoAnterior = evento.motivoAnterior || 'Sin motivo';
-              const motivoNuevo = evento.motivoNuevo || 'Sin motivo';
-              return `
-                <article class="history-event">
-                  <strong><i class="fa-solid fa-pen-to-square"></i> Cambio ${historial.length - posicion}</strong>
-                  <div class="discount-history-change">
-                    <span class="discount-history-value old"><i class="fa-solid fa-minus"></i> ${formatoPuntos(evento.valorAnterior)} puntos</span>
-                    <i class="fa-solid fa-arrow-right discount-history-arrow" aria-hidden="true"></i>
-                    <span class="discount-history-value new ${valorNuevo === 0 ? 'cleared' : ''}"><i class="fa-solid ${valorNuevo === 0 ? 'fa-circle-check' : 'fa-minus'}"></i> ${formatoPuntos(valorNuevo)} puntos</span>
-                  </div>
-                  <div class="history-event-meta">
-                    <span><b>Fecha:</b> ${escapeHtml(formatoFecha(evento.cambiadoEn))}</span>
-                    <span><b>Docente:</b> ${escapeHtml(evento.docente || 'Sin registrar')}</span>
-                  </div>
-                  <div class="discount-history-reasons">
-                    <div class="discount-history-reason"><small>Motivo anterior</small>${escapeHtml(motivoAnterior)}</div>
-                    <div class="discount-history-reason"><small>Motivo nuevo</small>${escapeHtml(motivoNuevo)}</div>
-                  </div>
-                </article>`;
-            }).join('')}`;
+          historialDescuentosActual = historial;
+          estudianteHistorialDescuentosActual = d;
+          const selectorDocente = document.getElementById('historialDescuentosDocente');
+          const docentes = [...new Set(historial.map(evento => String(evento.docente || 'Sin registrar')))]
+              .sort((a, b) => a.localeCompare(b, 'es'));
+          selectorDocente.innerHTML = '<option value="">Todos los docentes</option>';
+          docentes.forEach(docente => {
+              const opcion = document.createElement('option');
+              opcion.value = docente;
+              opcion.textContent = docente;
+              selectorDocente.appendChild(opcion);
+          });
+          document.getElementById('historialDescuentosDesde').value = '';
+          document.getElementById('historialDescuentosHasta').value = '';
+          filtros.hidden = false;
+          aplicarFiltrosHistorialDescuentos();
       }
 
       let confirmacionDocentePendiente = null;
