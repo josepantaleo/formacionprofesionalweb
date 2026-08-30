@@ -3,6 +3,7 @@
 const VERSION_REQUERIDA="1.3.0";
 const CLAVE_TEMA_PANEL_DOCENTE="teacher_panel_theme";
 let historialActual=[],estudianteHistorial=null,revisionesActuales=new Map(),salidasSeleccionadas=new Set(),grupoRevisionActual="";
+let docentesGestionActual=[],docenteGestionEditando="";
 const txt=v=>String(v||"").trim();
 function aplicarTemaPanelDocente(tema){
  const claro=tema==="light";
@@ -103,9 +104,135 @@ function asegurarPaneles(){
  asegurarPopupLimite();
  actualizarIndicadorLimite();
  asegurarPestanasPanelDocente();
+ asegurarGestionDocentes();
 }
 function crearPanelDocente(id,titulo,descripcion){
  const panel=document.createElement("section");panel.id=`teacherWorkspacePanel-${id}`;panel.className="teacher-workspace-panel";panel.dataset.teacherPanel=id;panel.innerHTML=`<div class="teacher-workspace-panel-heading"><div><h3>${titulo}</h3><p>${descripcion}</p></div></div>`;return panel;
+}
+function emailSesionDocente(){
+ return txt(window.firebaseTeacherUser?.email||window.firebaseCurrentUser?.email).toLowerCase();
+}
+function esAdministradorPrincipalGestion(){
+ return emailSesionDocente()===txt(window.PRIMARY_TEACHER_ADMIN_EMAIL).toLowerCase();
+}
+function fechaGestion(valor){
+ const tiempo=valor?.toMillis?.()||Number(valor?.seconds||0)*1000||Date.parse(valor||"");
+ return Number.isFinite(tiempo)&&tiempo>0?new Date(tiempo).toLocaleString("es-AR"):"Sin fecha";
+}
+async function confirmarGestionDocente(opciones){
+ if(typeof window.mostrarConfirmacionDocente==="function"){
+  const resultado=await window.mostrarConfirmacionDocente(opciones);
+  return resultado?.confirmado===true;
+ }
+ return window.confirm(`${opciones.titulo}\n\n${opciones.mensaje}`);
+}
+function asegurarModalesGestionDocentes(){
+ if(!document.getElementById("gestionDocenteModal")){
+  const modal=document.createElement("div");modal.id="gestionDocenteModal";modal.className="modal-overlay";modal.setAttribute("role","dialog");modal.setAttribute("aria-modal","true");modal.setAttribute("aria-labelledby","gestionDocenteTitulo");
+  modal.innerHTML=`<div class="modal-box teacher-management-box" tabindex="-1"><div class="teacher-management-modal-header"><div><h3 id="gestionDocenteTitulo"><i class="fa-solid fa-user-shield"></i> Alta de docente</h3><p id="gestionDocenteDescripcion">Registrá una cuenta de Google verificada.</p></div><button class="btn btn-secondary" id="cerrarGestionDocente" type="button" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button></div><div class="teacher-management-form"><label>Nombre y apellido<input id="gestionDocenteNombre" maxlength="120" autocomplete="off" placeholder="Ej.: María López"></label><label>Correo de Google<input id="gestionDocenteEmail" type="email" maxlength="254" autocomplete="off" placeholder="docente@gmail.com"></label><div class="teacher-management-role"><i class="fa-solid fa-key"></i><span>Rol asignado: <strong>Docente</strong>. Solo la cuenta institucional es administradora principal.</span></div></div><div id="gestionDocenteError" class="teacher-management-error" role="alert"></div><div class="teacher-management-actions"><button class="btn btn-secondary" id="cancelarGestionDocente" type="button">Cancelar</button><button class="btn btn-primary" id="guardarGestionDocente" type="button"><i class="fa-solid fa-floppy-disk"></i> Guardar docente</button></div></div>`;
+  document.body.appendChild(modal);
+  const cerrar=()=>modal.classList.remove("active");
+  modal.querySelector("#cerrarGestionDocente").onclick=cerrar;
+  modal.querySelector("#cancelarGestionDocente").onclick=cerrar;
+  modal.onclick=e=>{if(e.target===modal)cerrar()};
+  modal.querySelector("#guardarGestionDocente").onclick=guardarFormularioGestionDocente;
+ }
+ if(!document.getElementById("historialGestionDocentesModal")){
+  const modal=document.createElement("div");modal.id="historialGestionDocentesModal";modal.className="modal-overlay";modal.setAttribute("role","dialog");modal.setAttribute("aria-modal","true");modal.setAttribute("aria-labelledby","historialGestionDocentesTitulo");
+  modal.innerHTML=`<div class="modal-box history-modal-box teacher-management-history-box"><div class="history-modal-header"><div><h3 id="historialGestionDocentesTitulo"><i class="fa-solid fa-clock-rotate-left"></i> Historial de docentes</h3><p>Altas, modificaciones, cambios de correo, bajas y reactivaciones.</p></div><button class="btn btn-secondary" id="cerrarHistorialGestionDocentes" type="button"><i class="fa-solid fa-xmark"></i> Cerrar</button></div><div id="historialGestionDocentesContenido" class="teacher-management-history-list"></div></div>`;
+  document.body.appendChild(modal);
+  modal.querySelector("#cerrarHistorialGestionDocentes").onclick=()=>modal.classList.remove("active");
+  modal.onclick=e=>{if(e.target===modal)modal.classList.remove("active")};
+ }
+}
+function asegurarGestionDocentes(){
+ const lista=document.getElementById("listaDocentesAutorizados");if(!lista)return;
+ asegurarModalesGestionDocentes();
+ let panel=document.getElementById("gestionDocentesProfesor");
+ if(!panel){
+  panel=document.createElement("div");panel.id="gestionDocentesProfesor";panel.className="teacher-management-panel";
+  panel.innerHTML=`<div class="teacher-management-toolbar"><div><strong><i class="fa-solid fa-users-gear"></i> Gestión de accesos docentes</strong><p id="gestionDocentesPermiso"></p></div><div class="teacher-management-toolbar-actions"><button class="btn btn-primary" id="altaDocenteAutorizado" type="button"><i class="fa-solid fa-user-plus"></i> Alta docente</button><button class="btn btn-secondary" id="verHistorialDocentes" type="button"><i class="fa-solid fa-clock-rotate-left"></i> Historial</button><button class="btn btn-secondary" id="actualizarDocentesAutorizados" type="button" aria-label="Actualizar docentes" title="Actualizar lista"><i class="fa-solid fa-rotate"></i></button></div></div><div id="estadoGestionDocentes" class="teacher-management-state"></div>`;
+  lista.parentNode.insertBefore(panel,lista);
+  panel.querySelector("#altaDocenteAutorizado").onclick=()=>abrirFormularioGestionDocente();
+  panel.querySelector("#verHistorialDocentes").onclick=abrirHistorialGestionDocentes;
+  panel.querySelector("#actualizarDocentesAutorizados").onclick=cargarGestionDocentes;
+  setTimeout(cargarGestionDocentes,0);
+ }
+ const administrador=esAdministradorPrincipalGestion();
+ panel.querySelector("#altaDocenteAutorizado").hidden=!administrador;
+ panel.querySelector("#gestionDocentesPermiso").textContent=administrador
+  ? "Sos el administrador principal. Podés gestionar otras cuentas docentes."
+  : `Administración exclusiva de ${window.PRIMARY_TEACHER_ADMIN_EMAIL||"la cuenta institucional"}.`;
+}
+function abrirFormularioGestionDocente(email=""){
+ if(!esAdministradorPrincipalGestion())return;
+ asegurarModalesGestionDocentes();
+ const modal=document.getElementById("gestionDocenteModal"),registro=docentesGestionActual.find(x=>txt(x.email).toLowerCase()===txt(email).toLowerCase());
+ docenteGestionEditando=registro?.email||"";
+ modal.querySelector("#gestionDocenteTitulo").innerHTML=`<i class="fa-solid ${registro?"fa-user-pen":"fa-user-plus"}"></i> ${registro?"Editar docente":"Alta de docente"}`;
+ modal.querySelector("#gestionDocenteDescripcion").textContent=registro?"Modificá el nombre o el correo autorizado.":"Registrá una cuenta de Google con correo verificado.";
+ modal.querySelector("#gestionDocenteNombre").value=registro?.nombre||"";
+ modal.querySelector("#gestionDocenteEmail").value=registro?.email||"";
+ modal.querySelector("#gestionDocenteError").textContent="";
+ modal.classList.add("active");
+ setTimeout(()=>modal.querySelector("#gestionDocenteNombre")?.focus(),0);
+}
+async function guardarFormularioGestionDocente(){
+ const modal=document.getElementById("gestionDocenteModal"),nombre=txt(modal.querySelector("#gestionDocenteNombre").value),email=txt(modal.querySelector("#gestionDocenteEmail").value).toLowerCase(),error=modal.querySelector("#gestionDocenteError"),boton=modal.querySelector("#guardarGestionDocente");
+ error.textContent="";
+ if(!nombre){error.textContent="Ingresá el nombre del docente.";return}
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){error.textContent="Ingresá un correo válido.";return}
+ const cambioCorreo=docenteGestionEditando&&email!==docenteGestionEditando.toLowerCase();
+ const confirmado=await confirmarGestionDocente({tipo:"warning",icono:docenteGestionEditando?"fa-user-pen":"fa-user-plus",titulo:docenteGestionEditando?"Confirmar modificación":"Confirmar alta docente",mensaje:docenteGestionEditando?`Se actualizará el acceso de ${docenteGestionEditando}.${cambioCorreo?` El correo anterior quedará dado de baja y se habilitará ${email}.`:""}`:`Se autorizará a ${email} para ingresar al panel docente.`,detalles:["El cambio quedará registrado con fecha y administrador.","La cuenta debe tener el correo de Google verificado."],confirmarTexto:docenteGestionEditando?"Guardar cambios":"Dar de alta",confirmarIcono:"fa-check",confirmarClase:"btn-warning"});
+ if(!confirmado)return;
+ const original=boton.innerHTML;boton.disabled=true;boton.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+ try{
+  const resultado=await window.guardarDocenteAutorizadoFirebase?.({nombre,email},docenteGestionEditando);
+  if(!resultado?.ok){const mensajes={"solo-administrador-principal":"Solo el administrador principal puede realizar este cambio.","email-invalido":"El correo no es válido.","nombre-invalido":"El nombre no es válido.","administrador-protegido":"La cuenta administradora principal está protegida.","docente-existente":"Ese docente ya está activo.","email-en-uso":"El nuevo correo ya pertenece a otro docente activo."};error.textContent=mensajes[resultado?.error]||"No se pudo guardar. Publicá las reglas actualizadas de Firestore.";return}
+  modal.classList.remove("active");await cargarGestionDocentes();
+ }catch(e){console.error(e);error.textContent=`No se pudo guardar${e?.code?` (${e.code})`:""}. Publicá las reglas actualizadas de Firestore.`}
+ finally{boton.disabled=false;boton.innerHTML=original}
+}
+async function cambiarEstadoGestionDocente(email,activar){
+ if(!esAdministradorPrincipalGestion())return;
+ const registro=docentesGestionActual.find(x=>txt(x.email).toLowerCase()===txt(email).toLowerCase());if(!registro)return;
+ const confirmado=await confirmarGestionDocente({tipo:activar?"warning":"danger",icono:activar?"fa-user-check":"fa-user-slash",titulo:activar?"Reactivar docente":"Dar de baja al docente",mensaje:activar?`Se restablecerá el acceso de ${registro.email}.`:`${registro.email} perderá el acceso al panel y a las operaciones docentes.`,detalles:["El historial anterior no se eliminará.","La acción quedará registrada con fecha y administrador."],confirmarTexto:activar?"Reactivar":"Dar de baja",confirmarIcono:activar?"fa-user-check":"fa-user-slash",confirmarClase:activar?"btn-warning":"btn-danger"});
+ if(!confirmado)return;
+ const resultado=await window.cambiarEstadoDocenteFirebase?.(registro.email,activar,activar?"":`Baja de ${registro.nombre||registro.email}`);
+ if(!resultado?.ok){alert(resultado?.error==="administrador-protegido"?"La cuenta administradora principal no puede darse de baja.":"No se pudo actualizar el docente. Publicá las reglas actualizadas.");return}
+ await cargarGestionDocentes();
+}
+function renderGestionDocentes(docentes){
+ const lista=document.getElementById("listaDocentesAutorizados"),cantidad=document.getElementById("cantidadDocentesAutorizados");if(!lista)return;
+ const administrador=esAdministradorPrincipalGestion(),correoSesion=emailSesionDocente();
+ if(cantidad)cantidad.textContent=`(${docentes.filter(x=>x.activo===true).length} activos · ${docentes.length} registros)`;
+ lista.innerHTML=docentes.map(registro=>{
+  const email=txt(registro.email).toLowerCase(),principal=email===txt(window.PRIMARY_TEACHER_ADMIN_EMAIL).toLowerCase(),actual=email===correoSesion,activo=registro.activo===true;
+  return `<article class="teacher-management-card ${activo?"is-active":"is-inactive"} ${principal?"is-admin":""}"><div class="teacher-management-card-main"><span class="teacher-management-avatar"><i class="fa-solid ${principal?"fa-crown":activo?"fa-user-shield":"fa-user-slash"}"></i></span><div><div class="teacher-management-name">${escapeHtml(registro.nombre||"Docente")}${actual?'<span class="teacher-management-you">Sesión actual</span>':""}</div><div class="teacher-management-email">${escapeHtml(email)}</div><div class="teacher-management-meta"><span>${principal?"Administrador principal":"Docente"}</span><span class="${activo?"status-active":"status-inactive"}">${activo?"Activo":"Baja"}</span></div></div></div>${administrador&&!principal?`<div class="teacher-management-card-actions"><button class="btn btn-secondary" type="button" data-edit-teacher="${escapeHtml(email)}"><i class="fa-solid fa-user-pen"></i> Editar</button><button class="btn ${activo?"btn-danger":"btn-success"}" type="button" data-toggle-teacher="${escapeHtml(email)}" data-activate="${activo?"false":"true"}"><i class="fa-solid ${activo?"fa-user-slash":"fa-user-check"}"></i> ${activo?"Dar de baja":"Reactivar"}</button></div>`:`<div class="teacher-management-readonly"><i class="fa-solid ${principal?"fa-lock":"fa-eye"}"></i> ${principal?"Cuenta protegida":"Solo lectura"}</div>`}</article>`;
+ }).join("")||'<div class="teacher-workspace-empty">No hay registros docentes disponibles.</div>';
+ lista.querySelectorAll("[data-edit-teacher]").forEach(b=>b.onclick=()=>abrirFormularioGestionDocente(b.dataset.editTeacher));
+ lista.querySelectorAll("[data-toggle-teacher]").forEach(b=>b.onclick=()=>cambiarEstadoGestionDocente(b.dataset.toggleTeacher,b.dataset.activate==="true"));
+ actualizarBadgesPestanas();
+}
+async function cargarGestionDocentes(){
+ asegurarGestionDocentes();
+ const estado=document.getElementById("estadoGestionDocentes"),lista=document.getElementById("listaDocentesAutorizados");if(!lista)return;
+ if(estado)estado.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Cargando docentes...';
+ try{
+  const docentes=await window.obtenerDocentesAutorizadosFirebase?.();
+  docentesGestionActual=Array.isArray(docentes)?docentes:[];
+  renderGestionDocentes(docentesGestionActual);
+  if(estado)estado.textContent="";
+ }catch(e){console.error(e);if(estado)estado.textContent=`No se pudo cargar la gestión docente${e?.code?` (${e.code})`:""}. Publicá REGLAS.txt en Firebase.`}
+}
+async function abrirHistorialGestionDocentes(){
+ asegurarModalesGestionDocentes();
+ const modal=document.getElementById("historialGestionDocentesModal"),contenido=document.getElementById("historialGestionDocentesContenido");modal.classList.add("active");contenido.innerHTML='<p><i class="fa-solid fa-spinner fa-spin"></i> Cargando historial...</p>';
+ try{
+  const eventos=await window.obtenerHistorialDocentesFirebase?.()||[];
+  const etiquetas={migracion_inicial:"Migración inicial",alta:"Alta",modificacion:"Modificación",cambio_email:"Cambio de correo",baja:"Baja",reactivacion:"Reactivación"};
+  contenido.innerHTML=eventos.length?eventos.map(evento=>`<article class="teacher-management-history-event"><div class="teacher-management-history-heading"><span class="teacher-management-event-type type-${escapeHtml(evento.tipo||"modificacion")}">${escapeHtml(etiquetas[evento.tipo]||evento.tipo||"Cambio")}</span><time>${escapeHtml(fechaGestion(evento.cambiadoEn))}</time></div><strong>${escapeHtml(evento.nuevo?.nombre||evento.anterior?.nombre||"Docente")}</strong><div class="teacher-management-history-change"><span>${escapeHtml(evento.docenteEmailAnterior||"Sin correo anterior")}</span><i class="fa-solid fa-arrow-right"></i><span>${escapeHtml(evento.docenteEmailNuevo||"Sin correo nuevo")}</span></div><small>Administrador: ${escapeHtml(evento.administradorEmail||"")}</small></article>`).join(""):'<p class="teacher-workspace-empty">Todavía no hay cambios registrados.</p>';
+ }catch(e){console.error(e);contenido.innerHTML=`<p class="teacher-management-error">No se pudo cargar el historial${e?.code?` (${escapeHtml(e.code)})`:""}.</p>`}
 }
 function asegurarPestanasPanelDocente(){
  const contenido=document.querySelector("#panelProfesorModal .teacher-panel-content");if(!contenido)return;
@@ -133,7 +260,7 @@ function asegurarPestanasPanelDocente(){
  activarPestanaDocente(localStorage.getItem("teacher_panel_active_tab")||"resumen");actualizarBadgesPestanas();
 }
 function activarPestanaDocente(id){
- const valido=["resumen","estudiantes","seguimiento","solicitudes","docentes"].includes(id)?id:"resumen";document.querySelectorAll(".teacher-workspace-tab").forEach(b=>{const activo=b.dataset.teacherTab===valido;b.classList.toggle("active",activo);b.setAttribute("aria-selected",String(activo));b.tabIndex=activo?0:-1});document.querySelectorAll(".teacher-workspace-panel").forEach(p=>{const activo=p.dataset.teacherPanel===valido;p.classList.toggle("active",activo);p.hidden=!activo});localStorage.setItem("teacher_panel_active_tab",valido);document.querySelector(`#teacherWorkspacePanel-${valido}`)?.scrollIntoView({block:"start",behavior:"smooth"});
+ const valido=["resumen","estudiantes","seguimiento","solicitudes","docentes"].includes(id)?id:"resumen";document.querySelectorAll(".teacher-workspace-tab").forEach(b=>{const activo=b.dataset.teacherTab===valido;b.classList.toggle("active",activo);b.setAttribute("aria-selected",String(activo));b.tabIndex=activo?0:-1});document.querySelectorAll(".teacher-workspace-panel").forEach(p=>{const activo=p.dataset.teacherPanel===valido;p.classList.toggle("active",activo);p.hidden=!activo});localStorage.setItem("teacher_panel_active_tab",valido);document.querySelector(`#teacherWorkspacePanel-${valido}`)?.scrollIntoView({block:"start",behavior:"smooth"});if(valido==="docentes")setTimeout(cargarGestionDocentes,0);
 }
 function actualizarBadgesPestanas(){
  const datos=Array.isArray(estudiantesProfesor)?estudiantesProfesor:[],activos=datos.filter(x=>x.estadoCuenta==="activo"),pendientes=datos.filter(x=>x.estadoCuenta==="pendiente").length,problemas=activos.filter(x=>{const e=estadoExtension(x);return x.pantallaBloqueada===true||["sin-conexion","interrumpida","no-instalada"].includes(e.codigo)||claseDominio(x.seguimientoExtension?.dominioActual).clase==="danger"}).length,valores={resumen:problemas,estudiantes:datos.length,seguimiento:problemas,solicitudes:pendientes,docentes:Array.isArray(window.TEACHER_EMAILS)?window.TEACHER_EMAILS.length:0};Object.entries(valores).forEach(([id,n])=>{const x=document.querySelector(`[data-tab-count="${id}"]`),boton=document.querySelector(`[data-teacher-tab="${id}"]`);if(x)x.textContent=String(n);if(boton){const etiqueta=boton.dataset.tabLabel||id;boton.dataset.tooltip=`${etiqueta} · ${n}`;boton.setAttribute("aria-label",`${etiqueta}: ${n}`);boton.title=`${etiqueta}: ${n}`}});
@@ -348,6 +475,7 @@ abrirHistorialPestanas=async function(indice){
 };
 window.addEventListener("estado-inicio-clase",e=>setTimeout(()=>{cargarFormulario(e.detail?.configuracionSeguimiento||window.configuracionSeguimientoActual||{});if(document.getElementById("panelProfesorModal")?.classList.contains("active"))renderPanelProfesor()},0));
 window.addEventListener("profesor-data",()=>setTimeout(mejorarTabla,0));
+window.addEventListener("firebase-teacher-auth-changed",()=>setTimeout(()=>{if(document.getElementById("gestionDocentesProfesor"))cargarGestionDocentes()},0));
 document.addEventListener("keydown",evento=>{
  const actual=evento.target.closest?.(".teacher-workspace-tab");if(!actual||!["ArrowLeft","ArrowRight","Home","End"].includes(evento.key))return;const botones=[...document.querySelectorAll(".teacher-workspace-tab")],indice=botones.indexOf(actual);let siguiente=indice;if(evento.key==="ArrowRight")siguiente=(indice+1)%botones.length;if(evento.key==="ArrowLeft")siguiente=(indice-1+botones.length)%botones.length;if(evento.key==="Home")siguiente=0;if(evento.key==="End")siguiente=botones.length-1;evento.preventDefault();botones[siguiente]?.focus();activarPestanaDocente(botones[siguiente]?.dataset.teacherTab);
 });
