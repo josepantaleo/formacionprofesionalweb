@@ -3125,7 +3125,9 @@
           const subcoleccionesEstudiante = [
             "historialDesbloqueos",
             "historialDescuentos",
-            "historialPestanas"
+            "historialPestanas",
+            "revisionesPestanas",
+            "historialRevisionesPestanas"
           ];
           let documentosAsociadosEliminados = 0;
 
@@ -3464,6 +3466,102 @@
             message: error?.message || "Error desconocido"
           };
           return [];
+        }
+      };
+
+      window.obtenerRevisionesPestanasFirebase = async function(uid) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !(await verificarUsuarioDocente(user))) return [];
+        try {
+          const snapshot = await getDocs(collection(database, "estudiantes", uid, "revisionesPestanas"));
+          return snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        } catch (error) {
+          console.error("Error consultando revisiones de pestañas:", error);
+          window.ultimoErrorRevisionesPestanas = { code: error?.code || "", message: error?.message || "" };
+          return [];
+        }
+      };
+
+      window.obtenerHistorialRevisionesPestanasFirebase = async function(uid, salidaGrupoId = "") {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !(await verificarUsuarioDocente(user))) return [];
+        try {
+          const snapshot = await getDocs(collection(database, "estudiantes", uid, "historialRevisionesPestanas"));
+          return snapshot.docs
+            .map(item => ({ id: item.id, ...item.data() }))
+            .filter(item => !salidaGrupoId || item.salidaGrupoId === salidaGrupoId)
+            .sort((a, b) => {
+              const fechaA = a.cambiadoEn?.toMillis ? a.cambiadoEn.toMillis() : new Date(a.cambiadoEn || 0).getTime();
+              const fechaB = b.cambiadoEn?.toMillis ? b.cambiadoEn.toMillis() : new Date(b.cambiadoEn || 0).getTime();
+              return fechaB - fechaA;
+            });
+        } catch (error) {
+          console.error("Error consultando auditoría de revisiones:", error);
+          return [];
+        }
+      };
+
+      window.guardarRevisionPestanaFirebase = async function(uid, salidaGrupoId, revision = {}) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return false;
+        const { user, database } = contextoDocenteFirebase();
+        if (!user || !database || !uid || !salidaGrupoId) return false;
+        const texto = (valor, maximo) => String(valor || "").trim().slice(0, maximo);
+        const grupoId = texto(salidaGrupoId, 160);
+        const documentoId = grupoId.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const estadosPermitidos = ["pendiente", "revisada", "justificada", "no_justificada", "permitida", "advertencia"];
+        const estado = estadosPermitidos.includes(revision.estado) ? revision.estado : "pendiente";
+        const etiquetas = [...new Set((Array.isArray(revision.etiquetas) ? revision.etiquetas : [])
+          .map(item => texto(item, 40))
+          .filter(Boolean))].slice(0, 10);
+        const referencia = doc(database, "estudiantes", uid, "revisionesPestanas", documentoId);
+        try {
+          const anteriorSnapshot = await getDoc(referencia);
+          const anterior = anteriorSnapshot.exists() ? anteriorSnapshot.data() : {};
+          const responsable = user.email || user.displayName || user.uid;
+          const actual = {
+            salidaGrupoId: grupoId,
+            estado,
+            motivo: texto(revision.motivo, 120),
+            observacion: texto(revision.observacion, 1000),
+            etiquetas,
+            contabiliza: revision.contabiliza !== false,
+            docente: responsable,
+            docenteUid: user.uid,
+            revisadoEn: serverTimestamp()
+          };
+          const eventoId = `${Date.now()}-${user.uid}`.replace(/[^a-zA-Z0-9._-]/g, "_");
+          const historialReferencia = doc(database, "estudiantes", uid, "historialRevisionesPestanas", eventoId);
+          const lote = writeBatch(database);
+          lote.set(referencia, actual);
+          lote.set(historialReferencia, {
+            id: eventoId,
+            estudianteUid: uid,
+            salidaGrupoId: grupoId,
+            docente: responsable,
+            docenteUid: user.uid,
+            estadoAnterior: texto(anterior.estado || "pendiente", 40),
+            estadoNuevo: estado,
+            motivoAnterior: texto(anterior.motivo, 120),
+            motivoNuevo: actual.motivo,
+            observacionAnterior: texto(anterior.observacion, 1000),
+            observacionNueva: actual.observacion,
+            contabilizabaAntes: anterior.contabiliza !== false,
+            contabilizaAhora: actual.contabiliza,
+            etiquetasAnteriores: Array.isArray(anterior.etiquetas) ? anterior.etiquetas.slice(0, 10) : [],
+            etiquetasNuevas: etiquetas,
+            cambiadoEn: serverTimestamp()
+          });
+          await lote.commit();
+          return true;
+        } catch (error) {
+          console.error("Error guardando revisión de pestaña:", error);
+          window.ultimoErrorRevisionPestana = { code: error?.code || "", message: error?.message || "" };
+          return false;
         }
       };
 
@@ -10766,7 +10864,7 @@
               mensaje: `Se eliminará definitivamente a ${nombre}.`,
               detalles: [
                   'Se borrará el documento completo: identidad, progreso, códigos, respuestas, notas, cronómetros, bloqueos y consultas IA.',
-                  'Se eliminarán los historiales de desbloqueos, descuentos y pestañas antes de borrar al estudiante.',
+                  'Se eliminarán los historiales de desbloqueos, descuentos, pestañas, revisiones y auditoría antes de borrar al estudiante.',
                   'La cuenta externa de Google no se elimina; se borran todos los datos almacenados por esta aplicación.',
                   'Esta acción no se puede deshacer.'
               ],
