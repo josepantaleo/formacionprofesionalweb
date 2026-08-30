@@ -1,36 +1,82 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>JavaScript Básico + Práctica</title>
+    <title>Curso de JavaScript | IPEM 146</title>
+    <meta
+      name="description"
+      content="Curso introductorio de JavaScript con explicaciones, ejemplos ejecutables, ejercicios, evaluaciones y proyecto final."
+    />
+    <meta name="theme-color" content="#1d222d" />
 
     <link rel="stylesheet" href="style.css" />
   </head>
 
   <body>
+    <a class="saltar-contenido" href="#contenidoPrincipal">
+      Ir al contenido principal
+    </a>
     <!-- =====================================================
          HEADER
     ====================================================== -->
 
     <header class="header">
-      <div class="logo">
-        <span>JS</span>
-        IPEM 146 - Formación Profesional Programador web: JavaScript Profesor J.
-        Pantaleo
-        
+      <button
+        class="btn-menu"
+        id="botonMenu"
+        type="button"
+        aria-label="Abrir menú de clases"
+        aria-controls="sidebar"
+        aria-expanded="false"
+      >
+        <span aria-hidden="true">☰</span>
+      </button>
+
+      <div class="marca-curso">
+        <span class="marca-js" aria-hidden="true">JS</span>
+        <div>
+          <h1>JavaScript</h1>
+          <p>Formación Profesional · IPEM 146</p>
+        </div>
       </div>
 
-        <a class="practica" href="actividad.html">⭐​ Actividades Prácticas</a>
+      <a class="practica" href="actividad.html">
+        <span aria-hidden="true">✦</span>
+        <span class="texto-actividad">Actividades</span>
+      </a>
+
       <div class="progreso">
-        <span>Progreso del curso</span>
-        <div class="barra">
+        <span class="progreso-etiqueta">Progreso</span>
+        <div
+          class="barra"
+          id="barraCurso"
+          role="progressbar"
+          aria-label="Progreso del curso"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
           <div class="barra-progreso" id="barraProgreso"></div>
         </div>
         <span id="progresoTexto">0%</span>
       </div>
+
+      <button
+        class="btn-tema"
+        id="botonTema"
+        type="button"
+        aria-label="Activar modo claro"
+        aria-pressed="false"
+        title="Cambiar tema"
+      >
+        <span class="icono-tema" aria-hidden="true">☀</span>
+        <span class="sr-only">Cambiar tema</span>
+      </button>
     </header>
+
+    <div class="overlay-menu" id="overlayMenu" hidden></div>
 
     <!-- =====================================================
          LAYOUT
@@ -41,8 +87,21 @@
              MENÚ LATERAL
         ================================================== -->
 
-      <aside class="sidebar">
-        <h3>JavaScript</h3>
+      <aside class="sidebar" id="sidebar" aria-label="Clases del curso">
+        <div class="sidebar-cabecera">
+          <div>
+            <span class="sidebar-eyebrow">Contenido</span>
+            <h2>Clases del curso</h2>
+          </div>
+          <button
+            class="btn-cerrar-menu"
+            id="cerrarMenu"
+            type="button"
+            aria-label="Cerrar menú de clases"
+          >
+            ×
+          </button>
+        </div>
 
         <nav>
           <a href="#introduccion" class="activo">
@@ -110,34 +169,34 @@
             DOM
           </a>
 
-          <a href="#formularios">
+          <a href="#eventos">
             <span>14</span>
+            Eventos
+          </a>
+
+          <a href="#formularios">
+            <span>15</span>
             Formularios
           </a>
 
           <a href="#localstorage">
-            <span>15</span>
+            <span>16</span>
             LocalStorage
           </a>
 
           <a href="#json-fetch">
-            <span>16</span>
+            <span>17</span>
             JSON y Fetch
           </a>
 
           <a href="#errores">
-            <span>17</span>
+            <span>18</span>
             Errores
           </a>
 
           <a href="#proyecto">
-            <span>18</span>
-            Proyecto final
-          </a>
-
-          <a href="#eventos">
             <span>19</span>
-            Eventos
+            Proyecto final
           </a>
           
         </nav>
@@ -147,13 +206,53 @@
              CONTENIDO
         ================================================== -->
 
-      <main class="contenido">
+      <main class="contenido" id="contenidoPrincipal" tabindex="-1">
+        <section class="panel-curso" aria-labelledby="tituloBienvenida">
+          <div>
+            <span class="etiqueta">Curso inicial · 19 clases</span>
+            <h2 id="tituloBienvenida">Aprendé JavaScript creando</h2>
+            <p>
+              Avanzá por cada clase, ejecutá los ejemplos, resolvé las prácticas
+              y comprobá lo aprendido antes de continuar.
+            </p>
+          </div>
+
+          <div class="herramientas-curso">
+            <label class="buscador" for="busquedaCurso">
+              <span aria-hidden="true">⌕</span>
+              <span class="sr-only">Buscar en el curso</span>
+              <input
+                id="busquedaCurso"
+                type="search"
+                placeholder="Buscar tema o concepto"
+                autocomplete="off"
+              />
+              <button class="btn-limpiar-busqueda" id="limpiarBusqueda" type="button" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden>×</button>
+            </label>
+            <button class="btn-secundario" id="reiniciarProgreso" type="button">
+              Reiniciar progreso
+            </button>
+            <p class="estado-curso" id="estadoCurso" aria-live="polite">
+              Clase actual: Introducción
+            </p>
+            <p class="ultima-actividad" id="ultimaActividad">
+              Todavía no hay actividad guardada.
+            </p>
+          </div>
+
+          <div
+            class="resultados-busqueda"
+            id="resultadosBusqueda"
+            aria-live="polite"
+            hidden
+          ></div>
+        </section>
         <!-- =================================================
                  01 INTRODUCCIÓN
             ================================================== -->
 
         <section id="introduccion" class="clase">
-          <h1>JavaScript</h1>
+          <h2 class="titulo-clase">JavaScript</h2>
 
           <p class="descripcion">
             Fundamentos de JavaScript para crear páginas web interactivas.
@@ -202,32 +301,40 @@
               >, sin necesidad de crear los archivos manualmente.
             </li>
           </ol>
-<br>
-          <h3>
-            💡 <strong>Recomendación:</strong> si estás aprendiendo
-            programación, probá primero los ejemplos en el sitio y luego creá
-            tus propios archivos <code>prueba.html</code> y
-            <code>prueba.js</code> para practicar.
-          </h3>
-<br>
-          <img src="prueba.jpg" alt="Ejemplo de archivos JavaScript" />
+          <div class="nota">
+            <strong>Recomendación</strong>
+            <p>
+              Si estás aprendiendo programación, probá primero los ejemplos en
+              el sitio y luego creá tus propios archivos
+              <code>prueba.html</code> y <code>prueba.js</code> para practicar.
+            </p>
+          </div>
+
+          <figure class="diagrama-archivos">
+            <div class="archivo-ejemplo">
+              <span>HTML</span>
+              <strong>prueba.html</strong>
+              <code>&lt;script src="prueba.js"&gt;&lt;/script&gt;</code>
+            </div>
+            <span class="conexion-archivos" aria-hidden="true">→</span>
+            <div class="archivo-ejemplo">
+              <span>JS</span>
+              <strong>prueba.js</strong>
+              <code>console.log("Hola");</code>
+            </div>
+            <figcaption>
+              El archivo HTML carga el archivo JavaScript mediante la etiqueta
+              <code>script</code>.
+            </figcaption>
+          </figure>
 
           <h2>Código JS para probar</h2>
 
           <div class="codigo">
-            <pre><code>&lt;script&gt;
-fetch("prueba.js")
-    .then((respuesta) =&gt; respuesta.text())
-    .then((codigo) =&gt; {
-        document.getElementById("codigoJS").textContent = codigo;
-    })
-    .catch((error) =&gt; {
-        document.getElementById("codigoJS").textContent =
-            "Error al cargar prueba.js";
+            <pre><code>const nombre = "Estudiante";
 
-        console.error(error);
-    });
-&lt;/script&gt;</code></pre>
+console.log(`¡Hola, ${nombre}!`);
+console.log("Tu primer programa funciona.");</code></pre>
           </div>
 
           <h2>HTML + CSS + JavaScript</h2>
@@ -266,8 +373,8 @@ fetch("prueba.js")
               </li>
 
               <li>
-                En archivo externo:
-                <code>&lt;script src="script.js"&gt;</code>
+                En un archivo externo:
+                <code>&lt;script src="script.js"&gt;&lt;/script&gt;</code>
               </li>
             </ol>
           </div>
@@ -278,7 +385,7 @@ fetch("prueba.js")
             ================================================== -->
 
         <section id="variables" class="clase">
-          <h1>Variables</h1>
+          <h2 class="titulo-clase">Variables</h2>
 
           <p>
             Las variables sirven para guardar información que podemos utilizar
@@ -363,7 +470,7 @@ console.log(persona);</code></pre>
             ================================================== -->
 
         <section id="tipos" class="clase">
-          <h1>Tipos de datos</h1>
+          <h2 class="titulo-clase">Tipos de datos</h2>
 
           <p>JavaScript puede trabajar con diferentes tipos de información.</p>
 
@@ -425,6 +532,34 @@ console.log(typeof nombre);
 console.log(typeof edad);
 console.log(typeof esEstudiante);</code></pre>
           </div>
+
+          <div class="card">
+            <h3>Valores que suelen confundirse</h3>
+            <ul>
+              <li>
+                <code>undefined</code>: una variable o propiedad todavía no
+                tiene un valor asignado.
+              </li>
+              <li>
+                <code>null</code>: ausencia de valor indicada de manera
+                intencional.
+              </li>
+              <li>
+                <code>NaN</code>: resultado numérico inválido. Se comprueba con
+                <code>Number.isNaN()</code>.
+              </li>
+            </ul>
+          </div>
+
+          <div class="codigo">
+            <pre><code>let respuesta;
+const seleccion = null;
+const numeroInvalido = Number("hola");
+
+console.log(respuesta); // undefined
+console.log(seleccion); // null
+console.log(Number.isNaN(numeroInvalido)); // true</code></pre>
+          </div>
         </section>
 
         <!-- =================================================
@@ -432,7 +567,7 @@ console.log(typeof esEstudiante);</code></pre>
             ================================================== -->
 
         <section id="operadores" class="clase">
-          <h1>Operadores</h1>
+          <h2 class="titulo-clase">Operadores</h2>
 
           <p>
             Los operadores permiten realizar operaciones matemáticas y
@@ -471,11 +606,17 @@ console.log(a ** 2);</code></pre>
 console.log(10 < 5);
 console.log(10 >= 10);
 console.log(10 <= 5);
-console.log(10 == 10);
-console.log(10 != 5);
-
 console.log(10 === "10");
 console.log(10 !== "10");</code></pre>
+          </div>
+
+          <div class="nota">
+            <strong>Usá igualdad estricta</strong>
+            <p>
+              Preferí <code>===</code> y <code>!==</code>. Además del valor,
+              comparan el tipo de dato y evitan conversiones automáticas
+              difíciles de detectar.
+            </p>
           </div>
 
           <div class="card">
@@ -504,7 +645,7 @@ console.log(!tieneDocumento);</code></pre>
             ================================================== -->
 
         <section id="condicionales" class="clase">
-          <h1>Condicionales</h1>
+          <h2 class="titulo-clase">Condicionales</h2>
 
           <p>
             Los condicionales permiten ejecutar código dependiendo de una
@@ -605,7 +746,7 @@ console.log(nombreDia);</code></pre>
             ================================================== -->
 
         <section id="funciones" class="clase">
-          <h1>Funciones en JavaScript</h1>
+          <h2 class="titulo-clase">Funciones en JavaScript</h2>
 
           <p>
             Una <strong>función</strong> es un bloque de código que podemos
@@ -1147,7 +1288,7 @@ console.log("División:", dividir(20, 10));</code></pre>
             ================================================== -->
 
         <section id="arrays" class="clase">
-          <h1>Arrays en JavaScript</h1>
+          <h2 class="titulo-clase">Arrays en JavaScript</h2>
 
           <p>
             Los <strong>arrays</strong> permiten guardar varios valores dentro
@@ -1820,7 +1961,7 @@ frutas.length
             ================================================== -->
 
         <section id="bucles" class="clase">
-          <h1>Bucles</h1>
+          <h2 class="titulo-clase">Bucles</h2>
 
           <p>
             Los <strong>bucles</strong> permiten repetir una tarea varias veces
@@ -2470,7 +2611,7 @@ for (const numero of numeros) {
             ================================================== -->
 
         <section id="objetos" class="clase">
-          <h1>Objetos</h1>
+          <h2 class="titulo-clase">Objetos</h2>
 
           <p>Los objetos permiten representar entidades con propiedades.</p>
 
@@ -2509,6 +2650,42 @@ alumno.nota = 9;</code></pre>
 console.log(persona.saludar());</code></pre>
           </div>
 
+          <div class="card">
+            <h3>Agregar, eliminar y recorrer propiedades</h3>
+            <p>
+              Las propiedades pueden consultarse con punto o corchetes. Los
+              corchetes son útiles cuando el nombre está guardado en una
+              variable.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const producto = {
+    nombre: "Teclado",
+    precio: 25000,
+    disponible: true
+};
+
+const propiedad = "precio";
+
+console.log(producto[propiedad]);
+
+producto.stock = 8;
+delete producto.disponible;
+
+for (const clave of Object.keys(producto)) {
+    console.log(clave, producto[clave]);
+}</code></pre>
+          </div>
+
+          <div class="nota">
+            <strong>Objetos declarados con const</strong>
+            <p>
+              <code>const</code> impide reemplazar el objeto completo, pero sus
+              propiedades todavía pueden modificarse.
+            </p>
+          </div>
+
           <div class="ejercicio">
             <span>🚀 EJERCICIO</span>
 
@@ -2525,25 +2702,29 @@ console.log(persona.saludar());</code></pre>
             ================================================== -->
 
         <section id="arrays-avanzados" class="clase">
-          <h1>Arrays avanzados</h1>
+          <h2 class="titulo-clase">Arrays avanzados</h2>
 
           <p>Métodos para buscar, transformar, ordenar y filtrar.</p>
 
+          <div class="card">
+            <h3>Evitar modificaciones accidentales</h3>
+            <p>
+              Métodos como <code>map</code>, <code>filter</code> y
+              <code>slice</code> crean nuevos arrays. Esto hace que el programa
+              sea más predecible.
+            </p>
+          </div>
+
           <div class="codigo">
-            <pre><code>const frutas = [
-    "Manzana",
-    "Banana"
+            <pre><code>const frutas = ["Manzana", "Banana"];
+
+const frutasActualizadas = [
+    ...frutas,
+    "Naranja"
 ];
 
-frutas.push("Naranja");
-
-frutas.pop();
-
-frutas.unshift("Pera");
-
-frutas.shift();
-
-console.log(frutas);</code></pre>
+console.log(frutas);
+console.log(frutasActualizadas);</code></pre>
           </div>
 
           <div class="codigo">
@@ -2584,6 +2765,32 @@ const total = precios.reduce(
 
 console.log(total);</code></pre>
           </div>
+
+          <div class="codigo">
+            <pre><code>const edades = [12, 17, 21, 15];
+
+const hayAdultos =
+    edades.some(edad => edad >= 18);
+
+const todosSonPositivos =
+    edades.every(edad => edad > 0);
+
+const ordenadas =
+    [...edades].sort((a, b) => a - b);
+
+console.log(hayAdultos);
+console.log(todosSonPositivos);
+console.log(ordenadas);</code></pre>
+          </div>
+
+          <div class="nota">
+            <strong>Cuidado con sort()</strong>
+            <p>
+              <code>sort()</code> modifica el array original y ordena como
+              texto si no recibe una función de comparación. Por eso se crea
+              una copia con <code>[...edades]</code>.
+            </p>
+          </div>
         </section>
 
         <!-- =================================================
@@ -2591,7 +2798,7 @@ console.log(total);</code></pre>
             ================================================== -->
 
         <section id="strings" class="clase">
-          <h1>Strings y métodos de texto</h1>
+          <h2 class="titulo-clase">Strings y métodos de texto</h2>
 
           <p>Los strings representan texto.</p>
 
@@ -2639,6 +2846,24 @@ console.log(
     )
 );</code></pre>
           </div>
+
+          <div class="card">
+            <h3>Plantillas literales</h3>
+            <p>
+              Las comillas invertidas permiten insertar expresiones con
+              <code>${...}</code> y crear mensajes más legibles.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const estudiante = "Carla";
+const puntos = 85;
+
+const resumen =
+    `${estudiante} obtuvo ${puntos} puntos.`;
+
+console.log(resumen);</code></pre>
+          </div>
         </section>
 
         <!-- =================================================
@@ -2646,7 +2871,7 @@ console.log(
             ================================================== -->
 
         <section id="scope" class="clase">
-          <h1>Scope y buenas prácticas</h1>
+          <h2 class="titulo-clase">Scope y buenas prácticas</h2>
 
           <p>El scope determina dónde podemos utilizar una variable.</p>
 
@@ -2672,6 +2897,15 @@ if (true) {
           </div>
 
           <div class="card">
+            <h3>Tres niveles de alcance</h3>
+            <ul>
+              <li><strong>Global:</strong> accesible desde gran parte del programa.</li>
+              <li><strong>De función:</strong> existe solamente dentro de la función.</li>
+              <li><strong>De bloque:</strong> existe dentro de llaves con <code>let</code> o <code>const</code>.</li>
+            </ul>
+          </div>
+
+          <div class="card">
             <h2>Buenas prácticas</h2>
 
             <ul>
@@ -2693,7 +2927,7 @@ if (true) {
             ================================================== -->
 
         <section id="dom" class="clase">
-          <h1>DOM</h1>
+          <h2 class="titulo-clase">DOM</h2>
 
           <p>
             El DOM permite acceder y modificar los elementos HTML desde
@@ -2704,19 +2938,132 @@ if (true) {
             <pre><code>const titulo =
     document.querySelector("#titulo");
 
-titulo.textContent =
-    "Hola JavaScript";</code></pre>
+if (titulo) {
+    titulo.textContent =
+        "Hola JavaScript";
+
+    titulo.classList.add("destacado");
+}</code></pre>
+          </div>
+
+          <div class="nota">
+            <strong>Comprobá que el elemento exista</strong>
+            <p>
+              <code>querySelector()</code> devuelve <code>null</code> cuando no
+              encuentra el elemento. Comprobarlo evita errores al acceder a sus
+              propiedades.
+            </p>
+          </div>
+
+          <div class="card">
+            <h3>Crear y agregar elementos</h3>
+            <p>
+              Para contenido de texto, preferí <code>textContent</code>. Usar
+              <code>innerHTML</code> con datos del usuario puede introducir
+              contenido no deseado.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const lista =
+    document.querySelector("#lista");
+
+const elemento =
+    document.createElement("li");
+
+elemento.textContent =
+    "Nuevo contenido";
+
+lista.appendChild(elemento);
+
+// Para quitarlo:
+// elemento.remove();</code></pre>
           </div>
         </section>
 
         <!-- =================================================
-                 14 FORMULARIOS
+                 14 EVENTOS
+            ================================================== -->
+
+        <section id="eventos" class="clase">
+          <h2 class="titulo-clase">Eventos</h2>
+
+          <p>
+            Los eventos permiten reaccionar a acciones del usuario, como hacer
+            clic, escribir, enviar un formulario o presionar una tecla.
+          </p>
+
+          <div class="card">
+            <h3>Escuchar un evento</h3>
+            <p>
+              <code>addEventListener()</code> recibe el nombre del evento y una
+              función que se ejecutará cuando ese evento ocurra.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const boton =
+    document.querySelector("#boton");
+
+boton.addEventListener(
+    "click",
+    function(evento) {
+
+        console.log("Hiciste clic");
+        console.log(evento.target);
+
+    }
+);</code></pre>
+          </div>
+
+          <div class="card">
+            <h3>Eventos frecuentes</h3>
+            <ul>
+              <li><code>click</code>: clic sobre un elemento.</li>
+              <li><code>input</code>: cambia el valor de un campo.</li>
+              <li><code>change</code>: se confirma un cambio.</li>
+              <li><code>submit</code>: se envía un formulario.</li>
+              <li><code>keydown</code>: se presiona una tecla.</li>
+            </ul>
+          </div>
+
+          <div class="ejercicio">
+            <span>PRÁCTICA</span>
+            <h3>Contador de clics</h3>
+            <p>
+              Creá un botón y un texto. Cada clic debe aumentar un contador y
+              actualizar el texto mediante <code>textContent</code>.
+            </p>
+          </div>
+        </section>
+
+        <!-- =================================================
+                 15 FORMULARIOS
             ================================================== -->
 
         <section id="formularios" class="clase">
-          <h1>Formularios</h1>
+          <h2 class="titulo-clase">Formularios</h2>
 
-          <p>JavaScript puede leer y validar los datos ingresados.</p>
+          <p>
+            JavaScript puede leer y validar los datos ingresados. HTML debe
+            aportar primero etiquetas, tipos de campo y restricciones básicas.
+          </p>
+
+          <div class="codigo">
+            <pre><code class="language-html">&lt;form id="formulario" novalidate&gt;
+  &lt;label for="nombre"&gt;Nombre&lt;/label&gt;
+  &lt;input
+    id="nombre"
+    name="nombre"
+    type="text"
+    required
+    minlength="2"
+    aria-describedby="errorNombre"
+  /&gt;
+  &lt;p id="errorNombre" aria-live="polite"&gt;&lt;/p&gt;
+  &lt;button type="submit"&gt;Guardar&lt;/button&gt;
+&lt;/form&gt;</code></pre>
+          </div>
 
           <div class="codigo">
             <pre><code>const formulario =
@@ -2733,7 +3080,15 @@ formulario.addEventListener(
 
         if (nombre.value.trim() === "") {
 
-            alert("Ingresá tu nombre");
+            const errorNombre =
+                document.querySelector(
+                    "#errorNombre"
+                );
+
+            errorNombre.textContent =
+                "Ingresá tu nombre";
+
+            nombre.focus();
 
             return;
 
@@ -2747,6 +3102,31 @@ formulario.addEventListener(
     }
 );</code></pre>
           </div>
+
+          <div class="card">
+            <h3>Validación en dos niveles</h3>
+            <ul>
+              <li>
+                <strong>HTML:</strong> <code>required</code>,
+                <code>minlength</code>, <code>type="email"</code> y otros
+                atributos.
+              </li>
+              <li>
+                <strong>JavaScript:</strong> reglas propias del problema y
+                mensajes dinámicos.
+              </li>
+            </ul>
+          </div>
+
+          <div class="ejercicio">
+            <span>PRÁCTICA</span>
+            <h3>Registro de estudiante</h3>
+            <p>
+              Creá un formulario con nombre, edad y correo. Validá los campos,
+              mostrales mensajes junto a cada control y agregá los datos a una
+              lista sin recargar la página.
+            </p>
+          </div>
         </section>
 
         <!-- =================================================
@@ -2754,7 +3134,7 @@ formulario.addEventListener(
             ================================================== -->
 
         <section id="localstorage" class="clase">
-          <h1>LocalStorage</h1>
+          <h2 class="titulo-clase">LocalStorage</h2>
 
           <p>Permite guardar pequeños datos en el navegador.</p>
 
@@ -2797,6 +3177,43 @@ console.log(datos.nombre);
 
 console.log(datos.puntos);</code></pre>
           </div>
+
+          <div class="card">
+            <h3>Lectura segura</h3>
+            <p>
+              El dato puede no existir o contener JSON inválido. Conviene usar
+              un valor inicial y capturar errores.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>function leerJugadores() {
+    try {
+        const texto =
+            localStorage.getItem("jugadores");
+
+        return texto
+            ? JSON.parse(texto)
+            : [];
+    } catch (error) {
+        console.error(
+            "No se pudieron leer los datos",
+            error
+        );
+
+        return [];
+    }
+}</code></pre>
+          </div>
+
+          <div class="nota">
+            <strong>Límites y privacidad</strong>
+            <p>
+              <code>localStorage</code> guarda texto en ese navegador. No es una
+              base de datos y no debe usarse para contraseñas ni información
+              sensible.
+            </p>
+          </div>
         </section>
 
         <!-- =================================================
@@ -2804,7 +3221,7 @@ console.log(datos.puntos);</code></pre>
             ================================================== -->
 
         <section id="json-fetch" class="clase">
-          <h1>JSON y Fetch</h1>
+          <h2 class="titulo-clase">JSON y Fetch</h2>
 
           <p>
             JSON permite intercambiar información. Fetch permite realizar
@@ -2841,6 +3258,12 @@ console.log(objeto.nombre);</code></pre>
                 "https://jsonplaceholder.typicode.com/users"
             );
 
+        if (!respuesta.ok) {
+            throw new Error(
+                `Error HTTP: ${respuesta.status}`
+            );
+        }
+
         const usuarios =
             await respuesta.json();
 
@@ -2859,6 +3282,17 @@ console.log(objeto.nombre);</code></pre>
 
 cargarDatos();</code></pre>
           </div>
+
+          <div class="card">
+            <h3>Qué ocurre en una petición</h3>
+            <ol>
+              <li><code>fetch()</code> inicia la solicitud.</li>
+              <li><code>await</code> espera la respuesta sin bloquear la página.</li>
+              <li><code>response.ok</code> comprueba el estado HTTP.</li>
+              <li><code>response.json()</code> convierte el cuerpo en datos.</li>
+              <li><code>catch</code> maneja fallos de red o errores lanzados.</li>
+            </ol>
+          </div>
         </section>
 
         <!-- =================================================
@@ -2866,7 +3300,7 @@ cargarDatos();</code></pre>
             ================================================== -->
 
         <section id="errores" class="clase">
-          <h1>Errores y depuración</h1>
+          <h2 class="titulo-clase">Errores y depuración</h2>
 
           <p>Aprender a encontrar errores es fundamental.</p>
 
@@ -2904,6 +3338,46 @@ cargarDatos();</code></pre>
               breakpoints y el panel Console.
             </p>
           </div>
+
+          <div class="card">
+            <h3>Tipos de errores</h3>
+            <ul>
+              <li>
+                <strong>Sintaxis:</strong> el código no respeta la gramática del
+                lenguaje.
+              </li>
+              <li>
+                <strong>Ejecución:</strong> el programa comienza, pero una
+                instrucción falla.
+              </li>
+              <li>
+                <strong>Lógica:</strong> el programa funciona, aunque devuelve
+                un resultado incorrecto.
+              </li>
+            </ul>
+          </div>
+
+          <div class="codigo">
+            <pre><code>function convertirEdad(valor) {
+    const edad = Number(valor);
+
+    if (Number.isNaN(edad)) {
+        throw new TypeError(
+            "La edad debe ser numérica"
+        );
+    }
+
+    return edad;
+}
+
+try {
+    console.log(convertirEdad("quince"));
+} catch (error) {
+    console.error(error.message);
+} finally {
+    console.log("Validación terminada");
+}</code></pre>
+          </div>
         </section>
 
         <!-- =================================================
@@ -2911,7 +3385,7 @@ cargarDatos();</code></pre>
             ================================================== -->
 
         <section id="proyecto" class="clase">
-          <h1>Proyecto final: Sistema de torneo de ajedrez</h1>
+          <h2 class="titulo-clase">Proyecto final: Sistema de torneo de ajedrez</h2>
 
           <p>
             Integrá todo lo aprendido construyendo una pequeña aplicación web.
@@ -2994,45 +3468,30 @@ cargarDatos();</code></pre>
           </div>
         </section>
 
-        <!-- =================================================
-                 19 EVENTOS
-            ================================================== -->
+        <nav class="navegacion-clases" aria-label="Navegación entre clases">
+          <button class="btn-navegacion" id="claseAnterior" type="button">
+            <span aria-hidden="true">←</span>
+            <span>
+              <small>Anterior</small>
+              <strong id="nombreClaseAnterior">Inicio</strong>
+            </span>
+          </button>
+          <button class="btn-navegacion siguiente" id="claseSiguiente" type="button">
+            <span>
+              <small>Siguiente</small>
+              <strong id="nombreClaseSiguiente">Variables</strong>
+            </span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </nav>
 
-        <section id="eventos" class="clase">
-          <h1>Eventos</h1>
-
+        <footer class="footer-curso">
           <p>
-            Los eventos permiten reaccionar a acciones del usuario, como hacer
-            clic en un botón.
+            IPEM 146 · Formación Profesional Programador Web · Profesor J.
+            Pantaleo
           </p>
-
-          <div class="codigo">
-            <pre><code>const boton =
-    document.querySelector("#boton");
-
-boton.addEventListener(
-    "click",
-    function() {
-
-        alert("Hiciste clic");
-
-    }
-);</code></pre>
-          </div>
-
-          <div class="ejercicio">
-            <span>🚀 EJERCICIO</span>
-
-            <h2>Tu primer desafío</h2>
-
-            <p>
-              Creá un botón que cambie el texto de un título cuando el usuario
-              haga clic.
-            </p>
-
-            <button class="btn-ejercicio">Marcar como completado</button>
-          </div>
-        </section>
+          <p>Contenido revisado y organizado para aprendizaje progresivo.</p>
+        </footer>
       </main>
     </div>
 
@@ -3040,965 +3499,6 @@ boton.addEventListener(
          SISTEMA INTERACTIVO: COPIAR + EJECUTAR CÓDIGO,
          PROGRESO POR CLASE Y NAVEGACIÓN ACTIVA
     ====================================================== -->
-
-    <script>
-      /* =====================================================
-           BANCO DE PREGUNTAS MULTIPLE CHOICE POR TEMA
-        ====================================================== */
-
-      const QUIZ_DATA = {
-        introduccion: [
-          {
-            pregunta: "¿Qué es JavaScript?",
-            opciones: [
-              "Un lenguaje de programación para dar interactividad a las páginas web",
-              "Un lenguaje para diseñar el aspecto visual de la página",
-              "Un programa para crear bases de datos",
-              "Un sistema operativo",
-            ],
-            correcta: 0,
-          },
-          {
-            pregunta:
-              "¿Cuáles son las formas de incluir JavaScript en una página?",
-            opciones: [
-              "Solo en un archivo externo",
-              "En atributos HTML, en etiqueta <script> y en archivo externo",
-              "Únicamente con la etiqueta <style>",
-              "Solo dentro del <head>",
-            ],
-            correcta: 1,
-          },
-          {
-            pregunta:
-              "¿Qué lenguaje se encarga de la estructura de una página web?",
-            opciones: ["CSS", "JavaScript", "HTML", "JSON"],
-            correcta: 2,
-          },
-        ],
-
-        variables: [
-          {
-            pregunta:
-              "¿Qué palabra clave se usa para una variable que NO puede cambiar su valor?",
-            opciones: ["let", "var", "const", "static"],
-            correcta: 2,
-          },
-          {
-            pregunta:
-              "¿Qué palabra clave se recomienda evitar usar hoy en día?",
-            opciones: ["let", "const", "var", "function"],
-            correcta: 2,
-          },
-          {
-            pregunta:
-              'Si declaramos const persona = { nombre: "Ana" }, ¿podemos hacer persona.nombre = "Juan"?',
-            opciones: [
-              "No, nunca se puede modificar",
-              "Sí, porque const no impide modificar las propiedades del objeto",
-              "Solo si usamos let",
-              "Solo dentro de una función",
-            ],
-            correcta: 1,
-          },
-        ],
-
-        tipos: [
-          {
-            pregunta: '¿Qué tipo de dato es "Hola mundo"?',
-            opciones: ["Number", "String", "Boolean", "Object"],
-            correcta: 1,
-          },
-          {
-            pregunta: "¿Qué devuelve typeof al aplicarse sobre 25?",
-            opciones: ['"string"', '"boolean"', '"number"', '"object"'],
-            correcta: 2,
-          },
-          {
-            pregunta: "¿Cuál de estos es un valor Boolean?",
-            opciones: ['"true"', "true", "1", "null"],
-            correcta: 1,
-          },
-        ],
-
-        operadores: [
-          {
-            pregunta:
-              "¿Qué operador se usa para calcular el resto de una división?",
-            opciones: ["/", "%", "*", "//"],
-            correcta: 1,
-          },
-          {
-            pregunta: "¿Qué diferencia hay entre == y ===?",
-            opciones: [
-              "No hay diferencia",
-              "=== compara valor y tipo, == solo compara valor",
-              "== es más moderno",
-              "=== solo funciona con números",
-            ],
-            correcta: 1,
-          },
-          {
-            pregunta: "¿Qué devuelve la expresión true && false?",
-            opciones: ["true", "false", "undefined", "Error"],
-            correcta: 1,
-          },
-        ],
-
-        condicionales: [
-          {
-            pregunta:
-              "¿Qué palabra se usa para ejecutar un bloque cuando la condición del if es falsa?",
-            opciones: ["then", "else", "default", "catch"],
-            correcta: 1,
-          },
-          {
-            pregunta:
-              "¿Qué instrucción permite comparar un valor con varios casos posibles?",
-            opciones: ["if", "switch", "for", "function"],
-            correcta: 1,
-          },
-          {
-            pregunta:
-              "En un switch, ¿qué palabra evita que se sigan ejecutando los siguientes casos?",
-            opciones: ["return", "stop", "break", "end"],
-            correcta: 2,
-          },
-        ],
-
-        funciones: [
-          {
-            pregunta: "¿Qué palabra clave se usa para crear una función?",
-            opciones: ["func", "function", "def", "method"],
-            correcta: 1,
-          },
-          {
-            pregunta: "¿Qué diferencia hay entre parámetro y argumento?",
-            opciones: [
-              "Son lo mismo",
-              "El parámetro es la variable de la función, el argumento es el valor enviado",
-              "El argumento se define en la función y el parámetro se envía",
-              "No existe diferencia real",
-            ],
-            correcta: 1,
-          },
-          {
-            pregunta: "¿Para qué sirve la palabra return?",
-            opciones: [
-              "Para declarar una variable",
-              "Para devolver un valor desde la función",
-              "Para crear un bucle",
-              "Para importar un archivo",
-            ],
-            correcta: 1,
-          },
-        ],
-
-        arrays: [
-          {
-            pregunta:
-              "¿Cómo se accede al primer elemento de un array llamado frutas?",
-            opciones: ["frutas[1]", "frutas[0]", "frutas.primero", "frutas{0}"],
-            correcta: 1,
-          },
-          {
-            pregunta: "¿Qué método agrega un elemento al final de un array?",
-            opciones: ["push()", "add()", "append()", "insert()"],
-            correcta: 0,
-          },
-          {
-            pregunta:
-              "¿Qué propiedad indica la cantidad de elementos de un array?",
-            opciones: ["size", "count", "length", "total"],
-            correcta: 2,
-          },
-        ],
-
-        bucles: [
-          {
-            pregunta: "¿Cuál de estos es un bucle en JavaScript?",
-            opciones: ["if", "for", "switch", "function"],
-            correcta: 1,
-          },
-          {
-            pregunta:
-              "¿Qué bucle es ideal cuando no sabemos cuántas veces se repetirá pero sí la condición?",
-            opciones: ["for", "while", "switch", "if"],
-            correcta: 1,
-          },
-          {
-            pregunta: "¿Qué instrucción detiene por completo un bucle?",
-            opciones: ["continue", "break", "return", "stop"],
-            correcta: 1,
-          },
-        ],
-
-        objetos: [
-          {
-            pregunta: "¿Cómo se representa un objeto en JavaScript?",
-            opciones: [
-              "Con corchetes []",
-              "Con llaves {}",
-              "Con paréntesis ()",
-              'Con comillas ""',
-            ],
-            correcta: 1,
-          },
-          {
-            pregunta:
-              "¿Cómo se accede a una propiedad de un objeto llamado persona.nombre?",
-            opciones: [
-              "persona->nombre",
-              'persona.nombre o persona["nombre"]',
-              "persona::nombre",
-              "persona(nombre)",
-            ],
-            correcta: 1,
-          },
-          {
-            pregunta: "¿Qué es una propiedad de un objeto?",
-            opciones: [
-              "Un tipo de bucle",
-              "Un par clave-valor dentro del objeto",
-              "Una función global",
-              "Un array",
-            ],
-            correcta: 1,
-          },
-        ],
-
-        "arrays-avanzados": [
-          {
-            pregunta: "¿Qué hace el método map()?",
-            opciones: [
-              "Filtra elementos que cumplen una condición",
-              "Crea un nuevo array transformando cada elemento",
-              "Suma todos los elementos",
-              "Ordena el array",
-            ],
-            correcta: 1,
-          },
-          {
-            pregunta: "¿Qué hace el método filter()?",
-            opciones: [
-              "Devuelve un nuevo array con los elementos que cumplen una condición",
-              "Modifica el array original eliminando elementos",
-              "Suma los elementos del array",
-              "Convierte el array en string",
-            ],
-            correcta: 0,
-          },
-          {
-            pregunta: "¿Qué hace el método reduce()?",
-            opciones: [
-              "Elimina elementos duplicados",
-              "Reduce el array a un único valor acumulado",
-              "Invierte el orden del array",
-              "Cuenta cuántos elementos tiene el array",
-            ],
-            correcta: 1,
-          },
-        ],
-
-        strings: [
-          {
-            pregunta: "¿Qué método convierte un string a mayúsculas?",
-            opciones: [
-              "toUpperCase()",
-              "upperCase()",
-              "mayusculas()",
-              "toCaps()",
-            ],
-            correcta: 0,
-          },
-          {
-            pregunta:
-              "¿Qué propiedad indica la cantidad de caracteres de un string?",
-            opciones: ["length", "size", "count", "chars"],
-            correcta: 0,
-          },
-          {
-            pregunta: "¿Qué permiten los template strings (con backticks)?",
-            opciones: [
-              "Solo concatenar números",
-              "Insertar variables dentro del texto con ${}",
-              "Convertir strings a números",
-              "Crear arrays automáticamente",
-            ],
-            correcta: 1,
-          },
-        ],
-
-        scope: [
-          {
-            pregunta: '¿Qué es el "scope" en JavaScript?',
-            opciones: [
-              "Un tipo de dato",
-              "El alcance o ámbito donde una variable es accesible",
-              "Un método de array",
-              "Una etiqueta HTML",
-            ],
-            correcta: 1,
-          },
-          {
-            pregunta:
-              "¿Una variable declarada con let dentro de un bloque {} es accesible afuera de ese bloque?",
-            opciones: [
-              "Sí, siempre",
-              "No, su alcance es el bloque",
-              "Solo si es const",
-              "Solo dentro de funciones",
-            ],
-            correcta: 1,
-          },
-          {
-            pregunta: "¿Qué es una variable global?",
-            opciones: [
-              "Una variable que solo existe dentro de una función",
-              "Una variable accesible desde cualquier parte del código",
-              "Una variable que no se puede leer",
-              "Un tipo de array",
-            ],
-            correcta: 1,
-          },
-        ],
-
-        dom: [
-          {
-            pregunta: "¿Qué significa DOM?",
-            opciones: [
-              "Document Object Model",
-              "Data Object Method",
-              "Document Order Model",
-              "Dynamic Object Manager",
-            ],
-            correcta: 0,
-          },
-          {
-            pregunta:
-              "¿Qué método se usa para seleccionar un elemento por su id?",
-            opciones: [
-              "document.getElementById()",
-              "document.selectId()",
-              "document.findById()",
-              "document.id()",
-            ],
-            correcta: 0,
-          },
-          {
-            pregunta:
-              "¿Qué propiedad se usa para cambiar el texto de un elemento?",
-            opciones: ["innerHTML o textContent", "value", "style", "content"],
-            correcta: 0,
-          },
-        ],
-
-        formularios: [
-          {
-            pregunta: "¿Qué evento se dispara al enviar un formulario?",
-            opciones: ["click", "submit", "change", "load"],
-            correcta: 1,
-          },
-          {
-            pregunta:
-              "¿Qué método evita que el formulario recargue la página al enviarse?",
-            opciones: [
-              "preventDefault()",
-              "stopSubmit()",
-              "cancel()",
-              "avoidReload()",
-            ],
-            correcta: 0,
-          },
-          {
-            pregunta: "¿Cómo se obtiene el valor escrito en un input?",
-            opciones: [
-              "input.text",
-              "input.value",
-              "input.data",
-              "input.content",
-            ],
-            correcta: 1,
-          },
-        ],
-
-        localstorage: [
-          {
-            pregunta: "¿Para qué sirve localStorage?",
-            opciones: [
-              "Para guardar información en el navegador de forma persistente",
-              "Para hacer peticiones al servidor",
-              "Para crear animaciones",
-              "Para validar formularios",
-            ],
-            correcta: 0,
-          },
-          {
-            pregunta:
-              "¿Qué método se usa para guardar un dato en localStorage?",
-            opciones: [
-              "localStorage.save()",
-              "localStorage.setItem()",
-              "localStorage.add()",
-              "localStorage.write()",
-            ],
-            correcta: 1,
-          },
-          {
-            pregunta:
-              "¿En qué formato conviene guardar un objeto en localStorage?",
-            opciones: [
-              "Como objeto directamente",
-              "Como texto usando JSON.stringify()",
-              "Como array",
-              "No se pueden guardar objetos",
-            ],
-            correcta: 1,
-          },
-        ],
-
-        "json-fetch": [
-          {
-            pregunta: "¿Qué significa JSON?",
-            opciones: [
-              "JavaScript Object Notation",
-              "Java Standard Object Network",
-              "JavaScript Online Node",
-              "Java Serialized Object Name",
-            ],
-            correcta: 0,
-          },
-          {
-            pregunta:
-              "¿Qué función se usa para hacer peticiones a un servidor?",
-            opciones: ["request()", "fetch()", "get()", "load()"],
-            correcta: 1,
-          },
-          {
-            pregunta:
-              "¿Qué método convierte un objeto JavaScript en texto JSON?",
-            opciones: [
-              "JSON.parse()",
-              "JSON.stringify()",
-              "JSON.toText()",
-              "JSON.convert()",
-            ],
-            correcta: 1,
-          },
-        ],
-
-        errores: [
-          {
-            pregunta: "¿Qué bloque se usa para capturar errores en JavaScript?",
-            opciones: ["if/else", "try/catch", "switch/case", "for/while"],
-            correcta: 1,
-          },
-          {
-            pregunta: "¿Qué bloque se ejecuta siempre, haya o no un error?",
-            opciones: ["catch", "finally", "try", "throw"],
-            correcta: 1,
-          },
-          {
-            pregunta:
-              "¿Qué palabra clave permite lanzar un error personalizado?",
-            opciones: ["error()", "throw", "catch()", "fail()"],
-            correcta: 1,
-          },
-        ],
-
-        proyecto: [
-          {
-            pregunta:
-              "¿Cuál de estos NO es parte de las tecnologías vistas en el curso?",
-            opciones: ["HTML", "CSS", "JavaScript", "Base de datos SQL"],
-            correcta: 3,
-          },
-          {
-            pregunta: "¿Qué archivo define la estructura del proyecto?",
-            opciones: ["style.css", "index.html", "script.js", "README.md"],
-            correcta: 1,
-          },
-          {
-            pregunta:
-              "¿Qué tres tecnologías se combinaron a lo largo del curso?",
-            opciones: [
-              "HTML, CSS y JavaScript",
-              "Python, HTML y SQL",
-              "Java, CSS y PHP",
-              "JavaScript, PHP y XML",
-            ],
-            correcta: 0,
-          },
-        ],
-
-        eventos: [
-          {
-            pregunta:
-              "¿Qué método se usa para escuchar un evento en JavaScript?",
-            opciones: [
-              "addEventListener()",
-              "listenEvent()",
-              "onEvent()",
-              "catchEvent()",
-            ],
-            correcta: 0,
-          },
-          {
-            pregunta: "¿Qué evento se dispara al hacer clic en un elemento?",
-            opciones: ["hover", "click", "press", "touch"],
-            correcta: 1,
-          },
-          {
-            pregunta:
-              "¿Qué objeto contiene información sobre el evento ocurrido, como el elemento que lo generó?",
-            opciones: ["event", "window", "document", "target"],
-            correcta: 0,
-          },
-        ],
-      };
-
-      document.addEventListener("DOMContentLoaded", function () {
-        const CLAVE_PROGRESO = "js-curso-progreso";
-
-        /* =====================================================
-               UTILIDADES DE ALMACENAMIENTO
-            ====================================================== */
-
-        function leerCompletadas() {
-          try {
-            const datos = localStorage.getItem(CLAVE_PROGRESO);
-            return datos ? JSON.parse(datos) : [];
-          } catch (error) {
-            return [];
-          }
-        }
-
-        function guardarCompletadas(lista) {
-          try {
-            localStorage.setItem(CLAVE_PROGRESO, JSON.stringify(lista));
-          } catch (error) {
-            console.warn("No se pudo guardar el progreso:", error);
-          }
-        }
-
-        let completadas = new Set(leerCompletadas());
-
-        /* =====================================================
-               1. BOTÓN COPIAR + BOTÓN EJECUTAR EN CADA BLOQUE
-            ====================================================== */
-
-        const bloquesCodigo = document.querySelectorAll(".codigo");
-
-        bloquesCodigo.forEach(function (bloque) {
-          const codigoEl = bloque.querySelector("code");
-          if (!codigoEl) return;
-
-          let header = bloque.querySelector(".codigo-header");
-
-          if (!header) {
-            header = document.createElement("div");
-            header.className = "codigo-header";
-
-            const titulo = document.createElement("span");
-            titulo.textContent = "JavaScript";
-            header.appendChild(titulo);
-
-            bloque.insertBefore(header, bloque.firstChild);
-          }
-
-          if (header.querySelector(".btn-copiar")) return;
-
-          /* --------- grupo de botones --------- */
-
-          const grupoBotones = document.createElement("div");
-          grupoBotones.className = "codigo-botones";
-
-          const textoOriginal = codigoEl.textContent.trim();
-
-          /* --------- ¿es código ejecutable? --------- */
-
-          let esEjecutable = true;
-
-          try {
-            new Function(textoOriginal);
-          } catch (errorSintaxis) {
-            esEjecutable = false;
-          }
-
-          /* --------- botón ejecutar --------- */
-
-          let panelSalida = null;
-
-          if (esEjecutable) {
-            const botonEjecutar = document.createElement("button");
-            botonEjecutar.type = "button";
-            botonEjecutar.className = "btn-ejecutar";
-            botonEjecutar.textContent = "▶ Ejecutar";
-
-            panelSalida = document.createElement("div");
-            panelSalida.className = "salida";
-            panelSalida.hidden = true;
-            bloque.appendChild(panelSalida);
-
-            botonEjecutar.addEventListener("click", async function () {
-              panelSalida.hidden = false;
-              panelSalida.innerHTML = "";
-
-              const lineas = [];
-
-              function agregarLinea(tipo, args) {
-                const texto = Array.from(args)
-                  .map(function (valor) {
-                    if (typeof valor === "object" && valor !== null) {
-                      try {
-                        return JSON.stringify(valor);
-                      } catch (e) {
-                        return String(valor);
-                      }
-                    }
-                    return String(valor);
-                  })
-                  .join(" ");
-
-                lineas.push({ tipo: tipo, texto: texto });
-              }
-
-              const consolaOriginal = {
-                log: console.log,
-                error: console.error,
-                warn: console.warn,
-              };
-
-              console.log = function () {
-                agregarLinea("log", arguments);
-                consolaOriginal.log.apply(console, arguments);
-              };
-
-              console.error = function () {
-                agregarLinea("error", arguments);
-                consolaOriginal.error.apply(console, arguments);
-              };
-
-              console.warn = function () {
-                agregarLinea("warn", arguments);
-                consolaOriginal.warn.apply(console, arguments);
-              };
-
-              try {
-                const fn = new Function(
-                  "return (async () => {\n" + textoOriginal + "\n})();",
-                );
-
-                await fn();
-
-                if (lineas.length === 0) {
-                  lineas.push({
-                    tipo: "info",
-                    texto: "✓ Código ejecutado (sin console.log)",
-                  });
-                }
-              } catch (errorEjecucion) {
-                lineas.push({
-                  tipo: "error",
-                  texto: "⚠ " + errorEjecucion.message,
-                });
-              } finally {
-                console.log = consolaOriginal.log;
-                console.error = consolaOriginal.error;
-                console.warn = consolaOriginal.warn;
-              }
-
-              panelSalida.innerHTML = "";
-
-              lineas.forEach(function (linea) {
-                const p = document.createElement("div");
-                p.className = "salida-linea salida-" + linea.tipo;
-                p.textContent = linea.texto;
-                panelSalida.appendChild(p);
-              });
-            });
-
-            grupoBotones.appendChild(botonEjecutar);
-          }
-
-          /* --------- botón copiar --------- */
-
-          const botonCopiar = document.createElement("button");
-          botonCopiar.type = "button";
-          botonCopiar.className = "btn-copiar";
-          botonCopiar.textContent = "📋 Copiar";
-
-          botonCopiar.addEventListener("click", async function () {
-            const texto = codigoEl.textContent.trim();
-
-            async function marcarCopiado() {
-              botonCopiar.textContent = "✓ Copiado";
-              botonCopiar.classList.add("copiado");
-              setTimeout(function () {
-                botonCopiar.textContent = "📋 Copiar";
-                botonCopiar.classList.remove("copiado");
-              }, 1800);
-            }
-
-            try {
-              await navigator.clipboard.writeText(texto);
-              await marcarCopiado();
-            } catch (error) {
-              const textarea = document.createElement("textarea");
-              textarea.value = texto;
-              textarea.style.position = "fixed";
-              textarea.style.opacity = "0";
-              document.body.appendChild(textarea);
-              textarea.select();
-
-              try {
-                document.execCommand("copy");
-                await marcarCopiado();
-              } catch (errorAlternativo) {
-                botonCopiar.textContent = "❌ Error";
-              }
-
-              document.body.removeChild(textarea);
-            }
-          });
-
-          grupoBotones.appendChild(botonCopiar);
-          header.appendChild(grupoBotones);
-        });
-
-        /* =====================================================
-               2. PREGUNTAS MULTIPLE CHOICE POR TEMA
-            ====================================================== */
-
-        function crearQuiz(idSeccion, preguntas) {
-          const contenedor = document.createElement("div");
-          contenedor.className = "quiz";
-
-          const titulo = document.createElement("div");
-          titulo.className = "quiz-titulo";
-          titulo.textContent = "📝 Pon a prueba lo aprendido";
-          contenedor.appendChild(titulo);
-
-          const respuestas = {};
-
-          preguntas.forEach(function (pregunta, indicePregunta) {
-            const bloque = document.createElement("div");
-            bloque.className = "quiz-pregunta";
-
-            const enunciado = document.createElement("p");
-            enunciado.className = "quiz-enunciado";
-            enunciado.textContent =
-              indicePregunta + 1 + ". " + pregunta.pregunta;
-            bloque.appendChild(enunciado);
-
-            const opcionesCont = document.createElement("div");
-            opcionesCont.className = "quiz-opciones";
-
-            pregunta.opciones.forEach(function (textoOpcion, indiceOpcion) {
-              const label = document.createElement("label");
-              label.className = "quiz-opcion";
-
-              const input = document.createElement("input");
-              input.type = "radio";
-              input.name = idSeccion + "-pregunta-" + indicePregunta;
-              input.value = indiceOpcion;
-
-              input.addEventListener("change", function () {
-                respuestas[indicePregunta] = indiceOpcion;
-              });
-
-              const span = document.createElement("span");
-              span.textContent = textoOpcion;
-
-              label.appendChild(input);
-              label.appendChild(span);
-              opcionesCont.appendChild(label);
-            });
-
-            bloque.appendChild(opcionesCont);
-            contenedor.appendChild(bloque);
-          });
-
-          const acciones = document.createElement("div");
-          acciones.className = "quiz-acciones";
-
-          const botonCorregir = document.createElement("button");
-          botonCorregir.type = "button";
-          botonCorregir.className = "btn-corregir";
-          botonCorregir.textContent = "Corregir respuestas";
-
-          const puntaje = document.createElement("span");
-          puntaje.className = "quiz-puntaje";
-
-          botonCorregir.addEventListener("click", function () {
-            let correctas = 0;
-
-            const bloques = contenedor.querySelectorAll(".quiz-pregunta");
-
-            bloques.forEach(function (bloque, indicePregunta) {
-              const opciones = bloque.querySelectorAll(".quiz-opcion");
-              const correcta = preguntas[indicePregunta].correcta;
-              const elegida = respuestas[indicePregunta];
-
-              opciones.forEach(function (opcionEl, indiceOpcion) {
-                opcionEl.classList.remove("correcta", "incorrecta");
-
-                if (indiceOpcion === correcta) {
-                  opcionEl.classList.add("correcta");
-                } else if (indiceOpcion === elegida && elegida !== correcta) {
-                  opcionEl.classList.add("incorrecta");
-                }
-              });
-
-              if (elegida === correcta) correctas++;
-            });
-
-            puntaje.textContent =
-              "Puntaje: " + correctas + " / " + preguntas.length;
-
-            puntaje.classList.remove("bien", "regular", "mal");
-
-            const proporcion = correctas / preguntas.length;
-
-            if (proporcion === 1) {
-              puntaje.classList.add("bien");
-            } else if (proporcion >= 0.5) {
-              puntaje.classList.add("regular");
-            } else {
-              puntaje.classList.add("mal");
-            }
-          });
-
-          acciones.appendChild(botonCorregir);
-          acciones.appendChild(puntaje);
-          contenedor.appendChild(acciones);
-
-          return contenedor;
-        }
-
-        document.querySelectorAll(".clase").forEach(function (seccion) {
-          const preguntas = QUIZ_DATA[seccion.id];
-
-          if (!preguntas || preguntas.length === 0) return;
-
-          seccion.appendChild(crearQuiz(seccion.id, preguntas));
-        });
-
-        /* =====================================================
-               3. MARCAR CLASE COMO COMPLETADA + PROGRESO GENERAL
-            ====================================================== */
-
-        const secciones = document.querySelectorAll(".clase");
-        const totalSecciones = secciones.length;
-
-        const barraProgreso = document.getElementById("barraProgreso");
-        const progresoTexto = document.getElementById("progresoTexto");
-
-        function actualizarProgreso() {
-          const porcentaje =
-            totalSecciones > 0
-              ? Math.round((completadas.size / totalSecciones) * 100)
-              : 0;
-
-          if (barraProgreso) barraProgreso.style.width = porcentaje + "%";
-          if (progresoTexto) progresoTexto.textContent = porcentaje + "%";
-
-          secciones.forEach(function (seccion) {
-            const enlace = document.querySelector(
-              '.sidebar a[href="#' + seccion.id + '"]',
-            );
-            if (!enlace) return;
-
-            let marca = enlace.querySelector(".marca-completada");
-
-            if (completadas.has(seccion.id)) {
-              if (!marca) {
-                marca = document.createElement("span");
-                marca.className = "marca-completada";
-                marca.textContent = "✓";
-                enlace.appendChild(marca);
-              }
-            } else if (marca) {
-              marca.remove();
-            }
-          });
-        }
-
-        secciones.forEach(function (seccion) {
-          const barraCompletado = document.createElement("div");
-          barraCompletado.className = "barra-completado";
-
-          const label = document.createElement("label");
-          label.className = "check-completado";
-
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.checked = completadas.has(seccion.id);
-
-          const textoLabel = document.createElement("span");
-          textoLabel.textContent = "Marcar esta clase como completada";
-
-          label.appendChild(checkbox);
-          label.appendChild(textoLabel);
-          barraCompletado.appendChild(label);
-
-          seccion.appendChild(barraCompletado);
-
-          checkbox.addEventListener("change", function () {
-            if (checkbox.checked) {
-              completadas.add(seccion.id);
-            } else {
-              completadas.delete(seccion.id);
-            }
-            guardarCompletadas(Array.from(completadas));
-            actualizarProgreso();
-          });
-        });
-
-        actualizarProgreso();
-
-        /* =====================================================
-               4. NAVEGACIÓN LATERAL ACTIVA SEGÚN SCROLL
-            ====================================================== */
-
-        const enlacesSidebar = document.querySelectorAll(".sidebar a");
-
-        const observador = new IntersectionObserver(
-          function (entradas) {
-            entradas.forEach(function (entrada) {
-              if (!entrada.isIntersecting) return;
-
-              enlacesSidebar.forEach(function (enlace) {
-                enlace.classList.remove("activo");
-              });
-
-              const enlaceActivo = document.querySelector(
-                '.sidebar a[href="#' + entrada.target.id + '"]',
-              );
-
-              if (enlaceActivo) enlaceActivo.classList.add("activo");
-            });
-          },
-          { rootMargin: "-40% 0px -55% 0px", threshold: 0 },
-        );
-
-        secciones.forEach(function (seccion) {
-          observador.observe(seccion);
-        });
-
-        /* =====================================================
-               5. BOTÓN "MARCAR COMO COMPLETADO" DEL EJERCICIO DE EVENTOS
-            ====================================================== */
-
-        const botonEjercicio = document.querySelector(".btn-ejercicio");
-
-        if (botonEjercicio) {
-          botonEjercicio.addEventListener("click", function () {
-            const titulo = document.querySelector("#eventos h1");
-            if (titulo) titulo.textContent = "¡Eventos completados! 🎉";
-          });
-        }
-      });
-    </script>
+    <script src="app.js" defer></script>
   </body>
 </html>
