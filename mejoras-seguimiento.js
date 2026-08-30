@@ -53,6 +53,41 @@ function asegurarPaneles(){
  cargarFormulario(window.configuracionSeguimientoActual||{});
  asegurarPopupLimite();
  actualizarIndicadorLimite();
+ asegurarPestanasPanelDocente();
+}
+function crearPanelDocente(id,titulo,descripcion){
+ const panel=document.createElement("section");panel.id=`teacherWorkspacePanel-${id}`;panel.className="teacher-workspace-panel";panel.dataset.teacherPanel=id;panel.innerHTML=`<div class="teacher-workspace-panel-heading"><div><h3>${titulo}</h3><p>${descripcion}</p></div></div>`;return panel;
+}
+function asegurarPestanasPanelDocente(){
+ const contenido=document.querySelector("#panelProfesorModal .teacher-panel-content");if(!contenido)return;
+ if(document.getElementById("teacherWorkspaceTabs")){actualizarBadgesPestanas();return}
+ const referencias={
+  estado:document.getElementById("estadoClaseProfesor"),alerta:document.getElementById("alertaNuevaSolicitud"),solicitudes:document.getElementById("solicitudesPendientesProfesor"),docentes:document.getElementById("cantidadDocentesAutorizados")?.closest("details"),leyenda:contenido.querySelector(".teacher-icon-legend"),config:document.getElementById("configuracionSeguimientoProfesor"),incidencias:document.getElementById("incidenciasSeguimientoProfesor"),resumen:document.getElementById("resumenProfesor"),resumenIA:document.getElementById("resumenConsultasIAProfesor"),filtros:document.getElementById("filtrosPanelProfesor"),tabla:contenido.querySelector(".teacher-table-scroll"),estadoPanel:document.getElementById("estadoPanelProfesor"),tituloFiltros:[...contenido.querySelectorAll(".teacher-section-title")].find(x=>x.textContent.includes("Filtros")),calculo:[...contenido.children].find(x=>x.tagName==="DIV"&&x.textContent.includes("Cómo se calcula"))
+ };
+ const pestañas=[["resumen","fa-chart-pie","Resumen"],["estudiantes","fa-users","Estudiantes"],["seguimiento","fa-shield-halved","Seguimiento"],["solicitudes","fa-user-clock","Solicitudes"],["docentes","fa-user-shield","Docentes"]];
+ const nav=document.createElement("nav");nav.id="teacherWorkspaceTabs";nav.className="teacher-workspace-tabs";nav.setAttribute("aria-label","Secciones del panel docente");nav.innerHTML=pestañas.map(x=>`<button class="teacher-workspace-tab" type="button" data-teacher-tab="${x[0]}" aria-controls="teacherWorkspacePanel-${x[0]}"><i class="fa-solid ${x[1]}"></i><span>${x[2]}</span><span class="teacher-workspace-tab-count" data-tab-count="${x[0]}">0</span></button>`).join("");
+ const paneles={
+  resumen:crearPanelDocente("resumen","Resumen general","Estado de la clase, alertas y métricas principales."),
+  estudiantes:crearPanelDocente("estudiantes","Estudiantes","Filtros, calificaciones, progreso y acciones individuales."),
+  seguimiento:crearPanelDocente("seguimiento","Seguimiento y bloqueo","Límite de salidas, conexión de la extensión, dominios y retención."),
+  solicitudes:crearPanelDocente("solicitudes","Solicitudes de acceso","Altas pendientes y aprobación de estudiantes."),
+  docentes:crearPanelDocente("docentes","Docentes autorizados","Cuentas que pueden administrar el panel y sus registros.")
+ };
+ contenido.prepend(nav);Object.values(paneles).forEach(p=>contenido.appendChild(p));
+ [referencias.estado,referencias.alerta,referencias.incidencias,referencias.resumen,referencias.resumenIA].filter(Boolean).forEach(x=>paneles.resumen.appendChild(x));
+ [referencias.leyenda,referencias.tituloFiltros,referencias.filtros,referencias.calculo,referencias.tabla,referencias.estadoPanel].filter(Boolean).forEach(x=>paneles.estudiantes.appendChild(x));
+ [referencias.config].filter(Boolean).forEach(x=>paneles.seguimiento.appendChild(x));
+ [referencias.solicitudes].filter(Boolean).forEach(x=>paneles.solicitudes.appendChild(x));
+ [referencias.docentes].filter(Boolean).forEach(x=>paneles.docentes.appendChild(x));
+ [...contenido.children].filter(x=>x!==nav&&!Object.values(paneles).includes(x)).forEach(x=>paneles.resumen.appendChild(x));
+ nav.querySelectorAll("[data-teacher-tab]").forEach(b=>b.onclick=()=>activarPestanaDocente(b.dataset.teacherTab));
+ activarPestanaDocente(localStorage.getItem("teacher_panel_active_tab")||"resumen");actualizarBadgesPestanas();
+}
+function activarPestanaDocente(id){
+ const valido=["resumen","estudiantes","seguimiento","solicitudes","docentes"].includes(id)?id:"resumen";document.querySelectorAll(".teacher-workspace-tab").forEach(b=>{const activo=b.dataset.teacherTab===valido;b.classList.toggle("active",activo);b.setAttribute("aria-selected",String(activo));b.tabIndex=activo?0:-1});document.querySelectorAll(".teacher-workspace-panel").forEach(p=>{const activo=p.dataset.teacherPanel===valido;p.classList.toggle("active",activo);p.hidden=!activo});localStorage.setItem("teacher_panel_active_tab",valido);document.querySelector(`#teacherWorkspacePanel-${valido}`)?.scrollIntoView({block:"start",behavior:"smooth"});
+}
+function actualizarBadgesPestanas(){
+ const datos=Array.isArray(estudiantesProfesor)?estudiantesProfesor:[],activos=datos.filter(x=>x.estadoCuenta==="activo"),pendientes=datos.filter(x=>x.estadoCuenta==="pendiente").length,problemas=activos.filter(x=>{const e=estadoExtension(x);return x.pantallaBloqueada===true||["sin-conexion","interrumpida","no-instalada"].includes(e.codigo)||claseDominio(x.seguimientoExtension?.dominioActual).clase==="danger"}).length,valores={resumen:problemas,estudiantes:datos.length,seguimiento:problemas,solicitudes:pendientes,docentes:Array.isArray(window.TEACHER_EMAILS)?window.TEACHER_EMAILS.length:0};Object.entries(valores).forEach(([id,n])=>{const x=document.querySelector(`[data-tab-count="${id}"]`);if(x)x.textContent=String(n)});
 }
 function limiteActual(){return Math.max(1,Math.min(50,Number(window.configuracionSeguimientoActual?.limiteSalidas)||5))}
 function actualizarIndicadorLimite(valor=limiteActual()){
@@ -253,5 +288,8 @@ abrirHistorialPestanas=async function(indice){
 };
 window.addEventListener("estado-inicio-clase",e=>setTimeout(()=>{cargarFormulario(e.detail?.configuracionSeguimiento||window.configuracionSeguimientoActual||{});if(document.getElementById("panelProfesorModal")?.classList.contains("active"))renderPanelProfesor()},0));
 window.addEventListener("profesor-data",()=>setTimeout(mejorarTabla,0));
+document.addEventListener("keydown",evento=>{
+ const actual=evento.target.closest?.(".teacher-workspace-tab");if(!actual||!["ArrowLeft","ArrowRight","Home","End"].includes(evento.key))return;const botones=[...document.querySelectorAll(".teacher-workspace-tab")],indice=botones.indexOf(actual);let siguiente=indice;if(evento.key==="ArrowRight")siguiente=(indice+1)%botones.length;if(evento.key==="ArrowLeft")siguiente=(indice-1+botones.length)%botones.length;if(evento.key==="Home")siguiente=0;if(evento.key==="End")siguiente=botones.length-1;evento.preventDefault();botones[siguiente]?.focus();activarPestanaDocente(botones[siguiente]?.dataset.teacherTab);
+});
 asegurarPaneles();setInterval(mejorarTabla,10000);
 })();
