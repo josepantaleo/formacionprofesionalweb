@@ -3062,7 +3062,8 @@
       let ultimoEstadoExtensionGuardado = 0;
       window.guardarEstadoExtensionSeguimientoFirebase = async function(estado) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
-        if (!user || !db) return false;
+        // El heartbeat nunca debe crear el documento antes del alta inicial.
+        if (!user || !db || !registroFirebaseExistente) return false;
         const ahora = Date.now();
         if (ahora - ultimoEstadoExtensionGuardado < 8000 && estado?.forzar !== true) return true;
         ultimoEstadoExtensionGuardado = ahora;
@@ -5854,7 +5855,7 @@
           const modal=document.createElement('div'); modal.className='modal-overlay'; modal.style.display='flex';
           modal.innerHTML=`<div class="modal-box" style="max-width:520px;width:92%;"><h3>👨‍🎓 Datos del estudiante</h3><p>Primera vez con este correo. Completá tus datos para comenzar.</p><div class="input-group"><label>Nombre y Apellido</label><input id="nuevoNombre" type="text" required></div><div class="input-group"><label>Curso</label><select id="nuevoCurso" required><option value="">Seleccionar curso</option><option>1° Año</option><option>2° Año</option><option>3° Año</option><option>4° Año</option><option>5° Año</option><option>6° Año</option><option>7° Año</option></select></div><div class="input-group"><label>División</label><select id="nuevoDivision" required><option value="">Seleccionar división</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option></select></div><div class="input-group"><label>Turno</label><select id="nuevoTurno" required><option value="">Seleccionar turno</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select></div><div id="nuevoError" role="alert" style="display:none;color:#fca5a5">Seleccioná obligatoriamente curso, división y turno.</div><div class="modal-actions"><button class="btn btn-primary" id="confirmarNuevo" type="button">Comenzar actividad</button></div></div>`;
           document.body.appendChild(modal); const n=modal.querySelector('#nuevoNombre'); n.value=window.firebaseCurrentUser?.displayName||''; n.focus();
-          modal.querySelector('#confirmarNuevo').onclick=async()=>{const nombre=n.value.trim(),curso=modal.querySelector('#nuevoCurso').value.trim(),division=modal.querySelector('#nuevoDivision').value.trim().toUpperCase(),turno=modal.querySelector('#nuevoTurno').value;if(!nombre||!curso||!division||!turno){const error=modal.querySelector('#nuevoError');error.style.display='block';const primerFaltante=!nombre?n:!curso?modal.querySelector('#nuevoCurso'):!division?modal.querySelector('#nuevoDivision'):modal.querySelector('#nuevoTurno');primerFaltante.focus();return;}modal.querySelector('#nuevoError').style.display='none';document.getElementById('studentName').value=nombre;document.getElementById('studentCourse').value=curso;document.getElementById('studentDivision').value=division;document.getElementById('studentTurno').value=turno;setLocalStorage('app_student_name',nombre);setLocalStorage('app_student_course',curso);setLocalStorage('app_student_division',division);setLocalStorage('app_student_turno',turno);const guardado=await guardarIdentificacionFirebase();if(!guardado){modal.querySelector('#nuevoError').textContent='No se pudieron guardar los datos. Verificá la conexión e intentá nuevamente.';modal.querySelector('#nuevoError').style.display='block';return;}modal.remove();resolve();};
+          modal.querySelector('#confirmarNuevo').onclick=async()=>{const nombre=n.value.trim(),curso=modal.querySelector('#nuevoCurso').value.trim(),division=modal.querySelector('#nuevoDivision').value.trim().toUpperCase(),turno=modal.querySelector('#nuevoTurno').value;if(!nombre||!curso||!division||!turno){const error=modal.querySelector('#nuevoError');error.style.display='block';const primerFaltante=!nombre?n:!curso?modal.querySelector('#nuevoCurso'):!division?modal.querySelector('#nuevoDivision'):modal.querySelector('#nuevoTurno');primerFaltante.focus();return;}modal.querySelector('#nuevoError').style.display='none';document.getElementById('studentName').value=nombre;document.getElementById('studentCourse').value=curso;document.getElementById('studentDivision').value=division;document.getElementById('studentTurno').value=turno;setLocalStorage('app_student_name',nombre);setLocalStorage('app_student_course',curso);setLocalStorage('app_student_division',division);setLocalStorage('app_student_turno',turno);const guardado=await guardarIdentificacionFirebase();if(!guardado){const codigo=window.ultimoErrorGuardadoFirebase?.code||'';modal.querySelector('#nuevoError').textContent=`No se pudieron guardar los datos${codigo?` (${codigo})`:''}. Publicá REGLAS.txt y volvé a intentar.`;modal.querySelector('#nuevoError').style.display='block';return;}modal.remove();resolve();};
         });
       }
 
@@ -6075,7 +6076,11 @@
           }
 
           const datosFirebase = await window.cargarProgresoFirebase();
-          registroFirebaseExistente = Boolean(datosFirebase);
+          registroFirebaseExistente = Boolean(
+              datosFirebase?.uid &&
+              datosFirebase?.email &&
+              datosFirebase?.estadoCuenta
+          );
           window.ultimoDocumentoEstudianteFirebase = datosFirebase || null;
           if (datosFirebase?.estadoCuenta === 'inactivo') {
               bloquearCuentaEstudiante(datosFirebase.bajaMotivo || '');
