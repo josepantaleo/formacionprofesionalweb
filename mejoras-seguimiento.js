@@ -1,8 +1,39 @@
 (function(){
 "use strict";
 const VERSION_REQUERIDA="1.3.0";
+const CLAVE_TEMA_PANEL_DOCENTE="teacher_panel_theme";
 let historialActual=[],estudianteHistorial=null,revisionesActuales=new Map(),salidasSeleccionadas=new Set(),grupoRevisionActual="";
 const txt=v=>String(v||"").trim();
+function aplicarTemaPanelDocente(tema){
+ const claro=tema==="light",boton=document.getElementById("btnTemaPanelDocente");
+ document.body.classList.toggle("teacher-light-mode",claro);
+ document.body.dataset.teacherTheme=claro?"light":"dark";
+ if(boton){
+  const accion=claro?"oscuro":"claro",icono=claro?"fa-moon":"fa-sun";
+  boton.innerHTML=`<i class="fa-solid ${icono}" aria-hidden="true"></i><span>Modo ${accion}</span>`;
+  boton.title=`Cambiar a modo ${accion}`;
+  boton.setAttribute("aria-label",`Cambiar a modo ${accion}`);
+  boton.setAttribute("aria-pressed",String(claro));
+ }
+}
+function asegurarTemaPanelDocente(){
+ const barra=document.querySelector("#panelProfesorModal .teacher-panel-toolbar");if(!barra)return;
+ let boton=document.getElementById("btnTemaPanelDocente");
+ if(!boton){
+  boton=document.createElement("button");
+  boton.id="btnTemaPanelDocente";
+  boton.type="button";
+  boton.className="btn btn-secondary teacher-theme-toggle";
+  const cerrar=barra.querySelector(".teacher-panel-close");
+  cerrar?barra.insertBefore(boton,cerrar):barra.appendChild(boton);
+  boton.onclick=()=>{
+   const tema=document.body.classList.contains("teacher-light-mode")?"dark":"light";
+   localStorage.setItem(CLAVE_TEMA_PANEL_DOCENTE,tema);
+   aplicarTemaPanelDocente(tema);
+  };
+ }
+ aplicarTemaPanelDocente(localStorage.getItem(CLAVE_TEMA_PANEL_DOCENTE)==="light"?"light":"dark");
+}
 function ms(v){if(v?.toMillis)return v.toMillis();if(v?.seconds)return Number(v.seconds)*1000;const n=Date.parse(v||"");return Number.isFinite(n)?n:0}
 function dominioCoincide(dominio,lista){const d=txt(dominio).toLowerCase().replace(/^www\./,"");return(Array.isArray(lista)?lista:[]).some(x=>{x=txt(x).toLowerCase().replace(/^www\./,"");return x&&(d===x||d.endsWith(`.${x}`))})}
 function estadoExtension(d){
@@ -51,6 +82,7 @@ function asegurarPaneles(){
  }
  if(!document.getElementById("incidenciasSeguimientoProfesor")){const p=document.createElement("section");p.id="incidenciasSeguimientoProfesor";p.className="tracking-incidents-panel";const r=document.getElementById("resumenProfesor");r?.parentNode.insertBefore(p,r)}
  cargarFormulario(window.configuracionSeguimientoActual||{});
+ asegurarTemaPanelDocente();
  asegurarPopupLimite();
  actualizarIndicadorLimite();
  asegurarPestanasPanelDocente();

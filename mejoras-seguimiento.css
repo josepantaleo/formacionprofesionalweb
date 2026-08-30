@@ -289,4 +289,195 @@
     grid-template-columns:minmax(105px,40%) minmax(0,1fr);
   }
 }
+body.teacher-light-mode #panelProfesorModal,
+body.teacher-light-mode #accionesEstudianteModal,
+body.teacher-light-mode #historialDesbloqueosModal,
+body.teacher-light-mode #historialDescuentosModal,
+body.teacher-light-mode #historialPestanasModal,
+body.teacher-light-mode #detalleEstudianteProfesorModal,
+body.teacher-light-mode #configurarLimiteBloqueoModal{
+  --text-main:#0f172a;
+  --text-muted:#475569;
+  --primary:#0369a1;
+  --primary-hover:#075985;
+  --border:#cbd5e1;
+  --surface:#ffffff;
+}
+body.teacher-light-mode #panelProfesorModal .teacher-panel-box,
+body.teacher-light-mode #accionesEstudianteModal .modal-box,
+body.teacher-light-mode #historialDesbloqueosModal .modal-box,
+body.teacher-light-mode #historialDescuentosModal .modal-box,
+body.teacher-light-mode #historialPestanasModal .modal-box,
+body.teacher-light-mode #detalleEstudianteProfesorModal .modal-box,
+body.teacher-light-mode #configurarLimiteBloqueoModal .modal-box,
+body.teacher-light-mode .teacher-confirm-box,
+body.teacher-light-mode .teacher-discount-edit-box,
+body.teacher-light-mode .tab-review-box{
+  background:#f8fafc;
+  color:#0f172a;
+  border-color:#cbd5e1;
+}
+body.teacher-light-mode #panelProfesorModal .teacher-panel-header{
+  background:rgba(255,255,255,.97);
+  border-bottom-color:#cbd5e1;
+}
+body.teacher-light-mode #panelProfesorModal .teacher-panel-heading h3,
+body.teacher-light-mode #panelProfesorModal .teacher-workspace-panel-heading h3,
+body.teacher-light-mode #panelProfesorModal .teacher-section-title,
+body.teacher-light-mode #panelProfesorModal .tracking-panel-heading h4{
+  color:#075985;
+}
+body.teacher-light-mode #panelProfesorModal .teacher-panel-heading p,
+body.teacher-light-mode #panelProfesorModal .teacher-workspace-panel-heading p,
+body.teacher-light-mode #panelProfesorModal .tracking-config-note,
+body.teacher-light-mode #panelProfesorModal #estadoPanelProfesor{
+  color:#475569 !important;
+}
+body.teacher-light-mode #panelProfesorModal .teacher-workspace-tabs{
+  border-color:#bae6fd;
+  background:rgba(255,255,255,.98);
+  box-shadow:0 6px 18px rgba(15,23,42,.12);
+}
+body.teacher-light-mode #panelProfesorModal .teacher-workspace-tab{
+  color:#475569;
+}
+body.teacher-light-mode #panelProfesorModal .teacher-workspace-tab:hover{
+  background:#e0f2fe;
+  color:#075985;
+}
+body.teacher-light-mode #panelProfesorModal .teacher-workspace-tab.active{
+  border-color:#38bdf8;
+  background:#e0f2fe;
+  color:#075985;
+}
+body.teacher-light-mode #panelProfesorModal .teacher-workspace-tab-count{
+  background:#e2e8f0;
+  color:#334155;
+}
+body.teacher-light-mode #panelProfesorModal .teacher-workspace-tab.active .teacher-workspace-tab-count{
+  background:#0284c7;
+  color:#fff;
+}
+body.teacher-light-mode #panelProfesorModal .tracking-config-panel,
+body.teacher-light-mode #panelProfesorModal .tracking-incidents-panel,
+body.teacher-light-mode #panelProfesorModal #filtrosPanelProfesor,
+body.teacher-light-mode #panelProfesorModal #resumenProfesor>.teacher-summary-card,
+body.teacher-light-mode #panelProfesorModal .pending-request-card,
+body.teacher-light-mode #panelProfesorModal .tracking-incident-stat,
+body.teacher-light-mode #panelProfesorModal .teacher-icon-legend,
+body.teacher-light-mode #panelProfesorModal details{
+  background:#fff !important;
+  color:#0f172a;
+  border-color:#cbd5e1 !important;
+}
+body.teacher-light-mode #panelProfesorModal #estadoClaseProfesor{
+  background:#e0f2fe !important;
+  color:#075985 !important;
+  border-color:#7dd3fc !important;
+}
+body.teacher-light-mode #panelProfesorModal input,
+body.teacher-light-mode #panelProfesorModal select,
+body.teacher-light-mode #panelProfesorModal textarea,
+body.teacher-light-mode #historialPestanasModal input,
+body.teacher-light-mode #historialPestanasModal select,
+body.teacher-light-mode #historialPestanasModal textarea,
+body.teacher-light-mode #configurarLimiteBloqueoModal input{
+  background:#fff !important;
+  color:#0f172a !important;
+  border-color:#94a3b8 !important;
+}
+body.teacher-light-mode #panelProfesorModal input::placeholder,
+body.teacher-light-mode #panelProfesorModal textarea::placeholder,
+body.teacher-light-mode #historialPestanasModal input::placeholder,
+body.teacher-light-mode #historialPestanasModal textarea::placeholder{
+  color:#64748b;
+}
+body.teacher-light-mode #panelProfesorModal .teacher-table-scroll{
+  background:#fff;
+  border-color:#cbd5e1;
+}
+body.teacher-light-mode #panelProfesorModal table th{
+  background:#e2e8f0;
+  color:#075985;
+  border-color:#cbd5e1;
+}
+body.teacher-light-mode #panelProfesorModal table td,
+body.teacher-light-mode #panelProfesorModal table th:first-child,
+body.teacher-light-mode #panelProfesorModal table td:first-child{
+  background:#fff;
+  color:#0f172a;
+  border-color:#e2e8f0;
+}
+body.teacher-light-mode #panelProfesorModal table tbody tr:hover{
+  background:#f0f9ff;
+}
+body.teacher-light-mode #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row){
+  background:#fff !important;
+  border-color:#bae6fd;
+  box-shadow:0 5px 16px rgba(15,23,42,.09);
+}
+body.teacher-light-mode #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td{
+  background:transparent;
+  color:#0f172a;
+  border-color:#e2e8f0;
+}
+body.teacher-light-mode #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td::before{
+  color:#0369a1;
+}
+body.teacher-light-mode #panelProfesorModal .teacher-progress-value,
+body.teacher-light-mode #panelProfesorModal #resumenProfesor strong,
+body.teacher-light-mode #panelProfesorModal .tracking-current-title{
+  color:#0f172a;
+}
+body.teacher-light-mode #panelProfesorModal .tracking-cell-detail{
+  color:#475569;
+}
+body.teacher-light-mode #panelProfesorModal .teacher-progress-track{
+  background:#cbd5e1;
+}
+body.teacher-light-mode #panelProfesorModal .btn-secondary,
+body.teacher-light-mode #accionesEstudianteModal .btn-secondary,
+body.teacher-light-mode #historialDesbloqueosModal .btn-secondary,
+body.teacher-light-mode #historialDescuentosModal .btn-secondary,
+body.teacher-light-mode #historialPestanasModal .btn-secondary,
+body.teacher-light-mode #detalleEstudianteProfesorModal .btn-secondary,
+body.teacher-light-mode #configurarLimiteBloqueoModal .btn-secondary{
+  background:#e2e8f0;
+  color:#0f172a;
+  border-color:#94a3b8;
+}
+body.teacher-light-mode #panelProfesorModal .btn-secondary:hover,
+body.teacher-light-mode #accionesEstudianteModal .btn-secondary:hover,
+body.teacher-light-mode #historialPestanasModal .btn-secondary:hover{
+  background:#cbd5e1;
+}
+body.teacher-light-mode #panelProfesorModal .acciones-principales-cell .btn{
+  background:#64748b;
+  color:#fff;
+}
+body.teacher-light-mode #accionesEstudianteModal .student-actions-legend,
+body.teacher-light-mode #historialPestanasModal .tab-history-filters,
+body.teacher-light-mode #historialPestanasModal .tab-excursion,
+body.teacher-light-mode #historialPestanasModal .tracking-incident-stat,
+body.teacher-light-mode #configurarLimiteBloqueoModal .tracking-limit-control{
+  background:#fff;
+  color:#0f172a;
+  border-color:#cbd5e1;
+}
+body.teacher-light-mode #configurarLimiteBloqueoModal .tracking-limit-preview{
+  background:#fff7ed;
+  color:#9a3412;
+}
+.teacher-theme-toggle i{
+  width:1rem;
+  text-align:center;
+}
+@media(max-width:560px){
+  #btnTemaPanelDocente span{
+    display:none;
+  }
+  #btnTemaPanelDocente{
+    min-width:0;
+  }
+}
 @media print{body.tracking-print-history>*{display:none!important}body.tracking-print-history #historialPestanasModal{display:block!important;position:static!important;background:#fff!important;color:#000!important}body.tracking-print-history #historialPestanasModal .modal-box{display:block!important;width:100%!important;max-width:none!important;max-height:none!important;overflow:visible!important;color:#000!important;background:#fff!important}body.tracking-print-history .tab-history-filters,body.tracking-print-history .tab-history-toolbar,body.tracking-print-history #historialPestanasModal button{display:none!important}}
