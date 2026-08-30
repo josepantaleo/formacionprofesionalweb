@@ -86,7 +86,207 @@
 .tracking-limit-preview{margin:.75rem 0;padding:.7rem;border-left:3px solid #f59e0b;background:rgba(245,158,11,.09);color:#fde68a;font-size:.8rem;line-height:1.45}
 .tracking-limit-actions{display:flex;justify-content:flex-end;gap:.55rem;flex-wrap:wrap}
 #btnConfigurarLimiteBloqueo strong{font-size:1em}
-@media(max-width:760px){.teacher-workspace-tabs{grid-template-columns:repeat(2,minmax(0,1fr));position:static}.teacher-workspace-tab:last-child{grid-column:1/-1}.teacher-workspace-tab{justify-content:flex-start;min-width:0}.tracking-config-grid,.tracking-incidents-summary,.tab-history-filters,.tab-review-form{grid-template-columns:1fr}.tab-review-field.wide{grid-column:auto}.tracking-incident-item{grid-template-columns:1fr}#tablaProfesorBody td[data-label="Seguimiento"],#tablaProfesorBody td[data-label="Visita actual"]{display:grid;grid-template-columns:minmax(105px,36%) minmax(0,1fr);gap:.55rem;width:100%;box-sizing:border-box}.tab-excursion-actions .btn{flex:1;justify-content:center}.tab-bulk-bar .btn{flex:1}}
-@media(max-width:430px){.teacher-workspace-tabs{grid-template-columns:1fr}.teacher-workspace-tab:last-child{grid-column:auto}.teacher-workspace-tab{min-height:38px}.teacher-workspace-panel-heading{display:block}}
+@media(max-width:760px){.teacher-workspace-tabs{grid-template-columns:repeat(5,minmax(0,1fr));position:sticky;top:0;gap:.3rem;padding:.35rem;overflow:visible}.teacher-workspace-tab,.teacher-workspace-tab:last-child{position:relative;grid-column:auto;justify-content:center;min-width:0;min-height:44px;padding:.5rem}.teacher-workspace-tab>span{display:none}.teacher-workspace-tab i{font-size:1rem}.teacher-workspace-tab::after{content:attr(data-tooltip);position:absolute;left:50%;bottom:calc(100% + 8px);z-index:100;display:block;width:max-content;max-width:190px;padding:.4rem .55rem;border:1px solid rgba(56,189,248,.45);border-radius:6px;background:#020617;color:#e0f2fe;font-size:.68rem;font-weight:700;line-height:1.3;text-align:center;white-space:normal;box-shadow:0 8px 22px rgba(0,0,0,.42);opacity:0;visibility:hidden;pointer-events:none;transform:translate(-50%,5px);transition:opacity .14s ease,transform .14s ease,visibility .14s}.teacher-workspace-tab::before{content:"";position:absolute;left:50%;bottom:calc(100% + 3px);z-index:101;border:5px solid transparent;border-top-color:#38bdf8;opacity:0;visibility:hidden;transform:translateX(-50%);transition:opacity .14s ease,visibility .14s}.teacher-workspace-tab:hover::after,.teacher-workspace-tab:focus-visible::after,.teacher-workspace-tab:active::after,.teacher-workspace-tab:hover::before,.teacher-workspace-tab:focus-visible::before,.teacher-workspace-tab:active::before{opacity:1;visibility:visible;transform:translate(-50%,0)}.teacher-workspace-tab:hover::before,.teacher-workspace-tab:focus-visible::before,.teacher-workspace-tab:active::before{transform:translateX(-50%)}.teacher-workspace-tab:first-child::after{left:0;transform:translate(0,5px)}.teacher-workspace-tab:first-child:hover::after,.teacher-workspace-tab:first-child:focus-visible::after,.teacher-workspace-tab:first-child:active::after{transform:translate(0,0)}.teacher-workspace-tab:last-child::after{left:auto;right:0;transform:translate(0,5px)}.teacher-workspace-tab:last-child:hover::after,.teacher-workspace-tab:last-child:focus-visible::after,.teacher-workspace-tab:last-child:active::after{transform:translate(0,0)}.tracking-config-grid,.tracking-incidents-summary,.tab-history-filters,.tab-review-form{grid-template-columns:1fr}.tab-review-field.wide{grid-column:auto}.tracking-incident-item{grid-template-columns:1fr}#tablaProfesorBody td[data-label="Seguimiento"],#tablaProfesorBody td[data-label="Visita actual"]{display:grid;grid-template-columns:minmax(105px,36%) minmax(0,1fr);gap:.55rem;width:100%;box-sizing:border-box}.tab-excursion-actions .btn{flex:1;justify-content:center}.tab-bulk-bar .btn{flex:1}}
+@media(max-width:430px){.teacher-workspace-tabs{grid-template-columns:repeat(5,minmax(0,1fr));gap:.2rem}.teacher-workspace-tab{min-height:40px;padding:.4rem}.teacher-workspace-tab i{font-size:.92rem}.teacher-workspace-panel-heading{display:block}}
+@media(max-width:760px){.teacher-workspace-tab.show-mobile-tooltip::after,.teacher-workspace-tab.show-mobile-tooltip::before{opacity:1;visibility:visible}.teacher-workspace-tab.show-mobile-tooltip::after{transform:translate(-50%,0)}.teacher-workspace-tab.show-mobile-tooltip::before{transform:translateX(-50%)}.teacher-workspace-tab:first-child.show-mobile-tooltip::after,.teacher-workspace-tab:last-child.show-mobile-tooltip::after{transform:translate(0,0)}}
 @media(max-width:520px){.tracking-limit-presets{grid-template-columns:repeat(2,1fr)}.tracking-limit-control{grid-template-columns:1fr}.tracking-limit-actions .btn{flex:1}}
+@media(max-width:900px){
+  #panelProfesorModal .teacher-panel-content{
+    padding-bottom:5.25rem;
+  }
+  #panelProfesorModal .teacher-workspace-tabs{
+    position:fixed;
+    left:max(.45rem,env(safe-area-inset-left));
+    right:max(.45rem,env(safe-area-inset-right));
+    bottom:max(.45rem,env(safe-area-inset-bottom));
+    top:auto;
+    z-index:8100;
+    grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:.3rem;
+    margin:0;
+    padding:.38rem;
+    overflow:visible;
+    border-color:rgba(56,189,248,.38);
+    background:rgba(2,6,23,.97);
+    box-shadow:0 -8px 28px rgba(0,0,0,.48);
+    backdrop-filter:blur(14px);
+  }
+  #panelProfesorModal .teacher-workspace-tab,
+  #panelProfesorModal .teacher-workspace-tab:last-child{
+    position:relative;
+    grid-column:auto;
+    justify-content:center;
+    min-width:0;
+    min-height:44px;
+    padding:.48rem;
+  }
+  #panelProfesorModal .teacher-workspace-tab>span{
+    display:none;
+  }
+  #panelProfesorModal .teacher-workspace-tab i{
+    font-size:1rem;
+  }
+  #panelProfesorModal .teacher-workspace-tab::after{
+    content:attr(data-tooltip);
+    position:absolute;
+    left:50%;
+    bottom:calc(100% + 8px);
+    z-index:100;
+    display:block;
+    width:max-content;
+    max-width:190px;
+    padding:.4rem .55rem;
+    border:1px solid rgba(56,189,248,.45);
+    border-radius:6px;
+    background:#020617;
+    color:#e0f2fe;
+    font-size:.68rem;
+    font-weight:700;
+    line-height:1.3;
+    text-align:center;
+    white-space:normal;
+    box-shadow:0 8px 22px rgba(0,0,0,.42);
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transform:translate(-50%,5px);
+    transition:opacity .14s ease,transform .14s ease,visibility .14s;
+  }
+  #panelProfesorModal .teacher-workspace-tab::before{
+    content:"";
+    position:absolute;
+    left:50%;
+    bottom:calc(100% + 3px);
+    z-index:101;
+    border:5px solid transparent;
+    border-top-color:#38bdf8;
+    opacity:0;
+    visibility:hidden;
+    transform:translateX(-50%);
+    transition:opacity .14s ease,visibility .14s;
+  }
+  #panelProfesorModal .teacher-workspace-tab:hover::after,
+  #panelProfesorModal .teacher-workspace-tab:focus-visible::after,
+  #panelProfesorModal .teacher-workspace-tab:active::after,
+  #panelProfesorModal .teacher-workspace-tab.show-mobile-tooltip::after,
+  #panelProfesorModal .teacher-workspace-tab:hover::before,
+  #panelProfesorModal .teacher-workspace-tab:focus-visible::before,
+  #panelProfesorModal .teacher-workspace-tab:active::before,
+  #panelProfesorModal .teacher-workspace-tab.show-mobile-tooltip::before{
+    opacity:1;
+    visibility:visible;
+  }
+  #panelProfesorModal .teacher-workspace-tab:hover::after,
+  #panelProfesorModal .teacher-workspace-tab:focus-visible::after,
+  #panelProfesorModal .teacher-workspace-tab:active::after,
+  #panelProfesorModal .teacher-workspace-tab.show-mobile-tooltip::after{
+    transform:translate(-50%,0);
+  }
+  #panelProfesorModal .teacher-workspace-tab:first-child::after{
+    left:0;
+    transform:translate(0,5px);
+  }
+  #panelProfesorModal .teacher-workspace-tab:first-child:hover::after,
+  #panelProfesorModal .teacher-workspace-tab:first-child:focus-visible::after,
+  #panelProfesorModal .teacher-workspace-tab:first-child:active::after,
+  #panelProfesorModal .teacher-workspace-tab:first-child.show-mobile-tooltip::after{
+    transform:translate(0,0);
+  }
+  #panelProfesorModal .teacher-workspace-tab:last-child::after{
+    left:auto;
+    right:0;
+    transform:translate(0,5px);
+  }
+  #panelProfesorModal .teacher-workspace-tab:last-child:hover::after,
+  #panelProfesorModal .teacher-workspace-tab:last-child:focus-visible::after,
+  #panelProfesorModal .teacher-workspace-tab:last-child:active::after,
+  #panelProfesorModal .teacher-workspace-tab:last-child.show-mobile-tooltip::after{
+    transform:translate(0,0);
+  }
+  #panelProfesorModal .teacher-table-scroll{
+    max-height:none;
+    overflow-x:hidden !important;
+    overflow-y:visible;
+    border:0;
+    background:transparent;
+  }
+  #panelProfesorModal .teacher-table-scroll table,
+  #panelProfesorModal .teacher-table-scroll thead,
+  #panelProfesorModal .teacher-table-scroll tbody,
+  #panelProfesorModal .teacher-table-scroll tr,
+  #panelProfesorModal .teacher-table-scroll td{
+    display:block;
+    width:100% !important;
+    min-width:0 !important;
+    height:auto !important;
+    min-height:0 !important;
+    box-sizing:border-box;
+  }
+  #panelProfesorModal .teacher-table-scroll table{
+    min-width:0 !important;
+  }
+  #panelProfesorModal .teacher-table-scroll thead{
+    display:none;
+  }
+  #panelProfesorModal #tablaProfesorBody{
+    display:grid;
+    gap:.7rem;
+    height:auto !important;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row){
+    margin:0;
+    padding:.35rem .55rem .5rem;
+    overflow:hidden;
+    border:1px solid rgba(56,189,248,.25);
+    border-radius:8px;
+    background:rgba(15,23,42,.68) !important;
+    box-shadow:0 5px 16px rgba(0,0,0,.16);
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td{
+    display:grid;
+    grid-template-columns:minmax(118px,34%) minmax(0,1fr);
+    align-items:start;
+    gap:.5rem;
+    padding:.45rem .25rem;
+    border-bottom:1px solid rgba(148,163,184,.12);
+    background:transparent;
+    vertical-align:top;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td::before{
+    content:attr(data-label);
+    color:#7dd3fc;
+    font-size:.68rem;
+    font-weight:800;
+    line-height:1.35;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:first-child{
+    display:block !important;
+    position:static;
+    padding:.3rem 0 .55rem;
+    border-bottom:1px solid rgba(56,189,248,.2);
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:first-child::before{
+    display:none;
+  }
+  #panelProfesorModal #tablaProfesorBody .btn-abrir-acciones-estudiante{
+    width:100% !important;
+    min-width:0 !important;
+    justify-content:center !important;
+    text-align:center !important;
+    writing-mode:horizontal-tb !important;
+    white-space:normal !important;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:last-child{
+    border-bottom:0;
+  }
+  #panelProfesorModal #tablaProfesorBody .teacher-progress-indicator{
+    width:100%;
+    min-width:0;
+  }
+}
+@media(max-width:430px){
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td{
+    grid-template-columns:minmax(105px,40%) minmax(0,1fr);
+  }
+}
 @media print{body.tracking-print-history>*{display:none!important}body.tracking-print-history #historialPestanasModal{display:block!important;position:static!important;background:#fff!important;color:#000!important}body.tracking-print-history #historialPestanasModal .modal-box{display:block!important;width:100%!important;max-width:none!important;max-height:none!important;overflow:visible!important;color:#000!important;background:#fff!important}body.tracking-print-history .tab-history-filters,body.tracking-print-history .tab-history-toolbar,body.tracking-print-history #historialPestanasModal button{display:none!important}}
