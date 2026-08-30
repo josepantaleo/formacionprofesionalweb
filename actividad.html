@@ -11635,6 +11635,14 @@
           comunicacionModal.classList.add('active');
           comunicacionModal.style.display = 'flex';
       });
+      window.abrirComunicacionConEstudiante = function(email, modo = 'chat') {
+          if (!comunicacionModal || !destinatario) return;
+          destinatario.value = String(email || '').trim().toLowerCase();
+          comunicacionModal.classList.add('active');
+          comunicacionModal.style.display = 'flex';
+          if (modo === 'video') document.getElementById('iniciarVideo')?.click();
+          else document.getElementById('iniciarChat')?.click();
+      };
       document.getElementById('cerrarComunicacion')?.addEventListener('click', () => {
           cerrarRecursosVideo();
           comunicacionModal.classList.remove('active');
