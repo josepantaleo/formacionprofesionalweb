@@ -74,6 +74,10 @@
         <span class="icono-tema" aria-hidden="true">☀</span>
         <span class="sr-only">Cambiar tema</span>
       </button>
+      <button class="btn-docente" id="abrirPanelDocente" type="button">
+        <span aria-hidden="true">▣</span>
+        <span class="texto-docente">Panel docente</span>
+      </button>
     </header>
 
     <div class="overlay-menu" id="overlayMenu" hidden></div>
@@ -3494,6 +3498,27 @@ try {
         </footer>
       </main>
     </div>
+
+    <section class="panel-docente" id="panelDocente" hidden aria-labelledby="tituloPanelDocente">
+      <div class="panel-docente-cabecera">
+        <div>
+          <span class="clase-meta">Seguimiento</span>
+          <h2 id="tituloPanelDocente">Progreso de estudiantes</h2>
+          <p id="estadoPanelDocente">Iniciá sesión como docente para consultar los avances.</p>
+        </div>
+        <button class="btn-cerrar-panel" id="cerrarPanelDocente" type="button" aria-label="Cerrar panel docente">×</button>
+      </div>
+      <div class="panel-docente-controles">
+        <button class="btn-secundario" id="iniciarSesionDocente" type="button">Ingresar con Google</button>
+        <button class="btn-secundario" id="actualizarPanelDocente" type="button" disabled>Actualizar</button>
+      </div>
+      <div class="tabla-docente-wrap">
+        <table class="tabla-docente">
+          <thead><tr><th>Estudiante</th><th>Progreso</th><th>Clases</th><th>Última actividad</th></tr></thead>
+          <tbody id="tablaDocenteCuerpo"><tr><td colspan="4">Todavía no se cargaron datos.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
 
     <!-- =====================================================
          SISTEMA INTERACTIVO: COPIAR + EJECUTAR CÓDIGO,

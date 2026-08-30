@@ -728,6 +728,131 @@
           } catch (error) {
             console.warn("No se pudo guardar el progreso:", error);
           }
+          sincronizarProgresoNube(lista);
+        }
+
+        const CONFIG_FIREBASE_CURSO = {
+          apiKey: "AIzaSyA9Xvz6_NoyWIcl2gU2rLYsNzj_6uwB3hA",
+          authDomain: "ipem146js.firebaseapp.com",
+          projectId: "ipem146js",
+          storageBucket: "ipem146js.firebasestorage.app",
+          messagingSenderId: "572464024232",
+          appId: "1:572464024232:web:a30ef451228ac9109d509d",
+        };
+        const DOCENTES_AUTORIZADOS = [
+          "ipem146centenario@gmail.com",
+          "josepantaleo@gmail.com",
+        ];
+        let cursoFirebase = null;
+        let cursoAuth = null;
+        let cursoDb = null;
+        let cursoFirebaseCargando = null;
+
+        async function cargarFirebaseCurso() {
+          if (cursoFirebaseCargando) return cursoFirebaseCargando;
+          cursoFirebaseCargando = Promise.all([
+            import("https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js"),
+            import("https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js"),
+            import("https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js"),
+          ]).then(async ([app, auth, firestore]) => {
+            cursoFirebase = app.initializeApp(CONFIG_FIREBASE_CURSO, "curso-js");
+            cursoAuth = auth.getAuth(cursoFirebase);
+            cursoDb = firestore.getFirestore(cursoFirebase);
+            return { auth, firestore };
+          });
+          return cursoFirebaseCargando;
+        }
+
+        async function sincronizarProgresoNube(lista) {
+          if (window.location.protocol === "file:") return;
+          try {
+            const modulos = await cargarFirebaseCurso();
+            const usuario = cursoAuth.currentUser;
+            if (!usuario || !usuario.email) return;
+            const ref = modulos.firestore.doc(cursoDb, "cursoProgreso", usuario.uid);
+            await modulos.firestore.setDoc(ref, {
+              uid: usuario.uid,
+              email: usuario.email.toLowerCase(),
+              nombre: usuario.displayName || usuario.email,
+              completadas: lista,
+              totalClases: totalSecciones,
+              porcentaje: totalSecciones
+                ? Math.round((lista.length / totalSecciones) * 100)
+                : 0,
+              ultimaActividad: modulos.firestore.serverTimestamp(),
+            }, { merge: true });
+          } catch (error) {
+            console.warn("No se pudo sincronizar el progreso:", error);
+          }
+        }
+
+        async function cargarPanelDocente() {
+          const cuerpo = document.getElementById("tablaDocenteCuerpo");
+          const estado = document.getElementById("estadoPanelDocente");
+          if (!cuerpo || !estado) return;
+          try {
+            const modulos = await cargarFirebaseCurso();
+            const usuario = cursoAuth.currentUser;
+            const email = usuario && usuario.email
+              ? usuario.email.toLowerCase()
+              : "";
+            if (!email || !DOCENTES_AUTORIZADOS.includes(email)) {
+              estado.textContent = "Acceso restringido: cuenta no autorizada.";
+              return;
+            }
+            const consulta = await modulos.firestore.getDocs(
+              modulos.firestore.collection(cursoDb, "cursoProgreso"),
+            );
+            cuerpo.textContent = "";
+            if (consulta.empty) {
+              cuerpo.innerHTML = '<tr><td colspan="4">No hay avances sincronizados todavía.</td></tr>';
+              estado.textContent = "Sin registros para mostrar.";
+              return;
+            }
+            consulta.forEach((docSnap) => {
+              const dato = docSnap.data();
+              const fila = document.createElement("tr");
+              const fecha = dato.ultimaActividad && dato.ultimaActividad.toDate
+                ? dato.ultimaActividad.toDate().toLocaleString("es-AR")
+                : "Sin actividad";
+              fila.innerHTML =
+                `<td><strong>${dato.nombre || dato.email || "Estudiante"}</strong><small>${dato.email || ""}</small></td>` +
+                `<td><div class="mini-progreso"><span style="width:${Number(dato.porcentaje) || 0}%"></span></div><b>${Number(dato.porcentaje) || 0}%</b></td>` +
+                `<td>${Array.isArray(dato.completadas) ? dato.completadas.length : 0} / ${totalSecciones}</td>` +
+                `<td>${fecha}</td>`;
+              cuerpo.appendChild(fila);
+            });
+            estado.textContent = `${consulta.size} estudiante(s) sincronizado(s).`;
+          } catch (error) {
+            estado.textContent = "No se pudo cargar el panel. Revisá Firebase y las reglas.";
+            console.error(error);
+          }
+        }
+
+        const abrirPanelDocente = document.getElementById("abrirPanelDocente");
+        const panelDocente = document.getElementById("panelDocente");
+        const cerrarPanelDocente = document.getElementById("cerrarPanelDocente");
+        const iniciarSesionDocente = document.getElementById("iniciarSesionDocente");
+        const actualizarPanelDocente = document.getElementById("actualizarPanelDocente");
+        if (abrirPanelDocente && panelDocente) {
+          abrirPanelDocente.addEventListener("click", () => {
+            panelDocente.hidden = false;
+            panelDocente.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+        }
+        if (cerrarPanelDocente && panelDocente) {
+          cerrarPanelDocente.addEventListener("click", () => { panelDocente.hidden = true; });
+        }
+        if (iniciarSesionDocente) {
+          iniciarSesionDocente.addEventListener("click", async () => {
+            const modulos = await cargarFirebaseCurso();
+            await modulos.auth.signInWithPopup(new modulos.auth.GoogleAuthProvider());
+            actualizarPanelDocente.disabled = false;
+            await cargarPanelDocente();
+          });
+        }
+        if (actualizarPanelDocente) {
+          actualizarPanelDocente.addEventListener("click", cargarPanelDocente);
         }
 
         let completadas = new Set(leerCompletadas());

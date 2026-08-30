@@ -170,6 +170,113 @@ body {
     transform: translateY(-1px);
 }
 
+.btn-docente {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border: 1px solid rgba(91, 156, 255, .35);
+    border-radius: 8px;
+    background: rgba(91, 156, 255, .1);
+    color: var(--blue);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.btn-docente:hover {
+    background: var(--blue);
+    color: #fff;
+}
+
+.panel-docente {
+    width: min(1050px, calc(100% - 40px));
+    margin: 28px auto 48px;
+    padding: 28px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-hover);
+    scroll-margin-top: 90px;
+}
+
+.panel-docente-cabecera {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: flex-start;
+}
+
+.panel-docente-cabecera h2 {
+    margin: 10px 0 4px;
+}
+
+.btn-cerrar-panel {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.panel-docente-controles {
+    display: flex;
+    gap: 10px;
+    margin: 22px 0;
+}
+
+.tabla-docente-wrap {
+    overflow-x: auto;
+}
+
+.tabla-docente {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.tabla-docente th,
+.tabla-docente td {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    vertical-align: middle;
+}
+
+.tabla-docente th {
+    color: var(--text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.tabla-docente td small {
+    display: block;
+    color: var(--text-muted);
+    margin-top: 3px;
+}
+
+.mini-progreso {
+    width: 110px;
+    height: 7px;
+    display: inline-block;
+    margin-right: 8px;
+    overflow: hidden;
+    border-radius: 20px;
+    background: var(--surface-hover);
+    vertical-align: middle;
+}
+
+.mini-progreso span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--blue), var(--green));
+}
+
 
 /* =========================================================
    LOGO
@@ -1809,6 +1916,52 @@ input:focus-visible,
 
     .progreso .barra {
         display: none;
+    }
+
+    .texto-docente {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+    }
+
+    .btn-docente {
+        width: 36px;
+        min-height: 36px;
+        justify-content: center;
+        padding: 0;
+    }
+
+    .panel-docente {
+        width: calc(100% - 24px);
+        margin: 18px auto 32px;
+        padding: 18px 14px;
+    }
+
+    .panel-docente-controles {
+        flex-direction: column;
+    }
+
+    .tabla-docente {
+        table-layout: fixed;
+        font-size: 11px;
+    }
+
+    .tabla-docente th,
+    .tabla-docente td {
+        padding: 9px 5px;
+        overflow-wrap: anywhere;
+    }
+
+    .tabla-docente th:nth-child(4),
+    .tabla-docente td:nth-child(4) {
+        display: none;
+    }
+
+    .mini-progreso {
+        width: 58px;
+        margin-right: 3px;
     }
 
     .btn-tema {
