@@ -685,6 +685,8 @@ body.teacher-light-mode #configurarLimiteBloqueoModal .tracking-limit-preview{
 
 .student-communication-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem;width:100%;margin-top:.45rem}
 .student-communication-actions .btn{display:inline-flex;align-items:center;justify-content:center;gap:.35rem;min-width:0;font-size:.72rem}
+.acciones-principales-cell .student-communication-actions{grid-template-columns:1fr}
+.acciones-principales-cell .student-communication-actions .btn{width:100%;min-height:2.15rem}
 @media(max-width:800px){.student-communication-actions{grid-template-columns:repeat(2,minmax(0,1fr))}.student-communication-actions .btn span{display:none}}
 
 /* Chat y videollamada WebRTC */

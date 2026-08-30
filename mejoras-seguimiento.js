@@ -219,9 +219,8 @@ function agregarBotonesComunicacionFilas(){
   if(fila.querySelector("[data-comunicacion-fila]"))return;
   const email=txt(fila.children[3]?.textContent).toLowerCase();
   if(!email.includes("@"))return;
-  const acciones=fila.nextElementSibling?.classList.contains("teacher-actions-row")
-   ?fila.nextElementSibling.querySelector(".teacher-action-buttons")
-   :fila.querySelector("td:first-child .teacher-action-buttons")||fila.querySelector("td:last-child > div");
+  const celdaAcciones=fila.querySelector(".acciones-principales-cell")||fila.children[0];
+  const acciones=celdaAcciones?.querySelector(".teacher-action-buttons")||celdaAcciones;
   if(!acciones)return;
   const grupo=document.createElement("span");
   grupo.dataset.comunicacionFila="true";
@@ -229,6 +228,7 @@ function agregarBotonesComunicacionFilas(){
   grupo.innerHTML=`<button type="button" class="btn btn-secondary btn-comunicacion-fila" title="Abrir chat con ${escapeHtml(email)}"><i class="fa-solid fa-comments"></i><span>Chat</span></button><button type="button" class="btn btn-success btn-comunicacion-fila" title="Videollamada con ${escapeHtml(email)}"><i class="fa-solid fa-video"></i><span>Video</span></button>`;
   grupo.querySelector(".btn-comunicacion-fila").onclick=()=>window.abrirComunicacionConEstudiante?.(email,"chat");
   grupo.querySelectorAll(".btn-comunicacion-fila")[1].onclick=()=>window.abrirComunicacionConEstudiante?.(email,"video");
+  grupo.style.display="grid";
   acciones.appendChild(grupo);
  });
 }
@@ -367,6 +367,7 @@ abrirHistorialPestanas=async function(indice){
 };
 window.addEventListener("estado-inicio-clase",e=>setTimeout(()=>{cargarFormulario(e.detail?.configuracionSeguimiento||window.configuracionSeguimientoActual||{});if(document.getElementById("panelProfesorModal")?.classList.contains("active"))renderPanelProfesor()},0));
 window.addEventListener("profesor-data",()=>setTimeout(mejorarTabla,0));
+window.addEventListener("profesor-data",()=>setTimeout(agregarBotonesComunicacionFilas,120));
 document.addEventListener("keydown",evento=>{
  const actual=evento.target.closest?.(".teacher-workspace-tab");if(!actual||!["ArrowLeft","ArrowRight","Home","End"].includes(evento.key))return;const botones=[...document.querySelectorAll(".teacher-workspace-tab")],indice=botones.indexOf(actual);let siguiente=indice;if(evento.key==="ArrowRight")siguiente=(indice+1)%botones.length;if(evento.key==="ArrowLeft")siguiente=(indice-1+botones.length)%botones.length;if(evento.key==="Home")siguiente=0;if(evento.key==="End")siguiente=botones.length-1;evento.preventDefault();botones[siguiente]?.focus();activarPestanaDocente(botones[siguiente]?.dataset.teacherTab);
 });
