@@ -11555,6 +11555,9 @@
       const videoLocal = document.getElementById('videoLocal');
       const videoRemoto = document.getElementById('videoRemoto');
       const estadoVideo = document.getElementById('estadoVideo');
+      function usuarioComunicacionActual() {
+          return window.firebaseTeacherUser || window.firebaseCurrentUser || null;
+      }
 
       function idConversacion(a, b) {
           return [String(a || '').toLowerCase(), String(b || '').toLowerCase()]
@@ -11620,7 +11623,7 @@
       }
 
       async function iniciarVideollamadaWebRTC() {
-          const actual = window.firebaseCurrentUser;
+          const actual = usuarioComunicacionActual();
           comunicacionDestino = destinatario.value.trim().toLowerCase();
           if (!actual || !actual.email) return alert('Primero iniciá sesión con Google.');
           if (!comunicacionDestino.includes('@')) return alert('Ingresá el correo del estudiante.');
@@ -11734,7 +11737,7 @@
       }
       async function aceptarLlamadaEntrante() {
           const llamada = llamadaEntranteActual;
-          const actual = window.firebaseCurrentUser;
+          const actual = usuarioComunicacionActual();
           if (!llamada || !actual || !db) return;
           detenerAlertaLlamada();
           try {
@@ -11777,7 +11780,7 @@
           if (modal) modal.style.display = 'none';
       }
       async function escucharLlamadasEntrantes() {
-          const usuario = window.firebaseCurrentUser || await window.firebaseAuthReady;
+          const usuario = usuarioComunicacionActual() || await window.firebaseAuthReady;
           if (!usuario?.email || !db || llamadasEntrantesUnsubscribe) return;
           const email = usuario.email.toLowerCase();
           llamadasEntrantesUnsubscribe = onSnapshot(query(
@@ -11858,7 +11861,7 @@
       });
 
       document.getElementById('iniciarChat')?.addEventListener('click', async () => {
-          const actual = window.firebaseCurrentUser;
+          const actual = usuarioComunicacionActual();
           comunicacionDestino = destinatario.value.trim().toLowerCase();
           if (!actual || !comunicacionDestino.includes('@')) return alert('Iniciá sesión e ingresá un correo válido.');
           if (comunicacionUnsubscribe) comunicacionUnsubscribe();
@@ -11884,7 +11887,7 @@
       });
       document.getElementById('chatFormulario')?.addEventListener('submit', async event => {
           event.preventDefault();
-          const actual = window.firebaseCurrentUser;
+          const actual = usuarioComunicacionActual();
           const texto = chatTexto.value.trim();
           if (!actual || !texto || !comunicacionDestino || !db) return;
           await addDoc(collection(db, 'comunicaciones', idConversacion(actual.email, comunicacionDestino), 'mensajes'), {

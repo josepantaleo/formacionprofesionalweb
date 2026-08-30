@@ -219,8 +219,13 @@ function agregarBotonesComunicacionFilas(){
   if(fila.querySelector("[data-comunicacion-fila]"))return;
   const email=txt(fila.children[3]?.textContent).toLowerCase();
   if(!email.includes("@"))return;
-  const celdaAcciones=fila.querySelector(".acciones-principales-cell")||fila.children[0];
-  const acciones=celdaAcciones?.querySelector(".teacher-action-buttons")||celdaAcciones;
+  const filaAcciones=fila.nextElementSibling?.classList.contains("teacher-actions-row")
+    ?fila.nextElementSibling
+    :null;
+  const celdaAcciones=filaAcciones?.querySelector(".teacher-action-buttons")
+    ||filaAcciones?.querySelector("td")
+    ||fila.querySelector(".acciones-principales-cell");
+  const acciones=celdaAcciones;
   if(!acciones)return;
   const grupo=document.createElement("span");
   grupo.dataset.comunicacionFila="true";
