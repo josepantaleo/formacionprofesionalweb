@@ -303,6 +303,139 @@ body.teacher-light-mode #configurarLimiteBloqueoModal{
   --border:#cbd5e1;
   --surface:#ffffff;
 }
+body.teacher-light-mode{
+  --bg-dark:#eef2f7;
+  --bg-card:#ffffff;
+  --bg-editor:#0d1117;
+  --text-main:#0f172a;
+  --text-muted:#475569;
+  --primary:#0369a1;
+  --primary-hover:#075985;
+  --border:#cbd5e1;
+  background:#eef2f7;
+  color:#0f172a;
+  color-scheme:light;
+}
+body.teacher-light-mode aside{
+  background:#fff;
+  border-color:#cbd5e1;
+  box-shadow:4px 0 18px rgba(15,23,42,.08);
+}
+body.teacher-light-mode .brand{
+  background:#f8fafc;
+  border-color:#cbd5e1;
+}
+body.teacher-light-mode .nav-item{
+  color:#475569;
+}
+body.teacher-light-mode .nav-item:hover,
+body.teacher-light-mode .nav-item.active,
+body.teacher-light-mode .nav-item:focus-visible{
+  background:#e0f2fe;
+  color:#075985;
+}
+body.teacher-light-mode main{
+  background:#eef2f7;
+}
+body.teacher-light-mode header.top-header{
+  border-color:#cbd5e1;
+}
+body.teacher-light-mode .header-title h1,
+body.teacher-light-mode .section-card h3,
+body.teacher-light-mode .student-inputs strong{
+  color:#0f172a;
+}
+body.teacher-light-mode .section-card,
+body.teacher-light-mode .student-inputs,
+body.teacher-light-mode .export-bar,
+body.teacher-light-mode .theory-box,
+body.teacher-light-mode .exercise-box,
+body.teacher-light-mode .comprehension-panel,
+body.teacher-light-mode .steps-panel,
+body.teacher-light-mode .student-checklist,
+body.teacher-light-mode .ai-chat-box,
+body.teacher-light-mode .analyst-box,
+body.teacher-light-mode .modal-box,
+body.teacher-light-mode .screen-lock-card,
+body.teacher-light-mode .class-waiting-card,
+body.teacher-light-mode .firebase-auth-card{
+  background:#fff;
+  color:#0f172a;
+  border-color:#cbd5e1;
+  box-shadow:0 8px 24px rgba(15,23,42,.09);
+}
+body.teacher-light-mode .module-timer-bar,
+body.teacher-light-mode .keyword-help-panel,
+body.teacher-light-mode .comprehension-tools,
+body.teacher-light-mode .ai-column,
+body.teacher-light-mode .ai-chat-message,
+body.teacher-light-mode .analyst-question{
+  background:#f8fafc;
+  color:#0f172a;
+  border-color:#cbd5e1;
+}
+body.teacher-light-mode .exercise-box,
+body.teacher-light-mode .theory-box{
+  color:#1e293b;
+}
+body.teacher-light-mode .ai-feedback-box{
+  background:#faf5ff;
+  color:#1e293b;
+}
+body.teacher-light-mode .ai-chat-input,
+body.teacher-light-mode .student-inputs input,
+body.teacher-light-mode .student-inputs select,
+body.teacher-light-mode .input-group input,
+body.teacher-light-mode .input-group select,
+body.teacher-light-mode .modal-box input:not([type="checkbox"]):not([type="radio"]),
+body.teacher-light-mode .modal-box select,
+body.teacher-light-mode .modal-box textarea:not(.code-editor){
+  background:#fff !important;
+  color:#0f172a !important;
+  border-color:#94a3b8 !important;
+}
+body.teacher-light-mode input::placeholder,
+body.teacher-light-mode textarea:not(.code-editor)::placeholder{
+  color:#64748b;
+}
+body.teacher-light-mode .btn-secondary,
+body.teacher-light-mode .app-theme-toggle{
+  background:#e2e8f0;
+  color:#0f172a;
+  border-color:#94a3b8;
+}
+body.teacher-light-mode .btn-secondary:hover:not(:disabled),
+body.teacher-light-mode .app-theme-toggle:hover:not(:disabled){
+  background:#cbd5e1;
+}
+body.teacher-light-mode .progress-bar-bg,
+body.teacher-light-mode .checklist-progress{
+  background:#cbd5e1;
+}
+body.teacher-light-mode .export-bar{
+  border-color:#cbd5e1;
+  box-shadow:0 -5px 18px rgba(15,23,42,.1);
+}
+body.teacher-light-mode .editor-container{
+  border-color:#475569;
+}
+body.teacher-light-mode .editor-header{
+  color:#cbd5e1;
+}
+body.teacher-light-mode textarea.code-editor,
+body.teacher-light-mode .console-output{
+  color-scheme:dark;
+}
+body.teacher-light-mode #screenLockOverlay,
+body.teacher-light-mode #classStartOverlay{
+  color-scheme:light;
+}
+body.teacher-light-mode .screen-lock-card p,
+body.teacher-light-mode .class-waiting-card p,
+body.teacher-light-mode .firebase-auth-card p,
+body.teacher-light-mode .modal-box p{
+  color:#475569;
+}
 body.teacher-light-mode #panelProfesorModal .teacher-panel-box,
 body.teacher-light-mode #accionesEstudianteModal .modal-box,
 body.teacher-light-mode #historialDesbloqueosModal .modal-box,
@@ -468,9 +601,69 @@ body.teacher-light-mode #configurarLimiteBloqueoModal .tracking-limit-preview{
   background:#fff7ed;
   color:#9a3412;
 }
+.app-theme-toggle{
+  white-space:nowrap;
+}
+.app-theme-toggle i,
 .teacher-theme-toggle i{
   width:1rem;
   text-align:center;
+}
+@media(min-width:901px){
+  #panelProfesorModal .teacher-table-scroll{
+    overflow-x:auto !important;
+    overflow-y:visible;
+  }
+  #panelProfesorModal .teacher-table-scroll table{
+    width:100% !important;
+    min-width:1280px !important;
+    height:1px !important;
+    block-size:1px !important;
+    table-layout:auto;
+  }
+  #panelProfesorModal #tablaProfesorBody{
+    height:auto !important;
+  }
+  #panelProfesorModal .teacher-table-scroll th{
+    white-space:nowrap;
+    overflow-wrap:normal;
+    padding:.4rem .34rem;
+    font-size:.62rem;
+    line-height:1.1;
+  }
+  #panelProfesorModal .teacher-table-scroll td{
+    height:auto !important;
+    min-height:0 !important;
+    padding:.3rem .34rem;
+    font-size:.68rem;
+    line-height:1.15;
+    vertical-align:middle;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr{
+    height:38px !important;
+    min-height:0 !important;
+  }
+  #panelProfesorModal .btn-abrir-acciones-estudiante{
+    min-height:1.9rem;
+    padding:.34rem .46rem !important;
+    font-size:.66rem;
+    line-height:1.05;
+  }
+  #panelProfesorModal .teacher-discount-badge,
+  #panelProfesorModal .teacher-grade-badge,
+  #panelProfesorModal .teacher-tab-badge,
+  #panelProfesorModal .teacher-lock-badge{
+    padding:.22rem .4rem;
+    font-size:.66rem;
+    line-height:1.05;
+  }
+  #panelProfesorModal .teacher-progress-indicator{
+    min-width:78px;
+    gap:.22rem;
+  }
+  #panelProfesorModal .teacher-progress-track{
+    height:.3rem;
+  }
 }
 @media(max-width:560px){
   #btnTemaPanelDocente span{
@@ -478,6 +671,14 @@ body.teacher-light-mode #configurarLimiteBloqueoModal .tracking-limit-preview{
   }
   #btnTemaPanelDocente{
     min-width:0;
+  }
+  #btnTemaAplicacion span{
+    display:none;
+  }
+  #btnTemaAplicacion{
+    min-width:2.45rem;
+    justify-content:center;
+    padding:.5rem;
   }
 }
 @media print{body.tracking-print-history>*{display:none!important}body.tracking-print-history #historialPestanasModal{display:block!important;position:static!important;background:#fff!important;color:#000!important}body.tracking-print-history #historialPestanasModal .modal-box{display:block!important;width:100%!important;max-width:none!important;max-height:none!important;overflow:visible!important;color:#000!important;background:#fff!important}body.tracking-print-history .tab-history-filters,body.tracking-print-history .tab-history-toolbar,body.tracking-print-history #historialPestanasModal button{display:none!important}}

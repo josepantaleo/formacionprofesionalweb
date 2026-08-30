@@ -5,16 +5,36 @@ const CLAVE_TEMA_PANEL_DOCENTE="teacher_panel_theme";
 let historialActual=[],estudianteHistorial=null,revisionesActuales=new Map(),salidasSeleccionadas=new Set(),grupoRevisionActual="";
 const txt=v=>String(v||"").trim();
 function aplicarTemaPanelDocente(tema){
- const claro=tema==="light",boton=document.getElementById("btnTemaPanelDocente");
+ const claro=tema==="light";
  document.body.classList.toggle("teacher-light-mode",claro);
  document.body.dataset.teacherTheme=claro?"light":"dark";
- if(boton){
+ document.querySelectorAll("[data-app-theme-toggle]").forEach(boton=>{
   const accion=claro?"oscuro":"claro",icono=claro?"fa-moon":"fa-sun";
   boton.innerHTML=`<i class="fa-solid ${icono}" aria-hidden="true"></i><span>Modo ${accion}</span>`;
   boton.title=`Cambiar a modo ${accion}`;
   boton.setAttribute("aria-label",`Cambiar a modo ${accion}`);
   boton.setAttribute("aria-pressed",String(claro));
+ });
+}
+function alternarTemaAplicacion(){
+ const tema=document.body.classList.contains("teacher-light-mode")?"dark":"light";
+ localStorage.setItem(CLAVE_TEMA_PANEL_DOCENTE,tema);
+ aplicarTemaPanelDocente(tema);
+}
+function asegurarTemaAplicacion(){
+ const contenedor=document.querySelector("header.top-header>div:last-child");if(!contenedor)return;
+ let boton=document.getElementById("btnTemaAplicacion");
+ if(!boton){
+  boton=document.createElement("button");
+  boton.id="btnTemaAplicacion";
+  boton.type="button";
+  boton.className="btn btn-secondary app-theme-toggle";
+  boton.dataset.appThemeToggle="";
+  const progreso=contenedor.querySelector(".progress-wrapper");
+  progreso?contenedor.insertBefore(boton,progreso):contenedor.appendChild(boton);
+  boton.onclick=alternarTemaAplicacion;
  }
+ aplicarTemaPanelDocente(localStorage.getItem(CLAVE_TEMA_PANEL_DOCENTE)==="light"?"light":"dark");
 }
 function asegurarTemaPanelDocente(){
  const barra=document.querySelector("#panelProfesorModal .teacher-panel-toolbar");if(!barra)return;
@@ -24,13 +44,10 @@ function asegurarTemaPanelDocente(){
   boton.id="btnTemaPanelDocente";
   boton.type="button";
   boton.className="btn btn-secondary teacher-theme-toggle";
+  boton.dataset.appThemeToggle="";
   const cerrar=barra.querySelector(".teacher-panel-close");
   cerrar?barra.insertBefore(boton,cerrar):barra.appendChild(boton);
-  boton.onclick=()=>{
-   const tema=document.body.classList.contains("teacher-light-mode")?"dark":"light";
-   localStorage.setItem(CLAVE_TEMA_PANEL_DOCENTE,tema);
-   aplicarTemaPanelDocente(tema);
-  };
+  boton.onclick=alternarTemaAplicacion;
  }
  aplicarTemaPanelDocente(localStorage.getItem(CLAVE_TEMA_PANEL_DOCENTE)==="light"?"light":"dark");
 }
@@ -163,7 +180,7 @@ function renderIncidencias(){
  <div class="tracking-incident-stat"><small>Bloqueados</small><strong>${contar(x=>x.pantallaBloqueada===true)}</strong></div><div class="tracking-incident-stat"><small>Sin conexión</small><strong>${contar(x=>["sin-conexion","interrumpida"].includes(estadoExtension(x).codigo))}</strong></div><div class="tracking-incident-stat"><small>Sin extensión</small><strong>${contar(x=>estadoExtension(x).codigo==="no-instalada")}</strong></div><div class="tracking-incident-stat"><small>Dominios en alerta</small><strong>${contar(x=>claseDominio(x.seguimientoExtension?.dominioActual).clase==="danger")}</strong></div></div>
  <div class="tracking-incident-list">${items.slice(0,20).map(x=>{const n=x.estudiante.estudiante?.nombre||x.estudiante.nombreGoogle||x.estudiante.email||"Estudiante",grave=x.problemas.some(t=>/Interrumpida|No informada|bloqueada|Dominio/.test(t));return`<div class="tracking-incident-item ${grave?"danger":""}"><strong>${escapeHtml(n)}</strong><span>${x.problemas.map(escapeHtml).join(" · ")}</span></div>`}).join("")||'<p style="color:var(--text-muted);margin:0">No hay incidencias de seguimiento.</p>'}</div>`;
 }
-function mejorarTabla(){
+function mejorarTablaSeguimientoLegacy(){
  const tabla=document.querySelector("#tablaProfesorBody")?.closest("table"),head=tabla?.querySelector("thead tr");if(!head)return;
  if(!head.querySelector('[data-tracking-column]'))head.insertAdjacentHTML("beforeend",'<th data-tracking-column="status">Seguimiento</th><th data-tracking-column="visit">Visita actual</th>');
  [...document.querySelectorAll("#tablaProfesorBody>tr.teacher-actions-row td")].forEach(celda=>celda.colSpan=15);
@@ -177,6 +194,17 @@ function mejorarTabla(){
   fila.append(status,visit);
  });
  filtrarTabla();renderIncidencias();
+}
+function mejorarTabla(){
+ const tabla=document.querySelector("#tablaProfesorBody")?.closest("table"),head=tabla?.querySelector("thead tr");if(!head)return;
+ while(head.children.length>12)head.lastElementChild.remove();
+ document.querySelectorAll("#tablaProfesorBody>tr.teacher-actions-row td").forEach(celda=>celda.colSpan=12);
+ document.querySelectorAll("#tablaProfesorBody>tr:not(.teacher-actions-row)").forEach(fila=>{
+  if(fila.children.length===1){fila.firstElementChild.colSpan=12;return}
+  while(fila.children.length>12)fila.lastElementChild.remove();
+ });
+ filtrarTabla();
+ renderIncidencias();
 }
 function filtrarTabla(){
  const ef=document.getElementById("filtroSeguimientoProfesor")?.value||"",df=txt(document.getElementById("filtroDominioSeguimientoProfesor")?.value).toLowerCase();
@@ -323,5 +351,5 @@ window.addEventListener("profesor-data",()=>setTimeout(mejorarTabla,0));
 document.addEventListener("keydown",evento=>{
  const actual=evento.target.closest?.(".teacher-workspace-tab");if(!actual||!["ArrowLeft","ArrowRight","Home","End"].includes(evento.key))return;const botones=[...document.querySelectorAll(".teacher-workspace-tab")],indice=botones.indexOf(actual);let siguiente=indice;if(evento.key==="ArrowRight")siguiente=(indice+1)%botones.length;if(evento.key==="ArrowLeft")siguiente=(indice-1+botones.length)%botones.length;if(evento.key==="Home")siguiente=0;if(evento.key==="End")siguiente=botones.length-1;evento.preventDefault();botones[siguiente]?.focus();activarPestanaDocente(botones[siguiente]?.dataset.teacherTab);
 });
-asegurarPaneles();setInterval(mejorarTabla,10000);
+asegurarTemaAplicacion();asegurarPaneles();setInterval(mejorarTabla,10000);
 })();
