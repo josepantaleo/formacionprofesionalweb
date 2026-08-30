@@ -2383,11 +2383,16 @@
       const FIREBASE_AI_MODEL_NAME = "gemini-2.5-flash";
 
       const firebaseConfigured = !Object.values(firebaseConfig).some(v => String(v).includes("REEMPLAZAR_"));
-      const TEACHER_EMAILS = Object.freeze([
-        "ipem146centenario@gmail.com",
+      const PRIMARY_TEACHER_ADMIN_EMAIL = "ipem146centenario@gmail.com";
+      const INITIAL_TEACHER_EMAILS = Object.freeze([
+        PRIMARY_TEACHER_ADMIN_EMAIL,
         "josepantaleo@gmail.com"
       ]);
-      // La lista se usa también desde los scripts no modulares del panel docente.
+      const TEACHER_EMAILS = Object.freeze([PRIMARY_TEACHER_ADMIN_EMAIL]);
+      window.PRIMARY_TEACHER_ADMIN_EMAIL = PRIMARY_TEACHER_ADMIN_EMAIL;
+      window.INITIAL_TEACHER_EMAILS = INITIAL_TEACHER_EMAILS;
+      // La lista visible se actualiza desde Firestore. El administrador principal
+      // queda fijo como raíz de confianza para recuperar y gestionar accesos.
       window.TEACHER_EMAILS = TEACHER_EMAILS;
       let auth = null, db = null, googleProvider = null;
       let teacherAuth = null, teacherDb = null, teacherProvider = null;
@@ -2532,14 +2537,27 @@
         try {
           const token = await user.getIdTokenResult(forzarActualizacion);
           const correoVerificado = user.emailVerified === true || token?.claims?.email_verified === true;
-          const claimTeacher = token?.claims?.teacher === true || token?.claims?.docente === true;
-          const emailTeacher = TEACHER_EMAILS.includes(correoNormalizado(user));
-          const autorizado = correoVerificado && (claimTeacher || emailTeacher);
+          const correo = correoNormalizado(user);
+          const administradorPrincipal = correo === PRIMARY_TEACHER_ADMIN_EMAIL;
+          let registroDocente = null;
+          if (correoVerificado && !administradorPrincipal) {
+            const database = user === teacherAuth?.currentUser ? teacherDb : db;
+            if (database) {
+              const snap = await getDoc(doc(database, "docentesAutorizados", correo));
+              registroDocente = snap.exists() ? snap.data() : null;
+            }
+          }
+          const autorizado = correoVerificado && (
+            administradorPrincipal ||
+            (registroDocente?.activo === true && registroDocente?.email === correo)
+          );
           window.estadoAutorizacionDocente = {
             autorizado,
-            correo: correoNormalizado(user),
+            correo,
             correoVerificado,
-            metodo: claimTeacher ? 'claim' : (emailTeacher ? 'lista' : 'ninguno')
+            administradorPrincipal,
+            rol: administradorPrincipal ? 'administrador' : (registroDocente?.rol || 'docente'),
+            metodo: administradorPrincipal ? 'administrador-principal' : (registroDocente?.activo === true ? 'firestore' : 'ninguno')
           };
           return autorizado;
         } catch (error) {
@@ -2625,6 +2643,221 @@
         }
         return { user: window.firebaseCurrentUser, database: db };
       }
+
+      function normalizarEmailDocente(valor) {
+        return String(valor || "").trim().toLowerCase();
+      }
+
+      function resumenAuditoriaDocente(datos = {}) {
+        return {
+          email: normalizarEmailDocente(datos.email),
+          nombre: String(datos.nombre || "").trim(),
+          rol: datos.rol === "administrador" ? "administrador" : "docente",
+          activo: datos.activo === true
+        };
+      }
+
+      function crearIdAuditoriaDocente() {
+        const aleatorio = globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2);
+        return `${Date.now()}-${aleatorio}`;
+      }
+
+      function usuarioEsAdministradorPrincipal(user) {
+        return normalizarEmailDocente(user?.email) === PRIMARY_TEACHER_ADMIN_EMAIL &&
+          (user?.emailVerified === true || window.estadoAutorizacionDocente?.correoVerificado === true);
+      }
+
+      window.esAdministradorPrincipalDocente = function() {
+        const { user } = contextoDocenteFirebase();
+        return usuarioEsAdministradorPrincipal(user);
+      };
+
+      async function asegurarDocentesInicialesFirebase() {
+        const { user, database } = contextoDocenteFirebase();
+        if (!database || !usuarioEsAdministradorPrincipal(user)) return;
+        const administradorEmail = normalizarEmailDocente(user.email);
+        for (const emailInicial of INITIAL_TEACHER_EMAILS) {
+          const email = normalizarEmailDocente(emailInicial);
+          const referencia = doc(database, "docentesAutorizados", email);
+          const existente = await getDoc(referencia);
+          if (existente.exists()) continue;
+          const nombre = email === PRIMARY_TEACHER_ADMIN_EMAIL ? "Administración institucional" : "Docente autorizado";
+          const nuevo = {
+            email,
+            nombre,
+            rol: email === PRIMARY_TEACHER_ADMIN_EMAIL ? "administrador" : "docente",
+            activo: true,
+            creadoEn: serverTimestamp(),
+            creadoPor: administradorEmail,
+            actualizadoEn: serverTimestamp(),
+            actualizadoPor: administradorEmail,
+            bajaEn: null,
+            bajaPor: "",
+            motivoBaja: ""
+          };
+          const eventoId = crearIdAuditoriaDocente();
+          const lote = writeBatch(database);
+          lote.set(referencia, nuevo);
+          lote.set(doc(database, "historialDocentes", eventoId), {
+            id: eventoId,
+            tipo: "migracion_inicial",
+            docenteEmailAnterior: "",
+            docenteEmailNuevo: email,
+            anterior: resumenAuditoriaDocente(),
+            nuevo: resumenAuditoriaDocente({ ...nuevo, creadoEn: null, actualizadoEn: null }),
+            administradorEmail,
+            administradorUid: user.uid,
+            cambiadoEn: serverTimestamp()
+          });
+          await lote.commit();
+        }
+      }
+
+      window.obtenerDocentesAutorizadosFirebase = async function() {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return [];
+        const { user, database } = contextoDocenteFirebase();
+        if (!database || !user) return [];
+        if (usuarioEsAdministradorPrincipal(user)) await asegurarDocentesInicialesFirebase();
+        const snap = await getDocs(collection(database, "docentesAutorizados"));
+        const docentes = snap.docs.map(item => ({ id: item.id, ...item.data() }));
+        docentes.sort((a, b) => {
+          if (a.email === PRIMARY_TEACHER_ADMIN_EMAIL) return -1;
+          if (b.email === PRIMARY_TEACHER_ADMIN_EMAIL) return 1;
+          if (a.activo !== b.activo) return a.activo ? -1 : 1;
+          return String(a.nombre || a.email).localeCompare(String(b.nombre || b.email), "es");
+        });
+        window.TEACHER_EMAILS = docentes.filter(item => item.activo === true).map(item => normalizarEmailDocente(item.email));
+        window.dispatchEvent(new CustomEvent("docentes-autorizados-data", { detail: docentes }));
+        return docentes;
+      };
+
+      window.obtenerHistorialDocentesFirebase = async function() {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return [];
+        const { user, database } = contextoDocenteFirebase();
+        if (!database || !user) return [];
+        const snap = await getDocs(collection(database, "historialDocentes"));
+        return snap.docs
+          .map(item => ({ id: item.id, ...item.data() }))
+          .sort((a, b) => {
+            const fechaA = a.cambiadoEn?.toMillis?.() || a.cambiadoEn?.seconds * 1000 || 0;
+            const fechaB = b.cambiadoEn?.toMillis?.() || b.cambiadoEn?.seconds * 1000 || 0;
+            return fechaB - fechaA;
+          });
+      };
+
+      window.guardarDocenteAutorizadoFirebase = async function(datos = {}, emailAnterior = "") {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return { ok: false, error: "no-autorizado" };
+        const { user, database } = contextoDocenteFirebase();
+        if (!database || !usuarioEsAdministradorPrincipal(user)) return { ok: false, error: "solo-administrador-principal" };
+        const email = normalizarEmailDocente(datos.email);
+        const anteriorEmail = normalizarEmailDocente(emailAnterior);
+        const nombre = String(datos.nombre || "").trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { ok: false, error: "email-invalido" };
+        if (!nombre || nombre.length > 120) return { ok: false, error: "nombre-invalido" };
+        if (anteriorEmail === PRIMARY_TEACHER_ADMIN_EMAIL && email !== PRIMARY_TEACHER_ADMIN_EMAIL) {
+          return { ok: false, error: "administrador-protegido" };
+        }
+        const administradorEmail = normalizarEmailDocente(user.email);
+        const referenciaNueva = doc(database, "docentesAutorizados", email);
+        const snapNuevo = await getDoc(referenciaNueva);
+        const datosNuevosExistentes = snapNuevo.exists() ? snapNuevo.data() : null;
+        const referenciaAnterior = anteriorEmail ? doc(database, "docentesAutorizados", anteriorEmail) : null;
+        const snapAnterior = referenciaAnterior ? await getDoc(referenciaAnterior) : null;
+        const datosAnteriores = snapAnterior?.exists() ? snapAnterior.data() : null;
+        if (!anteriorEmail && datosNuevosExistentes?.activo === true) return { ok: false, error: "docente-existente" };
+        if (anteriorEmail && email !== anteriorEmail && datosNuevosExistentes?.activo === true) {
+          return { ok: false, error: "email-en-uso" };
+        }
+        const rol = email === PRIMARY_TEACHER_ADMIN_EMAIL ? "administrador" : "docente";
+        const nuevo = {
+          email,
+          nombre,
+          rol,
+          activo: true,
+          creadoEn: datosNuevosExistentes?.creadoEn || serverTimestamp(),
+          creadoPor: datosNuevosExistentes?.creadoPor || administradorEmail,
+          actualizadoEn: serverTimestamp(),
+          actualizadoPor: administradorEmail,
+          bajaEn: null,
+          bajaPor: "",
+          motivoBaja: ""
+        };
+        const tipo = anteriorEmail
+          ? (email === anteriorEmail ? (datosAnteriores?.activo === false ? "reactivacion" : "modificacion") : "cambio_email")
+          : (datosNuevosExistentes ? "reactivacion" : "alta");
+        const eventoId = crearIdAuditoriaDocente();
+        const lote = writeBatch(database);
+        if (referenciaAnterior && email !== anteriorEmail && datosAnteriores) {
+          lote.set(referenciaAnterior, {
+            activo: false,
+            actualizadoEn: serverTimestamp(),
+            actualizadoPor: administradorEmail,
+            bajaEn: serverTimestamp(),
+            bajaPor: administradorEmail,
+            motivoBaja: `Correo reemplazado por ${email}`
+          }, { merge: true });
+        }
+        lote.set(referenciaNueva, nuevo, { merge: true });
+        lote.set(doc(database, "historialDocentes", eventoId), {
+          id: eventoId,
+          tipo,
+          docenteEmailAnterior: anteriorEmail,
+          docenteEmailNuevo: email,
+          anterior: resumenAuditoriaDocente(datosAnteriores || datosNuevosExistentes || {}),
+          nuevo: resumenAuditoriaDocente(nuevo),
+          administradorEmail,
+          administradorUid: user.uid,
+          cambiadoEn: serverTimestamp()
+        });
+        await lote.commit();
+        return { ok: true, tipo };
+      };
+
+      window.cambiarEstadoDocenteFirebase = async function(emailValor, activar, motivo = "") {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return { ok: false, error: "no-autorizado" };
+        const { user, database } = contextoDocenteFirebase();
+        if (!database || !usuarioEsAdministradorPrincipal(user)) return { ok: false, error: "solo-administrador-principal" };
+        const email = normalizarEmailDocente(emailValor);
+        if (email === PRIMARY_TEACHER_ADMIN_EMAIL && activar !== true) return { ok: false, error: "administrador-protegido" };
+        const referencia = doc(database, "docentesAutorizados", email);
+        const snap = await getDoc(referencia);
+        if (!snap.exists()) return { ok: false, error: "docente-no-encontrado" };
+        const anterior = snap.data();
+        const administradorEmail = normalizarEmailDocente(user.email);
+        const nuevo = {
+          ...anterior,
+          activo: activar === true,
+          rol: email === PRIMARY_TEACHER_ADMIN_EMAIL ? "administrador" : "docente"
+        };
+        const eventoId = crearIdAuditoriaDocente();
+        const lote = writeBatch(database);
+        lote.set(referencia, {
+          activo: activar === true,
+          rol: nuevo.rol,
+          actualizadoEn: serverTimestamp(),
+          actualizadoPor: administradorEmail,
+          bajaEn: activar === true ? null : serverTimestamp(),
+          bajaPor: activar === true ? "" : administradorEmail,
+          motivoBaja: activar === true ? "" : String(motivo || "Baja dispuesta por el administrador principal").slice(0, 300)
+        }, { merge: true });
+        lote.set(doc(database, "historialDocentes", eventoId), {
+          id: eventoId,
+          tipo: activar === true ? "reactivacion" : "baja",
+          docenteEmailAnterior: email,
+          docenteEmailNuevo: email,
+          anterior: resumenAuditoriaDocente(anterior),
+          nuevo: resumenAuditoriaDocente(nuevo),
+          administradorEmail,
+          administradorUid: user.uid,
+          cambiadoEn: serverTimestamp()
+        });
+        await lote.commit();
+        return { ok: true, tipo: activar === true ? "reactivacion" : "baja" };
+      };
 
       function idClaseActual() {
         const partes = new Intl.DateTimeFormat("en-US", {
