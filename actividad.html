@@ -2358,7 +2358,7 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, onSnapshot, getDocs, increment, runTransaction, writeBatch, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+      import { getFirestore, doc, getDoc, setDoc, deleteDoc, updateDoc, serverTimestamp, collection, onSnapshot, getDocs, increment, runTransaction, writeBatch, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
       import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
       import { getAI, getTemplateGenerativeModel, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
 
@@ -4219,6 +4219,18 @@
           <input id="chatTexto" type="text" maxlength="500" placeholder="Escribí un mensaje..." autocomplete="off" disabled>
           <button class="btn btn-primary" type="submit" disabled id="enviarChat"><i class="fa-solid fa-arrow-up"></i></button>
         </form>
+        <div class="webrtc-panel" id="webrtcPanel" hidden>
+          <div class="webrtc-videos">
+            <video id="videoRemoto" autoplay playsinline></video>
+            <video id="videoLocal" autoplay muted playsinline></video>
+          </div>
+          <p id="estadoVideo" class="webrtc-status">Videollamada lista.</p>
+          <div class="webrtc-controls">
+            <button class="btn btn-secondary" id="alternarMicrofono" type="button"><i class="fa-solid fa-microphone"></i> Micrófono</button>
+            <button class="btn btn-secondary" id="alternarCamara" type="button"><i class="fa-solid fa-video"></i> Cámara</button>
+            <button class="btn btn-danger" id="finalizarVideo" type="button"><i class="fa-solid fa-phone-slash"></i> Finalizar</button>
+          </div>
+        </div>
       </div>
     </div>
     <div id="classStartOverlay" role="status" aria-live="polite" aria-labelledby="classStartTitle">
@@ -11492,6 +11504,198 @@
               doc.save(`Reporte_JS_${nombre.replace(/\s+/g, '_')}.pdf`);
           }
       }
+
+      // ============================================================
+      // Comunicación: chat y videollamada WebRTC
+      // Firebase solo se usa para señalización; audio y video viajan
+      // directamente entre los dos navegadores.
+      // ============================================================
+      let comunicacionDestino = '';
+      let comunicacionUnsubscribe = null;
+      let llamadaUnsubscribe = [];
+      let peerConnection = null;
+      let streamLocal = null;
+      let salaLlamada = '';
+      const comunicacionModal = document.getElementById('comunicacionModal');
+      const chatMensajes = document.getElementById('chatMensajes');
+      const chatTexto = document.getElementById('chatTexto');
+      const enviarChat = document.getElementById('enviarChat');
+      const destinatario = document.getElementById('comunicacionDestinatario');
+      const estadoComunicacion = document.getElementById('comunicacionEstado');
+      const webrtcPanel = document.getElementById('webrtcPanel');
+      const videoLocal = document.getElementById('videoLocal');
+      const videoRemoto = document.getElementById('videoRemoto');
+      const estadoVideo = document.getElementById('estadoVideo');
+
+      function idConversacion(a, b) {
+          return [String(a || '').toLowerCase(), String(b || '').toLowerCase()]
+              .sort().join('__').replace(/[^a-z0-9_@.-]/g, '_');
+      }
+
+      function limpiarEscuchasLlamada() {
+          llamadaUnsubscribe.forEach(detener => detener());
+          llamadaUnsubscribe = [];
+      }
+
+      function cerrarRecursosVideo() {
+          limpiarEscuchasLlamada();
+          if (peerConnection) peerConnection.close();
+          peerConnection = null;
+          if (streamLocal) streamLocal.getTracks().forEach(track => track.stop());
+          streamLocal = null;
+          if (videoLocal) videoLocal.srcObject = null;
+          if (videoRemoto) videoRemoto.srcObject = null;
+          if (salaLlamada && db) {
+              updateDoc(doc(db, 'videollamadas', salaLlamada), {
+                  estado: 'finalizada',
+                  finalizadaEn: serverTimestamp()
+              }).catch(() => {});
+          }
+          salaLlamada = '';
+          if (webrtcPanel) webrtcPanel.hidden = true;
+      }
+
+      function prepararConexion(roomId, soyCreador) {
+          salaLlamada = roomId;
+          peerConnection = new RTCPeerConnection({
+              iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+          });
+          peerConnection.ontrack = event => {
+              videoRemoto.srcObject = event.streams[0];
+          };
+          peerConnection.onconnectionstatechange = () => {
+              const estado = peerConnection.connectionState;
+              if (estadoVideo) estadoVideo.textContent = `Estado: ${estado}`;
+              if (estado === 'failed' || estado === 'closed') cerrarRecursosVideo();
+          };
+          streamLocal.getTracks().forEach(track => peerConnection.addTrack(track, streamLocal));
+          const roomRef = doc(db, 'videollamadas', roomId);
+          const candidatosPropios = collection(roomRef, soyCreador ? 'candidatosDocente' : 'candidatosEstudiante');
+          const candidatosRemotos = collection(roomRef, soyCreador ? 'candidatosEstudiante' : 'candidatosDocente');
+          peerConnection.onicecandidate = event => {
+              if (event.candidate) addDoc(candidatosPropios, event.candidate.toJSON()).catch(() => {});
+          };
+          llamadaUnsubscribe.push(onSnapshot(candidatosRemotos, snap => {
+              snap.docChanges().forEach(cambio => {
+                  if (cambio.type === 'added') peerConnection.addIceCandidate(cambio.doc.data()).catch(() => {});
+              });
+          }));
+          return roomRef;
+      }
+
+      async function iniciarVideollamadaWebRTC() {
+          const actual = window.firebaseCurrentUser;
+          comunicacionDestino = destinatario.value.trim().toLowerCase();
+          if (!actual || !actual.email) return alert('Primero iniciá sesión con Google.');
+          if (!comunicacionDestino.includes('@')) return alert('Ingresá el correo del estudiante.');
+          if (!db) return alert('Firebase no está disponible.');
+          if (!navigator.mediaDevices?.getUserMedia) return alert('El navegador no permite usar cámara y micrófono.');
+          cerrarRecursosVideo();
+          streamLocal = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          videoLocal.srcObject = streamLocal;
+          webrtcPanel.hidden = false;
+          const roomId = idConversacion(actual.email, comunicacionDestino);
+          const roomRef = doc(db, 'videollamadas', roomId);
+          const existente = await getDoc(roomRef);
+          const soyCreador = !existente.exists() || existente.data().estado === 'finalizada';
+          const conexion = prepararConexion(roomId, soyCreador);
+          estadoVideo.textContent = soyCreador ? 'Esperando que el estudiante se conecte...' : 'Conectando...';
+          if (soyCreador) {
+              const oferta = await peerConnection.createOffer();
+              await peerConnection.setLocalDescription(oferta);
+              await setDoc(conexion, {
+                  docente: actual.email.toLowerCase(),
+                  estudiante: comunicacionDestino,
+                  oferta: { type: oferta.type, sdp: oferta.sdp },
+                  estado: 'esperando',
+                  creadoEn: serverTimestamp()
+              }, { merge: true });
+              llamadaUnsubscribe.push(onSnapshot(conexion, async snap => {
+                  const datos = snap.data();
+                  if (datos?.respuesta && !peerConnection.currentRemoteDescription) {
+                      await peerConnection.setRemoteDescription(datos.respuesta);
+                      estadoVideo.textContent = 'Videollamada conectada.';
+                  }
+              }));
+          } else {
+              const datos = existente.data();
+              await peerConnection.setRemoteDescription(datos.oferta);
+              const respuesta = await peerConnection.createAnswer();
+              await peerConnection.setLocalDescription(respuesta);
+              await updateDoc(conexion, {
+                  respuesta: { type: respuesta.type, sdp: respuesta.sdp },
+                  estado: 'conectada',
+                  respondidaEn: serverTimestamp()
+              });
+              estadoVideo.textContent = 'Videollamada conectada.';
+          }
+      }
+
+      document.getElementById('abrirComunicacion')?.addEventListener('click', () => {
+          comunicacionModal.classList.add('active');
+          comunicacionModal.style.display = 'flex';
+      });
+      document.getElementById('cerrarComunicacion')?.addEventListener('click', () => {
+          cerrarRecursosVideo();
+          comunicacionModal.classList.remove('active');
+          comunicacionModal.style.display = 'none';
+      });
+      document.getElementById('iniciarVideo')?.addEventListener('click', () => {
+          iniciarVideollamadaWebRTC().catch(error => {
+              console.error(error);
+              cerrarRecursosVideo();
+              alert('No se pudo iniciar la videollamada. Verificá los permisos de cámara y micrófono.');
+          });
+      });
+      document.getElementById('finalizarVideo')?.addEventListener('click', cerrarRecursosVideo);
+      document.getElementById('alternarMicrofono')?.addEventListener('click', event => {
+          const pista = streamLocal?.getAudioTracks()[0];
+          if (!pista) return;
+          pista.enabled = !pista.enabled;
+          event.currentTarget.innerHTML = `<i class="fa-solid fa-microphone${pista.enabled ? '' : '-slash'}"></i> ${pista.enabled ? 'Micrófono' : 'Micrófono apagado'}`;
+      });
+      document.getElementById('alternarCamara')?.addEventListener('click', event => {
+          const pista = streamLocal?.getVideoTracks()[0];
+          if (!pista) return;
+          pista.enabled = !pista.enabled;
+          event.currentTarget.innerHTML = `<i class="fa-solid fa-video${pista.enabled ? '' : '-slash'}"></i> ${pista.enabled ? 'Cámara' : 'Cámara apagada'}`;
+      });
+
+      document.getElementById('iniciarChat')?.addEventListener('click', async () => {
+          const actual = window.firebaseCurrentUser;
+          comunicacionDestino = destinatario.value.trim().toLowerCase();
+          if (!actual || !comunicacionDestino.includes('@')) return alert('Iniciá sesión e ingresá un correo válido.');
+          if (comunicacionUnsubscribe) comunicacionUnsubscribe();
+          const ref = collection(db, 'comunicaciones', idConversacion(actual.email, comunicacionDestino), 'mensajes');
+          chatMensajes.textContent = '';
+          comunicacionUnsubscribe = onSnapshot(query(ref, orderBy('creadoEn', 'asc')), snap => {
+              chatMensajes.textContent = '';
+              if (snap.empty) chatMensajes.innerHTML = '<p class="chat-empty">Todavía no hay mensajes.</p>';
+              snap.forEach(item => {
+                  const dato = item.data();
+                  const bloque = document.createElement('div');
+                  bloque.className = `chat-message ${dato.autor === actual.email.toLowerCase() ? 'mine' : ''}`;
+                  bloque.innerHTML = `<strong>${dato.nombre || dato.autor}</strong><p></p><small>${dato.creadoEn?.toDate ? dato.creadoEn.toDate().toLocaleString('es-AR') : 'Ahora'}</small>`;
+                  bloque.querySelector('p').textContent = dato.texto || '';
+                  chatMensajes.appendChild(bloque);
+              });
+              chatMensajes.scrollTop = chatMensajes.scrollHeight;
+          });
+          chatTexto.disabled = false;
+          enviarChat.disabled = false;
+          estadoComunicacion.textContent = `Conversación con ${comunicacionDestino}`;
+      });
+      document.getElementById('chatFormulario')?.addEventListener('submit', async event => {
+          event.preventDefault();
+          const actual = window.firebaseCurrentUser;
+          const texto = chatTexto.value.trim();
+          if (!actual || !texto || !comunicacionDestino || !db) return;
+          await addDoc(collection(db, 'comunicaciones', idConversacion(actual.email, comunicacionDestino), 'mensajes'), {
+              texto, autor: actual.email.toLowerCase(), nombre: actual.displayName || actual.email,
+              destinatario: comunicacionDestino, creadoEn: serverTimestamp()
+          });
+          chatTexto.value = '';
+      });
     </script>
     <script src="mejoras-seguimiento.js"></script>
   </body>
