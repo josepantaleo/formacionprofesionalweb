@@ -2653,7 +2653,8 @@
               finalizadaPor: datos.finalizadaPor || "",
               cronometrosPausados: datos.cronometrosPausados === true,
               cronometrosReinicioId: datos.cronometrosReinicioId || "",
-              cronometrosActualizadosPor: datos.cronometrosActualizadosPor || ""
+              cronometrosActualizadosPor: datos.cronometrosActualizadosPor || "",
+              configuracionSeguimiento: datos.configuracionSeguimiento || {}
             }
           }));
         }, error => {
@@ -3012,6 +3013,82 @@
         }
       };
 
+      window.guardarConfiguracionSeguimientoFirebase = async function(configuracion) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return false;
+        const { user, database } = contextoDocenteFirebase();
+        if (!user || !database) return false;
+        const listaDominios = valor => [...new Set(
+          String(valor || "")
+            .split(/[\n,;]+/)
+            .map(item => item.trim().toLowerCase().replace(/^www\./, ""))
+            .filter(Boolean)
+        )].slice(0, 100);
+        const normalizada = {
+          limiteSalidas: Math.max(1, Math.min(50, Number(configuracion?.limiteSalidas) || 5)),
+          duracionMinimaSegundos: Math.max(0, Math.min(300, Number(configuracion?.duracionMinimaSegundos) || 3)),
+          bloqueoAutomatico: configuracion?.bloqueoAutomatico !== false,
+          avisoSinConexionSegundos: Math.max(15, Math.min(600, Number(configuracion?.avisoSinConexionSegundos) || 30)),
+          alertaSinConexionSegundos: Math.max(60, Math.min(3600, Number(configuracion?.alertaSinConexionSegundos) || 120)),
+          retencionDias: Math.max(1, Math.min(3650, Number(configuracion?.retencionDias) || 180)),
+          dominiosPermitidos: listaDominios(configuracion?.dominiosPermitidos),
+          dominiosAlerta: listaDominios(configuracion?.dominiosAlerta),
+          dominiosIgnorados: listaDominios(configuracion?.dominiosIgnorados),
+          actualizadaPor: user.email || user.displayName || user.uid,
+          actualizadaEn: new Date().toISOString()
+        };
+        try {
+          const claseId = idClaseActual();
+          await setDoc(doc(database, "controlClase", claseId), {
+            configuracionSeguimiento: normalizada,
+            zonaHoraria: "America/Argentina/Buenos_Aires"
+          }, { merge: true });
+          const auditoriaId = `${Date.now()}-${user.uid}`.replace(/[^a-zA-Z0-9._-]/g, "_");
+          await setDoc(doc(database, "controlClase", claseId, "historialConfiguracion", auditoriaId), {
+            id: auditoriaId,
+            claseId,
+            docenteUid: user.uid,
+            docente: user.email || user.displayName || user.uid,
+            configuracion: normalizada,
+            cambiadoEn: serverTimestamp()
+          });
+          return true;
+        } catch (error) {
+          console.error("Error guardando la configuración de seguimiento:", error);
+          return false;
+        }
+      };
+
+      let ultimoEstadoExtensionGuardado = 0;
+      window.guardarEstadoExtensionSeguimientoFirebase = async function(estado) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db) return false;
+        const ahora = Date.now();
+        if (ahora - ultimoEstadoExtensionGuardado < 8000 && estado?.forzar !== true) return true;
+        ultimoEstadoExtensionGuardado = ahora;
+        const texto = (valor, maximo) => String(valor || "").trim().slice(0, maximo);
+        try {
+          await setDoc(doc(db, "estudiantes", user.uid), {
+            seguimientoExtension: {
+              instalada: estado?.instalada === true,
+              activa: estado?.activa === true,
+              version: texto(estado?.version, 30),
+              ultimaSenalEn: texto(estado?.ultimaSenalEn || new Date().toISOString(), 40),
+              dominioActual: texto(estado?.dominioActual, 120),
+              tituloActual: texto(estado?.tituloActual, 300),
+              visitaIniciadaEn: texto(estado?.visitaIniciadaEn, 40),
+              salidaGrupoId: texto(estado?.salidaGrupoId, 160),
+              pendientes: Math.max(0, Math.min(500, Number(estado?.pendientes) || 0)),
+              claseId: texto(estado?.claseId || idClaseActual(), 120)
+            }
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error guardando el estado de la extensión:", error);
+          return false;
+        }
+      };
+
       window.guardarEstadoEstudianteFirebase = async function(uid, estadoData) {
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
@@ -3352,6 +3429,10 @@
             regresoEn,
             duracionSegundos: Math.max(0, Math.min(86400, Number(evento.duracionSegundos) || 0)),
             extensionVersion: texto(evento.extensionVersion, 30),
+            expiraEn: new Date(Date.now() + Math.max(
+              1,
+              Math.min(3650, Number(window.configuracionSeguimientoActual?.retencionDias) || 180)
+            ) * 86400000),
             registradoEn: serverTimestamp()
           });
           return true;
@@ -3482,6 +3563,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
+    <link rel="stylesheet" href="mejoras-seguimiento.css">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -4920,7 +5002,20 @@
       let pantallaBloqueada = false;
       let pantallaBloqueadaEn = "";
       let pantallaBloqueadaSeccion = "";
-      const LIMITE_SALIDAS_PARA_BLOQUEO = 5;
+      let LIMITE_SALIDAS_PARA_BLOQUEO = 5;
+      let configuracionSeguimientoActual = {
+          limiteSalidas: 5,
+          duracionMinimaSegundos: 3,
+          bloqueoAutomatico: true,
+          avisoSinConexionSegundos: 30,
+          alertaSinConexionSegundos: 120,
+          retencionDias: 180,
+          dominiosPermitidos: [],
+          dominiosAlerta: [],
+          dominiosIgnorados: []
+      };
+      window.configuracionSeguimientoActual = configuracionSeguimientoActual;
+      let ignorarSalidasHasta = Date.now() + 5000;
       let ultimoEventoVisibilidad = 0;
       let temporizadorPerdidaFoco = null;
       let monitorSalidasInicializado = false;
@@ -5013,18 +5108,32 @@
           if (mensaje.type === 'EXTENSION_READY') {
               estadoExtensionSeguimiento.instalada = true;
               estadoExtensionSeguimiento.version = String(mensaje.version || '');
+              ignorarSalidasHasta = Date.now() + 5000;
               sincronizarExtensionSeguimientoPestanas();
               return;
           }
 
-          if (mensaje.type === 'EXTENSION_STATUS') {
-              const status = mensaje.response?.status || {};
+          if (mensaje.type === 'EXTENSION_STATUS' || mensaje.type === 'EXTENSION_LIVE_STATUS') {
+              const status = mensaje.type === 'EXTENSION_LIVE_STATUS'
+                  ? (mensaje.status || {})
+                  : (mensaje.response?.status || {});
+              if (!status || !Object.keys(status).length) return;
               estadoExtensionSeguimiento = {
-                  instalada: mensaje.response?.ok !== false,
+                  instalada: mensaje.type === 'EXTENSION_LIVE_STATUS' || mensaje.response?.ok !== false,
                   activa: status.active === true,
                   version: String(status.version || estadoExtensionSeguimiento.version || ''),
-                  pendientes: Number(status.pendingCount || 0)
+                  pendientes: Number(status.pendingCount || 0),
+                  ultimaSenalEn: String(status.lastHeartbeat || new Date().toISOString()),
+                  dominioActual: String(status.currentDomain || ''),
+                  tituloActual: String(status.currentTitle || ''),
+                  visitaIniciadaEn: String(status.currentVisitStartedAt || ''),
+                  salidaGrupoId: String(status.currentExcursionId || ''),
+                  claseId: String(status.classId || '')
               };
+              void window.guardarEstadoExtensionSeguimientoFirebase?.({
+                  ...estadoExtensionSeguimiento,
+                  forzar: mensaje.type === 'EXTENSION_LIVE_STATUS'
+              });
               return;
           }
 
@@ -5062,9 +5171,11 @@
       function seguimientoSalidasHabilitado() {
           return Boolean(
               firebaseInitialized &&
+              claseHabilitada &&
               cuentaEstudianteActiva &&
               estadoCuentaEstudiante === 'activo' &&
-              window.firebaseCurrentUser
+              window.firebaseCurrentUser &&
+              Date.now() >= ignorarSalidasHasta
           );
       }
 
@@ -5153,12 +5264,6 @@
           if (ahora - ultimoEventoVisibilidad < 1500) return;
           ultimoEventoVisibilidad = ahora;
 
-          totalSalidasPestana = normalizarCantidadSalidas(totalSalidasPestana) + 1;
-          if (totalSalidasPestana >= LIMITE_SALIDAS_PARA_BLOQUEO) {
-              activarBloqueoPantalla();
-          }
-
-          setLocalStorage('app_blur_count', totalSalidasPestana);
           salidaActivaPestana = {
               id: `${ahora}-${totalSalidasPestana}`,
               numero: eventosSalidasPestana.length + 1,
@@ -5167,17 +5272,10 @@
               duracionSegundos: null,
               seccion: seccionActivaActual,
               origen,
-              justificacion: null
+              justificacion: null,
+              contabilizada: false
           };
           eventosSalidasPestana.push(salidaActivaPestana);
-          void persistirEventosSalidas(true);
-
-          const badge = document.getElementById('blurCount');
-          if (badge) badge.innerText = String(totalSalidasPestana);
-
-          if (totalSalidasPestana === LIMITE_SALIDAS_PARA_BLOQUEO) {
-              setLocalStorage('app_pending_lock_notice', 'true');
-          }
       }
 
       async function registrarRegresoPestana() {
@@ -5188,6 +5286,25 @@
                   0,
                   Math.round((regreso - new Date(salidaActivaPestana.salidaEn).getTime()) / 1000)
               );
+              const duracionMinima = Math.max(0, Number(configuracionSeguimientoActual.duracionMinimaSegundos) || 0);
+              if (salidaActivaPestana.duracionSegundos >= duracionMinima) {
+                  salidaActivaPestana.contabilizada = true;
+                  totalSalidasPestana = normalizarCantidadSalidas(totalSalidasPestana) + 1;
+                  setLocalStorage('app_blur_count', totalSalidasPestana);
+                  const badge = document.getElementById('blurCount');
+                  if (badge) badge.innerText = String(totalSalidasPestana);
+                  if (
+                      configuracionSeguimientoActual.bloqueoAutomatico !== false &&
+                      totalSalidasPestana >= LIMITE_SALIDAS_PARA_BLOQUEO
+                  ) {
+                      activarBloqueoPantalla();
+                      if (totalSalidasPestana === LIMITE_SALIDAS_PARA_BLOQUEO) {
+                          setLocalStorage('app_pending_lock_notice', 'true');
+                      }
+                  }
+              } else {
+                  salidaActivaPestana.justificacion = `Salida breve ignorada (${salidaActivaPestana.duracionSegundos}s)`;
+              }
               salidaActivaPestana = null;
               const guardado = await persistirEventosSalidas(true);
               if (!guardado) setTimeout(() => void persistirEventosSalidas(true), 1200);
@@ -5212,11 +5329,8 @@
 
           window.addEventListener('blur', () => {
               clearTimeout(temporizadorPerdidaFoco);
-              temporizadorPerdidaFoco = setTimeout(() => {
-                  if (!document.hasFocus() && document.visibilityState !== 'hidden') {
-                      registrarCambioPestana('window-blur');
-                  }
-              }, 200);
+              // Abrir el popup de la extensión o un diálogo del navegador produce blur
+              // sin abandonar la actividad. Solo visibilitychange contabiliza una salida.
           });
 
           window.addEventListener('focus', () => {
@@ -5237,6 +5351,17 @@
       inicializarMonitorSalidasPestana();
 
       function aplicarEstadoInicioClase(iniciada, datos = {}) {
+          const configuracionRecibida = datos.configuracionSeguimiento || {};
+          configuracionSeguimientoActual = {
+              ...configuracionSeguimientoActual,
+              ...configuracionRecibida,
+              dominiosPermitidos: Array.isArray(configuracionRecibida.dominiosPermitidos) ? configuracionRecibida.dominiosPermitidos : configuracionSeguimientoActual.dominiosPermitidos,
+              dominiosAlerta: Array.isArray(configuracionRecibida.dominiosAlerta) ? configuracionRecibida.dominiosAlerta : configuracionSeguimientoActual.dominiosAlerta,
+              dominiosIgnorados: Array.isArray(configuracionRecibida.dominiosIgnorados) ? configuracionRecibida.dominiosIgnorados : configuracionSeguimientoActual.dominiosIgnorados
+          };
+          LIMITE_SALIDAS_PARA_BLOQUEO = Math.max(1, Number(configuracionSeguimientoActual.limiteSalidas) || 5);
+          window.configuracionSeguimientoActual = configuracionSeguimientoActual;
+          ignorarSalidasHasta = Date.now() + 3000;
           claseHabilitada = Boolean(iniciada);
           const overlay = document.getElementById('classStartOverlay');
           const mensaje = document.getElementById('classStartMessage');
@@ -11006,6 +11131,7 @@
           }
       }
     </script>
+    <script src="mejoras-seguimiento.js"></script>
   </body>
 </html>
 
