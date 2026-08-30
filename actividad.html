@@ -11653,6 +11653,13 @@
                   if (datos?.respuesta && !peerConnection.currentRemoteDescription) {
                       await peerConnection.setRemoteDescription(datos.respuesta);
                       estadoVideo.textContent = 'Videollamada conectada.';
+                  } else if (datos?.estado === 'rechazada' && !llamadasNotificadasDocente.has(roomId)) {
+                      llamadasNotificadasDocente.add(roomId);
+                      const motivo = datos.motivoCierre === 'sin_respuesta_30s'
+                          ? 'no respondió durante 30 segundos'
+                          : 'rechazó la llamada';
+                      notificarDocenteLlamada(`El estudiante ${comunicacionDestino} ${motivo}.`);
+                      estadoVideo.textContent = `El estudiante ${motivo}.`;
                   }
               }));
           } else {
@@ -11672,6 +11679,17 @@
       let llamadasEntrantesUnsubscribe = null;
       let temporizadorLlamadaEntrante = null;
       let audioLlamadaEntrante = null;
+      const llamadasNotificadasDocente = new Set();
+      function notificarDocenteLlamada(texto) {
+          const aviso = document.createElement('div');
+          aviso.className = 'teacher-call-notification';
+          aviso.setAttribute('role', 'status');
+          aviso.innerHTML = '<i class="fa-solid fa-bell"></i><span></span><button type="button" aria-label="Cerrar aviso">×</button>';
+          aviso.querySelector('span').textContent = texto;
+          aviso.querySelector('button').onclick = () => aviso.remove();
+          document.body.appendChild(aviso);
+          setTimeout(() => aviso.remove(), 7000);
+      }
       function detenerAlertaLlamada() {
           if (temporizadorLlamadaEntrante) {
               clearTimeout(temporizadorLlamadaEntrante);
@@ -11750,6 +11768,7 @@
           detenerAlertaLlamada();
           if (llamada && db) updateDoc(doc(db, 'videollamadas', llamada.id), {
               estado: 'rechazada',
+              motivoCierre: 'rechazada_por_estudiante',
               rechazadaEn: serverTimestamp()
           }).catch(() => {});
           llamadaEntranteActual = null;
@@ -11782,7 +11801,16 @@
               reproducirAlertaLlamada();
               temporizadorLlamadaEntrante = setTimeout(() => {
                   if (llamadaEntranteActual?.id === llamada.id) {
-                      rechazarLlamadaEntrante();
+                      if (db) updateDoc(doc(db, 'videollamadas', llamada.id), {
+                          estado: 'rechazada',
+                          motivoCierre: 'sin_respuesta_30s',
+                          rechazadaEn: serverTimestamp()
+                      }).catch(() => {});
+                      detenerAlertaLlamada();
+                      llamadaEntranteActual = null;
+                      const modal = document.getElementById('llamadaEntranteModal');
+                      modal?.classList.remove('active');
+                      if (modal) modal.style.display = 'none';
                       if (estadoVideo) estadoVideo.textContent = 'Llamada rechazada automáticamente por falta de respuesta.';
                   }
               }, 30000);

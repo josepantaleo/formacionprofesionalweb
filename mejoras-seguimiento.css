@@ -712,6 +712,11 @@ body.teacher-light-mode #configurarLimiteBloqueoModal .tracking-limit-preview{
 .incoming-call-box{animation:incomingCallPulse 1.4s ease-in-out infinite}
 .incoming-call-toast{position:fixed;top:1rem;right:1rem;z-index:2400;display:flex;align-items:center;gap:.55rem;padding:.75rem 1rem;border:1px solid rgba(248,113,113,.55);border-radius:10px;background:#7f1d1d;color:#fee2e2;font-weight:800;box-shadow:0 12px 28px rgba(127,29,29,.32);animation:incomingCallToast 1s ease-in-out infinite}
 .incoming-call-toast i{color:#fecaca}
+.teacher-call-notification{position:fixed;top:1rem;right:1rem;z-index:2500;display:flex;align-items:center;gap:.6rem;max-width:min(420px,calc(100vw - 2rem));padding:.8rem 1rem;border:1px solid rgba(96,165,250,.55);border-radius:10px;background:#172554;color:#dbeafe;box-shadow:0 12px 28px rgba(30,64,175,.28);font-size:.82rem;animation:teacherCallNotice .25s ease-out}
+.teacher-call-notification i{color:#93c5fd}
+.teacher-call-notification span{flex:1}
+.teacher-call-notification button{border:0;background:transparent;color:#bfdbfe;font-size:1.15rem;cursor:pointer}
+@keyframes teacherCallNotice{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 @keyframes incomingCallPulse{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.25)}50%{box-shadow:0 0 0 10px rgba(248,113,113,0)}}
 @keyframes incomingCallToast{0%,100%{transform:translateX(0)}50%{transform:translateX(-4px)}}
 @media(max-width:600px){.communication-fab{right:.7rem;bottom:.7rem}.communication-fab span{display:none}.communication-box{width:96vw;padding:.85rem}.webrtc-videos{grid-template-columns:1fr}.webrtc-videos video:last-child{max-width:42%;justify-self:end;margin-top:-5rem;position:relative}}
