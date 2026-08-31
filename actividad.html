@@ -12478,7 +12478,9 @@
           ocultarAlertaJitsi();
           window.abrirJitsiConSala(invitacion.enlace, datos.nombre, datos.email, invitacion.mensaje || invitacion.titulo, { expiraEn: invitacion.expiraEn, requerirModerador: false, rol: 'estudiante' });
           if (invitacion.expiraEn) iniciarCuentaRegresivaJitsi(invitacion.expiraEn, () => {
-            actualizarBotonJitsiEstudiante();
+            const boton = document.getElementById('btnJitsiEstudiante');
+            if (boton) boton.hidden = true;
+            ocultarAlertaJitsi();
             cerrarJitsi();
           }, null);
         }
@@ -12569,6 +12571,17 @@
         window.addEventListener('firebase-teacher-auth-changed', actualizarBotonJitsiEstudiante);
         window.addEventListener('estado-cuenta-estudiante', actualizarBotonJitsiEstudiante);
         window.setTimeout(actualizarBotonJitsiEstudiante, 0);
+         window.setInterval(() => {
+           const modal = document.getElementById('jitsiModal');
+           if (modal?.dataset.jitsiRole !== 'student') return;
+           const invitacion = obtenerInvitacionJitsi();
+           if (!invitacion || (invitacion.expiraEn && fechaJitsiValida(invitacion.expiraEn) <= Date.now())) {
+             const boton = document.getElementById('btnJitsiEstudiante');
+             if (boton) boton.hidden = true;
+             ocultarAlertaJitsi();
+             cerrarJitsi();
+           }
+         }, 1500);
       })();    </script>
     <script src="mejoras-seguimiento.js"></script>
   </body>
