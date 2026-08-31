@@ -12467,7 +12467,8 @@
           const texto = document.getElementById('btnJitsiEstudianteTexto');
           if (!boton) return;
           const datos = datosEstudianteActual();
-          const esDocente = Boolean(window.firebaseTeacherUser);
+          const esDocente = Boolean(window.firebaseTeacherUser || (window.firebaseCurrentUser && document.body.classList.contains('teacher-authorized')));
+          const invitacionPendienteDocente = Boolean(jitsiOpcionesPendientes?.requerirModerador);
           const invitacion = obtenerInvitacionJitsi();
           invitacionJitsiActual = invitacion;
           boton.hidden = !datos.email || esDocente || !invitacion;
@@ -12476,7 +12477,7 @@
 
           if (!invitacion) {
             ocultarAlertaJitsi();
-            if (!esDocente && document.getElementById('jitsiModal')?.classList.contains('active')) cerrarJitsi();
+            if (!esDocente && !invitacionPendienteDocente && document.getElementById('jitsiModal')?.classList.contains('active')) cerrarJitsi();
             return;
           }
           if (esDocente) return;
