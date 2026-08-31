@@ -3521,6 +3521,8 @@
                   curso: String(configuracion.curso || ""),
                   division: String(configuracion.division || ""),
                   turno: String(configuracion.turno || ""),
+                  duracionMinutos: Number(configuracion.duracionMinutos || 0),
+                  expiraEn: configuracion.disponible === true ? String(configuracion.expiraEn || "") : "",
                   actualizadoPor: responsable,
                   actualizadoPorUid: user.uid,
                   actualizadoEn: serverTimestamp()
@@ -3540,7 +3542,7 @@
           return false;
         }
       };
-      window.actualizarDisponibilidadJitsiFirebase = async function(uid, disponible) {
+      window.actualizarDisponibilidadJitsiFirebase = async function(uid, disponible, configuracion = {}) {
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
         const database = contexto.database;
@@ -3552,6 +3554,8 @@
             jitsiSala: {
               disponible: disponible === true,
               id: disponible === true ? `${Date.now()}-${uid}` : "",
+              duracionMinutos: Number(configuracion.duracionMinutos || 0),
+              expiraEn: disponible === true ? String(configuracion.expiraEn || "") : "",
               actualizadoPor: responsable,
               actualizadoPorUid: user.uid,
               actualizadoEn: serverTimestamp()
@@ -4126,6 +4130,9 @@
             <button class="btn btn-danger" id="btnFinalizarJitsiGrupal" type="button" onclick="finalizarJitsiGrupalProfesor()" title="Finalizar la videollamada grupal del curso seleccionado">
               <i class="fa-solid fa-video-slash"></i> Finalizar Jitsi grupal
             </button>
+            <button class="btn btn-secondary" id="btnConfigurarDuracionJitsi" type="button" onclick="abrirConfiguracionDuracionJitsi()" title="Configurar el límite de tiempo de las videollamadas">
+              <i class="fa-solid fa-hourglass-half"></i> Jitsi: <strong id="duracionJitsiProfesorValor">5</strong> min
+            </button>
             <button class="btn btn-warning" id="btnPausarCronometrosProfesor" onclick="pausarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-pause"></i> Pausar cronómetros</button>
             <button class="btn btn-secondary" onclick="reiniciarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00</button>
             <button class="btn btn-secondary" id="btnConfigurarLimiteBloqueo" type="button" onclick="abrirConfiguracionLimiteBloqueo()" title="Modificar cuántas salidas producen el bloqueo">
@@ -4295,6 +4302,29 @@
       </div>
     </div>
 
+    <div class="modal-overlay" id="configuracionDuracionJitsiModal" role="dialog" aria-modal="true" aria-labelledby="configuracionDuracionJitsiTitulo" style="display:none">
+      <div class="modal-box jitsi-duration-box" tabindex="-1">
+        <div class="jitsi-duration-header">
+          <span aria-hidden="true"><i class="fa-solid fa-hourglass-half"></i></span>
+          <div><h3 id="configuracionDuracionJitsiTitulo">Duración de las llamadas Jitsi</h3><p>Este límite se aplicará a llamadas individuales y grupales.</p></div>
+        </div>
+        <label class="jitsi-duration-field" for="duracionJitsiMinutos">
+          <span>Duración máxima</span>
+          <div><input id="duracionJitsiMinutos" type="number" min="1" max="120" step="1" inputmode="numeric"><strong>minutos</strong></div>
+        </label>
+        <div class="jitsi-duration-presets" aria-label="Duraciones rápidas">
+          <button type="button" data-jitsi-minutos="5">5 min</button>
+          <button type="button" data-jitsi-minutos="10">10 min</button>
+          <button type="button" data-jitsi-minutos="15">15 min</button>
+          <button type="button" data-jitsi-minutos="30">30 min</button>
+        </div>
+        <p class="jitsi-duration-error" id="duracionJitsiError" role="alert"></p>
+        <div class="jitsi-duration-actions">
+          <button class="btn btn-secondary" id="cancelarDuracionJitsi" type="button"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+          <button class="btn btn-success" id="guardarDuracionJitsi" type="button"><i class="fa-solid fa-floppy-disk"></i> Guardar duración</button>
+        </div>
+      </div>
+    </div>
     <div class="modal-overlay" id="selectorJitsiGrupalModal" role="dialog" aria-modal="true" aria-labelledby="selectorJitsiGrupalTitulo" style="display:none">
       <div class="modal-box jitsi-group-selector" tabindex="-1">
         <div class="jitsi-group-selector-header">
@@ -4347,9 +4377,15 @@
             <h3 id="jitsiTitle"><i class="fa-solid fa-video"></i> Videollamada Jitsi Meet</h3>
             <p id="jitsiEstado">Preparando sala...</p>
           </div>
-          <button class="btn btn-secondary jitsi-close" id="cerrarJitsi" type="button" aria-label="Cerrar videollamada" title="Cerrar">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
+          <div class="jitsi-window-actions">
+            <span class="jitsi-countdown" id="jitsiTiempoRestante" title="Tiempo restante"><i class="fa-solid fa-hourglass-half"></i><strong>--:--</strong></span>
+            <button class="btn btn-secondary jitsi-fullscreen" id="pantallaCompletaJitsi" type="button" aria-label="Ver Jitsi en pantalla completa" title="Pantalla completa">
+              <i class="fa-solid fa-expand"></i>
+            </button>
+            <button class="btn btn-secondary jitsi-close" id="cerrarJitsi" type="button" aria-label="Cerrar videollamada" title="Cerrar">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
         </div>
         <div class="jitsi-participant-card">
           <span class="jitsi-participant-icon" aria-hidden="true"><i class="fa-solid fa-user-graduate"></i></span>
@@ -11647,7 +11683,115 @@
         let enlaceJitsiActual = '';
         let invitacionJitsiActual = null;
         let jitsiApiActual = null;
+        let jitsiTemporizadorIntervalo = null;
+        let jitsiTemporizadorVencido = false;
+        const DURACION_JITSI_CLAVE = 'teacher_jitsi_duration_minutes';
+        const DURACION_JITSI_PREDETERMINADA = 5;
 
+        function obtenerDuracionJitsi() {
+          try {
+            const valor = Number(localStorage.getItem(DURACION_JITSI_CLAVE));
+            return Number.isInteger(valor) && valor >= 1 && valor <= 120 ? valor : DURACION_JITSI_PREDETERMINADA;
+          } catch (error) {
+            return DURACION_JITSI_PREDETERMINADA;
+          }
+        }
+
+        function mostrarDuracionJitsi() {
+          const valor = obtenerDuracionJitsi();
+          const etiqueta = document.getElementById('duracionJitsiProfesorValor');
+          if (etiqueta) etiqueta.textContent = String(valor);
+          return valor;
+        }
+
+        function cerrarConfiguracionDuracionJitsi() {
+          const modal = document.getElementById('configuracionDuracionJitsiModal');
+          if (!modal) return;
+          modal.classList.remove('active');
+          modal.style.display = 'none';
+        }
+
+        window.abrirConfiguracionDuracionJitsi = function() {
+          const modal = document.getElementById('configuracionDuracionJitsiModal');
+          const entrada = document.getElementById('duracionJitsiMinutos');
+          const error = document.getElementById('duracionJitsiError');
+          if (!modal || !entrada) return;
+          entrada.value = String(obtenerDuracionJitsi());
+          if (error) error.textContent = '';
+          modal.style.display = 'flex';
+          modal.classList.add('active');
+          entrada.focus({ preventScroll: true });
+          entrada.select();
+        };
+
+        function guardarConfiguracionDuracionJitsi() {
+          const entrada = document.getElementById('duracionJitsiMinutos');
+          const error = document.getElementById('duracionJitsiError');
+          const minutos = Number(entrada?.value);
+          if (!Number.isInteger(minutos) || minutos < 1 || minutos > 120) {
+            if (error) error.textContent = 'Ingresá una duración completa entre 1 y 120 minutos.';
+            entrada?.focus();
+            return;
+          }
+          try { localStorage.setItem(DURACION_JITSI_CLAVE, String(minutos)); } catch (errorGuardado) {}
+          mostrarDuracionJitsi();
+          cerrarConfiguracionDuracionJitsi();
+        }
+
+        function fechaJitsiValida(valor) {
+          const tiempo = new Date(String(valor || '')).getTime();
+          return Number.isFinite(tiempo) ? tiempo : 0;
+        }
+
+        function formatearTiempoJitsi(milisegundos) {
+          const segundos = Math.max(0, Math.ceil(milisegundos / 1000));
+          const minutos = Math.floor(segundos / 60);
+          return `${String(minutos).padStart(2, '0')}:${String(segundos % 60).padStart(2, '0')}`;
+        }
+
+        function detenerCuentaRegresivaJitsi() {
+          if (jitsiTemporizadorIntervalo) clearInterval(jitsiTemporizadorIntervalo);
+          jitsiTemporizadorIntervalo = null;
+        }
+
+        function iniciarCuentaRegresivaJitsi(expiraEn, alVencer) {
+          detenerCuentaRegresivaJitsi();
+          jitsiTemporizadorVencido = false;
+          const vencimiento = fechaJitsiValida(expiraEn);
+          const indicador = document.getElementById('jitsiTiempoRestante');
+          const valor = indicador?.querySelector('strong');
+          if (!vencimiento) {
+            if (valor) valor.textContent = '--:--';
+            indicador?.classList.remove('is-warning', 'is-expired');
+            return;
+          }
+          const actualizar = async () => {
+            const restante = vencimiento - Date.now();
+            if (valor) valor.textContent = formatearTiempoJitsi(restante);
+            indicador?.classList.toggle('is-warning', restante > 0 && restante <= 60000);
+            if (restante > 0 || jitsiTemporizadorVencido) return;
+            jitsiTemporizadorVencido = true;
+            detenerCuentaRegresivaJitsi();
+            indicador?.classList.add('is-expired');
+            const estado = document.getElementById('jitsiEstado');
+            if (estado) estado.textContent = 'Tiempo finalizado. Cerrando la videollamada...';
+            try { await alVencer?.(); } catch (error) { console.error('No se pudo finalizar Jitsi automáticamente.', error); }
+            cerrarJitsi();
+          };
+          actualizar();
+          jitsiTemporizadorIntervalo = setInterval(actualizar, 1000);
+        }
+
+        async function alternarPantallaCompletaJitsi() {
+          const caja = document.querySelector('#jitsiModal .jitsi-box');
+          if (!caja) return;
+          try {
+            if (document.fullscreenElement) await document.exitFullscreen();
+            else await caja.requestFullscreen();
+          } catch (error) {
+            alert('El navegador no permitió activar la pantalla completa.');
+          }
+        }
         function datosEstudianteActual() {
           const usuario = window.firebaseCurrentUser;
           const datosGuardados = window.ultimoDocumentoEstudianteFirebase?.estudiante || {};
@@ -11680,18 +11824,19 @@
 
         function obtenerInvitacionJitsi(documento = window.ultimoDocumentoEstudianteFirebase || {}) {
           const grupal = documento.jitsiGrupal || {};
-          if (grupal.disponible === true && /^https:\/\/meet\.jit\.si\//.test(String(grupal.enlace || ''))) {
+          if (grupal.disponible === true && (!grupal.expiraEn || fechaJitsiValida(grupal.expiraEn) > Date.now()) && /^https:\/\/meet\.jit\.si\//.test(String(grupal.enlace || ''))) {
             return {
               tipo: 'grupal',
               id: String(grupal.id || grupal.sala || 'grupal'),
               enlace: String(grupal.enlace),
               titulo: 'Videollamada grupal del curso',
               mensaje: [grupal.curso, grupal.division, grupal.turno].filter(Boolean).join(' · '),
-              docente: String(grupal.actualizadoPor || '')
+              docente: String(grupal.actualizadoPor || ''),
+              expiraEn: String(grupal.expiraEn || '')
             };
           }
           const individualDisponible = documento.jitsiDisponible === true || documento.jitsiSala?.disponible === true;
-          if (individualDisponible) {
+          if (individualDisponible && (!documento.jitsiSala?.expiraEn || fechaJitsiValida(documento.jitsiSala.expiraEn) > Date.now())) {
             const datos = crearDatosSalaJitsi(window.firebaseCurrentUser?.email || '');
             if (datos) {
               return {
@@ -11700,7 +11845,8 @@
                 enlace: datos.enlace,
                 titulo: 'El docente inició una videollamada',
                 mensaje: 'Sala individual con el docente',
-                docente: String(documento.jitsiSala?.actualizadoPor || '')
+                docente: String(documento.jitsiSala?.actualizadoPor || ''),
+                expiraEn: String(documento.jitsiSala?.expiraEn || '')
               };
             }
           }
@@ -11739,6 +11885,7 @@
           const emailElemento = document.getElementById('jitsiEstudianteEmail');
           const copiarEstado = document.getElementById('jitsiCopiarEstado');
           if (!modal || !frame) return false;
+          detenerCuentaRegresivaJitsi();
           cerrarJitsi();
           const nombreVisible = String(nombre || 'Participante').trim() || 'Participante';
           enlaceJitsiActual = enlaceSeguro;
@@ -11765,6 +11912,7 @@
                 return;
               }
               moderadorConfirmado = true;
+              if (resultado?.expiraEn) iniciarCuentaRegresivaJitsi(resultado.expiraEn, resultado.alVencer);
               if (estado) estado.textContent = estadoTexto || 'Docente conectado como anfitrión';
             } catch (error) {
               console.error('Error habilitando la sala después de confirmar al anfitrión:', error);
@@ -11828,12 +11976,22 @@
             {
               requerirModerador: true,
               alConfirmarModerador: async () => {
-                const habilitado = await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, true);
+                const duracionMinutos = obtenerDuracionJitsi();
+                const expiraEn = new Date(Date.now() + duracionMinutos * 60000).toISOString();
+                const habilitado = await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, true, { duracionMinutos, expiraEn });
                 if (!habilitado) return false;
                 estudiante.jitsiDisponible = true;
-                estudiante.jitsiSala = { ...(estudiante.jitsiSala || {}), disponible: true };
+                estudiante.jitsiSala = { ...(estudiante.jitsiSala || {}), disponible: true, duracionMinutos, expiraEn };
                 renderPanelProfesor?.();
-                return true;
+                return {
+                  expiraEn,
+                  alVencer: async () => {
+                    await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, false);
+                    estudiante.jitsiDisponible = false;
+                    estudiante.jitsiSala = { ...(estudiante.jitsiSala || {}), disponible: false, expiraEn: '' };
+                    renderPanelProfesor?.();
+                  }
+                };
               }
             }
           );
@@ -12013,16 +12171,28 @@
             {
               requerirModerador: true,
               alConfirmarModerador: async () => {
+                const duracionMinutos = obtenerDuracionJitsi();
+                const expiraEn = new Date(Date.now() + duracionMinutos * 60000).toISOString();
                 const guardado = await window.actualizarJitsiGrupalFirebase?.(grupo.estudiantes, {
-                  disponible: true, id, sala, enlace,
+                  disponible: true, id, sala, enlace, duracionMinutos, expiraEn,
                   curso: grupo.curso, division: grupo.division, turno: grupo.turno
                 });
                 if (!guardado) return false;
                 grupo.estudiantes.forEach(item => {
-                  item.jitsiGrupal = { disponible: true, id, sala, enlace, curso: grupo.curso, division: grupo.division, turno: grupo.turno };
+                  item.jitsiGrupal = { disponible: true, id, sala, enlace, duracionMinutos, expiraEn, curso: grupo.curso, division: grupo.division, turno: grupo.turno };
                 });
                 renderPanelProfesor?.();
-                return true;
+                return {
+                  expiraEn,
+                  alVencer: async () => {
+                    await window.actualizarJitsiGrupalFirebase?.(grupo.estudiantes, {
+                      disponible: false, id, sala, enlace, duracionMinutos, expiraEn: '',
+                      curso: grupo.curso, division: grupo.division, turno: grupo.turno
+                    });
+                    grupo.estudiantes.forEach(item => { item.jitsiGrupal = { ...(item.jitsiGrupal || {}), disponible: false, expiraEn: '' }; });
+                    renderPanelProfesor?.();
+                  }
+                };
               }
             }
           );
@@ -12127,7 +12297,8 @@
           const invitacion = obtenerInvitacionJitsi();
           if (!invitacion) { alert('La videollamada ya no está disponible.'); actualizarBotonJitsiEstudiante(); return; }
           ocultarAlertaJitsi();
-          window.abrirJitsiConSala(invitacion.enlace, datos.nombre, datos.email, invitacion.mensaje || invitacion.titulo);
+          window.abrirJitsiConSala(invitacion.enlace, datos.nombre, datos.email, invitacion.mensaje || invitacion.titulo, { expiraEn: invitacion.expiraEn });
+          if (invitacion.expiraEn) iniciarCuentaRegresivaJitsi(invitacion.expiraEn, actualizarBotonJitsiEstudiante);
         }
 
         function actualizarBotonJitsiEstudiante() {
@@ -12157,6 +12328,26 @@
           }
         }
 
+        document.querySelectorAll('[data-jitsi-minutos]').forEach(boton => {
+          boton.addEventListener('click', () => {
+            const entrada = document.getElementById('duracionJitsiMinutos');
+            if (entrada) entrada.value = boton.dataset.jitsiMinutos || '5';
+          });
+        });
+        document.getElementById('guardarDuracionJitsi')?.addEventListener('click', guardarConfiguracionDuracionJitsi);
+        document.getElementById('cancelarDuracionJitsi')?.addEventListener('click', cerrarConfiguracionDuracionJitsi);
+        document.getElementById('configuracionDuracionJitsiModal')?.addEventListener('click', event => {
+          if (event.target?.id === 'configuracionDuracionJitsiModal') cerrarConfiguracionDuracionJitsi();
+        });
+        document.getElementById('pantallaCompletaJitsi')?.addEventListener('click', alternarPantallaCompletaJitsi);
+        document.addEventListener('fullscreenchange', () => {
+          const boton = document.getElementById('pantallaCompletaJitsi');
+          const icono = boton?.querySelector('i');
+          const activo = Boolean(document.fullscreenElement);
+          if (icono) icono.className = `fa-solid ${activo ? 'fa-compress' : 'fa-expand'}`;
+          if (boton) boton.title = activo ? 'Salir de pantalla completa' : 'Pantalla completa';
+        });
+        mostrarDuracionJitsi();
         document.getElementById('selectorJitsiCurso')?.addEventListener('change', () => actualizarSelectorJitsiGrupal({ curso: document.getElementById('selectorJitsiCurso')?.value || '', division: '', turno: '' }));
         document.getElementById('selectorJitsiDivision')?.addEventListener('change', () => actualizarSelectorJitsiGrupal({ curso: document.getElementById('selectorJitsiCurso')?.value || '', division: document.getElementById('selectorJitsiDivision')?.value || '', turno: '' }));
         document.getElementById('selectorJitsiTurno')?.addEventListener('change', () => actualizarSelectorJitsiGrupal());
@@ -12176,6 +12367,10 @@
         });
         window.addEventListener('keydown', event => {
           if (event.key !== 'Escape') return;
+          if (document.getElementById('configuracionDuracionJitsiModal')?.classList.contains('active')) {
+            cerrarConfiguracionDuracionJitsi();
+            return;
+          }
           if (document.getElementById('selectorJitsiGrupalModal')?.classList.contains('active')) {
             cerrarSelectorJitsiGrupal();
             return;
