@@ -4198,9 +4198,34 @@
       </div>
     </div>
 
+    <button class="btn btn-success jitsi-student-entry" id="btnJitsiEstudiante" type="button" hidden aria-label="Ingresar a la videollamada Jitsi">
+      <i class="fa-solid fa-video"></i>
+      <span>Ingresar a Jitsi</span>
+    </button>
+
     <div class="modal-overlay" id="jitsiModal" role="dialog" aria-modal="true" aria-labelledby="jitsiTitle" style="display:none">
-      <div class="modal-box jitsi-box">
-        <div class="jitsi-header"><div><h3 id="jitsiTitle"><i class="fa-solid fa-video"></i> Videollamada Jitsi Meet</h3><p id="jitsiEstado">Preparando sala...</p></div><button class="btn btn-secondary" id="cerrarJitsi" type="button" aria-label="Cerrar videollamada">?</button></div>
+      <div class="modal-box jitsi-box" tabindex="-1">
+        <div class="jitsi-header">
+          <div>
+            <h3 id="jitsiTitle"><i class="fa-solid fa-video"></i> Videollamada Jitsi Meet</h3>
+            <p id="jitsiEstado">Preparando sala...</p>
+          </div>
+          <button class="btn btn-secondary jitsi-close" id="cerrarJitsi" type="button" aria-label="Cerrar videollamada" title="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="jitsi-participant-card">
+          <span class="jitsi-participant-icon" aria-hidden="true"><i class="fa-solid fa-user-graduate"></i></span>
+          <div class="jitsi-participant-data">
+            <strong id="jitsiEstudianteNombre">Estudiante</strong>
+            <span id="jitsiEstudianteEmail">Sin correo</span>
+          </div>
+          <button class="btn btn-secondary jitsi-copy-link" id="copiarEnlaceJitsi" type="button" title="Copiar enlace de la sala">
+            <i class="fa-solid fa-link"></i>
+            <span>Copiar enlace</span>
+          </button>
+        </div>
+        <p class="jitsi-copy-status" id="jitsiCopiarEstado" role="status" aria-live="polite"></p>
         <iframe id="jitsiFrame" title="Videollamada Jitsi Meet" allow="camera; microphone; fullscreen; display-capture" loading="lazy"></iframe>
       </div>
     </div>
@@ -10803,6 +10828,7 @@
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial de desbloqueos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDescuentos(${indice})"><i class="fa-solid fa-file-invoice-dollar"></i><span>Historial de descuentos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialPestanas(${indice})"><i class="fa-solid fa-window-restore"></i><span>Historial de pestañas</span></button>
+            <button class="btn btn-success" onclick="cerrarAccionesEstudiante();abrirJitsiDocente(${indice})"><i class="fa-solid fa-video"></i><span>Jitsi Meet</span></button>
             <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();abrirEditorDescuentoEstudiante(${indice})"><i class="fa-solid fa-circle-minus"></i><span>Editar descuento y motivo</span></button>
             <button class="btn btn-danger" ${bloqueado ? 'disabled title="La pantalla ya está bloqueada"' : ''} onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i><span>Bloquear pantalla</span></button>
             <button class="btn student-action-highlight" ${bloqueado ? '' : 'disabled title="La pantalla no está bloqueada"'} onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i><span>Desbloquear pantalla</span></button>
@@ -11477,16 +11503,139 @@
       }
     </script>
     <script>
-      window.abrirJitsiConEstudiante = function(email){
-        const correo=String(email||'').trim().toLowerCase();
-        if(!correo.includes('@')){ alert('No se encontr? un correo v?lido del estudiante.'); return; }
-        const slug=btoa(unescape(encodeURIComponent(correo))).replace(/[^a-zA-Z0-9]/g,'').slice(0,30);
-        const sala='ipem146-clase-'+slug;
-        const modal=document.getElementById('jitsiModal'); const frame=document.getElementById('jitsiFrame'); const estado=document.getElementById('jitsiEstado');
-        if(!modal||!frame)return; frame.src='https://meet.jit.si/'+sala+'#config.prejoinPageEnabled=true&config.disableAP=true';
-        if(estado)estado.textContent='Sala asignada a '+correo; modal.style.display='flex'; modal.classList.add('active');
-      };
-      document.getElementById('cerrarJitsi')?.addEventListener('click',()=>{const m=document.getElementById('jitsiModal'),f=document.getElementById('jitsiFrame');if(f)f.src='';if(m){m.classList.remove('active');m.style.display='none';}});
+      (() => {
+        let enlaceJitsiActual = '';
+
+        function datosEstudianteActual() {
+          const usuario = window.firebaseCurrentUser;
+          const datosGuardados = window.ultimoDocumentoEstudianteFirebase?.estudiante || {};
+          return {
+            email: String(usuario?.email || '').trim().toLowerCase(),
+            nombre: String(
+              datosGuardados.nombre ||
+              document.getElementById('studentName')?.value ||
+              usuario?.displayName ||
+              'Estudiante'
+            ).trim()
+          };
+        }
+
+        function crearDatosSalaJitsi(email) {
+          const correo = String(email || '').trim().toLowerCase();
+          if (!correo.includes('@')) return null;
+          const slug = btoa(unescape(encodeURIComponent(correo)))
+            .replace(/[^a-zA-Z0-9]/g, '')
+            .slice(0, 30);
+          const sala = 'ipem146-clase-' + slug;
+          return {
+            correo,
+            sala,
+            enlace: 'https://meet.jit.si/' + sala
+          };
+        }
+
+        function cerrarJitsi() {
+          const modal = document.getElementById('jitsiModal');
+          const frame = document.getElementById('jitsiFrame');
+          const copiarEstado = document.getElementById('jitsiCopiarEstado');
+          if (frame) frame.src = '';
+          if (copiarEstado) copiarEstado.textContent = '';
+          if (modal) {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+          }
+        }
+
+        window.abrirJitsiConEstudiante = function(email, nombre) {
+          const datosSala = crearDatosSalaJitsi(email);
+          if (!datosSala) {
+            alert('No se encontró un correo válido del estudiante.');
+            return;
+          }
+
+          const modal = document.getElementById('jitsiModal');
+          const frame = document.getElementById('jitsiFrame');
+          const estado = document.getElementById('jitsiEstado');
+          const nombreElemento = document.getElementById('jitsiEstudianteNombre');
+          const emailElemento = document.getElementById('jitsiEstudianteEmail');
+          const copiarEstado = document.getElementById('jitsiCopiarEstado');
+          if (!modal || !frame) return;
+
+          const nombreVisible = String(nombre || 'Estudiante').trim() || 'Estudiante';
+          enlaceJitsiActual = datosSala.enlace;
+          if (nombreElemento) nombreElemento.textContent = nombreVisible;
+          if (emailElemento) emailElemento.textContent = datosSala.correo;
+          if (estado) estado.textContent = 'Sala compartida para docente y estudiante';
+          if (copiarEstado) copiarEstado.textContent = '';
+
+          frame.src = datosSala.enlace +
+            '#config.prejoinPageEnabled=true&config.disableAP=true' +
+            '&userInfo.displayName=' + encodeURIComponent(nombreVisible);
+          modal.style.display = 'flex';
+          modal.classList.add('active');
+          modal.querySelector('.jitsi-box')?.focus({ preventScroll: true });
+        };
+
+        window.abrirJitsiDocente = function(indice) {
+          const estudiante = window.estudiantesProfesor?.[indice] || estudiantesProfesor?.[indice];
+          if (!estudiante) {
+            alert('No se pudo identificar al estudiante seleccionado.');
+            return;
+          }
+          const nombre = estudiante.estudiante?.nombre || estudiante.nombreGoogle || estudiante.email || 'Estudiante';
+          window.abrirJitsiConEstudiante(estudiante.email, nombre);
+        };
+
+        async function copiarEnlaceJitsi() {
+          if (!enlaceJitsiActual) return;
+          const estado = document.getElementById('jitsiCopiarEstado');
+          try {
+            if (navigator.clipboard?.writeText && window.isSecureContext) {
+              await navigator.clipboard.writeText(enlaceJitsiActual);
+            } else {
+              const area = document.createElement('textarea');
+              area.value = enlaceJitsiActual;
+              area.setAttribute('readonly', '');
+              area.style.position = 'fixed';
+              area.style.opacity = '0';
+              document.body.appendChild(area);
+              area.select();
+              const copiado = document.execCommand('copy');
+              area.remove();
+              if (!copiado) throw new Error('No se pudo copiar');
+            }
+            if (estado) estado.textContent = 'Enlace copiado. Podés compartirlo con el estudiante.';
+          } catch (error) {
+            if (estado) estado.textContent = 'No se pudo copiar automáticamente. Enlace: ' + enlaceJitsiActual;
+          }
+        }
+
+        function actualizarBotonJitsiEstudiante() {
+          const boton = document.getElementById('btnJitsiEstudiante');
+          if (!boton) return;
+          const datos = datosEstudianteActual();
+          const esDocente = Boolean(window.firebaseTeacherUser);
+          boton.hidden = !datos.email || esDocente;
+          boton.setAttribute('aria-hidden', boton.hidden ? 'true' : 'false');
+        }
+
+        document.getElementById('btnJitsiEstudiante')?.addEventListener('click', () => {
+          const datos = datosEstudianteActual();
+          window.abrirJitsiConEstudiante(datos.email, datos.nombre);
+        });
+        document.getElementById('copiarEnlaceJitsi')?.addEventListener('click', copiarEnlaceJitsi);
+        document.getElementById('cerrarJitsi')?.addEventListener('click', cerrarJitsi);
+        document.getElementById('jitsiModal')?.addEventListener('click', event => {
+          if (event.target?.id === 'jitsiModal') cerrarJitsi();
+        });
+        window.addEventListener('keydown', event => {
+          if (event.key === 'Escape' && document.getElementById('jitsiModal')?.classList.contains('active')) cerrarJitsi();
+        });
+        window.addEventListener('firebase-auth-changed', actualizarBotonJitsiEstudiante);
+        window.addEventListener('firebase-teacher-auth-changed', actualizarBotonJitsiEstudiante);
+        window.addEventListener('estado-cuenta-estudiante', actualizarBotonJitsiEstudiante);
+        window.setTimeout(actualizarBotonJitsiEstudiante, 0);
+      })();
     </script>
     <script src="mejoras-seguimiento.js"></script>
   </body>

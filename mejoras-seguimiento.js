@@ -335,9 +335,8 @@ function exportarJson(){
  const grupos=gruposFiltrados();if(!grupos.length){alert("No hay salidas que coincidan con los filtros.");return}const datos={exportadoEn:new Date().toISOString(),estudiante:{uid:estudianteHistorial?.uid||"",nombre:estudianteHistorial?.estudiante?.nombre||"",email:estudianteHistorial?.email||""},salidas:grupos.map(g=>({salidaGrupoId:g.id,revision:datosGrupo(g).revision,visitas:g.eventos.map(e=>({dominio:e.dominioDestino,titulo:e.tituloDestino,salidaEn:e.salidaEn,regresoEn:e.regresoEn,duracionSegundos:e.duracionSegundos,seccion:e.seccionTitulo||e.seccionOrigen,clase:e.claseId,version:e.extensionVersion}))}))},blob=new Blob([JSON.stringify(datos,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`historial_pestanas_${txt(estudianteHistorial?.estudiante?.nombre||estudianteHistorial?.email||"estudiante").replace(/[^\w.-]+/g,"_")}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 
-function agregarBotonesJitsiFilas(){const filas=[...document.querySelectorAll('#tablaProfesorBody>tr:not(.teacher-actions-row)')];filas.forEach(fila=>{if(fila.querySelector('[data-jitsi-fila]'))return;const email=txt(fila.children[3]?.textContent).toLowerCase();if(!email.includes('@'))return;const extra=fila.nextElementSibling?.classList.contains('teacher-actions-row')?fila.nextElementSibling:null;const acciones=extra?.querySelector('.teacher-action-buttons')||extra?.querySelector('td');if(!acciones)return;const b=document.createElement('button');b.type='button';b.dataset.jitsiFila='true';b.className='btn btn-success btn-jitsi-fila';b.title='Videollamada Jitsi con '+email;b.innerHTML='<i class="fa-solid fa-video"></i> Jitsi Meet';b.onclick=()=>window.abrirJitsiConEstudiante?.(email);acciones.appendChild(b);});}
 const renderOriginal=renderPanelProfesor;
-renderPanelProfesor=function(){renderOriginal();asegurarPaneles();mejorarTabla();setTimeout(agregarBotonesJitsiFilas,0)};
+renderPanelProfesor=function(){renderOriginal();asegurarPaneles();mejorarTabla()};
 const limpiarOriginal=limpiarFiltrosProfesor;
 limpiarFiltrosProfesor=function(){limpiarOriginal();const e=document.getElementById("filtroSeguimientoProfesor"),d=document.getElementById("filtroDominioSeguimientoProfesor");if(e)e.value="";if(d)d.value="";filtrarTabla()};
 const historialOriginal=abrirHistorialPestanas;
@@ -349,7 +348,7 @@ abrirHistorialPestanas=async function(indice){
  decorarSalidas();aplicarFiltrosHistorial();
 };
 window.addEventListener("estado-inicio-clase",e=>setTimeout(()=>{cargarFormulario(e.detail?.configuracionSeguimiento||window.configuracionSeguimientoActual||{});if(document.getElementById("panelProfesorModal")?.classList.contains("active"))renderPanelProfesor()},0));
-window.addEventListener("profesor-data",()=>setTimeout(()=>{mejorarTabla();agregarBotonesJitsiFilas()},120));
+window.addEventListener("profesor-data",()=>setTimeout(mejorarTabla,0));
 document.addEventListener("keydown",evento=>{
  const actual=evento.target.closest?.(".teacher-workspace-tab");if(!actual||!["ArrowLeft","ArrowRight","Home","End"].includes(evento.key))return;const botones=[...document.querySelectorAll(".teacher-workspace-tab")],indice=botones.indexOf(actual);let siguiente=indice;if(evento.key==="ArrowRight")siguiente=(indice+1)%botones.length;if(evento.key==="ArrowLeft")siguiente=(indice-1+botones.length)%botones.length;if(evento.key==="Home")siguiente=0;if(evento.key==="End")siguiente=botones.length-1;evento.preventDefault();botones[siguiente]?.focus();activarPestanaDocente(botones[siguiente]?.dataset.teacherTab);
 });
