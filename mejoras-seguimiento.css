@@ -1031,3 +1031,407 @@ body.student-screen-locked .jitsi-finished-toast{
     text-align:center;
   }
 }
+
+/* Teacher mobile command center and student action cards. */
+.teacher-mobile-command-center,
+.teacher-mobile-student-meta,
+.teacher-mobile-tracking-strip,
+.teacher-mobile-row-actions{
+  display:none;
+}
+
+@media(max-width:900px){
+  #panelProfesorModal .teacher-panel-header{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+  }
+  #panelProfesorModal .teacher-panel-toolbar{
+    display:flex!important;
+    width:100%;
+    max-width:100%;
+    grid-template-columns:none;
+    gap:.4rem;
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding:.15rem 0 .3rem;
+    scroll-snap-type:x proximity;
+    scrollbar-width:thin;
+  }
+  #panelProfesorModal .teacher-panel-toolbar>*{
+    flex:0 0 2.65rem;
+    scroll-snap-align:start;
+  }
+  #panelProfesorModal .teacher-panel-toolbar .btn,
+  #panelProfesorModal .teacher-panel-toolbar .jitsi-live-summary{
+    width:2.65rem;
+    min-width:2.65rem;
+    min-height:2.65rem;
+    padding:0;
+    justify-content:center;
+  }
+  #panelProfesorModal .teacher-panel-toolbar .btn{
+    font-size:0;
+  }
+  #panelProfesorModal .teacher-panel-toolbar .btn i{
+    font-size:.9rem;
+  }
+  #panelProfesorModal .teacher-panel-toolbar .btn strong{
+    display:none;
+  }
+  #panelProfesorModal .teacher-panel-close{
+    order:-1;
+    position:sticky;
+    left:0;
+    z-index:3;
+    border-color:rgba(239,68,68,.45);
+    background:#7f1d1d;
+  }
+  .teacher-mobile-command-center{
+    display:grid;
+    gap:.65rem;
+    margin:.55rem 0 .75rem;
+    padding:.7rem;
+    border:1px solid rgba(56,189,248,.34);
+    border-radius:8px;
+    background:rgba(2,6,23,.78);
+    box-shadow:0 5px 16px rgba(0,0,0,.18);
+  }
+  .teacher-mobile-search{
+    display:grid;
+    grid-template-columns:auto minmax(0,1fr) 2.45rem;
+    align-items:center;
+    min-height:2.85rem;
+    overflow:hidden;
+    border:1px solid rgba(148,163,184,.35);
+    border-radius:7px;
+    background:#0f172a;
+  }
+  .teacher-mobile-search>i{
+    padding-left:.8rem;
+    color:#7dd3fc;
+  }
+  .teacher-mobile-search input{
+    width:100%;
+    min-width:0;
+    min-height:2.75rem;
+    padding:.65rem;
+    border:0!important;
+    outline:0;
+    background:transparent!important;
+    color:#f8fafc;
+    font-size:.9rem;
+  }
+  .teacher-mobile-search button{
+    width:2.45rem;
+    height:2.45rem;
+    border:0;
+    background:transparent;
+    color:#cbd5e1;
+    cursor:pointer;
+  }
+  .teacher-mobile-search button[hidden]{
+    display:block;
+    visibility:hidden;
+  }
+  .teacher-mobile-filter-chips{
+    display:flex;
+    gap:.4rem;
+    overflow-x:auto;
+    padding-bottom:.2rem;
+    scroll-snap-type:x proximity;
+    scrollbar-width:thin;
+  }
+  .teacher-mobile-filter-chips button{
+    display:grid;
+    grid-template-columns:auto auto;
+    grid-template-areas:"icon count" "label label";
+    align-items:center;
+    justify-content:center;
+    column-gap:.35rem;
+    flex:0 0 auto;
+    min-width:82px;
+    min-height:54px;
+    padding:.4rem .55rem;
+    border:1px solid rgba(148,163,184,.28);
+    border-radius:7px;
+    background:rgba(30,41,59,.82);
+    color:#cbd5e1;
+    cursor:pointer;
+    scroll-snap-align:start;
+  }
+  .teacher-mobile-filter-chips button i{
+    grid-area:icon;
+    color:#7dd3fc;
+  }
+  .teacher-mobile-filter-chips button span{
+    grid-area:label;
+    font-size:.66rem;
+    font-weight:800;
+    white-space:nowrap;
+  }
+  .teacher-mobile-filter-chips button strong{
+    grid-area:count;
+    min-width:19px;
+    padding:.08rem .28rem;
+    border-radius:999px;
+    background:rgba(148,163,184,.2);
+    font-size:.65rem;
+  }
+  .teacher-mobile-filter-chips button.is-active{
+    border-color:#38bdf8;
+    background:rgba(2,132,199,.2);
+    color:#e0f2fe;
+    box-shadow:inset 0 -2px 0 #38bdf8;
+  }
+  .teacher-mobile-filter-chips button[data-mobile-filter="alerts"] i,
+  .teacher-mobile-filter-chips button[data-mobile-filter="blocked"] i{
+    color:#fca5a5;
+  }
+  .teacher-mobile-filter-chips button[data-mobile-filter="online"] i{
+    color:#86efac;
+  }
+  .teacher-mobile-command-footer{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:.6rem;
+  }
+  #teacherMobileResults{
+    color:#94a3b8;
+    font-size:.72rem;
+  }
+  #teacherMobileResults strong{
+    color:#e2e8f0;
+    font-size:.9rem;
+  }
+  #teacherMobileAdvancedToggle{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:.38rem;
+    min-height:2.45rem;
+    padding:.45rem .6rem;
+    border:1px solid rgba(148,163,184,.3);
+    border-radius:6px;
+    background:rgba(71,85,105,.68);
+    color:#f8fafc;
+    font-size:.7rem;
+    font-weight:800;
+    cursor:pointer;
+  }
+  #teacherMobileAdvancedToggle strong{
+    display:inline-grid;
+    place-items:center;
+    min-width:20px;
+    height:20px;
+    border-radius:999px;
+    background:#f59e0b;
+    color:#111827;
+    font-size:.65rem;
+  }
+  #teacherMobileAdvancedToggle.has-active-filters{
+    border-color:#f59e0b;
+  }
+  #teacherWorkspacePanel-estudiantes:not(.mobile-filters-expanded) #filtrosPanelProfesor{
+    display:none!important;
+  }
+  #teacherWorkspacePanel-estudiantes.mobile-filters-expanded #filtrosPanelProfesor{
+    display:grid!important;
+    margin:.55rem 0 .8rem!important;
+    padding:.65rem;
+    border:1px solid rgba(148,163,184,.25);
+    border-radius:8px;
+    background:rgba(15,23,42,.58);
+  }
+  #teacherWorkspacePanel-estudiantes.mobile-filters-expanded #teacherMobileAdvancedToggle{
+    border-color:#38bdf8;
+    background:rgba(2,132,199,.18);
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row){
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:0 .55rem;
+    padding:.55rem;
+    border-left:4px solid #64748b;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr.teacher-mobile-online{
+    border-left-color:#22c55e;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr.teacher-mobile-alert,
+  #panelProfesorModal #tablaProfesorBody>tr.teacher-mobile-blocked{
+    border-left-color:#ef4444;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr.teacher-mobile-paused:not(.teacher-mobile-alert):not(.teacher-mobile-blocked){
+    border-left-color:#f59e0b;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td{
+    grid-template-columns:minmax(92px,42%) minmax(0,1fr);
+    min-width:0;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:nth-child(3){
+    order:1;
+    grid-column:1/-1;
+    display:block!important;
+    padding:.25rem .2rem .65rem;
+    border-bottom:1px solid rgba(56,189,248,.22);
+    font-size:.95rem;
+    font-weight:800;
+    overflow-wrap:anywhere;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:nth-child(3)::before{
+    display:none;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:nth-child(1){
+    order:2;
+    grid-column:1/-1;
+    display:block!important;
+    padding:.55rem 0;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:nth-child(2){order:7}
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:nth-child(8){order:3}
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:nth-child(9){order:4}
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:nth-child(10){order:5}
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:nth-child(11){order:6}
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:nth-child(12){order:8}
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:nth-child(4),
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:nth-child(5),
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:nth-child(6),
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td:nth-child(7){
+    display:none!important;
+  }
+  .teacher-mobile-student-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap:.3rem .65rem;
+    margin-top:.4rem;
+    color:#94a3b8;
+    font-size:.67rem;
+    font-weight:600;
+  }
+  .teacher-mobile-student-meta span{
+    display:inline-flex;
+    align-items:center;
+    gap:.28rem;
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+  .teacher-mobile-student-meta i{
+    color:#7dd3fc;
+  }
+  .teacher-mobile-tracking-strip{
+    display:flex;
+    flex-wrap:wrap;
+    gap:.35rem;
+    margin-top:.45rem;
+  }
+  .teacher-mobile-tracking-strip .tracking-status-badge,
+  .teacher-mobile-tracking-strip .tracking-domain-badge{
+    max-width:100%;
+    font-size:.63rem;
+  }
+  #panelProfesorModal .acciones-principales-cell>.btn-abrir-acciones-estudiante{
+    min-height:2.7rem;
+    border-radius:7px;
+    justify-content:center!important;
+  }
+  .teacher-mobile-row-actions{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:.4rem;
+    margin-top:.45rem;
+  }
+  .teacher-mobile-quick-action{
+    display:grid;
+    place-items:center;
+    gap:.18rem;
+    min-width:0;
+    min-height:3rem;
+    padding:.35rem .25rem;
+    border:1px solid rgba(148,163,184,.28);
+    border-radius:7px;
+    background:rgba(30,41,59,.82);
+    color:#f8fafc;
+    cursor:pointer;
+  }
+  .teacher-mobile-quick-action i{
+    font-size:.9rem;
+  }
+  .teacher-mobile-quick-action span{
+    font-size:.62rem;
+    font-weight:800;
+    line-height:1.1;
+  }
+  .teacher-mobile-quick-action.is-jitsi{
+    border-color:rgba(34,197,94,.46);
+    color:#bbf7d0;
+  }
+  .teacher-mobile-quick-action.is-pause,
+  .teacher-mobile-quick-action.is-resume{
+    border-color:rgba(245,158,11,.48);
+    color:#fde68a;
+  }
+  .teacher-mobile-quick-action.is-lock,
+  .teacher-mobile-quick-action.is-unlock{
+    border-color:rgba(239,68,68,.48);
+    color:#fecaca;
+  }
+  #panelProfesorModal #resumenProfesor{
+    display:flex!important;
+    gap:.5rem!important;
+    overflow-x:auto;
+    scroll-snap-type:x proximity;
+    padding-bottom:.25rem;
+  }
+  #panelProfesorModal #resumenProfesor>.teacher-summary-card{
+    flex:0 0 132px;
+    min-height:78px;
+    scroll-snap-align:start;
+  }
+}
+
+@media(max-width:430px){
+  .teacher-mobile-command-center{
+    margin-left:-.15rem;
+    margin-right:-.15rem;
+    padding:.6rem;
+  }
+  .teacher-mobile-filter-chips button{
+    min-width:76px;
+  }
+  .teacher-mobile-command-footer{
+    align-items:stretch;
+  }
+  #teacherMobileAdvancedToggle span{
+    display:none;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row){
+    gap:0 .35rem;
+    padding:.48rem;
+  }
+  #panelProfesorModal #tablaProfesorBody>tr:not(.teacher-actions-row)>td{
+    grid-template-columns:minmax(82px,43%) minmax(0,1fr);
+    font-size:.7rem;
+  }
+}
+
+body.teacher-light-mode .teacher-mobile-command-center{
+  border-color:#bae6fd;
+  background:#f8fafc;
+}
+body.teacher-light-mode .teacher-mobile-search,
+body.teacher-light-mode #teacherWorkspacePanel-estudiantes.mobile-filters-expanded #filtrosPanelProfesor{
+  border-color:#cbd5e1;
+  background:#fff;
+}
+body.teacher-light-mode .teacher-mobile-search input{
+  color:#0f172a;
+}
+body.teacher-light-mode .teacher-mobile-filter-chips button,
+body.teacher-light-mode .teacher-mobile-quick-action{
+  border-color:#cbd5e1;
+  background:#fff;
+  color:#334155;
+}
+body.teacher-light-mode #teacherMobileResults strong{
+  color:#0f172a;
+}

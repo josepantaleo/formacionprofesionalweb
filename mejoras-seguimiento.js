@@ -109,7 +109,7 @@ function crearPanelDocente(id,titulo,descripcion){
 }
 function asegurarPestanasPanelDocente(){
  const contenido=document.querySelector("#panelProfesorModal .teacher-panel-content");if(!contenido)return;
- if(document.getElementById("teacherWorkspaceTabs")){actualizarBadgesPestanas();return}
+ if(document.getElementById("teacherWorkspaceTabs")){asegurarCentroMovilDocente();actualizarBadgesPestanas();return}
  const referencias={
   estado:document.getElementById("estadoClaseProfesor"),alerta:document.getElementById("alertaNuevaSolicitud"),solicitudes:document.getElementById("solicitudesPendientesProfesor"),docentes:document.getElementById("cantidadDocentesAutorizados")?.closest("details"),leyenda:contenido.querySelector(".teacher-icon-legend"),config:document.getElementById("configuracionSeguimientoProfesor"),incidencias:document.getElementById("incidenciasSeguimientoProfesor"),resumen:document.getElementById("resumenProfesor"),resumenIA:document.getElementById("resumenConsultasIAProfesor"),filtros:document.getElementById("filtrosPanelProfesor"),tabla:contenido.querySelector(".teacher-table-scroll"),estadoPanel:document.getElementById("estadoPanelProfesor"),tituloFiltros:[...contenido.querySelectorAll(".teacher-section-title")].find(x=>x.textContent.includes("Filtros")),calculo:[...contenido.children].find(x=>x.tagName==="DIV"&&x.textContent.includes("Cómo se calcula"))
  };
@@ -129,8 +129,60 @@ function asegurarPestanasPanelDocente(){
  [referencias.solicitudes].filter(Boolean).forEach(x=>paneles.solicitudes.appendChild(x));
  [referencias.docentes].filter(Boolean).forEach(x=>paneles.docentes.appendChild(x));
  [...contenido.children].filter(x=>x!==nav&&!Object.values(paneles).includes(x)).forEach(x=>paneles.resumen.appendChild(x));
+ asegurarCentroMovilDocente(paneles.estudiantes);
  nav.querySelectorAll("[data-teacher-tab]").forEach(b=>b.onclick=()=>{activarPestanaDocente(b.dataset.teacherTab);if(window.matchMedia("(max-width: 900px)").matches){nav.querySelectorAll(".show-mobile-tooltip").forEach(x=>x.classList.remove("show-mobile-tooltip"));b.classList.add("show-mobile-tooltip");clearTimeout(b._tooltipTimer);b._tooltipTimer=setTimeout(()=>b.classList.remove("show-mobile-tooltip"),1600)}});
  activarPestanaDocente(localStorage.getItem("teacher_panel_active_tab")||"resumen");actualizarBadgesPestanas();
+}
+function cantidadFiltrosMovilesActivos(){
+ const valores={filtroProfesor:"",filtroEmailProfesor:"",filtroCursoProfesor:"",filtroDivisionProfesor:"",filtroTurnoProfesor:"",filtroEstadoProfesor:"",filtroBloqueoProfesor:"",filtroProgresoProfesor:"",filtroSalidasProfesor:"",filtroNotaProfesor:"",filtroDescuentoProfesor:"",filtroActualizacionProfesor:"",filtroSeguimientoProfesor:"",filtroDominioSeguimientoProfesor:"",ordenProfesor:"actualizacion-desc"};
+ return Object.entries(valores).filter(([id,inicial])=>{const control=document.getElementById(id);return control&&String(control.value||"")!==inicial}).length;
+}
+function estudianteEnLineaMovil(d){
+ const actualizado=ms(d?.actualizadoEn);return actualizado>0&&Date.now()-actualizado<120000;
+}
+function actualizarCentroMovilDocente(){
+ const centro=document.getElementById("teacherMobileCommandCenter");if(!centro)return;
+ const datos=Array.isArray(estudiantesProfesor)?estudiantesProfesor.filter(d=>d.estadoCuenta!=="pendiente"):[],conteos={
+  all:datos.length,
+  online:datos.filter(estudianteEnLineaMovil).length,
+  alerts:datos.filter(d=>d.__panelMeta?.alerta===true).length,
+  blocked:datos.filter(d=>d.pantallaBloqueada===true).length,
+  paused:datos.filter(d=>d.controlCronometroIndividual?.pausado===true||d.controlCronometros?.pausado===true).length
+ };
+ Object.entries(conteos).forEach(([id,valor])=>{const el=centro.querySelector(`[data-mobile-count="${id}"]`);if(el)el.textContent=String(valor)});
+ const estado=document.getElementById("filtroEstadoProfesor")?.value||"",bloqueo=document.getElementById("filtroBloqueoProfesor")?.value||"",activo=bloqueo==="bloqueados"?"blocked":estado==="conectados"?"online":estado==="alertas"?"alerts":estado==="pausados"?"paused":"all";
+ centro.querySelectorAll("[data-mobile-filter]").forEach(b=>{const seleccionado=b.dataset.mobileFilter===activo;b.classList.toggle("is-active",seleccionado);b.setAttribute("aria-pressed",String(seleccionado))});
+ const filas=[...document.querySelectorAll("#tablaProfesorBody>tr:not(.teacher-actions-row)")],visibles=filas.filter(f=>f.style.display!=="none").length,resultado=document.getElementById("teacherMobileResults");
+ if(resultado)resultado.innerHTML=`<strong>${visibles}</strong> estudiante${visibles===1?"":"s"} visible${visibles===1?"":"s"}`;
+ const cantidad=cantidadFiltrosMovilesActivos(),contador=document.getElementById("teacherMobileAdvancedCount"),boton=document.getElementById("teacherMobileAdvancedToggle");
+ if(contador){contador.textContent=String(cantidad);contador.hidden=cantidad===0}
+ if(boton)boton.classList.toggle("has-active-filters",cantidad>0);
+ const buscar=document.getElementById("teacherMobileSearch"),base=document.getElementById("filtroProfesor"),limpiar=document.getElementById("teacherMobileSearchClear");
+ if(buscar&&document.activeElement!==buscar&&base)buscar.value=base.value||"";
+ if(limpiar)limpiar.hidden=!buscar?.value;
+}
+function aplicarFiltroMovilDocente(tipo){
+ if(tipo==="incidents"){activarPestanaDocente("seguimiento");return}
+ const estado=document.getElementById("filtroEstadoProfesor"),bloqueo=document.getElementById("filtroBloqueoProfesor");
+ if(estado)estado.value="";
+ if(bloqueo)bloqueo.value="";
+ if(tipo==="online"&&estado)estado.value="conectados";
+ if(tipo==="alerts"&&estado)estado.value="alertas";
+ if(tipo==="paused"&&estado)estado.value="pausados";
+ if(tipo==="blocked"&&bloqueo)bloqueo.value="bloqueados";
+ renderPanelProfesor();
+}
+function asegurarCentroMovilDocente(panel=null){
+ panel=panel||document.getElementById("teacherWorkspacePanel-estudiantes");if(!panel||document.getElementById("teacherMobileCommandCenter"))return;
+ const centro=document.createElement("section");centro.id="teacherMobileCommandCenter";centro.className="teacher-mobile-command-center";centro.setAttribute("aria-label","Acciones rápidas del panel docente");
+ centro.innerHTML=`<div class="teacher-mobile-search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input id="teacherMobileSearch" type="search" inputmode="search" autocomplete="off" placeholder="Buscar estudiante o correo" aria-label="Buscar estudiante o correo"><button id="teacherMobileSearchClear" type="button" aria-label="Limpiar búsqueda" title="Limpiar búsqueda" hidden><i class="fa-solid fa-xmark"></i></button></div><div class="teacher-mobile-filter-chips" aria-label="Filtros rápidos"><button type="button" data-mobile-filter="all"><i class="fa-solid fa-users"></i><span>Todos</span><strong data-mobile-count="all">0</strong></button><button type="button" data-mobile-filter="online"><i class="fa-solid fa-signal"></i><span>En línea</span><strong data-mobile-count="online">0</strong></button><button type="button" data-mobile-filter="alerts"><i class="fa-solid fa-triangle-exclamation"></i><span>Alertas</span><strong data-mobile-count="alerts">0</strong></button><button type="button" data-mobile-filter="blocked"><i class="fa-solid fa-lock"></i><span>Bloqueados</span><strong data-mobile-count="blocked">0</strong></button><button type="button" data-mobile-filter="paused"><i class="fa-solid fa-pause"></i><span>Pausados</span><strong data-mobile-count="paused">0</strong></button><button type="button" data-mobile-filter="incidents"><i class="fa-solid fa-shield-halved"></i><span>Seguimiento</span></button></div><div class="teacher-mobile-command-footer"><span id="teacherMobileResults"><strong>0</strong> estudiantes visibles</span><button id="teacherMobileAdvancedToggle" type="button" aria-expanded="false"><i class="fa-solid fa-sliders"></i><span>Filtros avanzados</span><strong id="teacherMobileAdvancedCount" hidden>0</strong></button></div>`;
+ panel.querySelector(".teacher-workspace-panel-heading")?.after(centro);
+ const buscar=centro.querySelector("#teacherMobileSearch"),base=document.getElementById("filtroProfesor"),limpiar=centro.querySelector("#teacherMobileSearchClear");
+ buscar?.addEventListener("input",()=>{if(base)base.value=buscar.value;limpiar.hidden=!buscar.value;renderPanelProfesor()});
+ limpiar?.addEventListener("click",()=>{buscar.value="";if(base)base.value="";limpiar.hidden=true;renderPanelProfesor();buscar.focus()});
+ centro.querySelectorAll("[data-mobile-filter]").forEach(b=>b.addEventListener("click",()=>aplicarFiltroMovilDocente(b.dataset.mobileFilter)));
+ centro.querySelector("#teacherMobileAdvancedToggle")?.addEventListener("click",e=>{const expandido=panel.classList.toggle("mobile-filters-expanded");e.currentTarget.setAttribute("aria-expanded",String(expandido));if(expandido)document.getElementById("filtrosPanelProfesor")?.scrollIntoView({block:"start",behavior:"smooth"})});
+ actualizarCentroMovilDocente();
 }
 function activarPestanaDocente(id){
  const valido=["resumen","estudiantes","seguimiento","solicitudes","docentes"].includes(id)?id:"resumen";document.querySelectorAll(".teacher-workspace-tab").forEach(b=>{const activo=b.dataset.teacherTab===valido;b.classList.toggle("active",activo);b.setAttribute("aria-selected",String(activo));b.tabIndex=activo?0:-1});document.querySelectorAll(".teacher-workspace-panel").forEach(p=>{const activo=p.dataset.teacherPanel===valido;p.classList.toggle("active",activo);p.hidden=!activo});localStorage.setItem("teacher_panel_active_tab",valido);document.querySelector(`#teacherWorkspacePanel-${valido}`)?.scrollIntoView({block:"start",behavior:"smooth"});
@@ -195,6 +247,28 @@ function mejorarTablaSeguimientoLegacy(){
  });
  filtrarTabla();renderIncidencias();
 }
+function decorarTarjetasMovilesDocente(){
+ document.querySelectorAll("#tablaProfesorBody>tr:not(.teacher-actions-row)").forEach(fila=>{
+  if(fila.children.length<4)return;
+  const email=txt(fila.children[3]?.textContent).toLowerCase(),d=estudiantesProfesor.find(x=>txt(x.email).toLowerCase()===email);if(!d)return;
+  const indice=estudiantesProfesor.indexOf(d),celdaNombre=fila.children[2],celdaAcciones=fila.children[0],e=d.estudiante||{},estado=estadoExtension(d),dominio=txt(d.seguimientoExtension?.dominioActual),clasificacion=claseDominio(dominio),pausado=d.controlCronometroIndividual?.pausado===true||d.controlCronometros?.pausado===true,bloqueado=d.pantallaBloqueada===true,enLinea=estudianteEnLineaMovil(d),alerta=d.__panelMeta?.alerta===true;
+  fila.classList.toggle("teacher-mobile-online",enLinea);fila.classList.toggle("teacher-mobile-blocked",bloqueado);fila.classList.toggle("teacher-mobile-alert",alerta);fila.classList.toggle("teacher-mobile-paused",pausado);
+  if(celdaNombre&&!celdaNombre.querySelector(".teacher-mobile-student-meta")){
+   const meta=document.createElement("div");meta.className="teacher-mobile-student-meta";meta.innerHTML=`<span><i class="fa-solid fa-envelope"></i>${escapeHtml(d.email||"Sin correo")}</span><span><i class="fa-solid fa-graduation-cap"></i>${escapeHtml([e.curso,e.division,e.turno].filter(Boolean).join(" Â· ")||"Curso sin informar")}</span>`;celdaNombre.appendChild(meta);
+   const seguimiento=document.createElement("div");seguimiento.className="teacher-mobile-tracking-strip";seguimiento.innerHTML=`<span class="tracking-status-badge ${estado.clase}"><i class="fa-solid ${estado.icono}"></i>${escapeHtml(estado.texto)}</span>${dominio?`<span class="tracking-domain-badge ${clasificacion.clase}"><i class="fa-solid ${clasificacion.icono}"></i>${escapeHtml(dominio)}</span>`:'<span class="tracking-domain-badge allowed"><i class="fa-solid fa-house"></i>En actividad</span>'}`;celdaNombre.appendChild(seguimiento);
+  }
+  if(celdaAcciones&&!celdaAcciones.querySelector(".teacher-mobile-row-actions")){
+   const acciones=document.createElement("div");acciones.className="teacher-mobile-row-actions";
+   const crear=(clase,icono,texto,titulo,accion)=>{const b=document.createElement("button");b.type="button";b.className=`teacher-mobile-quick-action ${clase}`;b.title=titulo;b.setAttribute("aria-label",`${titulo}: ${e.nombre||d.nombreGoogle||d.email||"estudiante"}`);b.innerHTML=`<i class="fa-solid ${icono}"></i><span>${texto}</span>`;b.onclick=evento=>{evento.stopPropagation();accion()};return b};
+   acciones.append(
+    crear("is-jitsi","fa-video","Jitsi","Iniciar o abrir llamada Jitsi",()=>window.abrirJitsiDocente?.(indice)),
+    crear(pausado?"is-resume":"is-pause",pausado?"fa-play":"fa-pause",pausado?"Reanudar":"Pausar",pausado?"Reanudar cronómetro":"Pausar cronómetro",()=>window.controlarCronometroEstudianteProfesor?.(indice,pausado?"reanudar":"pausar")),
+    crear(bloqueado?"is-unlock":"is-lock",bloqueado?"fa-unlock-keyhole":"fa-lock",bloqueado?"Desbloquear":"Bloquear",bloqueado?"Desbloquear pantalla":"Bloquear pantalla",()=>bloqueado?window.desbloquearPantallaEstudianteProfesor?.(indice):window.bloquearPantallaEstudianteProfesor?.(indice))
+   );
+   celdaAcciones.appendChild(acciones);
+  }
+ });
+}
 function mejorarTabla(){
  const tabla=document.querySelector("#tablaProfesorBody")?.closest("table"),head=tabla?.querySelector("thead tr");if(!head)return;
  while(head.children.length>12)head.lastElementChild.remove();
@@ -205,6 +279,8 @@ function mejorarTabla(){
  });
  filtrarTabla();
  renderIncidencias();
+ decorarTarjetasMovilesDocente();
+ actualizarCentroMovilDocente();
 }
 function filtrarTabla(){
  const ef=document.getElementById("filtroSeguimientoProfesor")?.value||"",df=txt(document.getElementById("filtroDominioSeguimientoProfesor")?.value).toLowerCase();

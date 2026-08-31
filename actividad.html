@@ -11486,7 +11486,7 @@
                 || (bloqueoFiltro === 'activos' && !pantallaBloqueada);
               d.__panelMeta = { progreso, nota, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cuentaPendiente, cuentaRechazada, cronometroPausado, tieneCambios, salidas };
               return (!cuentaPendiente || estadoFiltro === 'solicitudes')
-                  && (!q || nombre.includes(q))
+                  && (!q || nombre.includes(q) || email.includes(q))
                   && (!emailFiltro || email.includes(emailFiltro))
                   && (!curso || e.curso===curso)
                   && (!division || e.division===division)
