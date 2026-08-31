@@ -4285,11 +4285,6 @@
       </div>
     </div>
 
-    <button class="btn btn-success jitsi-student-entry" id="btnJitsiEstudiante" type="button" hidden aria-label="Conectarse con el docente por Jitsi">
-      <i class="fa-solid fa-video"></i>
-      <span id="btnJitsiEstudianteTexto">Conectarse con el docente</span>
-    </button>
-
     <div class="jitsi-incoming-alert" id="jitsiLlamadaAlerta" role="alertdialog" aria-modal="false" aria-labelledby="jitsiLlamadaTitulo" hidden>
       <div class="jitsi-incoming-pulse" aria-hidden="true"><i class="fa-solid fa-video"></i></div>
       <div class="jitsi-incoming-content">
@@ -12467,7 +12462,7 @@
 
         function abrirInvitacionJitsiActual() {
           const invitacion = obtenerInvitacionJitsi();
-          if (!invitacion) { alert('La videollamada ya no está disponible.'); actualizarBotonJitsiEstudiante(); return; }
+          if (!invitacion) { alert('La videollamada ya no está disponible.'); actualizarInvitacionJitsiEstudiante(); return; }
           ocultarAlertaJitsi();
           cerrarJitsi();
           enlaceJitsiActual = String(invitacion.enlace || '').split('#')[0];
@@ -12494,25 +12489,17 @@
             return;
           }
           if (invitacion.expiraEn) iniciarCuentaRegresivaJitsi(invitacion.expiraEn, () => {
-            const boton = document.getElementById('btnJitsiEstudiante');
-            if (boton) boton.hidden = true;
             ocultarAlertaJitsi();
             cerrarJitsi();
           }, null);
         }
 
-        function actualizarBotonJitsiEstudiante() {
-          const boton = document.getElementById('btnJitsiEstudiante');
-          const texto = document.getElementById('btnJitsiEstudianteTexto');
-          if (!boton) return;
+        function actualizarInvitacionJitsiEstudiante() {
           const datos = datosEstudianteActual();
           const esDocente = Boolean(window.firebaseTeacherUser || (window.firebaseCurrentUser && document.body.classList.contains('teacher-authorized')));
           const invitacionPendienteDocente = Boolean(jitsiOpcionesPendientes?.requerirModerador);
           const invitacion = obtenerInvitacionJitsi();
           invitacionJitsiActual = invitacion;
-          boton.hidden = !datos.email || esDocente || !invitacion;
-          boton.setAttribute('aria-hidden', boton.hidden ? 'true' : 'false');
-          if (texto && invitacion) texto.textContent = invitacion.tipo === 'grupal' ? 'Unirse a la clase por Jitsi' : 'Conectarse con el docente';
 
           if (!invitacion) {
             ocultarAlertaJitsi();
@@ -12563,7 +12550,6 @@
         document.getElementById('selectorJitsiGrupalModal')?.addEventListener('click', event => {
           if (event.target?.id === 'selectorJitsiGrupalModal') cerrarSelectorJitsiGrupal();
         });
-        document.getElementById('btnJitsiEstudiante')?.addEventListener('click', abrirInvitacionJitsiActual);
         document.getElementById('jitsiLlamadaAceptar')?.addEventListener('click', abrirInvitacionJitsiActual);
         document.getElementById('jitsiLlamadaDescartar')?.addEventListener('click', ocultarAlertaJitsi);
         document.getElementById('copiarEnlaceJitsi')?.addEventListener('click', copiarEnlaceJitsi);
@@ -12583,18 +12569,16 @@
           }
           if (document.getElementById('jitsiModal')?.classList.contains('active')) cerrarJitsi();
         });
-        window.addEventListener('firebase-auth-changed', actualizarBotonJitsiEstudiante);
-        window.addEventListener('firebase-teacher-auth-changed', actualizarBotonJitsiEstudiante);
-        window.addEventListener('estado-cuenta-estudiante', actualizarBotonJitsiEstudiante);
-        window.setTimeout(actualizarBotonJitsiEstudiante, 0);
+        window.addEventListener('firebase-auth-changed', actualizarInvitacionJitsiEstudiante);
+        window.addEventListener('firebase-teacher-auth-changed', actualizarInvitacionJitsiEstudiante);
+        window.addEventListener('estado-cuenta-estudiante', actualizarInvitacionJitsiEstudiante);
+        window.setTimeout(actualizarInvitacionJitsiEstudiante, 0);
          window.setInterval(() => {
-           actualizarBotonJitsiEstudiante();
+           actualizarInvitacionJitsiEstudiante();
            const modal = document.getElementById('jitsiModal');
            if (modal?.dataset.jitsiRole !== 'student') return;
            const invitacion = obtenerInvitacionJitsi();
            if (!invitacion || (invitacion.expiraEn && fechaJitsiValida(invitacion.expiraEn) <= Date.now())) {
-             const boton = document.getElementById('btnJitsiEstudiante');
-             if (boton) boton.hidden = true;
              ocultarAlertaJitsi();
              cerrarJitsi();
            }
