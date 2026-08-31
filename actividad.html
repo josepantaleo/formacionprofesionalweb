@@ -2970,6 +2970,9 @@
             iniciada: true,
             iniciadaEn: serverTimestamp(),
             iniciadaPor: user.email || user.displayName || user.uid,
+            cronometrosPausados: false,
+            cronometrosActualizadosEn: serverTimestamp(),
+            cronometrosActualizadosPor: user.email || user.displayName || user.uid,
             zonaHoraria: "America/Argentina/Buenos_Aires"
           }, { merge: true });
           return true;
@@ -3011,8 +3014,8 @@
         try {
           const referencia = doc(database, "controlClase", idClaseActual());
           const estadoActual = await getDoc(referencia);
-          if (!estadoActual.exists()) {
-            alert("Primero iniciá la clase. Después podrás pausar o reiniciar los cronómetros.");
+          if (!estadoActual.exists() || estadoActual.data()?.iniciada !== true) {
+            alert("Primero iniciá la clase. Después podrás pausar, continuar o reiniciar los cronómetros.");
             return false;
           }
           const payload = {
@@ -3216,6 +3219,16 @@
               ? null
               : Number(Math.max(0, promedioAcademico - penalizacionNueva).toFixed(1));
             const notaConfirmada = revision.notaConfirmada === true && notaCalculada !== null;
+            const notaDocenteSolicitada = revision.notaFinalDocente === null ||
+              revision.notaFinalDocente === undefined ||
+              revision.notaFinalDocente === ""
+              ? NaN
+              : Number(revision.notaFinalDocente);
+            const notaDefinitiva = notaConfirmada
+              ? Number(Math.max(0, Math.min(10,
+                  Number.isFinite(notaDocenteSolicitada) ? notaDocenteSolicitada : notaCalculada
+                )).toFixed(1))
+              : null;
             const descuentoModificado =
               penalizacionAnterior !== penalizacionNueva ||
               motivoAnterior !== motivoNuevo;
@@ -3228,7 +3241,10 @@
                 revisadoPorUid: user.uid,
                 revisadoEn: serverTimestamp(),
                 notaConfirmada,
-                notaConfirmadaValor: notaConfirmada ? notaCalculada : null,
+                notaFinalDocente: notaDefinitiva,
+                notaConfirmadaValor: notaDefinitiva,
+                notaCalculadaAlConfirmar: notaConfirmada ? notaCalculada : null,
+                notaModificadaManualmente: notaConfirmada && notaDefinitiva !== notaCalculada,
                 notaConfirmadaPor: notaConfirmada ? responsable : "",
                 notaConfirmadaPorUid: notaConfirmada ? user.uid : "",
                 notaConfirmadaEn: notaConfirmada ? serverTimestamp() : null
@@ -4367,8 +4383,15 @@
             <span class="jitsi-live-summary" id="resumenJitsiProfesor" title="Estado de la llamada Jitsi activa">
               <i class="fa-solid fa-video"></i><strong>0</strong><span>conectados</span>
             </span>
-            <button class="btn btn-warning" id="btnPausarCronometrosProfesor" onclick="pausarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-pause"></i> Pausar cronómetros</button>
-            <button class="btn btn-secondary" onclick="reiniciarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00</button>
+            <button class="btn btn-warning" id="btnPausarCronometrosTodosProfesor" type="button" onclick="controlarCronometrosTodosDesdeInterfaz('pausar', this)" title="Pausar los cronómetros y la edición de todos los estudiantes" aria-label="Pausar cronómetros a todos">
+              <i class="fa-solid fa-pause"></i> Pausar a todos
+            </button>
+            <button class="btn btn-success" id="btnContinuarCronometrosTodosProfesor" type="button" onclick="controlarCronometrosTodosDesdeInterfaz('reanudar', this)" title="Continuar los cronómetros y la edición de todos los estudiantes" aria-label="Continuar cronómetros a todos">
+              <i class="fa-solid fa-play"></i> Continuar a todos
+            </button>
+            <button class="btn btn-secondary" id="btnReiniciarCronometrosTodosProfesor" type="button" onclick="controlarCronometrosTodosDesdeInterfaz('reiniciar', this)" title="Reiniciar a 40 minutos los módulos activos de todos los estudiantes" aria-label="Reiniciar cronómetros a todos">
+              <i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a todos
+            </button>
             <button class="btn btn-secondary" id="btnConfigurarLimiteBloqueo" type="button" onclick="abrirConfiguracionLimiteBloqueo()" title="Modificar cuántas salidas producen el bloqueo">
               <i class="fa-solid fa-arrow-up-9-1"></i> Bloqueo: <strong id="limiteBloqueoProfesorValor">5</strong> salidas
             </button>
@@ -4473,7 +4496,7 @@
             <option value="5">5 o más</option>
             <option value="10">10 o más</option>
           </select>
-          <select id="filtroNotaProfesor" aria-label="Filtrar por nota definitiva"><option value="">Todas las notas</option><option value="sin-nota">Sin calificación</option><option value="0-3.9">0–3,9</option><option value="4-5.9">4–5,9</option><option value="6-6.9">6–6,9</option><option value="7-8.9">7–8,9</option><option value="9-10">9–10</option></select>
+          <select id="filtroNotaProfesor" aria-label="Filtrar por nota definitiva confirmada"><option value="">Todas las notas</option><option value="sin-nota">Pendientes de confirmación</option><option value="0-3.9">0–3,9</option><option value="4-5.9">4–5,9</option><option value="6-6.9">6–6,9</option><option value="7-8.9">7–8,9</option><option value="9-10">9–10</option></select>
           <select id="filtroDescuentoProfesor" aria-label="Filtrar por descuento de puntos">
             <option value="">Todos los descuentos</option>
             <option value="con-descuento">Con descuento</option>
@@ -4509,10 +4532,10 @@
           <button class="btn btn-secondary" id="btnLimpiarFiltrosProfesor" type="button" onclick="limpiarFiltrosProfesor()" title="Restablecer todos los filtros y el orden"><i class="fa-solid fa-filter-circle-xmark"></i> Limpiar filtros</button>
         </div>
         <div style="padding:.75rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06);margin-bottom:1rem;font-size:.82rem;line-height:1.5;">
-          <strong>Cómo se calcula:</strong> cada actividad obtiene
+          <strong>Cómo se calcula:</strong> cada actividad obtiene una calificación automática mediante
           <strong>nota del código × 70% + nota de las preguntas × 30%</strong>.
-          El promedio general es la suma de las notas finales de las actividades evaluadas dividida por la cantidad de actividades evaluadas.
-          Las actividades pendientes no se incluyen. El descuento genera una nota calculada, pero la nota definitiva solo se publica cuando el docente la confirma.
+          El promedio académico es la suma de las calificaciones automáticas de las actividades evaluadas dividida por la cantidad de actividades evaluadas.
+          Las actividades pendientes no se incluyen. El descuento genera una nota calculada; el docente puede modificarla y la nota definitiva solo se publica cuando la confirma.
         </div>
         <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
         <div id="resumenConsultasIAProfesor" style="margin-bottom:1rem;"></div>
@@ -4823,7 +4846,7 @@
           </div>
         </div>
         <div class="teacher-discount-edit-summary">
-          <span>Nota actual</span>
+          <span>Nota calculada actual</span>
           <strong id="editarDescuentoNotaActual">Pendiente</strong>
         </div>
         <div class="teacher-discount-edit-field">
@@ -5821,7 +5844,10 @@
           penalizacion: 0,
           motivo: "",
           notaConfirmada: false,
-          notaConfirmadaValor: null
+          notaFinalDocente: null,
+          notaConfirmadaValor: null,
+          notaCalculadaAlConfirmar: null,
+          notaModificadaManualmente: false
       };
       let seccionActivaActual = seccionesData[0].id;
 
@@ -6221,6 +6247,7 @@
               moduloCronometroEnCurso = null;
           }
           sincronizarExtensionSeguimientoPestanas();
+          actualizarBotonPausaCronometros();
       }
 
       window.addEventListener('estado-inicio-clase', event => {
@@ -6293,6 +6320,7 @@
           aplicarEstadoInicioClase(true, {
               iniciadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || 'docente autorizado'
           });
+          establecerPausaGlobal(false, false);
           if (estado) estado.textContent = 'Clase iniciada. Los alumnos conectados ya pueden trabajar.';
           alert('Clase iniciada. Los alumnos conectados ya pueden comenzar.');
       }
@@ -6310,29 +6338,81 @@
           alert('Clase finalizada. Todos los estudiantes volvieron al estado de espera.');
       }
 
+      function bloquearBotonesCronometrosTodos(bloqueados) {
+          [
+              'btnPausarCronometrosTodosProfesor',
+              'btnContinuarCronometrosTodosProfesor',
+              'btnReiniciarCronometrosTodosProfesor'
+          ].forEach(id => {
+              const boton = document.getElementById(id);
+              if (boton) boton.disabled = Boolean(bloqueados);
+          });
+      }
+
+      async function controlarCronometrosTodosDesdeInterfaz(accion, boton = null) {
+          const configuracion = {
+              pausar: {
+                  pregunta: '¿Pausar los cronómetros y la edición de todos los estudiantes?',
+                  estado: 'Pausando los cronómetros de todos...',
+                  resultado: 'Cronómetros pausados para todos los estudiantes.'
+              },
+              reanudar: {
+                  pregunta: '¿Continuar los cronómetros y habilitar la edición para todos los estudiantes?',
+                  estado: 'Continuando los cronómetros de todos...',
+                  resultado: 'Cronómetros y edición habilitados para todos los estudiantes.'
+              },
+              reiniciar: {
+                  pregunta: '¿Reiniciar a 40:00 los cronómetros de los módulos activos para todos los estudiantes?\n\nNo se borrarán códigos, respuestas ni calificaciones.',
+                  estado: 'Reiniciando a 40:00 los cronómetros de todos...',
+                  resultado: 'Cronómetros reiniciados a 40:00 para todos los estudiantes.'
+              }
+          }[accion];
+          if (!configuracion) return;
+          if (accion === 'pausar' && cronometrosPausadosPorDocente) {
+              actualizarBotonPausaCronometros();
+              alert('Los cronómetros de todos los estudiantes ya están pausados.');
+              return;
+          }
+          if (accion === 'reanudar' && !cronometrosPausadosPorDocente) {
+              actualizarBotonPausaCronometros();
+              alert('Los cronómetros de todos los estudiantes ya están activos.');
+              return;
+          }
+          if (!confirm(configuracion.pregunta)) return;
+          const estado = document.getElementById('estadoClaseProfesor');
+          const contenidoOriginal = boton?.innerHTML || '';
+          bloquearBotonesCronometrosTodos(true);
+          if (boton) boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+          if (estado) estado.textContent = configuracion.estado;
+          try {
+              const ok = await window.controlarCronometrosFirebase?.(accion);
+              if (!ok) {
+                  if (estado) estado.textContent = 'No se pudieron actualizar los cronómetros. Verificá que la clase esté iniciada.';
+                  return;
+              }
+              if (accion === 'pausar' || accion === 'reanudar') {
+                  establecerPausaGlobal(accion === 'pausar', false);
+              } else {
+                  reiniciarCronometrosLocales();
+              }
+              if (estado) estado.textContent = configuracion.resultado;
+              alert(configuracion.resultado);
+          } finally {
+              if (boton && contenidoOriginal) boton.innerHTML = contenidoOriginal;
+              bloquearBotonesCronometrosTodos(false);
+              actualizarBotonPausaCronometros();
+          }
+      }
+
       async function pausarCronometrosDesdeInterfaz(boton = null) {
-          const accion = cronometrosPausadosPorDocente ? 'reanudar' : 'pausar';
-          if (boton) boton.disabled = true;
-          const ok = await window.controlarCronometrosFirebase?.(accion);
-          if (boton) boton.disabled = false;
-          if (!ok) return;
-          establecerPausaGlobal(accion === 'pausar', false);
-          actualizarBotonPausaCronometros();
-          alert(accion === 'pausar'
-              ? 'Cronómetros pausados para todos los alumnos.'
-              : 'Cronómetros reanudados para todos los alumnos.');
+          return controlarCronometrosTodosDesdeInterfaz(
+              cronometrosPausadosPorDocente ? 'reanudar' : 'pausar',
+              boton
+          );
       }
 
       async function reiniciarCronometrosDesdeInterfaz(boton = null) {
-          if (!confirm('¿Reiniciar a 40:00 los cronómetros de los módulos activos para todos los alumnos?\n\nNo se borrarán códigos, respuestas ni calificaciones.')) {
-              return;
-          }
-          if (boton) boton.disabled = true;
-          const ok = await window.controlarCronometrosFirebase?.('reiniciar');
-          if (boton) boton.disabled = false;
-          if (!ok) return;
-          reiniciarCronometrosLocales();
-          alert('Cronómetros reiniciados a 40:00 para todos los alumnos.');
+          return controlarCronometrosTodosDesdeInterfaz('reiniciar', boton);
       }
 
       async function cerrarAccesoDocenteTemporal() {
@@ -6670,11 +6750,14 @@
                   motivo: datos.revisionSalidas.motivo || '',
                   revisadoPor: datos.revisionSalidas.revisadoPor || '',
                   notaConfirmada: datos.revisionSalidas.notaConfirmada === true,
+                  notaFinalDocente: datos.revisionSalidas.notaFinalDocente ?? null,
                   notaConfirmadaValor: datos.revisionSalidas.notaConfirmadaValor !== null &&
                       datos.revisionSalidas.notaConfirmadaValor !== '' &&
                       Number.isFinite(Number(datos.revisionSalidas.notaConfirmadaValor))
                       ? Number(datos.revisionSalidas.notaConfirmadaValor)
                       : null,
+                  notaCalculadaAlConfirmar: datos.revisionSalidas.notaCalculadaAlConfirmar ?? null,
+                  notaModificadaManualmente: datos.revisionSalidas.notaModificadaManualmente === true,
                   notaConfirmadaPor: datos.revisionSalidas.notaConfirmadaPor || '',
                   notaConfirmadaEn: datos.revisionSalidas.notaConfirmadaEn || null
               };
@@ -7776,12 +7859,34 @@
       }
 
       function actualizarBotonPausaCronometros() {
-          const boton = document.getElementById('btnPausarCronometrosProfesor');
-          if (!boton) return;
-          boton.innerHTML = cronometrosPausadosPorDocente
-              ? '<i class="fa-solid fa-play"></i> Reanudar cronómetros'
-              : '<i class="fa-solid fa-pause"></i> Pausar cronómetros';
-          boton.className = cronometrosPausadosPorDocente ? 'btn btn-success' : 'btn btn-warning';
+          const pausar = document.getElementById('btnPausarCronometrosTodosProfesor');
+          const continuar = document.getElementById('btnContinuarCronometrosTodosProfesor');
+          const reiniciar = document.getElementById('btnReiniciarCronometrosTodosProfesor');
+          const claseActiva = Boolean(claseHabilitada);
+          if (pausar) {
+              pausar.disabled = !claseActiva || cronometrosPausadosPorDocente;
+              pausar.setAttribute('aria-pressed', String(cronometrosPausadosPorDocente));
+              pausar.title = !claseActiva
+                  ? 'Primero iniciá la clase'
+                  : cronometrosPausadosPorDocente
+                  ? 'Los cronómetros de todos ya están pausados'
+                  : 'Pausar los cronómetros y la edición de todos los estudiantes';
+          }
+          if (continuar) {
+              continuar.disabled = !claseActiva || !cronometrosPausadosPorDocente;
+              continuar.setAttribute('aria-pressed', String(!cronometrosPausadosPorDocente));
+              continuar.title = !claseActiva
+                  ? 'Primero iniciá la clase'
+                  : cronometrosPausadosPorDocente
+                  ? 'Continuar los cronómetros y la edición de todos los estudiantes'
+                  : 'Los cronómetros de todos ya están activos';
+          }
+          if (reiniciar) {
+              reiniciar.disabled = !claseActiva;
+              reiniciar.title = claseActiva
+                  ? 'Reiniciar a 40 minutos los módulos activos de todos los estudiantes'
+                  : 'Primero iniciá la clase';
+          }
       }
 
       function reiniciarCronometrosLocales() {
@@ -7834,7 +7939,10 @@
               penalizacion: 0,
               motivo: "",
               notaConfirmada: false,
-              notaConfirmadaValor: null
+              notaFinalDocente: null,
+              notaConfirmadaValor: null,
+              notaCalculadaAlConfirmar: null,
+              notaModificadaManualmente: false
           };
           removeLocalStorage('app_blur_count');
           removeLocalStorage('app_tab_events');
@@ -9197,15 +9305,15 @@
           const evaluacionCodigo = historialResultados[sectionId].evaluacionCodigo || null;
           const notaFinal = calcularNotaCombinada(notaCodigo, porcentaje, evaluacionCodigo);
           const limiteFinal = evaluacionCodigo?.sintaxis?.valida === false
-              ? "La nota final se limitó a 3 porque el código contiene un error de sintaxis."
+              ? "La calificación automática del módulo se limitó a 3 porque el código contiene un error de sintaxis."
               : evaluacionCodigo?.ejecucion?.ok === false
-                  ? "La nota final se limitó a 4 porque el código no se ejecutó correctamente."
+                  ? "La calificación automática del módulo se limitó a 4 porque el código no se ejecutó correctamente."
                   : Number(evaluacionCodigo?.metricas?.comportamiento) < 0.35
-                      ? "La nota final se limitó a 6 porque la salida no demuestra el comportamiento esperado."
+                      ? "La calificación automática del módulo se limitó a 6 porque la salida no demuestra el comportamiento esperado."
                       : "";
 
           result.innerHTML =
-              `<strong>Calificación final del módulo: ${notaFinal}/10</strong><br>` +
+              `<strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>` +
               `Código: <strong>${notaCodigo}/10</strong> (70%).<br>` +
               `Preguntas: <strong>${notaPreguntas}/10</strong> (30%) — ${correctas}/${maxPuntos} respuestas perfectas; las selecciones parcialmente correctas recibieron puntaje proporcional y las incorrectas descontaron.<br>` +
               `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
@@ -9249,7 +9357,7 @@
               feedbackText.insertAdjacentHTML(
                   "beforeend",
                   `<div style="margin-top:.8rem;padding:.7rem;border:1px solid rgba(16,185,129,.4);border-radius:6px;color:#a7f3d0">
-                      <strong>Nota final: ${notaFinal}/10</strong><br>
+                      <strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>
                       Código ${notaCodigo}/10 × 70% + preguntas ${notaPreguntas}/10 × 30%.
                   </div>`
               );
@@ -9325,7 +9433,7 @@
               const objetivos = Array.isArray(sec.objetivosPedagogicos) ? sec.objetivosPedagogicos : [];
               const conceptos = Array.isArray(sec.conceptosDetectar) ? sec.conceptosDetectar : [];
               const errores = Array.isArray(sec.erroresFrecuentes) ? sec.erroresFrecuentes : [];
-              feedbackText.innerHTML = `<strong>Nota del código: ${puntaje}/10 (70% de la nota final)</strong><br><small>La nota final se calculará después de entregar todas las preguntas, que representan el 30%.</small><br>${analisis}` +
+              feedbackText.innerHTML = `<strong>Nota del código: ${puntaje}/10 (70% de la calificación automática del módulo)</strong><br><small>La calificación automática se calculará después de entregar todas las preguntas, que representan el 30%. La nota definitiva requiere confirmación docente.</small><br>${analisis}` +
                 (objetivos.length ? `<hr><strong>🎯 Objetivos:</strong><ul>${objetivos.map(x=>`<li>${escaparTextoAnalista(x)}</li>`).join("")}</ul>`:"") +
                 (conceptos.length ? `<strong>🧠 Conceptos que la IA revisa:</strong> ${conceptos.map(x=>escaparTextoAnalista(x)).join(", ")}<br>`:"") +
                 (errores.length ? `<strong>⚠️ Errores frecuentes a revisar:</strong> ${errores.slice(0,3).map(x=>escaparTextoAnalista(x)).join(" · ")}<br>`:"") +
@@ -9694,6 +9802,7 @@
 
       function abrirPanelProfesor() {
           document.getElementById('panelProfesorModal').classList.add('active');
+          actualizarBotonPausaCronometros();
           const controlSonido = document.getElementById('sonidoSolicitudesProfesor');
           if (controlSonido) controlSonido.checked = sonidoSolicitudesActivo;
           renderDocentesAutorizados();
@@ -9833,7 +9942,7 @@
               ? NaN
               : Number(revision.notaConfirmadaValor);
           if (Number.isFinite(confirmada)) return Math.max(0, Math.min(10, confirmada)).toFixed(1);
-          return calcularNotaProvisionalEstudiante(d);
+          return '—';
       }
       function obtenerDetallePromedioEstudiante(d) {
           const historial = d.historialResultados || {};
@@ -9880,6 +9989,8 @@
           const motivo = document.getElementById('motivoRevisionProfesor')?.value.trim() || '';
           const notaCalculada = calcularNotaProvisionalEstudiante(d);
           const notaConfirmada = document.getElementById('confirmarNotaDefinitivaProfesor')?.checked === true;
+          const notaFinalTexto = String(document.getElementById('notaFinalDocenteProfesor')?.value || '').trim();
+          const notaFinalDocente = notaFinalTexto === '' ? NaN : Number(notaFinalTexto);
           if (penalizacion > 0 && !motivo) {
               alert('Escribí una justificación antes de aplicar una penalización.');
               return;
@@ -9888,12 +9999,30 @@
               alert('Todavía no hay un promedio académico para confirmar.');
               return;
           }
+          if (notaConfirmada && (!Number.isFinite(notaFinalDocente) || notaFinalDocente < 0 || notaFinalDocente > 10)) {
+              alert('La nota final debe ser un número entre 0 y 10.');
+              document.getElementById('notaFinalDocenteProfesor')?.focus();
+              return;
+          }
+          const notaFinalConfirmada = notaConfirmada
+              ? Number(notaFinalDocente.toFixed(1))
+              : null;
+          const notaModificadaManualmente = notaConfirmada &&
+              notaFinalConfirmada !== Number(notaCalculada);
+          if (notaModificadaManualmente && !motivo) {
+              alert('Escribí un fundamento para modificar la nota calculada.');
+              document.getElementById('motivoRevisionProfesor')?.focus();
+              return;
+          }
           const revision = {
               estado,
               penalizacion,
               motivo,
               notaConfirmada,
-              notaConfirmadaValor: notaConfirmada ? Number(notaCalculada) : null
+              notaFinalDocente: notaFinalConfirmada,
+              notaConfirmadaValor: notaFinalConfirmada,
+              notaCalculadaAlConfirmar: notaConfirmada ? Number(notaCalculada) : null,
+              notaModificadaManualmente
           };
           const ok = await window.guardarRevisionDocenteFirebase?.(d.uid, revision);
           if (!ok) {
@@ -9910,7 +10039,7 @@
           renderPanelProfesor();
           abrirDetalleEstudianteProfesor(indice);
           alert(notaConfirmada
-              ? `Revisión guardada. Nota definitiva confirmada: ${notaCalculada}/10.`
+              ? `Revisión guardada. Nota definitiva confirmada: ${notaFinalConfirmada}/10.`
               : 'Revisión guardada. La nota definitiva queda pendiente de confirmación docente.');
       }
       async function cambiarEstadoCuentaEstudiante(indice, nuevoEstado, opciones = {}) {
@@ -10549,6 +10678,7 @@
           const promedio = calcularNotaEstudiante(d);
           const notaCalculada = calcularNotaProvisionalEstudiante(d);
           const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
+          const notaFinalEditable = notaDefinitiva !== '—' ? notaDefinitiva : notaCalculada;
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
           const resumenConsultasIA = resumirConsultasIAEstudiante(d);
           const eventos = Array.isArray(d.eventosSalidasPestana)
@@ -10610,13 +10740,13 @@
                   ? `(${r.notaCodigo} × 0,70) + (${r.notaPreguntas} × 0,30) = ${notaFinal}`
                   : 'La fórmula se completará al entregar código y preguntas.';
               return `<details class="teacher-activity" ${numero === 0 ? 'open' : ''}>
-                  <summary>${escapeHtml(sec.title)} · ${estado} · Nota ${notaFinal !== undefined ? `${notaFinal}/10` : 'pendiente'}</summary>
+                  <summary>${escapeHtml(sec.title)} · ${estado} · Calificación automática ${notaFinal !== undefined ? `${notaFinal}/10` : 'pendiente'}</summary>
                   <div class="teacher-activity-content">
                       <div class="teacher-detail-summary">
                           <div class="teacher-detail-stat"><small>Estado</small><strong>${estado}</strong></div>
                           <div class="teacher-detail-stat"><small>Nota del código (70%)</small><strong>${r.notaCodigo !== undefined ? `${r.notaCodigo}/10` : 'Pendiente'}</strong></div>
                           <div class="teacher-detail-stat"><small>Nota de preguntas (30%)</small><strong>${r.notaPreguntas !== undefined ? `${r.notaPreguntas}/10` : 'Pendiente'}</strong></div>
-                          <div class="teacher-detail-stat"><small>Nota final</small><strong>${notaFinal !== undefined ? `${notaFinal}/10` : 'Pendiente'}</strong></div>
+                          <div class="teacher-detail-stat"><small>Calificación automática</small><strong>${notaFinal !== undefined ? `${notaFinal}/10` : 'Pendiente'}</strong></div>
                           <div class="teacher-detail-stat"><small>Tiempo restante</small><strong>${formatearTiempoProfesor(tiempos[sec.id] ?? 2400)}</strong></div>
                           <div class="teacher-detail-stat"><small>Consultas de nota</small><strong>${Number(previews[sec.id] || 0)}/3</strong></div>
                       </div>
@@ -10656,7 +10786,7 @@
 
           const notasUsadas = detallePromedio.evaluadas.length
               ? detallePromedio.evaluadas.map(x=>`${escapeHtml(x.titulo)}: ${x.nota}/10`).join('<br>')
-              : 'Todavía no hay actividades con nota final.';
+              : 'Todavía no hay actividades con calificación automática completa.';
           const formulaPromedio = detallePromedio.promedio !== null
               ? `${detallePromedio.evaluadas.map(x=>x.nota).join(' + ')} = ${detallePromedio.suma.toFixed(1)}; ${detallePromedio.suma.toFixed(1)} ÷ ${detallePromedio.evaluadas.length} = ${detallePromedio.promedio.toFixed(1)}`
               : 'Pendiente';
@@ -10779,13 +10909,13 @@
               ${resumenConsultasHtml}
               ${renderResumenAyudasComprensionProfesor(d)}
               <details class="teacher-activity" open>
-                  <summary>Cómo se calculó el promedio final</summary>
+                  <summary>Cómo se calculó el promedio académico</summary>
                   <div class="teacher-activity-content">
-                      <p><strong>Fórmula:</strong> suma de las notas finales evaluadas ÷ cantidad de actividades evaluadas.</p>
+                      <p><strong>Fórmula:</strong> suma de las calificaciones automáticas evaluadas ÷ cantidad de actividades evaluadas.</p>
                       <p style="margin-top:.5rem;"><strong>Cálculo actual:</strong> ${escapeHtml(formulaPromedio)}</p>
                       <p style="margin-top:.7rem;"><strong>Actividades incluidas (${detallePromedio.evaluadas.length}):</strong></p>
                       <div style="margin-top:.35rem;color:#cbd5e1;line-height:1.5">${notasUsadas}</div>
-                      <p style="margin-top:.7rem;color:var(--text-muted);">Las actividades sin nota final no forman parte del promedio hasta que se entreguen las preguntas.</p>
+                      <p style="margin-top:.7rem;color:var(--text-muted);">Las actividades sin calificación automática completa no forman parte del promedio hasta que se entreguen las preguntas.</p>
                   </div>
               </details>
               <details class="teacher-activity" open>
@@ -10818,18 +10948,26 @@
                               <label for="motivoRevisionProfesor">Fundamento de la decisión</label>
                               <textarea id="motivoRevisionProfesor" style="min-height:90px;padding:.7rem;border-radius:6px;background:var(--bg-dark);color:white;border:1px solid var(--border)">${escapeHtml(revision.motivo || '')}</textarea>
                           </div>
+                          <div class="input-group" style="margin-top:.7rem">
+                              <label for="notaFinalDocenteProfesor">Nota final que desea confirmar el docente</label>
+                              <input id="notaFinalDocenteProfesor" type="number" min="0" max="10" step="0.1" value="${notaFinalEditable === '—' ? '' : notaFinalEditable}">
+                              <small style="color:var(--text-muted)">Puede conservar la nota calculada o reemplazarla por otro valor entre 0 y 10. Solo será definitiva al marcar la confirmación.</small>
+                          </div>
                           <div style="margin-top:.7rem;line-height:1.5">
                               Promedio académico: <strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong><br>
                               Penalización: <strong>-${Number(revision.penalizacion || 0).toFixed(1)}</strong><br>
                               Nota calculada: <strong>${notaCalculada === '—' ? 'Pendiente' : `${notaCalculada}/10`}</strong><br>
                               Nota definitiva: <strong>${notaDefinitiva === '—' ? 'Pendiente de confirmación docente' : `${notaDefinitiva}/10`}</strong>
+                              ${revision.notaConfirmada === true && revision.notaModificadaManualmente === true
+                                  ? '<br><small>La nota definitiva fue modificada manualmente por el docente.</small>'
+                                  : ''}
                               ${revision.revisadoPor ? `<br><small>Última revisión: ${escapeHtml(revision.revisadoPor)}</small>` : ''}
                           </div>
                           <label style="display:flex;align-items:flex-start;gap:.55rem;margin-top:.8rem;padding:.75rem;border:1px solid rgba(56,189,248,.35);border-radius:7px;background:rgba(56,189,248,.08);cursor:pointer">
                               <input id="confirmarNotaDefinitivaProfesor" type="checkbox" ${revision.notaConfirmada === true ? 'checked' : ''} ${notaCalculada === '—' ? 'disabled' : ''} style="margin-top:.2rem">
                               <span>
                                   <strong>Confirmar nota definitiva</strong><br>
-                                  <small>La nota calculada solo será definitiva después de guardar esta confirmación. Si se modifica el descuento, deberá confirmarse nuevamente.</small>
+                                  <small>Se confirmará el valor ingresado arriba. Si se modifica el descuento desde el editor rápido, deberá confirmarse nuevamente.</small>
                               </span>
                           </label>
                           <button class="btn btn-warning" style="margin-top:.8rem" onclick="guardarRevisionSalidasProfesor(${indice})">
@@ -11380,7 +11518,10 @@
               penalizacion: puntos,
               motivo,
               notaConfirmada: false,
-              notaConfirmadaValor: null
+              notaFinalDocente: null,
+              notaConfirmadaValor: null,
+              notaCalculadaAlConfirmar: null,
+              notaModificadaManualmente: false
           };
           const ok = await window.guardarRevisionDocenteFirebase?.(d.uid, revision);
           if (boton) {
@@ -11651,7 +11792,7 @@
               const notaCalculada = calcularNotaProvisionalEstudiante(d);
               const notaHtml = Number.isFinite(notaNumero)
                   ? `<span class="teacher-grade-badge ${notaClase}" title="Nota definitiva confirmada por el docente: ${n}"><i class="fa-solid ${notaIcono}"></i> ${n}</span>`
-                  : `<span class="teacher-grade-badge" title="${notaCalculada === '—' ? 'Sin nota calculada' : `Nota calculada ${notaCalculada}/10, pendiente de confirmación docente`}"><i class="fa-solid fa-clock"></i> ${notaCalculada === '—' ? '—' : `${notaCalculada} pendiente`}</span>`;
+                  : `<span class="teacher-grade-badge" title="${notaCalculada === '—' ? 'Sin nota calculada' : `Nota calculada ${notaCalculada}/10, pendiente de confirmación docente`}"><i class="fa-solid fa-clock"></i> ${notaCalculada === '—' ? 'Pendiente' : `${notaCalculada} sin confirmar`}</span>`;
               const descuentoPuntos = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
               const descuentoMotivo = String(d.revisionSalidas?.motivo || '').trim();
               const descuentoTitulo = descuentoPuntos > 0
@@ -11991,7 +12132,7 @@
           doc.setFont("helvetica", "normal");
           doc.setFontSize(9);
           const formulaGeneral = doc.splitTextToSize(
-              "Fórmula: suma de las notas finales de las actividades evaluadas ÷ cantidad de actividades evaluadas. Las actividades pendientes no se incluyen.",
+              "Fórmula: suma de las calificaciones automáticas de las actividades evaluadas ÷ cantidad de actividades evaluadas. Las actividades pendientes no se incluyen.",
               180
           );
           doc.text(formulaGeneral, 14, yPos);
@@ -12022,7 +12163,7 @@
               );
               yPos += 7;
           } else {
-              doc.text("No hay actividades con nota final para calcular el promedio.", 14, yPos);
+              doc.text("No hay actividades con calificación automática completa para calcular el promedio.", 14, yPos);
               yPos += 7;
           }
 
@@ -12048,7 +12189,7 @@
           yPos += 5;
           doc.text(
               notaDefinitivaNumero !== null
-                  ? `Confirmación docente: nota definitiva ${notaDefinitivaPDF}/10`
+                  ? `Confirmación docente: nota definitiva ${notaDefinitivaPDF}/10${revisionSalidasActual.notaModificadaManualmente === true ? ' (modificada por el docente)' : ''}`
                   : 'Confirmación docente: pendiente; este cálculo todavía no es una nota definitiva.',
               14,
               yPos
@@ -12095,7 +12236,7 @@
 
               doc.setFontSize(12);
               doc.setFont("helvetica", "bold");
-              doc.text(`${sec.title} - Nota final: ${nota}`, 14, yPos);
+              doc.text(`${sec.title} - Calificación automática del módulo: ${nota}`, 14, yPos);
               yPos += 6;
 
               if (res.notaCodigo !== undefined || res.notaPreguntas !== undefined) {
