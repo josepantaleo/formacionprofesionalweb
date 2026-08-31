@@ -2143,7 +2143,7 @@
       }
       .teacher-tab-badge.tabs-warning{background:rgba(161,98,7,.28);border-color:rgba(251,191,36,.38);color:#fde68a}
       .teacher-tab-badge.tabs-danger{background:rgba(153,27,27,.34);border-color:rgba(248,113,113,.46);color:#fca5a5}
-      #confirmacionDocenteModal{z-index:10000}
+      #confirmacionDocenteModal{z-index:12000}
       .teacher-confirm-box{
         width:min(520px,calc(100vw - 1rem));
         max-width:520px;
@@ -10804,6 +10804,7 @@
       function cerrarConfirmacionDocente(resultado = { confirmado: false, valor: '' }) {
           const modal = document.getElementById('confirmacionDocenteModal');
           modal?.classList.remove('active');
+          if (modal) modal.style.zIndex = '';
           if (resultado?.confirmado) {
               const jitsiModal = document.getElementById('jitsiModal');
               if (jitsiModal?.dataset.hostConfirmation === 'true') {
@@ -10901,6 +10902,7 @@
                   }
                   cerrarConfirmacionDocente({ confirmado: true, valor });
               };
+              modal.style.zIndex = '12000';
               modal.classList.add('active');
               setTimeout(() => {
                   if (usaCampo) entrada.focus();
