@@ -3691,10 +3691,18 @@
         }
       };
       window.obtenerHistorialJitsiFirebase = async function() {
+        window.ultimoErrorHistorialJitsi = null;
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
         const database = contexto.database;
-        if (!user || !database || !(await verificarUsuarioDocente(user))) return [];
+        if (!user || !database) {
+          window.ultimoErrorHistorialJitsi = { code: "not-authenticated", message: "No hay una cuenta docente autorizada activa." };
+          return [];
+        }
+        if (!(await verificarUsuarioDocente(user))) {
+          window.ultimoErrorHistorialJitsi = { code: "not-authorized", message: "La cuenta actual no está autorizada como docente o el correo no está verificado." };
+          return [];
+        }
         try {
           const snapshot = await getDocs(collection(database, "controlClase", idClaseActual(), "historialJitsi"));
           return snapshot.docs.map(item => ({ id: item.id, ...item.data() })).sort((a, b) => {
@@ -3704,6 +3712,7 @@
           });
         } catch (error) {
           console.error("Error consultando historial Jitsi:", error);
+          window.ultimoErrorHistorialJitsi = { code: error?.code || "unknown", message: error?.message || "No se pudo consultar el historial Jitsi." };
           return [];
         }
       };
@@ -11263,7 +11272,7 @@
           const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante';
           const bloqueado = d.pantallaBloqueada === true;
           const pausado = d.controlCronometroIndividual?.pausado === true;
-          const jitsiDisponible = d.jitsiDisponible === true || d.jitsiSala?.disponible === true;
+          const jitsiDisponible = d.jitsiDisponible === true || d.jitsiSala?.disponible === true || d.jitsiGrupal?.disponible === true;
           const jitsiTieneSala = Boolean(d.jitsiSala?.id || d.jitsiGrupal?.id);
           const llamadaJitsiId = String(d.jitsiGrupal?.id || d.jitsiSala?.id || '');
           const estadoJitsi = llamadaJitsiId ? (window.estadoParticipacionJitsi?.(d, llamadaJitsiId) || 'invitado') : '';
@@ -12475,11 +12484,27 @@
           const modal = document.getElementById('historialJitsiModal');
           const lista = document.getElementById('listaHistorialJitsi');
           if (!modal || !lista) return;
+          const autorizado = await window.esDocenteAutorizadoFirebase?.();
+          if (!autorizado) {
+            const ingreso = await window.autorizarDocenteFirebase?.();
+            if (!ingreso) {
+              modal.style.display = 'flex';
+              modal.classList.add('active');
+              lista.innerHTML = '<div class="jitsi-history-empty jitsi-history-error"><i class="fa-solid fa-user-lock"></i><strong>Se necesita una cuenta docente autorizada.</strong><span>Ingresá con la cuenta docente y volvé a abrir el historial.</span></div>';
+              return;
+            }
+          }
           modal.style.display = 'flex';
           modal.classList.add('active');
           lista.innerHTML = '<p class="jitsi-history-empty"><i class="fa-solid fa-spinner fa-spin"></i> Cargando historial...</p>';
           await sincronizarHistorialJitsiActivo(true);
           historialJitsiCache = await window.obtenerHistorialJitsiFirebase?.() || [];
+          if (!historialJitsiCache.length && window.ultimoErrorHistorialJitsi) {
+            const error = window.ultimoErrorHistorialJitsi;
+            lista.innerHTML = `<div class="jitsi-history-empty jitsi-history-error"><i class="fa-solid fa-triangle-exclamation"></i><strong>No se pudo cargar el historial Jitsi.</strong><span>${escapeHtml(error.message || error.code || 'Error desconocido')}</span><small>Verificá que la cuenta docente esté autorizada y que las reglas Firestore estén publicadas.</small></div>`;
+            modal.querySelector('.jitsi-history-box')?.focus({ preventScroll: true });
+            return;
+          }
           renderHistorialJitsiProfesor();
           modal.querySelector('.jitsi-history-box')?.focus({ preventScroll: true });
         };
@@ -12874,8 +12899,12 @@
             confirmarClase: 'btn-danger'
           });
           if (!confirmacion?.confirmado) return;
+          const grupalActiva = estudiante.jitsiGrupal?.disponible === true;
+          const individualActiva = estudiante.jitsiDisponible === true || estudiante.jitsiSala?.disponible === true;
           const idGrupal = String(estudiante.jitsiGrupal?.id || '');
-          if (idGrupal) {
+          const idIndividual = String(estudiante.jitsiSala?.id || '');
+          const cerrarGrupal = grupalActiva || (!individualActiva && Boolean(idGrupal));
+          if (cerrarGrupal && idGrupal) {
             const grupo = (window.estudiantesProfesor || estudiantesProfesor || []).filter(item =>
               String(item.jitsiGrupal?.id || '') === idGrupal
             );
@@ -12919,7 +12948,14 @@
             alert('La llamada grupal anterior fue limpiada y dejó de estar disponible.');
             return;
           }
-          const idLlamada = String(estudiante.jitsiSala?.id || '');
+          const idLlamada = idIndividual;
+          if (!idLlamada && !individualActiva) {
+            alert('No se encontró una invitación Jitsi activa o anterior para este estudiante. El panel se actualizará para quitar el estado desactualizado.');
+            estudiante.jitsiDisponible = false;
+            estudiante.jitsiSala = { ...(estudiante.jitsiSala || {}), disponible: false };
+            renderPanelProfesor?.();
+            return;
+          }
           const participantes = participantesHistorialJitsi([estudiante], idLlamada);
           const cerrado = await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, false, { id: idLlamada });
           if (!cerrado) {
