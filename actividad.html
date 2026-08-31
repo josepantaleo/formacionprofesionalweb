@@ -3494,6 +3494,52 @@
         }
       };
 
+      window.actualizarJitsiGrupalFirebase = async function(estudiantes, configuracion = {}) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !(await verificarUsuarioDocente(user))) return false;
+        const lista = Array.isArray(estudiantes)
+          ? estudiantes.filter(item => item?.uid)
+          : [];
+        if (!lista.length) return false;
+        try {
+          const responsable = user.email || user.displayName || user.uid;
+          const grupos = [];
+          for (let inicio = 0; inicio < lista.length; inicio += 400) {
+            grupos.push(lista.slice(inicio, inicio + 400));
+          }
+          for (const grupo of grupos) {
+            const batch = writeBatch(database);
+            grupo.forEach(estudiante => {
+              batch.set(doc(database, "estudiantes", estudiante.uid), {
+                jitsiGrupal: {
+                  disponible: configuracion.disponible === true,
+                  id: String(configuracion.id || ""),
+                  sala: String(configuracion.sala || ""),
+                  enlace: String(configuracion.enlace || ""),
+                  curso: String(configuracion.curso || ""),
+                  division: String(configuracion.division || ""),
+                  turno: String(configuracion.turno || ""),
+                  actualizadoPor: responsable,
+                  actualizadoPorUid: user.uid,
+                  actualizadoEn: serverTimestamp()
+                },
+                actualizadoEn: serverTimestamp()
+              }, { merge: true });
+            });
+            await batch.commit();
+          }
+          return true;
+        } catch (error) {
+          console.error("Error actualizando la sala Jitsi grupal:", error);
+          window.ultimoErrorJitsiGrupal = {
+            code: error?.code || "",
+            message: error?.message || "Error desconocido"
+          };
+          return false;
+        }
+      };
       window.actualizarDisponibilidadJitsiFirebase = async function(uid, disponible) {
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
@@ -3505,6 +3551,7 @@
             jitsiDisponible: disponible === true,
             jitsiSala: {
               disponible: disponible === true,
+              id: disponible === true ? `${Date.now()}-${uid}` : "",
               actualizadoPor: responsable,
               actualizadoPorUid: user.uid,
               actualizadoEn: serverTimestamp()
@@ -4073,6 +4120,12 @@
           <div class="teacher-panel-toolbar">
             <button class="btn btn-success" onclick="iniciarClaseDesdeInterfaz(this)"><i class="fa-solid fa-play"></i> Iniciar clase</button>
             <button class="btn btn-danger" onclick="finalizarClaseDesdeInterfaz(this)"><i class="fa-solid fa-stop"></i> Finalizar clase</button>
+            <button class="btn btn-success" id="btnIniciarJitsiGrupal" type="button" onclick="iniciarJitsiGrupalProfesor()" title="Iniciar una videollamada para el curso seleccionado en los filtros">
+              <i class="fa-solid fa-users-viewfinder"></i> Iniciar Jitsi grupal
+            </button>
+            <button class="btn btn-danger" id="btnFinalizarJitsiGrupal" type="button" onclick="finalizarJitsiGrupalProfesor()" title="Finalizar la videollamada grupal del curso seleccionado">
+              <i class="fa-solid fa-video-slash"></i> Finalizar Jitsi grupal
+            </button>
             <button class="btn btn-warning" id="btnPausarCronometrosProfesor" onclick="pausarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-pause"></i> Pausar cronómetros</button>
             <button class="btn btn-secondary" onclick="reiniciarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00</button>
             <button class="btn btn-secondary" id="btnConfigurarLimiteBloqueo" type="button" onclick="abrirConfiguracionLimiteBloqueo()" title="Modificar cuántas salidas producen el bloqueo">
@@ -4227,8 +4280,20 @@
 
     <button class="btn btn-success jitsi-student-entry" id="btnJitsiEstudiante" type="button" hidden aria-label="Conectarse con el docente por Jitsi">
       <i class="fa-solid fa-video"></i>
-      <span>Conectarse con el docente</span>
+      <span id="btnJitsiEstudianteTexto">Conectarse con el docente</span>
     </button>
+
+    <div class="jitsi-incoming-alert" id="jitsiLlamadaAlerta" role="alertdialog" aria-modal="false" aria-labelledby="jitsiLlamadaTitulo" hidden>
+      <div class="jitsi-incoming-pulse" aria-hidden="true"><i class="fa-solid fa-video"></i></div>
+      <div class="jitsi-incoming-content">
+        <strong id="jitsiLlamadaTitulo">El docente inició una videollamada</strong>
+        <span id="jitsiLlamadaMensaje">Podés ingresar ahora a la sala Jitsi.</span>
+      </div>
+      <div class="jitsi-incoming-actions">
+        <button class="btn btn-success" id="jitsiLlamadaAceptar" type="button"><i class="fa-solid fa-video"></i> Unirse ahora</button>
+        <button class="btn btn-secondary" id="jitsiLlamadaDescartar" type="button"><i class="fa-solid fa-xmark"></i> Ahora no</button>
+      </div>
+    </div>
 
     <div class="modal-overlay" id="jitsiModal" role="dialog" aria-modal="true" aria-labelledby="jitsiTitle" style="display:none">
       <div class="modal-box jitsi-box" tabindex="-1">
@@ -11534,6 +11599,7 @@
     <script>
       (() => {
         let enlaceJitsiActual = '';
+        let invitacionJitsiActual = null;
 
         function datosEstudianteActual() {
           const usuario = window.firebaseCurrentUser;
@@ -11556,11 +11622,42 @@
             .replace(/[^a-zA-Z0-9]/g, '')
             .slice(0, 30);
           const sala = 'ipem146-clase-' + slug;
-          return {
-            correo,
-            sala,
-            enlace: 'https://meet.jit.si/' + sala
-          };
+          return { correo, sala, enlace: 'https://meet.jit.si/' + sala };
+        }
+
+        function crearSlugJitsiGrupo(texto) {
+          return btoa(unescape(encodeURIComponent(String(texto || 'curso').toLowerCase())))
+            .replace(/[^a-zA-Z0-9]/g, '')
+            .slice(0, 34) || 'curso';
+        }
+
+        function obtenerInvitacionJitsi(documento = window.ultimoDocumentoEstudianteFirebase || {}) {
+          const grupal = documento.jitsiGrupal || {};
+          if (grupal.disponible === true && /^https:\/\/meet\.jit\.si\//.test(String(grupal.enlace || ''))) {
+            return {
+              tipo: 'grupal',
+              id: String(grupal.id || grupal.sala || 'grupal'),
+              enlace: String(grupal.enlace),
+              titulo: 'Videollamada grupal del curso',
+              mensaje: [grupal.curso, grupal.division, grupal.turno].filter(Boolean).join(' · '),
+              docente: String(grupal.actualizadoPor || '')
+            };
+          }
+          const individualDisponible = documento.jitsiDisponible === true || documento.jitsiSala?.disponible === true;
+          if (individualDisponible) {
+            const datos = crearDatosSalaJitsi(window.firebaseCurrentUser?.email || '');
+            if (datos) {
+              return {
+                tipo: 'individual',
+                id: String(documento.jitsiSala?.id || 'individual-' + datos.correo),
+                enlace: datos.enlace,
+                titulo: 'El docente inició una videollamada',
+                mensaje: 'Sala individual con el docente',
+                docente: String(documento.jitsiSala?.actualizadoPor || '')
+              };
+            }
+          }
+          return null;
         }
 
         function cerrarJitsi() {
@@ -11575,13 +11672,12 @@
           }
         }
 
-        window.abrirJitsiConEstudiante = function(email, nombre) {
-          const datosSala = crearDatosSalaJitsi(email);
-          if (!datosSala) {
-            alert('No se encontró un correo válido del estudiante.');
+        window.abrirJitsiConSala = function(enlace, nombre, email, estadoTexto) {
+          const enlaceSeguro = String(enlace || '');
+          if (!/^https:\/\/meet\.jit\.si\/[a-zA-Z0-9_-]+/.test(enlaceSeguro)) {
+            alert('No se encontró un enlace válido para la sala Jitsi.');
             return;
           }
-
           const modal = document.getElementById('jitsiModal');
           const frame = document.getElementById('jitsiFrame');
           const estado = document.getElementById('jitsiEstado');
@@ -11590,19 +11686,32 @@
           const copiarEstado = document.getElementById('jitsiCopiarEstado');
           if (!modal || !frame) return;
 
-          const nombreVisible = String(nombre || 'Estudiante').trim() || 'Estudiante';
-          enlaceJitsiActual = datosSala.enlace;
+          const nombreVisible = String(nombre || 'Participante').trim() || 'Participante';
+          enlaceJitsiActual = enlaceSeguro.split('#')[0];
           if (nombreElemento) nombreElemento.textContent = nombreVisible;
-          if (emailElemento) emailElemento.textContent = datosSala.correo;
-          if (estado) estado.textContent = 'Encuentro en vivo entre docente y estudiante';
+          if (emailElemento) emailElemento.textContent = String(email || '');
+          if (estado) estado.textContent = estadoTexto || 'Encuentro en vivo por Jitsi Meet';
           if (copiarEstado) copiarEstado.textContent = '';
-
-          frame.src = datosSala.enlace +
+          frame.src = enlaceJitsiActual +
             '#config.prejoinPageEnabled=true&config.disableAP=true' +
             '&userInfo.displayName=' + encodeURIComponent(nombreVisible);
           modal.style.display = 'flex';
           modal.classList.add('active');
           modal.querySelector('.jitsi-box')?.focus({ preventScroll: true });
+        };
+
+        window.abrirJitsiConEstudiante = function(email, nombre) {
+          const datosSala = crearDatosSalaJitsi(email);
+          if (!datosSala) {
+            alert('No se encontró un correo válido del estudiante.');
+            return;
+          }
+          window.abrirJitsiConSala(
+            datosSala.enlace,
+            nombre || 'Estudiante',
+            datosSala.correo,
+            'Encuentro en vivo entre docente y estudiante'
+          );
         };
 
         window.abrirJitsiDocente = async function(indice) {
@@ -11644,7 +11753,6 @@
             confirmarClase: 'btn-danger'
           });
           if (!confirmacion?.confirmado) return;
-
           const cerrado = await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, false);
           if (!cerrado) {
             alert('No se pudo cerrar la sala Jitsi. Verificá la autorización docente y las reglas de Firestore.');
@@ -11655,6 +11763,92 @@
           cerrarJitsi();
           renderPanelProfesor?.();
           alert('La videollamada Jitsi finalizó y ya no está disponible para el estudiante.');
+        };
+
+        function obtenerGrupoProfesor() {
+          const curso = String(document.getElementById('filtroCursoProfesor')?.value || '').trim();
+          const division = String(document.getElementById('filtroDivisionProfesor')?.value || '').trim();
+          const turno = String(document.getElementById('filtroTurnoProfesor')?.value || '').trim();
+          if (!curso) return { error: 'Seleccioná un curso en los filtros antes de iniciar la llamada grupal.' };
+          const estudiantes = estudiantesProfesor.filter(item => {
+            const datos = item.estudiante || {};
+            return item.uid &&
+              (!item.estadoCuenta || item.estadoCuenta === 'activo') &&
+              String(datos.curso || '') === curso &&
+              (!division || String(datos.division || '') === division) &&
+              (!turno || String(datos.turno || '') === turno);
+          });
+          const descripcion = [curso, division, turno].filter(Boolean).join(' · ');
+          return { curso, division, turno, estudiantes, descripcion };
+        }
+
+        window.iniciarJitsiGrupalProfesor = async function() {
+          const grupo = obtenerGrupoProfesor();
+          if (grupo.error) { alert(grupo.error); return; }
+          if (!grupo.estudiantes.length) { alert('No hay estudiantes activos que coincidan con esos filtros.'); return; }
+          const confirmacion = await mostrarConfirmacionDocente({
+            tipo: 'warning',
+            icono: 'fa-users-viewfinder',
+            titulo: 'Iniciar llamada Jitsi grupal',
+            mensaje: `Se invitará a ${grupo.estudiantes.length} estudiante(s) de ${grupo.descripcion}.`,
+            detalles: [
+              'Todos recibirán una notificación visual y sonora.',
+              'El botón para ingresar permanecerá disponible hasta finalizar la llamada.'
+            ],
+            confirmarTexto: 'Iniciar llamada',
+            confirmarIcono: 'fa-video',
+            confirmarClase: 'btn-success'
+          });
+          if (!confirmacion?.confirmado) return;
+          const id = `${Date.now()}-${crearSlugJitsiGrupo(grupo.descripcion)}`;
+          const sala = `ipem146-grupo-${crearSlugJitsiGrupo(grupo.descripcion)}-${Date.now()}`;
+          const enlace = 'https://meet.jit.si/' + sala;
+          const guardado = await window.actualizarJitsiGrupalFirebase?.(grupo.estudiantes, {
+            disponible: true, id, sala, enlace,
+            curso: grupo.curso, division: grupo.division, turno: grupo.turno
+          });
+          if (!guardado) {
+            alert('No se pudo iniciar la llamada grupal. Verificá la autorización docente y las reglas de Firestore.');
+            return;
+          }
+          grupo.estudiantes.forEach(item => {
+            item.jitsiGrupal = { disponible: true, id, sala, enlace, curso: grupo.curso, division: grupo.division, turno: grupo.turno };
+          });
+          const docente = window.firebaseTeacherUser || window.firebaseCurrentUser || {};
+          window.abrirJitsiConSala(enlace, docente.displayName || 'Docente', docente.email || '', `Sala grupal: ${grupo.descripcion}`);
+          renderPanelProfesor?.();
+        };
+
+        window.finalizarJitsiGrupalProfesor = async function() {
+          const grupo = obtenerGrupoProfesor();
+          if (grupo.error) { alert(grupo.error); return; }
+          const activos = grupo.estudiantes.filter(item => item.jitsiGrupal?.disponible === true);
+          if (!activos.length) { alert('No hay una llamada Jitsi grupal activa para esos filtros.'); return; }
+          const confirmacion = await mostrarConfirmacionDocente({
+            tipo: 'danger',
+            icono: 'fa-video-slash',
+            titulo: 'Finalizar Jitsi grupal',
+            mensaje: `La sala dejará de estar disponible para ${activos.length} estudiante(s) de ${grupo.descripcion}.`,
+            detalles: ['Las ventanas Jitsi abiertas por los estudiantes se cerrarán automáticamente.'],
+            confirmarTexto: 'Finalizar llamada',
+            confirmarIcono: 'fa-video-slash',
+            confirmarClase: 'btn-danger'
+          });
+          if (!confirmacion?.confirmado) return;
+          const referencia = activos[0].jitsiGrupal || {};
+          const cerrado = await window.actualizarJitsiGrupalFirebase?.(activos, {
+            disponible: false,
+            id: referencia.id || '', sala: referencia.sala || '', enlace: referencia.enlace || '',
+            curso: grupo.curso, division: grupo.division, turno: grupo.turno
+          });
+          if (!cerrado) {
+            alert('No se pudo finalizar la llamada grupal. Verificá las reglas de Firestore.');
+            return;
+          }
+          activos.forEach(item => { item.jitsiGrupal = { ...(item.jitsiGrupal || {}), disponible: false }; });
+          cerrarJitsi();
+          renderPanelProfesor?.();
+          alert('La llamada Jitsi grupal finalizó correctamente.');
         };
 
         async function copiarEnlaceJitsi() {
@@ -11675,30 +11869,90 @@
               area.remove();
               if (!copiado) throw new Error('No se pudo copiar');
             }
-            if (estado) estado.textContent = 'Enlace copiado. Podés compartirlo con el estudiante.';
+            if (estado) estado.textContent = 'Enlace copiado correctamente.';
           } catch (error) {
             if (estado) estado.textContent = 'No se pudo copiar automáticamente. Enlace: ' + enlaceJitsiActual;
           }
         }
 
-        function actualizarBotonJitsiEstudiante() {
-          const boton = document.getElementById('btnJitsiEstudiante');
-          if (!boton) return;
-          const datos = datosEstudianteActual();
-          const esDocente = Boolean(window.firebaseTeacherUser);
-          const documento = window.ultimoDocumentoEstudianteFirebase || {};
-          const disponible = documento.jitsiDisponible === true || documento.jitsiSala?.disponible === true;
-          boton.hidden = !datos.email || esDocente || !disponible;
-          boton.setAttribute('aria-hidden', boton.hidden ? 'true' : 'false');
-          if (!disponible && !esDocente && document.getElementById('jitsiModal')?.classList.contains('active')) {
-            cerrarJitsi();
+        function reproducirSonidoLlamadaJitsi() {
+          try {
+            const AudioContexto = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContexto) return;
+            const contexto = window.__jitsiAudioContext || new AudioContexto();
+            window.__jitsiAudioContext = contexto;
+            contexto.resume?.();
+            [0, 0.28, 0.56].forEach((demora, indice) => {
+              const oscilador = contexto.createOscillator();
+              const ganancia = contexto.createGain();
+              oscilador.type = 'sine';
+              oscilador.frequency.value = indice === 1 ? 880 : 660;
+              ganancia.gain.setValueAtTime(0.0001, contexto.currentTime + demora);
+              ganancia.gain.exponentialRampToValueAtTime(0.18, contexto.currentTime + demora + 0.02);
+              ganancia.gain.exponentialRampToValueAtTime(0.0001, contexto.currentTime + demora + 0.2);
+              oscilador.connect(ganancia); ganancia.connect(contexto.destination);
+              oscilador.start(contexto.currentTime + demora);
+              oscilador.stop(contexto.currentTime + demora + 0.22);
+            });
+          } catch (error) {
+            console.warn('El navegador bloqueó el aviso sonoro de Jitsi.', error);
           }
         }
 
-        document.getElementById('btnJitsiEstudiante')?.addEventListener('click', () => {
+        function ocultarAlertaJitsi() {
+          const alerta = document.getElementById('jitsiLlamadaAlerta');
+          if (alerta) alerta.hidden = true;
+        }
+
+        function mostrarAlertaJitsi(invitacion) {
+          const alerta = document.getElementById('jitsiLlamadaAlerta');
+          const titulo = document.getElementById('jitsiLlamadaTitulo');
+          const mensaje = document.getElementById('jitsiLlamadaMensaje');
+          if (!alerta || !invitacion) return;
+          if (titulo) titulo.textContent = invitacion.titulo;
+          if (mensaje) mensaje.textContent = [invitacion.mensaje, invitacion.docente ? `Docente: ${invitacion.docente}` : ''].filter(Boolean).join(' · ');
+          alerta.hidden = false;
+          reproducirSonidoLlamadaJitsi();
+        }
+
+        function abrirInvitacionJitsiActual() {
           const datos = datosEstudianteActual();
-          window.abrirJitsiConEstudiante(datos.email, datos.nombre);
-        });
+          const invitacion = obtenerInvitacionJitsi();
+          if (!invitacion) { alert('La videollamada ya no está disponible.'); actualizarBotonJitsiEstudiante(); return; }
+          ocultarAlertaJitsi();
+          window.abrirJitsiConSala(invitacion.enlace, datos.nombre, datos.email, invitacion.mensaje || invitacion.titulo);
+        }
+
+        function actualizarBotonJitsiEstudiante() {
+          const boton = document.getElementById('btnJitsiEstudiante');
+          const texto = document.getElementById('btnJitsiEstudianteTexto');
+          if (!boton) return;
+          const datos = datosEstudianteActual();
+          const esDocente = Boolean(window.firebaseTeacherUser);
+          const invitacion = obtenerInvitacionJitsi();
+          invitacionJitsiActual = invitacion;
+          boton.hidden = !datos.email || esDocente || !invitacion;
+          boton.setAttribute('aria-hidden', boton.hidden ? 'true' : 'false');
+          if (texto && invitacion) texto.textContent = invitacion.tipo === 'grupal' ? 'Unirse a la clase por Jitsi' : 'Conectarse con el docente';
+
+          if (!invitacion) {
+            ocultarAlertaJitsi();
+            if (!esDocente && document.getElementById('jitsiModal')?.classList.contains('active')) cerrarJitsi();
+            return;
+          }
+          if (esDocente) return;
+          const clave = `jitsi_invitacion_notificada_${window.firebaseCurrentUser?.uid || datos.email}`;
+          let ultima = '';
+          try { ultima = localStorage.getItem(clave) || ''; } catch (error) {}
+          if (invitacion.id && invitacion.id !== ultima) {
+            try { localStorage.setItem(clave, invitacion.id); } catch (error) {}
+            mostrarAlertaJitsi(invitacion);
+          }
+        }
+
+        document.getElementById('btnJitsiEstudiante')?.addEventListener('click', abrirInvitacionJitsiActual);
+        document.getElementById('jitsiLlamadaAceptar')?.addEventListener('click', abrirInvitacionJitsiActual);
+        document.getElementById('jitsiLlamadaDescartar')?.addEventListener('click', ocultarAlertaJitsi);
         document.getElementById('copiarEnlaceJitsi')?.addEventListener('click', copiarEnlaceJitsi);
         document.getElementById('cerrarJitsi')?.addEventListener('click', cerrarJitsi);
         document.getElementById('jitsiModal')?.addEventListener('click', event => {
@@ -11711,8 +11965,7 @@
         window.addEventListener('firebase-teacher-auth-changed', actualizarBotonJitsiEstudiante);
         window.addEventListener('estado-cuenta-estudiante', actualizarBotonJitsiEstudiante);
         window.setTimeout(actualizarBotonJitsiEstudiante, 0);
-      })();
-    </script>
+      })();    </script>
     <script src="mejoras-seguimiento.js"></script>
   </body>
 </html>
