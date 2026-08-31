@@ -4225,9 +4225,9 @@
       </div>
     </div>
 
-    <button class="btn btn-success jitsi-student-entry" id="btnJitsiEstudiante" type="button" hidden aria-label="Ingresar a la videollamada Jitsi">
+    <button class="btn btn-success jitsi-student-entry" id="btnJitsiEstudiante" type="button" hidden aria-label="Conectarse con el docente por Jitsi">
       <i class="fa-solid fa-video"></i>
-      <span>Ingresar a Jitsi</span>
+      <span>Conectarse con el docente</span>
     </button>
 
     <div class="modal-overlay" id="jitsiModal" role="dialog" aria-modal="true" aria-labelledby="jitsiTitle" style="display:none">
@@ -10856,8 +10856,8 @@
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial de desbloqueos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDescuentos(${indice})"><i class="fa-solid fa-file-invoice-dollar"></i><span>Historial de descuentos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialPestanas(${indice})"><i class="fa-solid fa-window-restore"></i><span>Historial de pestañas</span></button>
-            <button class="btn btn-success" onclick="cerrarAccionesEstudiante();abrirJitsiDocente(${indice})"><i class="fa-solid fa-video"></i><span>${jitsiDisponible ? 'Ingresar a Jitsi' : 'Habilitar sala Jitsi'}</span></button>
-            ${jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-video-slash"></i><span>Cerrar sala Jitsi</span></button>` : ''}
+            <button class="btn btn-success" onclick="cerrarAccionesEstudiante();abrirJitsiDocente(${indice})"><i class="fa-solid fa-video"></i><span>${jitsiDisponible ? 'Volver a la llamada Jitsi' : 'Iniciar llamada Jitsi'}</span></button>
+            ${jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-video-slash"></i><span>Finalizar llamada Jitsi</span></button>` : ''}
             <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();abrirEditorDescuentoEstudiante(${indice})"><i class="fa-solid fa-circle-minus"></i><span>Editar descuento y motivo</span></button>
             <button class="btn btn-danger" ${bloqueado ? 'disabled title="La pantalla ya está bloqueada"' : ''} onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i><span>Bloquear pantalla</span></button>
             <button class="btn student-action-highlight" ${bloqueado ? '' : 'disabled title="La pantalla no está bloqueada"'} onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i><span>Desbloquear pantalla</span></button>
@@ -11594,7 +11594,7 @@
           enlaceJitsiActual = datosSala.enlace;
           if (nombreElemento) nombreElemento.textContent = nombreVisible;
           if (emailElemento) emailElemento.textContent = datosSala.correo;
-          if (estado) estado.textContent = 'Sala compartida para docente y estudiante';
+          if (estado) estado.textContent = 'Encuentro en vivo entre docente y estudiante';
           if (copiarEstado) copiarEstado.textContent = '';
 
           frame.src = datosSala.enlace +
@@ -11633,13 +11633,13 @@
           const confirmacion = await mostrarConfirmacionDocente({
             tipo: 'danger',
             icono: 'fa-video-slash',
-            titulo: 'Cerrar sala Jitsi',
-            mensaje: `La sala dejará de estar disponible para ${nombre}.`,
+            titulo: 'Finalizar llamada Jitsi',
+            mensaje: `La videollamada finalizará y dejará de estar disponible para ${nombre}.`,
             detalles: [
               'El botón para ingresar desaparecerá de la pantalla del estudiante.',
               'Si el estudiante tiene la sala abierta, la ventana se cerrará automáticamente.'
             ],
-            confirmarTexto: 'Cerrar sala',
+            confirmarTexto: 'Finalizar llamada',
             confirmarIcono: 'fa-video-slash',
             confirmarClase: 'btn-danger'
           });
@@ -11654,7 +11654,7 @@
           estudiante.jitsiSala = { ...(estudiante.jitsiSala || {}), disponible: false };
           cerrarJitsi();
           renderPanelProfesor?.();
-          alert('La sala Jitsi ya no está disponible para el estudiante.');
+          alert('La videollamada Jitsi finalizó y ya no está disponible para el estudiante.');
         };
 
         async function copiarEnlaceJitsi() {
