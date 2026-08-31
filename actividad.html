@@ -4388,7 +4388,7 @@
         </div>
         <div class="jitsi-minute-alert" id="jitsiAlertaUltimoMinuto" role="alert" aria-live="assertive" hidden>
           <span aria-hidden="true"><i class="fa-solid fa-bell"></i></span>
-          <div><strong>Queda un minuto</strong><p>La videollamada finalizará automáticamente.</p></div>
+          <div><strong>Quedan 30 segundos</strong><p>La videollamada finalizará automáticamente.</p></div>
         </div>        <div class="jitsi-participant-card">
           <span class="jitsi-participant-icon" aria-hidden="true"><i class="fa-solid fa-user-graduate"></i></span>
           <div class="jitsi-participant-data">
@@ -11846,8 +11846,8 @@
           const actualizar = async () => {
             const restante = jitsiVencimientoActual - Date.now();
             if (valor) valor.textContent = formatearTiempoJitsi(restante);
-            indicador?.classList.toggle('is-warning', restante > 0 && restante <= 60000);
-            if (restante > 0 && restante <= 60000) mostrarAlertaUltimoMinutoJitsi();
+            indicador?.classList.toggle('is-warning', restante > 0 && restante <= 30000);
+            if (restante > 0 && restante <= 30000) mostrarAlertaUltimoMinutoJitsi();
             if (restante > 0 || jitsiTemporizadorVencido) return;
             jitsiTemporizadorVencido = true;
             detenerCuentaRegresivaJitsi();
