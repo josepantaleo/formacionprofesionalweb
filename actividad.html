@@ -4120,7 +4120,7 @@
           <div class="teacher-panel-toolbar">
             <button class="btn btn-success" onclick="iniciarClaseDesdeInterfaz(this)"><i class="fa-solid fa-play"></i> Iniciar clase</button>
             <button class="btn btn-danger" onclick="finalizarClaseDesdeInterfaz(this)"><i class="fa-solid fa-stop"></i> Finalizar clase</button>
-            <button class="btn btn-success" id="btnIniciarJitsiGrupal" type="button" onclick="iniciarJitsiGrupalProfesor()" title="Iniciar una videollamada para el curso seleccionado en los filtros">
+            <button class="btn btn-success" id="btnIniciarJitsiGrupal" type="button" onclick="abrirSelectorJitsiGrupal()" title="Seleccionar curso, división y turno para iniciar una videollamada grupal">
               <i class="fa-solid fa-users-viewfinder"></i> Iniciar Jitsi grupal
             </button>
             <button class="btn btn-danger" id="btnFinalizarJitsiGrupal" type="button" onclick="finalizarJitsiGrupalProfesor()" title="Finalizar la videollamada grupal del curso seleccionado">
@@ -4295,6 +4295,51 @@
       </div>
     </div>
 
+    <div class="modal-overlay" id="selectorJitsiGrupalModal" role="dialog" aria-modal="true" aria-labelledby="selectorJitsiGrupalTitulo" style="display:none">
+      <div class="modal-box jitsi-group-selector" tabindex="-1">
+        <div class="jitsi-group-selector-header">
+          <div>
+            <span class="jitsi-group-selector-icon" aria-hidden="true"><i class="fa-solid fa-users-viewfinder"></i></span>
+            <div>
+              <h3 id="selectorJitsiGrupalTitulo">Iniciar llamada Jitsi grupal</h3>
+              <p>Elegí el grupo que recibirá la invitación.</p>
+            </div>
+          </div>
+          <button class="btn btn-secondary jitsi-close" id="cerrarSelectorJitsiGrupal" type="button" aria-label="Cerrar selección" title="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="jitsi-group-selector-grid">
+          <label>
+            <span><i class="fa-solid fa-graduation-cap"></i> Curso <strong>*</strong></span>
+            <select id="selectorJitsiCurso" aria-label="Curso para la llamada Jitsi grupal">
+              <option value="">Seleccionar curso</option>
+            </select>
+          </label>
+          <label>
+            <span><i class="fa-solid fa-layer-group"></i> División</span>
+            <select id="selectorJitsiDivision" aria-label="División para la llamada Jitsi grupal">
+              <option value="">Todas las divisiones</option>
+            </select>
+          </label>
+          <label>
+            <span><i class="fa-solid fa-clock"></i> Turno</span>
+            <select id="selectorJitsiTurno" aria-label="Turno para la llamada Jitsi grupal">
+              <option value="">Todos los turnos</option>
+            </select>
+          </label>
+        </div>
+        <div class="jitsi-group-selector-summary" id="selectorJitsiResumen" role="status" aria-live="polite">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>Seleccioná un curso para consultar los estudiantes disponibles.</span>
+        </div>
+        <div class="jitsi-group-selector-preview" id="selectorJitsiVistaPrevia" hidden></div>
+        <div class="jitsi-group-selector-actions">
+          <button class="btn btn-secondary" id="cancelarSelectorJitsiGrupal" type="button"><i class="fa-solid fa-xmark"></i> Cancelar</button>
+          <button class="btn btn-success" id="confirmarSelectorJitsiGrupal" type="button" disabled><i class="fa-solid fa-video"></i> Continuar</button>
+        </div>
+      </div>
+    </div>
     <div class="modal-overlay" id="jitsiModal" role="dialog" aria-modal="true" aria-labelledby="jitsiTitle" style="display:none">
       <div class="modal-box jitsi-box" tabindex="-1">
         <div class="jitsi-header">
@@ -4318,7 +4363,7 @@
           </button>
         </div>
         <p class="jitsi-copy-status" id="jitsiCopiarEstado" role="status" aria-live="polite"></p>
-        <iframe id="jitsiFrame" title="Videollamada Jitsi Meet" allow="camera; microphone; fullscreen; display-capture" loading="lazy"></iframe>
+        <div id="jitsiFrame" class="jitsi-frame-container" role="region" aria-label="Videollamada Jitsi Meet"></div>
       </div>
     </div>
     <div id="classStartOverlay" role="status" aria-live="polite" aria-labelledby="classStartTitle">
@@ -11596,10 +11641,12 @@
           }
       }
     </script>
+    <script src="https://meet.jit.si/external_api.js"></script>
     <script>
       (() => {
         let enlaceJitsiActual = '';
         let invitacionJitsiActual = null;
+        let jitsiApiActual = null;
 
         function datosEstudianteActual() {
           const usuario = window.firebaseCurrentUser;
@@ -11664,7 +11711,9 @@
           const modal = document.getElementById('jitsiModal');
           const frame = document.getElementById('jitsiFrame');
           const copiarEstado = document.getElementById('jitsiCopiarEstado');
-          if (frame) frame.src = '';
+          try { jitsiApiActual?.dispose?.(); } catch (error) { console.warn('No se pudo cerrar la instancia Jitsi.', error); }
+          jitsiApiActual = null;
+          if (frame) frame.replaceChildren();
           if (copiarEstado) copiarEstado.textContent = '';
           if (modal) {
             modal.classList.remove('active');
@@ -11672,11 +11721,16 @@
           }
         }
 
-        window.abrirJitsiConSala = function(enlace, nombre, email, estadoTexto) {
-          const enlaceSeguro = String(enlace || '');
-          if (!/^https:\/\/meet\.jit\.si\/[a-zA-Z0-9_-]+/.test(enlaceSeguro)) {
+        window.abrirJitsiConSala = function(enlace, nombre, email, estadoTexto, opciones = {}) {
+          const enlaceSeguro = String(enlace || '').split('#')[0];
+          const coincidencia = enlaceSeguro.match(/^https:\/\/meet\.jit\.si\/([a-zA-Z0-9_-]+)$/);
+          if (!coincidencia) {
             alert('No se encontró un enlace válido para la sala Jitsi.');
-            return;
+            return false;
+          }
+          if (typeof window.JitsiMeetExternalAPI !== 'function') {
+            alert('No se pudo cargar la API de Jitsi Meet. Revisá la conexión a Internet y actualizá la página.');
+            return false;
           }
           const modal = document.getElementById('jitsiModal');
           const frame = document.getElementById('jitsiFrame');
@@ -11684,22 +11738,61 @@
           const nombreElemento = document.getElementById('jitsiEstudianteNombre');
           const emailElemento = document.getElementById('jitsiEstudianteEmail');
           const copiarEstado = document.getElementById('jitsiCopiarEstado');
-          if (!modal || !frame) return;
-
+          if (!modal || !frame) return false;
+          cerrarJitsi();
           const nombreVisible = String(nombre || 'Participante').trim() || 'Participante';
-          enlaceJitsiActual = enlaceSeguro.split('#')[0];
+          enlaceJitsiActual = enlaceSeguro;
           if (nombreElemento) nombreElemento.textContent = nombreVisible;
           if (emailElemento) emailElemento.textContent = String(email || '');
-          if (estado) estado.textContent = estadoTexto || 'Encuentro en vivo por Jitsi Meet';
           if (copiarEstado) copiarEstado.textContent = '';
-          frame.src = enlaceJitsiActual +
-            '#config.prejoinPageEnabled=true&config.disableAP=true' +
-            '&userInfo.displayName=' + encodeURIComponent(nombreVisible);
+          if (estado) estado.textContent = opciones.requerirModerador
+            ? 'Ingresá a Jitsi y autenticá tu cuenta. Los estudiantes serán invitados cuando seas anfitrión.'
+            : (estadoTexto || 'Encuentro en vivo por Jitsi Meet');
           modal.style.display = 'flex';
           modal.classList.add('active');
           modal.querySelector('.jitsi-box')?.focus({ preventScroll: true });
+          let moderadorConfirmado = false;
+          let confirmacionEnCurso = false;
+          const confirmarModerador = async () => {
+            if (!opciones.requerirModerador || moderadorConfirmado || confirmacionEnCurso) return;
+            confirmacionEnCurso = true;
+            if (estado) estado.textContent = 'Anfitrión confirmado. Habilitando el acceso de los estudiantes...';
+            try {
+              const resultado = await opciones.alConfirmarModerador?.();
+              if (resultado === false) {
+                if (estado) estado.textContent = 'No se pudo habilitar la invitación en Firebase.';
+                confirmacionEnCurso = false;
+                return;
+              }
+              moderadorConfirmado = true;
+              if (estado) estado.textContent = estadoTexto || 'Docente conectado como anfitrión';
+            } catch (error) {
+              console.error('Error habilitando la sala después de confirmar al anfitrión:', error);
+              if (estado) estado.textContent = 'No se pudo habilitar la invitación de los estudiantes.';
+              confirmacionEnCurso = false;
+            }
+          };
+          jitsiApiActual = new window.JitsiMeetExternalAPI('meet.jit.si', {
+            roomName: coincidencia[1],
+            parentNode: frame,
+            width: '100%',
+            height: '100%',
+            userInfo: { email: String(email || ''), displayName: nombreVisible },
+            configOverwrite: { prejoinPageEnabled: true, disableDeepLinking: true }
+          });
+          jitsiApiActual.addEventListener('participantRoleChanged', evento => {
+            if (evento?.role === 'moderator') {
+              confirmarModerador();
+            } else if (opciones.requerirModerador && !moderadorConfirmado && estado) {
+              estado.textContent = 'Todavía no sos anfitrión. Autenticá la cuenta docente dentro de Jitsi.';
+            }
+          });
+          jitsiApiActual.addEventListener('videoConferenceJoined', () => {
+            if (!opciones.requerirModerador && estado) estado.textContent = estadoTexto || 'Conectado a Jitsi Meet';
+          });
+          jitsiApiActual.addEventListener('readyToClose', cerrarJitsi);
+          return true;
         };
-
         window.abrirJitsiConEstudiante = function(email, nombre) {
           const datosSala = crearDatosSalaJitsi(email);
           if (!datosSala) {
@@ -11720,18 +11813,31 @@
             alert('No se pudo identificar al estudiante seleccionado.');
             return;
           }
-          const habilitado = await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, true);
-          if (!habilitado) {
-            alert('No se pudo habilitar la sala Jitsi. Verificá la autorización docente y las reglas de Firestore.');
+          const nombre = estudiante.estudiante?.nombre || estudiante.nombreGoogle || estudiante.email || 'Estudiante';
+          const datosSala = crearDatosSalaJitsi(estudiante.email);
+          if (!datosSala) {
+            alert('No se encontró un correo válido del estudiante.');
             return;
           }
-          estudiante.jitsiDisponible = true;
-          estudiante.jitsiSala = { ...(estudiante.jitsiSala || {}), disponible: true };
-          renderPanelProfesor?.();
-          const nombre = estudiante.estudiante?.nombre || estudiante.nombreGoogle || estudiante.email || 'Estudiante';
-          window.abrirJitsiConEstudiante(estudiante.email, nombre);
+          const docente = window.firebaseTeacherUser || window.firebaseCurrentUser || {};
+          window.abrirJitsiConSala(
+            datosSala.enlace,
+            docente.displayName || 'Docente',
+            docente.email || '',
+            `Docente anfitrión · Llamada con ${nombre}`,
+            {
+              requerirModerador: true,
+              alConfirmarModerador: async () => {
+                const habilitado = await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, true);
+                if (!habilitado) return false;
+                estudiante.jitsiDisponible = true;
+                estudiante.jitsiSala = { ...(estudiante.jitsiSala || {}), disponible: true };
+                renderPanelProfesor?.();
+                return true;
+              }
+            }
+          );
         };
-
         window.cerrarSalaJitsiProfesor = async function(indice) {
           const estudiante = window.estudiantesProfesor?.[indice] || estudiantesProfesor?.[indice];
           if (!estudiante?.uid) {
@@ -11765,16 +11871,18 @@
           alert('La videollamada Jitsi finalizó y ya no está disponible para el estudiante.');
         };
 
-        function obtenerGrupoProfesor() {
-          const curso = String(document.getElementById('filtroCursoProfesor')?.value || '').trim();
-          const division = String(document.getElementById('filtroDivisionProfesor')?.value || '').trim();
-          const turno = String(document.getElementById('filtroTurnoProfesor')?.value || '').trim();
-          if (!curso) return { error: 'Seleccioná un curso en los filtros antes de iniciar la llamada grupal.' };
-          const estudiantes = estudiantesProfesor.filter(item => {
+        function estudiantesActivosProfesor() {
+          return estudiantesProfesor.filter(item => item?.uid && (!item.estadoCuenta || item.estadoCuenta === 'activo'));
+        }
+
+        function obtenerGrupoProfesor(seleccion = null) {
+          const curso = String(seleccion?.curso ?? document.getElementById('filtroCursoProfesor')?.value ?? '').trim();
+          const division = String(seleccion?.division ?? document.getElementById('filtroDivisionProfesor')?.value ?? '').trim();
+          const turno = String(seleccion?.turno ?? document.getElementById('filtroTurnoProfesor')?.value ?? '').trim();
+          if (!curso) return { error: 'Seleccioná un curso antes de iniciar la llamada grupal.' };
+          const estudiantes = estudiantesActivosProfesor().filter(item => {
             const datos = item.estudiante || {};
-            return item.uid &&
-              (!item.estadoCuenta || item.estadoCuenta === 'activo') &&
-              String(datos.curso || '') === curso &&
+            return String(datos.curso || '') === curso &&
               (!division || String(datos.division || '') === division) &&
               (!turno || String(datos.turno || '') === turno);
           });
@@ -11782,46 +11890,146 @@
           return { curso, division, turno, estudiantes, descripcion };
         }
 
-        window.iniciarJitsiGrupalProfesor = async function() {
-          const grupo = obtenerGrupoProfesor();
+        function completarSelectorJitsi(select, valores, textoTodos, seleccionado = '') {
+          if (!select) return '';
+          const opciones = [...new Set(valores.filter(Boolean).map(valor => String(valor).trim()))]
+            .filter(Boolean)
+            .sort((a, b) => a.localeCompare(b, 'es'));
+          select.innerHTML = `<option value="">${textoTodos}</option>` +
+            opciones.map(valor => `<option value="${escapeHtml(valor)}">${escapeHtml(valor)}</option>`).join('');
+          if (seleccionado && opciones.includes(seleccionado)) select.value = seleccionado;
+          return select.value;
+        }
+
+        function actualizarSelectorJitsiGrupal(preferencias = {}) {
+          const cursoSelect = document.getElementById('selectorJitsiCurso');
+          const divisionSelect = document.getElementById('selectorJitsiDivision');
+          const turnoSelect = document.getElementById('selectorJitsiTurno');
+          const resumen = document.getElementById('selectorJitsiResumen');
+          const vistaPrevia = document.getElementById('selectorJitsiVistaPrevia');
+          const confirmar = document.getElementById('confirmarSelectorJitsiGrupal');
+          if (!cursoSelect || !divisionSelect || !turnoSelect || !resumen || !vistaPrevia || !confirmar) return;
+
+          const activos = estudiantesActivosProfesor();
+          const cursoPreferido = String(preferencias.curso ?? cursoSelect.value ?? '').trim();
+          completarSelectorJitsi(cursoSelect, activos.map(item => item.estudiante?.curso), 'Seleccionar curso', cursoPreferido);
+          const curso = cursoSelect.value;
+          const porCurso = activos.filter(item => String(item.estudiante?.curso || '') === curso);
+
+          const divisionPreferida = String(preferencias.division ?? divisionSelect.value ?? '').trim();
+          completarSelectorJitsi(divisionSelect, porCurso.map(item => item.estudiante?.division), 'Todas las divisiones', divisionPreferida);
+          divisionSelect.disabled = !curso;
+          const division = divisionSelect.value;
+          const porDivision = porCurso.filter(item => !division || String(item.estudiante?.division || '') === division);
+
+          const turnoPreferido = String(preferencias.turno ?? turnoSelect.value ?? '').trim();
+          completarSelectorJitsi(turnoSelect, porDivision.map(item => item.estudiante?.turno), 'Todos los turnos', turnoPreferido);
+          turnoSelect.disabled = !curso;
+          const turno = turnoSelect.value;
+          const grupo = obtenerGrupoProfesor({ curso, division, turno });
+          const cantidad = grupo.error ? 0 : grupo.estudiantes.length;
+
+          confirmar.disabled = !curso || cantidad === 0;
+          resumen.className = `jitsi-group-selector-summary ${cantidad > 0 ? 'is-ready' : 'is-empty'}`;
+          resumen.innerHTML = curso
+            ? `<i class="fa-solid ${cantidad > 0 ? 'fa-users' : 'fa-user-slash'}"></i><span><strong>${cantidad}</strong> estudiante(s) activo(s) recibirán la invitación.</span>`
+            : '<i class="fa-solid fa-circle-info"></i><span>Seleccioná un curso para consultar los estudiantes disponibles.</span>';
+
+          if (cantidad > 0) {
+            const nombres = grupo.estudiantes.slice(0, 8).map(item => escapeHtml(item.estudiante?.nombre || item.nombreGoogle || item.email || 'Estudiante'));
+            const restantes = Math.max(0, cantidad - nombres.length);
+            vistaPrevia.hidden = false;
+            vistaPrevia.innerHTML = `<strong>Grupo seleccionado:</strong><div>${nombres.map(nombre => `<span><i class="fa-solid fa-user"></i>${nombre}</span>`).join('')}${restantes ? `<span class="is-more">+${restantes} más</span>` : ''}</div>`;
+          } else {
+            vistaPrevia.hidden = true;
+            vistaPrevia.innerHTML = '';
+          }
+        }
+
+        function cerrarSelectorJitsiGrupal() {
+          const modal = document.getElementById('selectorJitsiGrupalModal');
+          if (!modal) return;
+          modal.classList.remove('active');
+          modal.style.display = 'none';
+        }
+
+        window.abrirSelectorJitsiGrupal = function() {
+          const modal = document.getElementById('selectorJitsiGrupalModal');
+          if (!modal) return;
+          const preferencias = {
+            curso: document.getElementById('filtroCursoProfesor')?.value || '',
+            division: document.getElementById('filtroDivisionProfesor')?.value || '',
+            turno: document.getElementById('filtroTurnoProfesor')?.value || ''
+          };
+          actualizarSelectorJitsiGrupal(preferencias);
+          modal.style.display = 'flex';
+          modal.classList.add('active');
+          modal.querySelector('.jitsi-group-selector')?.focus({ preventScroll: true });
+        };
+
+        window.confirmarSelectorJitsiGrupal = async function() {
+          const seleccion = {
+            curso: document.getElementById('selectorJitsiCurso')?.value || '',
+            division: document.getElementById('selectorJitsiDivision')?.value || '',
+            turno: document.getElementById('selectorJitsiTurno')?.value || ''
+          };
+          const grupo = obtenerGrupoProfesor(seleccion);
+          if (grupo.error || !grupo.estudiantes.length) {
+            actualizarSelectorJitsiGrupal(seleccion);
+            return;
+          }
+          cerrarSelectorJitsiGrupal();
+          await window.iniciarJitsiGrupalProfesor(seleccion);
+        };
+
+        window.iniciarJitsiGrupalProfesor = async function(seleccion = null) {
+          const grupo = obtenerGrupoProfesor(seleccion);
           if (grupo.error) { alert(grupo.error); return; }
-          if (!grupo.estudiantes.length) { alert('No hay estudiantes activos que coincidan con esos filtros.'); return; }
+          if (!grupo.estudiantes.length) { alert('No hay estudiantes activos que coincidan con la selección.'); return; }
           const confirmacion = await mostrarConfirmacionDocente({
             tipo: 'warning',
             icono: 'fa-users-viewfinder',
-            titulo: 'Iniciar llamada Jitsi grupal',
-            mensaje: `Se invitará a ${grupo.estudiantes.length} estudiante(s) de ${grupo.descripcion}.`,
+            titulo: 'Preparar llamada Jitsi grupal',
+            mensaje: `Primero ingresarás como anfitrión. Luego se invitará a ${grupo.estudiantes.length} estudiante(s) de ${grupo.descripcion}.`,
             detalles: [
-              'Todos recibirán una notificación visual y sonora.',
-              'El botón para ingresar permanecerá disponible hasta finalizar la llamada.'
+              'Jitsi puede solicitar que autentiques tu cuenta para crear la sala.',
+              'Ningún estudiante recibirá la notificación hasta que Jitsi confirme tu rol de moderador.'
             ],
-            confirmarTexto: 'Iniciar llamada',
-            confirmarIcono: 'fa-video',
+            confirmarTexto: 'Ingresar como anfitrión',
+            confirmarIcono: 'fa-user-shield',
             confirmarClase: 'btn-success'
           });
           if (!confirmacion?.confirmado) return;
-          const id = `${Date.now()}-${crearSlugJitsiGrupo(grupo.descripcion)}`;
-          const sala = `ipem146-grupo-${crearSlugJitsiGrupo(grupo.descripcion)}-${Date.now()}`;
+          const momento = Date.now();
+          const id = `${momento}-${crearSlugJitsiGrupo(grupo.descripcion)}`;
+          const sala = `ipem146-grupo-${crearSlugJitsiGrupo(grupo.descripcion)}-${momento}`;
           const enlace = 'https://meet.jit.si/' + sala;
-          const guardado = await window.actualizarJitsiGrupalFirebase?.(grupo.estudiantes, {
-            disponible: true, id, sala, enlace,
-            curso: grupo.curso, division: grupo.division, turno: grupo.turno
-          });
-          if (!guardado) {
-            alert('No se pudo iniciar la llamada grupal. Verificá la autorización docente y las reglas de Firestore.');
-            return;
-          }
-          grupo.estudiantes.forEach(item => {
-            item.jitsiGrupal = { disponible: true, id, sala, enlace, curso: grupo.curso, division: grupo.division, turno: grupo.turno };
-          });
           const docente = window.firebaseTeacherUser || window.firebaseCurrentUser || {};
-          window.abrirJitsiConSala(enlace, docente.displayName || 'Docente', docente.email || '', `Sala grupal: ${grupo.descripcion}`);
-          renderPanelProfesor?.();
+          window.abrirJitsiConSala(
+            enlace,
+            docente.displayName || 'Docente',
+            docente.email || '',
+            `Docente anfitrión · Sala grupal: ${grupo.descripcion}`,
+            {
+              requerirModerador: true,
+              alConfirmarModerador: async () => {
+                const guardado = await window.actualizarJitsiGrupalFirebase?.(grupo.estudiantes, {
+                  disponible: true, id, sala, enlace,
+                  curso: grupo.curso, division: grupo.division, turno: grupo.turno
+                });
+                if (!guardado) return false;
+                grupo.estudiantes.forEach(item => {
+                  item.jitsiGrupal = { disponible: true, id, sala, enlace, curso: grupo.curso, division: grupo.division, turno: grupo.turno };
+                });
+                renderPanelProfesor?.();
+                return true;
+              }
+            }
+          );
         };
-
         window.finalizarJitsiGrupalProfesor = async function() {
           const grupo = obtenerGrupoProfesor();
-          if (grupo.error) { alert(grupo.error); return; }
+          if (grupo.error) { alert('Seleccioná en los filtros el curso de la llamada que querés finalizar.'); return; }
           const activos = grupo.estudiantes.filter(item => item.jitsiGrupal?.disponible === true);
           if (!activos.length) { alert('No hay una llamada Jitsi grupal activa para esos filtros.'); return; }
           const confirmacion = await mostrarConfirmacionDocente({
@@ -11850,7 +12058,6 @@
           renderPanelProfesor?.();
           alert('La llamada Jitsi grupal finalizó correctamente.');
         };
-
         async function copiarEnlaceJitsi() {
           if (!enlaceJitsiActual) return;
           const estado = document.getElementById('jitsiCopiarEstado');
@@ -11950,6 +12157,15 @@
           }
         }
 
+        document.getElementById('selectorJitsiCurso')?.addEventListener('change', () => actualizarSelectorJitsiGrupal({ curso: document.getElementById('selectorJitsiCurso')?.value || '', division: '', turno: '' }));
+        document.getElementById('selectorJitsiDivision')?.addEventListener('change', () => actualizarSelectorJitsiGrupal({ curso: document.getElementById('selectorJitsiCurso')?.value || '', division: document.getElementById('selectorJitsiDivision')?.value || '', turno: '' }));
+        document.getElementById('selectorJitsiTurno')?.addEventListener('change', () => actualizarSelectorJitsiGrupal());
+        document.getElementById('cerrarSelectorJitsiGrupal')?.addEventListener('click', cerrarSelectorJitsiGrupal);
+        document.getElementById('cancelarSelectorJitsiGrupal')?.addEventListener('click', cerrarSelectorJitsiGrupal);
+        document.getElementById('confirmarSelectorJitsiGrupal')?.addEventListener('click', confirmarSelectorJitsiGrupal);
+        document.getElementById('selectorJitsiGrupalModal')?.addEventListener('click', event => {
+          if (event.target?.id === 'selectorJitsiGrupalModal') cerrarSelectorJitsiGrupal();
+        });
         document.getElementById('btnJitsiEstudiante')?.addEventListener('click', abrirInvitacionJitsiActual);
         document.getElementById('jitsiLlamadaAceptar')?.addEventListener('click', abrirInvitacionJitsiActual);
         document.getElementById('jitsiLlamadaDescartar')?.addEventListener('click', ocultarAlertaJitsi);
@@ -11959,7 +12175,12 @@
           if (event.target?.id === 'jitsiModal') cerrarJitsi();
         });
         window.addEventListener('keydown', event => {
-          if (event.key === 'Escape' && document.getElementById('jitsiModal')?.classList.contains('active')) cerrarJitsi();
+          if (event.key !== 'Escape') return;
+          if (document.getElementById('selectorJitsiGrupalModal')?.classList.contains('active')) {
+            cerrarSelectorJitsiGrupal();
+            return;
+          }
+          if (document.getElementById('jitsiModal')?.classList.contains('active')) cerrarJitsi();
         });
         window.addEventListener('firebase-auth-changed', actualizarBotonJitsiEstudiante);
         window.addEventListener('firebase-teacher-auth-changed', actualizarBotonJitsiEstudiante);
