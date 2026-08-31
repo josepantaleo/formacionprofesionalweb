@@ -10804,6 +10804,18 @@
       function cerrarConfirmacionDocente(resultado = { confirmado: false, valor: '' }) {
           const modal = document.getElementById('confirmacionDocenteModal');
           modal?.classList.remove('active');
+          if (resultado?.confirmado) {
+              const jitsiModal = document.getElementById('jitsiModal');
+              if (jitsiModal?.dataset.hostConfirmation === 'true') {
+                  jitsiModal.style.display = 'flex';
+                  jitsiModal.classList.add('active');
+                  jitsiModal.style.zIndex = '11000';
+                  setTimeout(() => {
+                      try { window.focus(); } catch (error) {}
+                      jitsiModal.querySelector('.jitsi-box')?.focus({ preventScroll: true });
+                  }, 0);
+              }
+          }
           if (confirmacionDocentePendiente) {
               const resolver = confirmacionDocentePendiente;
               confirmacionDocentePendiente = null;
@@ -11934,6 +11946,7 @@
           } catch (error) {}
           jitsiVentanaExterna = null;
           jitsiOpcionesPendientes = null;
+          if (modal) modal.dataset.hostConfirmation = 'false';
           jitsiConfirmacionAnfitrionEnCurso = false;
           if (copiarEstado) copiarEstado.textContent = '';
           ocultarAlertaUltimoMinutoJitsi();
@@ -12055,6 +12068,7 @@
           const nombreVisible = String(nombre || 'Participante').trim() || 'Participante';
           enlaceJitsiActual = enlaceSeguro;
           jitsiOpcionesPendientes = { ...opciones, estadoConfirmado: estadoTexto };
+          modal.dataset.hostConfirmation = opciones.requerirModerador ? 'true' : 'false';
           if (nombreElemento) nombreElemento.textContent = nombreVisible;
           if (emailElemento) emailElemento.textContent = String(email || '');
           if (copiarEstado) copiarEstado.textContent = '';
