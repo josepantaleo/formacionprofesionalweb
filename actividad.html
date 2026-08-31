@@ -3527,6 +3527,17 @@
                   actualizadoPorUid: user.uid,
                   actualizadoEn: serverTimestamp()
                 },
+                jitsiParticipacion: configuracion.disponible === true ? {
+                  llamadaId: String(configuracion.id || ""),
+                  tipo: "grupal",
+                  estado: "invitado",
+                  actualizadoEn: serverTimestamp()
+                } : {
+                  llamadaId: String(configuracion.id || estudiante.jitsiGrupal?.id || ""),
+                  tipo: "grupal",
+                  estado: "finalizada",
+                  actualizadoEn: serverTimestamp()
+                },
                 actualizadoEn: serverTimestamp()
               }, { merge: true });
             });
@@ -3560,6 +3571,17 @@
               actualizadoPorUid: user.uid,
               actualizadoEn: serverTimestamp()
             },
+            jitsiParticipacion: disponible === true ? {
+              llamadaId: String(configuracion.id || `${Date.now()}-${uid}`),
+              tipo: "individual",
+              estado: "invitado",
+              actualizadoEn: serverTimestamp()
+            } : {
+              llamadaId: String(configuracion.id || ""),
+              tipo: "individual",
+              estado: "finalizada",
+              actualizadoEn: serverTimestamp()
+            },
             actualizadoEn: serverTimestamp()
           }, { merge: true });
           return true;
@@ -3569,6 +3591,140 @@
             code: error?.code || "",
             message: error?.message || "Error desconocido"
           };
+          return false;
+        }
+      };
+      window.guardarConfiguracionJitsiFirebase = async function(configuracion = {}) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !(await verificarUsuarioDocente(user))) return false;
+        try {
+          const individual = Math.max(1, Math.min(120, Number(configuracion.individual) || 5));
+          const grupal = Math.max(1, Math.min(120, Number(configuracion.grupal) || 60));
+          await setDoc(doc(database, "controlClase", idClaseActual(), "configuracion", "jitsi"), {
+            individual,
+            grupal,
+            actualizadoPor: user.email || user.displayName || user.uid,
+            actualizadoPorUid: user.uid,
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error guardando la configuración Jitsi:", error);
+          return false;
+        }
+      };
+      window.cargarConfiguracionJitsiFirebase = async function() {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || window.firebaseCurrentUser || await window.firebaseAuthReady;
+        const database = contexto.database || db;
+        if (!user || !database) return null;
+        try {
+          const snapshot = await getDoc(doc(database, "controlClase", idClaseActual(), "configuracion", "jitsi"));
+          return snapshot.exists() ? snapshot.data() : null;
+        } catch (error) {
+          console.error("Error cargando la configuración Jitsi:", error);
+          return null;
+        }
+      };
+      window.escucharConfiguracionJitsiFirebase = function() {
+        const contexto = contextoDocenteFirebase();
+        const database = contexto.database || db;
+        if (!database) return;
+        if (window.__jitsiConfiguracionUnsubscribe) window.__jitsiConfiguracionUnsubscribe();
+        window.__jitsiConfiguracionUnsubscribe = onSnapshot(
+          doc(database, "controlClase", idClaseActual(), "configuracion", "jitsi"),
+          snapshot => {
+            if (!snapshot.exists()) return;
+            window.dispatchEvent(new CustomEvent("jitsi-configuracion-remota", { detail: snapshot.data() }));
+          },
+          error => console.error("Error escuchando configuración Jitsi:", error)
+        );
+      };
+      window.guardarHistorialJitsiFirebase = async function(llamada = {}) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        const id = String(llamada.id || "").replace(/[^a-zA-Z0-9._-]/g, "_");
+        if (!user || !database || !id || !(await verificarUsuarioDocente(user))) return false;
+        try {
+          const participantes = Array.isArray(llamada.participantes)
+            ? llamada.participantes.slice(0, 350).map(item => ({
+                uid: String(item.uid || ""),
+                email: String(item.email || ""),
+                nombre: String(item.nombre || ""),
+                estado: String(item.estado || "invitado")
+              }))
+            : [];
+          const datosHistorial = {
+            id,
+            tipo: llamada.tipo === "grupal" ? "grupal" : "individual",
+            sala: String(llamada.sala || ""),
+            curso: String(llamada.curso || ""),
+            division: String(llamada.division || ""),
+            turno: String(llamada.turno || ""),
+            estudianteUid: String(llamada.estudianteUid || ""),
+            estudianteEmail: String(llamada.estudianteEmail || ""),
+            estudianteNombre: String(llamada.estudianteNombre || ""),
+            duracionMinutos: Number(llamada.duracionMinutos || 0),
+            expiraEn: String(llamada.expiraEn || ""),
+            estado: String(llamada.estado || "activa"),
+            motivoFinalizacion: String(llamada.motivoFinalizacion || ""),
+            participantes,
+            invitados: Number(llamada.invitados ?? participantes.length ?? 0),
+            notificados: Number(llamada.notificados || 0),
+            unidos: Number(llamada.unidos || 0),
+            rechazados: Number(llamada.rechazados || 0),
+            salieron: Number(llamada.salieron || 0),
+            docente: user.email || user.displayName || user.uid,
+            docenteUid: user.uid,
+            actualizadoEn: serverTimestamp()
+          };
+          if (llamada.registrarInicio === true) datosHistorial.iniciadaEn = serverTimestamp();
+          if (llamada.estado === "finalizada" || llamada.estado === "cancelada") datosHistorial.finalizadaEn = serverTimestamp();
+          await setDoc(doc(database, "controlClase", idClaseActual(), "historialJitsi", id), datosHistorial, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error guardando historial Jitsi:", error);
+          return false;
+        }
+      };
+      window.obtenerHistorialJitsiFirebase = async function() {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !(await verificarUsuarioDocente(user))) return [];
+        try {
+          const snapshot = await getDocs(collection(database, "controlClase", idClaseActual(), "historialJitsi"));
+          return snapshot.docs.map(item => ({ id: item.id, ...item.data() })).sort((a, b) => {
+            const fechaA = a.iniciadaEn?.toMillis?.() || a.iniciadaEn?.seconds * 1000 || new Date(a.expiraEn || 0).getTime();
+            const fechaB = b.iniciadaEn?.toMillis?.() || b.iniciadaEn?.seconds * 1000 || new Date(b.expiraEn || 0).getTime();
+            return fechaB - fechaA;
+          });
+        } catch (error) {
+          console.error("Error consultando historial Jitsi:", error);
+          return [];
+        }
+      };
+      window.registrarEstadoJitsiEstudianteFirebase = async function(tipo, llamadaId, estado) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!db || !user || !llamadaId) return false;
+        const estadosPermitidos = ["notificado", "unido", "rechazado", "salio", "finalizada"];
+        const estadoSeguro = estadosPermitidos.includes(estado) ? estado : "notificado";
+        try {
+          await setDoc(doc(db, "estudiantes", user.uid), {
+            jitsiParticipacion: {
+              llamadaId: String(llamadaId),
+              tipo: tipo === "grupal" ? "grupal" : "individual",
+              estado: estadoSeguro,
+              actualizadoEn: serverTimestamp()
+            },
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error registrando participación Jitsi:", error);
           return false;
         }
       };
@@ -4133,6 +4289,12 @@
             <button class="btn btn-secondary" id="btnConfigurarDuracionJitsi" type="button" onclick="abrirConfiguracionDuracionJitsi('individual')" title="Configurar la duración de las llamadas Jitsi individuales">
               <i class="fa-solid fa-hourglass-half"></i> Jitsi individual: <strong id="duracionJitsiProfesorValor">5</strong> min
             </button>
+            <button class="btn btn-secondary" id="btnHistorialJitsi" type="button" onclick="abrirHistorialJitsiProfesor()" title="Consultar llamadas e invitaciones Jitsi">
+              <i class="fa-solid fa-clock-rotate-left"></i> Historial Jitsi
+            </button>
+            <span class="jitsi-live-summary" id="resumenJitsiProfesor" title="Estado de la llamada Jitsi activa">
+              <i class="fa-solid fa-video"></i><strong>0</strong><span>conectados</span>
+            </span>
             <button class="btn btn-warning" id="btnPausarCronometrosProfesor" onclick="pausarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-pause"></i> Pausar cronómetros</button>
             <button class="btn btn-secondary" onclick="reiniciarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00</button>
             <button class="btn btn-secondary" id="btnConfigurarLimiteBloqueo" type="button" onclick="abrirConfiguracionLimiteBloqueo()" title="Modificar cuántas salidas producen el bloqueo">
@@ -4297,6 +4459,19 @@
       </div>
     </div>
 
+    <div class="jitsi-ending-alert" id="jitsiFinAlerta" role="alert" aria-live="assertive" hidden>
+      <span class="jitsi-ending-icon" aria-hidden="true"><i class="fa-solid fa-hourglass-end"></i></span>
+      <div>
+        <strong id="jitsiFinTitulo">Quedan 30 segundos</strong>
+        <p id="jitsiFinMensaje">La videollamada finalizará automáticamente.</p>
+      </div>
+    </div>
+
+    <div class="jitsi-finished-toast" id="jitsiFinalizadaAviso" role="status" aria-live="polite" hidden>
+      <i class="fa-solid fa-circle-check"></i>
+      <span>La videollamada finalizó.</span>
+    </div>
+
     <div class="modal-overlay" id="configuracionDuracionJitsiModal" role="dialog" aria-modal="true" aria-labelledby="configuracionDuracionJitsiTitulo" style="display:none">
       <div class="modal-box jitsi-duration-box" tabindex="-1">
         <div class="jitsi-duration-header">
@@ -4363,6 +4538,34 @@
         <div class="jitsi-group-selector-actions">
           <button class="btn btn-secondary" id="cancelarSelectorJitsiGrupal" type="button"><i class="fa-solid fa-xmark"></i> Cancelar</button>
           <button class="btn btn-success" id="confirmarSelectorJitsiGrupal" type="button" disabled><i class="fa-solid fa-video"></i> Continuar</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-overlay" id="historialJitsiModal" role="dialog" aria-modal="true" aria-labelledby="historialJitsiTitulo" style="display:none">
+      <div class="modal-box jitsi-history-box" tabindex="-1">
+        <div class="jitsi-history-header">
+          <div>
+            <span aria-hidden="true"><i class="fa-solid fa-clock-rotate-left"></i></span>
+            <div>
+              <h3 id="historialJitsiTitulo">Historial de videollamadas Jitsi</h3>
+              <p>Registro de llamadas individuales y grupales.</p>
+            </div>
+          </div>
+          <button class="btn btn-secondary jitsi-close" id="cerrarHistorialJitsi" type="button" aria-label="Cerrar historial" title="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        <div class="jitsi-history-filters">
+          <select id="filtroHistorialJitsiTipo" aria-label="Filtrar historial Jitsi por tipo">
+            <option value="">Todas las llamadas</option>
+            <option value="individual">Individuales</option>
+            <option value="grupal">Grupales</option>
+          </select>
+          <input id="filtroHistorialJitsiTexto" type="search" placeholder="Curso, estudiante o docente" aria-label="Buscar en historial Jitsi">
+        </div>
+        <div class="jitsi-history-summary" id="resumenHistorialJitsi" role="status"></div>
+        <div class="jitsi-history-list" id="listaHistorialJitsi">
+          <p class="jitsi-history-empty">Cargando historial...</p>
         </div>
       </div>
     </div>
@@ -4523,7 +4726,7 @@
         </div>
         <div class="student-actions-status" aria-live="polite">
           <strong id="accionesEstudianteEstado"><i class="fa-solid fa-circle-check"></i> Pantalla habilitada</strong>
-          <span class="student-actions-count">12 acciones disponibles</span>
+          <span class="student-actions-count">Acciones disponibles</span>
         </div>
         <div class="student-actions-legend" role="note" aria-label="Leyenda de acciones">
           <span><i class="fa-solid fa-eye"></i> Información</span>
@@ -11013,6 +11216,16 @@
           const bloqueado = d.pantallaBloqueada === true;
           const pausado = d.controlCronometroIndividual?.pausado === true;
           const jitsiDisponible = d.jitsiDisponible === true || d.jitsiSala?.disponible === true;
+          const llamadaJitsiId = String(d.jitsiGrupal?.disponible === true ? d.jitsiGrupal?.id : d.jitsiSala?.id || '');
+          const estadoJitsi = llamadaJitsiId ? (window.estadoParticipacionJitsi?.(d, llamadaJitsiId) || 'invitado') : '';
+          const etiquetasJitsi = {
+            invitado: 'Invitado',
+            notificado: 'Notificado',
+            unido: 'PulsÃ³ Unirse ahora',
+            rechazado: 'RechazÃ³',
+            salio: 'SaliÃ³ o cerrÃ³ la pestaÃ±a',
+            finalizada: 'Finalizada'
+          };
           const contenido = document.getElementById('accionesEstudianteContenido');
           const subtitulo = document.getElementById('accionesEstudianteSubtitulo');
           const estadoPantalla = document.getElementById('accionesEstudianteEstado');
@@ -11027,12 +11240,14 @@
               ? '<i class="fa-solid fa-lock"></i> Pantalla bloqueada'
               : '<i class="fa-solid fa-circle-check"></i> Pantalla habilitada';
           contenido.innerHTML = `
+            ${llamadaJitsiId ? `<div class="student-action-jitsi-state"><i class="fa-solid fa-signal"></i><span>Estado Jitsi</span><strong>${escapeHtml(etiquetasJitsi[estadoJitsi] || 'Invitado')}</strong></div>` : ''}
             <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i><span>Ver detalle completo</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial de desbloqueos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDescuentos(${indice})"><i class="fa-solid fa-file-invoice-dollar"></i><span>Historial de descuentos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialPestanas(${indice})"><i class="fa-solid fa-window-restore"></i><span>Historial de pestañas</span></button>
+            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialJitsiEstudianteProfesor(${indice})"><i class="fa-solid fa-video"></i><span>Historial Jitsi del estudiante</span></button>
             <button class="btn btn-success" onclick="cerrarAccionesEstudiante();abrirJitsiDocente(${indice})"><i class="fa-solid fa-video"></i><span>${jitsiDisponible ? 'Volver a la llamada Jitsi' : 'Iniciar llamada Jitsi'}</span></button>
-            ${jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-video-slash"></i><span>Finalizar llamada Jitsi</span></button>` : ''}
+            ${jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-video-slash"></i><span>Cancelar invitaciÃ³n / finalizar</span></button>` : ''}
             <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();abrirEditorDescuentoEstudiante(${indice})"><i class="fa-solid fa-circle-minus"></i><span>Editar descuento y motivo</span></button>
             <button class="btn btn-danger" ${bloqueado ? 'disabled title="La pantalla ya está bloqueada"' : ''} onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i><span>Bloquear pantalla</span></button>
             <button class="btn student-action-highlight" ${bloqueado ? '' : 'disabled title="La pantalla no está bloqueada"'} onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i><span>Desbloquear pantalla</span></button>
@@ -11047,6 +11262,7 @@
       }
       function renderPanelProfesor() {
           renderBandejaSolicitudesPendientes();
+          window.setTimeout(() => window.actualizarResumenJitsiProfesor?.(), 0);
           const q = (document.getElementById('filtroProfesor').value || '').toLowerCase().trim();
           const emailFiltro = (document.getElementById('filtroEmailProfesor')?.value || '').toLowerCase().trim();
           const curso = document.getElementById('filtroCursoProfesor').value;
@@ -11720,6 +11936,14 @@
         let jitsiAlVencerActual = null;
         let jitsiAlExtenderActual = null;
         let jitsiAvisoUltimoMinutoEmitido = false;
+        let jitsiRecordatorioTimeout = null;
+        let jitsiVentanaMonitorIntervalo = null;
+        let jitsiFinalizadaTimeout = null;
+        let jitsiInvitacionAbiertaId = '';
+        let jitsiFinAlumnoAvisadoId = '';
+        let historialJitsiCache = [];
+        let historialJitsiActualizacionPendiente = false;
+        let ultimaSincronizacionHistorialJitsi = 0;
         const DURACION_JITSI_CLAVE = 'teacher_jitsi_duration_minutes';
         const DURACION_JITSI_PREDETERMINADA = 5;
         const DURACION_JITSI_GRUPAL_CLAVE = 'teacher_jitsi_group_duration_minutes';
@@ -11782,7 +12006,7 @@
           entrada.select();
         };
 
-        function guardarConfiguracionDuracionJitsi() {
+        async function guardarConfiguracionDuracionJitsi() {
           const entrada = document.getElementById('duracionJitsiMinutos');
           const error = document.getElementById('duracionJitsiError');
           const minutos = Number(entrada?.value);
@@ -11794,7 +12018,34 @@
           const claveDuracion = tipoDuracionJitsiConfigurada === 'grupal' ? DURACION_JITSI_GRUPAL_CLAVE : DURACION_JITSI_CLAVE;
           try { localStorage.setItem(claveDuracion, String(minutos)); } catch (errorGuardado) {}
           mostrarDuracionJitsi();
+          const guardadoRemoto = await window.guardarConfiguracionJitsiFirebase?.({
+            individual: obtenerDuracionJitsi(),
+            grupal: obtenerDuracionJitsiGrupal()
+          });
           cerrarConfiguracionDuracionJitsi();
+          if (guardadoRemoto === false) {
+            alert('La duraciÃ³n se guardÃ³ en este dispositivo, pero no se pudo sincronizar con Firebase.');
+          }
+        }
+
+        function aplicarConfiguracionJitsiRemota(configuracion = {}) {
+          const individual = Number(configuracion.individual);
+          const grupal = Number(configuracion.grupal);
+          try {
+            if (Number.isInteger(individual) && individual >= 1 && individual <= 120) {
+              localStorage.setItem(DURACION_JITSI_CLAVE, String(individual));
+            }
+            if (Number.isInteger(grupal) && grupal >= 1 && grupal <= 120) {
+              localStorage.setItem(DURACION_JITSI_GRUPAL_CLAVE, String(grupal));
+            }
+          } catch (error) {}
+          mostrarDuracionJitsi();
+        }
+
+        async function iniciarSincronizacionConfiguracionJitsi() {
+          const configuracion = await window.cargarConfiguracionJitsiFirebase?.();
+          if (configuracion) aplicarConfiguracionJitsiRemota(configuracion);
+          window.escucharConfiguracionJitsiFirebase?.();
         }
 
         function fechaJitsiValida(valor) {
@@ -11811,6 +12062,77 @@
         function detenerCuentaRegresivaJitsi() {
           if (jitsiTemporizadorIntervalo) clearInterval(jitsiTemporizadorIntervalo);
           jitsiTemporizadorIntervalo = null;
+        }
+
+        function detenerRecordatorioJitsi() {
+          if (jitsiRecordatorioTimeout) clearTimeout(jitsiRecordatorioTimeout);
+          jitsiRecordatorioTimeout = null;
+        }
+
+        function detenerMonitorVentanaJitsi() {
+          if (jitsiVentanaMonitorIntervalo) clearInterval(jitsiVentanaMonitorIntervalo);
+          jitsiVentanaMonitorIntervalo = null;
+        }
+
+        function ocultarAvisoFinAlumnoJitsi() {
+          const alerta = document.getElementById('jitsiFinAlerta');
+          if (alerta) alerta.hidden = true;
+        }
+
+        function mostrarAvisoFinAlumnoJitsi(invitacion) {
+          if (!invitacion?.id || jitsiFinAlumnoAvisadoId === invitacion.id) return;
+          jitsiFinAlumnoAvisadoId = invitacion.id;
+          const alerta = document.getElementById('jitsiFinAlerta');
+          const titulo = document.getElementById('jitsiFinTitulo');
+          const mensaje = document.getElementById('jitsiFinMensaje');
+          if (titulo) titulo.textContent = 'Quedan 30 segundos';
+          if (mensaje) mensaje.textContent = 'La videollamada finalizarÃ¡ automÃ¡ticamente.';
+          if (alerta) alerta.hidden = false;
+          reproducirSonidoLlamadaJitsi();
+        }
+
+        function mostrarAvisoJitsiFinalizada() {
+          const aviso = document.getElementById('jitsiFinalizadaAviso');
+          if (!aviso) return;
+          if (jitsiFinalizadaTimeout) clearTimeout(jitsiFinalizadaTimeout);
+          aviso.hidden = false;
+          jitsiFinalizadaTimeout = setTimeout(() => { aviso.hidden = true; }, 4500);
+        }
+
+        function claveJitsiAlumno(prefijo) {
+          const datos = datosEstudianteActual();
+          return `${prefijo}_${window.firebaseCurrentUser?.uid || datos.email || 'estudiante'}`;
+        }
+
+        function programarRecordatorioJitsi(invitacion) {
+          detenerRecordatorioJitsi();
+          if (!invitacion?.id) return;
+          const claveRecordatorio = claveJitsiAlumno('jitsi_invitacion_recordada');
+          let recordada = '';
+          try { recordada = localStorage.getItem(claveRecordatorio) || ''; } catch (error) {}
+          if (recordada === invitacion.id) return;
+          jitsiRecordatorioTimeout = setTimeout(() => {
+            const vigente = obtenerInvitacionJitsi();
+            const alerta = document.getElementById('jitsiLlamadaAlerta');
+            if (!vigente || vigente.id !== invitacion.id || alerta?.hidden) return;
+            try { localStorage.setItem(claveRecordatorio, invitacion.id); } catch (error) {}
+            const mensaje = document.getElementById('jitsiLlamadaMensaje');
+            if (mensaje) mensaje.textContent = 'Recordatorio: la invitaciÃ³n sigue pendiente. PodÃ©s unirte ahora o rechazarla.';
+            reproducirSonidoLlamadaJitsi();
+          }, 30000);
+        }
+
+        function iniciarMonitorVentanaJitsi(invitacion) {
+          detenerMonitorVentanaJitsi();
+          if (!invitacion?.id) return;
+          jitsiInvitacionAbiertaId = invitacion.id;
+          jitsiVentanaMonitorIntervalo = setInterval(async () => {
+            if (!jitsiVentanaExterna || !jitsiVentanaExterna.closed) return;
+            detenerMonitorVentanaJitsi();
+            try { localStorage.setItem(claveJitsiAlumno('jitsi_invitacion_salida'), invitacion.id); } catch (error) {}
+            await window.registrarEstadoJitsiEstudianteFirebase?.(invitacion.tipo, invitacion.id, 'salio');
+            jitsiInvitacionAbiertaId = '';
+          }, 1200);
         }
 
         function ocultarAlertaUltimoMinutoJitsi() {
@@ -11957,6 +12279,177 @@
           return null;
         }
 
+        function estadoParticipacionJitsi(estudiante, llamadaId) {
+          const participacion = estudiante?.jitsiParticipacion || {};
+          if (String(participacion.llamadaId || '') !== String(llamadaId || '')) return 'invitado';
+          const estado = String(participacion.estado || 'invitado');
+          return ['invitado', 'notificado', 'unido', 'rechazado', 'salio', 'finalizada'].includes(estado) ? estado : 'invitado';
+        }
+        window.estadoParticipacionJitsi = estadoParticipacionJitsi;
+
+        function participantesHistorialJitsi(estudiantes, llamadaId) {
+          return (Array.isArray(estudiantes) ? estudiantes : []).map(item => ({
+            uid: item.uid || '',
+            email: item.email || '',
+            nombre: item.estudiante?.nombre || item.nombreGoogle || item.email || 'Estudiante',
+            estado: estadoParticipacionJitsi(item, llamadaId)
+          }));
+        }
+
+        function metricasParticipantesJitsi(participantes) {
+          const lista = Array.isArray(participantes) ? participantes : [];
+          const contar = estado => lista.filter(item => item.estado === estado).length;
+          return {
+            invitados: lista.length,
+            notificados: contar('notificado'),
+            unidos: contar('unido'),
+            rechazados: contar('rechazado'),
+            salieron: contar('salio'),
+            finalizados: contar('finalizada')
+          };
+        }
+
+        function llamadasJitsiActivasProfesor() {
+          const mapa = new Map();
+          (window.estudiantesProfesor || estudiantesProfesor || []).forEach(estudiante => {
+            const grupal = estudiante.jitsiGrupal || {};
+            const individual = estudiante.jitsiSala || {};
+            let tipo = '';
+            let datos = null;
+            if (grupal.disponible === true && fechaJitsiValida(grupal.expiraEn) > Date.now()) {
+              tipo = 'grupal';
+              datos = grupal;
+            } else if ((estudiante.jitsiDisponible === true || individual.disponible === true) && (!individual.expiraEn || fechaJitsiValida(individual.expiraEn) > Date.now())) {
+              tipo = 'individual';
+              datos = individual;
+            }
+            const id = String(datos?.id || '');
+            if (!id) return;
+            if (!mapa.has(id)) mapa.set(id, { id, tipo, datos, estudiantes: [] });
+            mapa.get(id).estudiantes.push(estudiante);
+          });
+          return [...mapa.values()];
+        }
+
+        async function sincronizarHistorialJitsiActivo(forzar = false) {
+          const ahora = Date.now();
+          if (historialJitsiActualizacionPendiente || (!forzar && ahora - ultimaSincronizacionHistorialJitsi < 5000)) return;
+          historialJitsiActualizacionPendiente = true;
+          ultimaSincronizacionHistorialJitsi = ahora;
+          try {
+            for (const llamada of llamadasJitsiActivasProfesor()) {
+              const participantes = participantesHistorialJitsi(llamada.estudiantes, llamada.id);
+              const metricas = metricasParticipantesJitsi(participantes);
+              const primero = llamada.estudiantes[0] || {};
+              await window.guardarHistorialJitsiFirebase?.({
+                id: llamada.id,
+                tipo: llamada.tipo,
+                sala: llamada.datos.sala || '',
+                curso: llamada.datos.curso || primero.estudiante?.curso || '',
+                division: llamada.datos.division || primero.estudiante?.division || '',
+                turno: llamada.datos.turno || primero.estudiante?.turno || '',
+                estudianteUid: llamada.tipo === 'individual' ? primero.uid : '',
+                estudianteEmail: llamada.tipo === 'individual' ? primero.email : '',
+                estudianteNombre: llamada.tipo === 'individual' ? (primero.estudiante?.nombre || primero.nombreGoogle || primero.email || '') : '',
+                duracionMinutos: llamada.datos.duracionMinutos || 0,
+                expiraEn: llamada.datos.expiraEn || '',
+                estado: 'activa',
+                participantes,
+                ...metricas
+              });
+            }
+          } finally {
+            historialJitsiActualizacionPendiente = false;
+          }
+        }
+
+        function actualizarResumenJitsiProfesor() {
+          const resumen = document.getElementById('resumenJitsiProfesor');
+          if (!resumen) return;
+          const llamadas = llamadasJitsiActivasProfesor();
+          const participantes = llamadas.flatMap(llamada => participantesHistorialJitsi(llamada.estudiantes, llamada.id));
+          const metricas = metricasParticipantesJitsi(participantes);
+          const activos = metricas.unidos;
+          resumen.innerHTML = `<i class="fa-solid fa-video"></i><strong>${activos}</strong><span>se unieron</span>`;
+          resumen.classList.toggle('is-active', llamadas.length > 0);
+          resumen.title = llamadas.length
+            ? `${llamadas.length} llamada(s) activa(s). Invitados: ${metricas.invitados}. Notificados: ${metricas.notificados}. Se unieron: ${metricas.unidos}. Rechazaron: ${metricas.rechazados}. Salieron: ${metricas.salieron}.`
+            : 'No hay llamadas Jitsi activas.';
+          if (llamadas.length) sincronizarHistorialJitsiActivo();
+        }
+        window.actualizarResumenJitsiProfesor = actualizarResumenJitsiProfesor;
+
+        function fechaHistorialJitsi(valor) {
+          const fecha = valor?.toDate?.() || (valor?.seconds ? new Date(valor.seconds * 1000) : new Date(valor || 0));
+          return Number.isFinite(fecha.getTime()) ? fecha.toLocaleString('es-AR') : 'Sin fecha';
+        }
+
+        function renderHistorialJitsiProfesor() {
+          const lista = document.getElementById('listaHistorialJitsi');
+          const resumen = document.getElementById('resumenHistorialJitsi');
+          if (!lista || !resumen) return;
+          const tipo = document.getElementById('filtroHistorialJitsiTipo')?.value || '';
+          const texto = String(document.getElementById('filtroHistorialJitsiTexto')?.value || '').toLowerCase().trim();
+          const filtrado = historialJitsiCache.filter(item => {
+            const bolsa = [item.curso, item.division, item.turno, item.estudianteNombre, item.estudianteEmail, item.docente, item.sala].join(' ').toLowerCase();
+            return (!tipo || item.tipo === tipo) && (!texto || bolsa.includes(texto));
+          });
+          const totales = filtrado.reduce((acc, item) => {
+            acc.unidos += Number(item.unidos || 0);
+            acc.rechazados += Number(item.rechazados || 0);
+            acc.salieron += Number(item.salieron || 0);
+            return acc;
+          }, { unidos: 0, rechazados: 0, salieron: 0 });
+          resumen.innerHTML = `<span><strong>${filtrado.length}</strong> llamadas</span><span><strong>${totales.unidos}</strong> ingresos</span><span><strong>${totales.rechazados}</strong> rechazos</span><span><strong>${totales.salieron}</strong> salidas</span>`;
+          lista.innerHTML = filtrado.map(item => {
+            const destino = item.tipo === 'grupal'
+              ? [item.curso, item.division, item.turno].filter(Boolean).join(' Â· ') || 'Grupo'
+              : item.estudianteNombre || item.estudianteEmail || 'Estudiante';
+            const estado = String(item.estado || 'activa');
+            const participantes = Array.isArray(item.participantes) ? item.participantes : [];
+            const detalleParticipantes = participantes.length
+              ? `<details><summary>Ver ${participantes.length} participante(s)</summary><div class="jitsi-history-participants">${participantes.map(p => `<span><i class="fa-solid fa-user"></i>${escapeHtml(p.nombre || p.email || 'Estudiante')} <strong>${escapeHtml(p.estado || 'invitado')}</strong></span>`).join('')}</div></details>`
+              : '';
+            return `<article class="jitsi-history-item">
+              <div class="jitsi-history-item-head"><span class="jitsi-history-type is-${escapeHtml(item.tipo || 'individual')}"><i class="fa-solid ${item.tipo === 'grupal' ? 'fa-users' : 'fa-user'}"></i>${item.tipo === 'grupal' ? 'Grupal' : 'Individual'}</span><span class="jitsi-history-status is-${escapeHtml(estado)}">${escapeHtml(estado)}</span></div>
+              <h4>${escapeHtml(destino)}</h4>
+              <p><i class="fa-solid fa-calendar"></i> ${escapeHtml(fechaHistorialJitsi(item.iniciadaEn))} Â· <i class="fa-solid fa-clock"></i> ${Number(item.duracionMinutos || 0)} min</p>
+              <p><i class="fa-solid fa-chalkboard-user"></i> ${escapeHtml(item.docente || 'Docente')}</p>
+              <div class="jitsi-history-stats"><span>Invitados <strong>${Number(item.invitados || 0)}</strong></span><span>Notificados <strong>${Number(item.notificados || 0)}</strong></span><span>Se unieron <strong>${Number(item.unidos || 0)}</strong></span><span>Rechazaron <strong>${Number(item.rechazados || 0)}</strong></span><span>Salieron <strong>${Number(item.salieron || 0)}</strong></span></div>
+              ${detalleParticipantes}
+            </article>`;
+          }).join('') || '<p class="jitsi-history-empty">No hay llamadas que coincidan con los filtros.</p>';
+        }
+
+        window.abrirHistorialJitsiProfesor = async function() {
+          const modal = document.getElementById('historialJitsiModal');
+          const lista = document.getElementById('listaHistorialJitsi');
+          if (!modal || !lista) return;
+          modal.style.display = 'flex';
+          modal.classList.add('active');
+          lista.innerHTML = '<p class="jitsi-history-empty"><i class="fa-solid fa-spinner fa-spin"></i> Cargando historial...</p>';
+          await sincronizarHistorialJitsiActivo(true);
+          historialJitsiCache = await window.obtenerHistorialJitsiFirebase?.() || [];
+          renderHistorialJitsiProfesor();
+          modal.querySelector('.jitsi-history-box')?.focus({ preventScroll: true });
+        };
+
+        window.abrirHistorialJitsiEstudianteProfesor = async function(indice) {
+          const estudiante = window.estudiantesProfesor?.[indice] || estudiantesProfesor?.[indice];
+          await window.abrirHistorialJitsiProfesor();
+          const filtro = document.getElementById('filtroHistorialJitsiTexto');
+          if (!filtro || !estudiante) return;
+          filtro.value = estudiante.email || estudiante.estudiante?.nombre || estudiante.nombreGoogle || '';
+          renderHistorialJitsiProfesor();
+        };
+
+        function cerrarHistorialJitsiProfesor() {
+          const modal = document.getElementById('historialJitsiModal');
+          if (!modal) return;
+          modal.classList.remove('active');
+          modal.style.display = 'none';
+        }
+
         function cerrarJitsi() {
           const modal = document.getElementById('jitsiModal');
           const frame = document.getElementById('jitsiFrame');
@@ -11967,11 +12460,14 @@
             if (jitsiVentanaExterna && !jitsiVentanaExterna.closed) jitsiVentanaExterna.close();
           } catch (error) {}
           jitsiVentanaExterna = null;
+          detenerMonitorVentanaJitsi();
+          jitsiInvitacionAbiertaId = '';
           jitsiOpcionesPendientes = null;
           if (modal) { modal.dataset.hostConfirmation = 'false'; modal.dataset.jitsiRole = ''; }
           jitsiConfirmacionAnfitrionEnCurso = false;
           if (copiarEstado) copiarEstado.textContent = '';
           ocultarAlertaUltimoMinutoJitsi();
+          ocultarAvisoFinAlumnoJitsi();
           const botonExtender = document.getElementById('sumarTiempoJitsi');
           if (botonExtender) botonExtender.hidden = true;
           if (modal) {
@@ -12156,13 +12652,45 @@
                 if (!habilitado) return false;
                 estudiante.jitsiDisponible = true;
                 estudiante.jitsiSala = { ...(estudiante.jitsiSala || {}), disponible: true, id: idLlamada, duracionMinutos, expiraEn };
+                estudiante.jitsiParticipacion = { llamadaId: idLlamada, tipo: 'individual', estado: 'invitado' };
+                await window.guardarHistorialJitsiFirebase?.({
+                  id: idLlamada,
+                  tipo: 'individual',
+                  estudianteUid: estudiante.uid,
+                  estudianteEmail: estudiante.email || '',
+                  estudianteNombre: nombre,
+                  curso: estudiante.estudiante?.curso || '',
+                  division: estudiante.estudiante?.division || '',
+                  turno: estudiante.estudiante?.turno || '',
+                  duracionMinutos,
+                  expiraEn,
+                  estado: 'activa',
+                  registrarInicio: true,
+                  participantes: participantesHistorialJitsi([estudiante], idLlamada),
+                  invitados: 1
+                });
                 renderPanelProfesor?.();
                 return {
                   expiraEn,
                   alVencer: async () => {
-                    await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, false);
+                    const participantes = participantesHistorialJitsi([estudiante], idLlamada);
+                    await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, false, { id: idLlamada });
+                    await window.guardarHistorialJitsiFirebase?.({
+                      id: idLlamada,
+                      tipo: 'individual',
+                      estudianteUid: estudiante.uid,
+                      estudianteEmail: estudiante.email || '',
+                      estudianteNombre: nombre,
+                      duracionMinutos,
+                      expiraEn,
+                      estado: 'finalizada',
+                      motivoFinalizacion: 'Tiempo agotado',
+                      participantes,
+                      ...metricasParticipantesJitsi(participantes)
+                    });
                     estudiante.jitsiDisponible = false;
                     estudiante.jitsiSala = { ...(estudiante.jitsiSala || {}), disponible: false, expiraEn: '' };
+                    estudiante.jitsiParticipacion = { llamadaId: idLlamada, tipo: 'individual', estado: 'finalizada' };
                     renderPanelProfesor?.();
                   },
                   alExtender: async nuevoExpiraEn => {
@@ -12174,6 +12702,15 @@
                     });
                     if (!actualizado) return false;
                     estudiante.jitsiSala = { ...(estudiante.jitsiSala || {}), disponible: true, id: idLlamada, duracionMinutos: duracionRestante, expiraEn: nuevoExpiraEn };
+                    await window.guardarHistorialJitsiFirebase?.({
+                      id: idLlamada,
+                      tipo: 'individual',
+                      duracionMinutos: duracionRestante,
+                      expiraEn: nuevoExpiraEn,
+                      estado: 'activa',
+                      participantes: participantesHistorialJitsi([estudiante], idLlamada),
+                      ...metricasParticipantesJitsi(participantesHistorialJitsi([estudiante], idLlamada))
+                    });
                     renderPanelProfesor?.();
                     return true;
                   }
@@ -12203,13 +12740,31 @@
             confirmarClase: 'btn-danger'
           });
           if (!confirmacion?.confirmado) return;
-          const cerrado = await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, false);
+          const idLlamada = String(estudiante.jitsiSala?.id || '');
+          const participantes = participantesHistorialJitsi([estudiante], idLlamada);
+          const cerrado = await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, false, { id: idLlamada });
           if (!cerrado) {
             alert('No se pudo cerrar la sala Jitsi. Verificá la autorización docente y las reglas de Firestore.');
             return;
           }
+          if (idLlamada) {
+            await window.guardarHistorialJitsiFirebase?.({
+              id: idLlamada,
+              tipo: 'individual',
+              estudianteUid: estudiante.uid,
+              estudianteEmail: estudiante.email || '',
+              estudianteNombre: nombre,
+              duracionMinutos: estudiante.jitsiSala?.duracionMinutos || 0,
+              expiraEn: estudiante.jitsiSala?.expiraEn || '',
+              estado: 'cancelada',
+              motivoFinalizacion: 'Cancelada por el docente',
+              participantes,
+              ...metricasParticipantesJitsi(participantes)
+            });
+          }
           estudiante.jitsiDisponible = false;
           estudiante.jitsiSala = { ...(estudiante.jitsiSala || {}), disponible: false };
+          estudiante.jitsiParticipacion = { llamadaId: idLlamada, tipo: 'individual', estado: 'finalizada' };
           cerrarJitsi();
           renderPanelProfesor?.();
           alert('La videollamada Jitsi finalizó y ya no está disponible para el estudiante.');
@@ -12328,6 +12883,18 @@
 
         window.iniciarJitsiGrupalProfesor = async function(seleccion = null) {
           const grupo = obtenerGrupoProfesor(seleccion);
+          const llamadaExistente = grupo.estudiantes?.find(item =>
+            item.jitsiGrupal?.disponible === true &&
+            fechaJitsiValida(item.jitsiGrupal?.expiraEn) > Date.now()
+          );
+          if (llamadaExistente) {
+            const horaFin = new Date(llamadaExistente.jitsiGrupal.expiraEn).toLocaleTimeString('es-AR', {
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+            alert(`Ya existe una llamada Jitsi grupal activa para esta seleccion. Finaliza aproximadamente a las ${horaFin}.`);
+            return;
+          }
           if (grupo.error) { alert(grupo.error); return; }
           if (!grupo.estudiantes.length) { alert('No hay estudiantes activos que coincidan con la selección.'); return; }
           const confirmacion = await mostrarConfirmacionDocente({
@@ -12366,16 +12933,50 @@
                 if (!guardado) return false;
                 grupo.estudiantes.forEach(item => {
                   item.jitsiGrupal = { disponible: true, id, sala, enlace, duracionMinutos, expiraEn, curso: grupo.curso, division: grupo.division, turno: grupo.turno };
+                  item.jitsiParticipacion = { llamadaId: id, tipo: 'grupal', estado: 'invitado' };
+                });
+                const participantesIniciales = participantesHistorialJitsi(grupo.estudiantes, id);
+                await window.guardarHistorialJitsiFirebase?.({
+                  id,
+                  tipo: 'grupal',
+                  sala,
+                  curso: grupo.curso,
+                  division: grupo.division,
+                  turno: grupo.turno,
+                  duracionMinutos,
+                  expiraEn,
+                  estado: 'activa',
+                  registrarInicio: true,
+                  participantes: participantesIniciales,
+                  ...metricasParticipantesJitsi(participantesIniciales)
                 });
                 renderPanelProfesor?.();
                 return {
                   expiraEn,
                   alVencer: async () => {
+                    const participantes = participantesHistorialJitsi(grupo.estudiantes, id);
                     await window.actualizarJitsiGrupalFirebase?.(grupo.estudiantes, {
                       disponible: false, id, sala, enlace, duracionMinutos, expiraEn: '',
                       curso: grupo.curso, division: grupo.division, turno: grupo.turno
                     });
-                    grupo.estudiantes.forEach(item => { item.jitsiGrupal = { ...(item.jitsiGrupal || {}), disponible: false, expiraEn: '' }; });
+                    await window.guardarHistorialJitsiFirebase?.({
+                      id,
+                      tipo: 'grupal',
+                      sala,
+                      curso: grupo.curso,
+                      division: grupo.division,
+                      turno: grupo.turno,
+                      duracionMinutos,
+                      expiraEn,
+                      estado: 'finalizada',
+                      motivoFinalizacion: 'Tiempo agotado',
+                      participantes,
+                      ...metricasParticipantesJitsi(participantes)
+                    });
+                    grupo.estudiantes.forEach(item => {
+                      item.jitsiGrupal = { ...(item.jitsiGrupal || {}), disponible: false, expiraEn: '' };
+                      item.jitsiParticipacion = { llamadaId: id, tipo: 'grupal', estado: 'finalizada' };
+                    });
                     renderPanelProfesor?.();
                   },
                   alExtender: async nuevoExpiraEn => {
@@ -12387,6 +12988,20 @@
                     if (!actualizado) return false;
                     grupo.estudiantes.forEach(item => {
                       item.jitsiGrupal = { ...(item.jitsiGrupal || {}), disponible: true, id, sala, enlace, duracionMinutos: duracionRestante, expiraEn: nuevoExpiraEn };
+                    });
+                    const participantes = participantesHistorialJitsi(grupo.estudiantes, id);
+                    await window.guardarHistorialJitsiFirebase?.({
+                      id,
+                      tipo: 'grupal',
+                      sala,
+                      curso: grupo.curso,
+                      division: grupo.division,
+                      turno: grupo.turno,
+                      duracionMinutos: duracionRestante,
+                      expiraEn: nuevoExpiraEn,
+                      estado: 'activa',
+                      participantes,
+                      ...metricasParticipantesJitsi(participantes)
                     });
                     renderPanelProfesor?.();
                     return true;
@@ -12449,7 +13064,7 @@
           if (alerta) alerta.hidden = true;
         }
 
-        function mostrarAlertaJitsi(invitacion) {
+        function mostrarAlertaJitsi(invitacion, sonar = true) {
           const alerta = document.getElementById('jitsiLlamadaAlerta');
           const titulo = document.getElementById('jitsiLlamadaTitulo');
           const mensaje = document.getElementById('jitsiLlamadaMensaje');
@@ -12457,13 +13072,15 @@
           if (titulo) titulo.textContent = invitacion.titulo;
           if (mensaje) mensaje.textContent = [invitacion.mensaje, invitacion.docente ? `Docente: ${invitacion.docente}` : ''].filter(Boolean).join(' · ');
           alerta.hidden = false;
-          reproducirSonidoLlamadaJitsi();
+          if (sonar) reproducirSonidoLlamadaJitsi();
+          programarRecordatorioJitsi(invitacion);
         }
 
-        function abrirInvitacionJitsiActual() {
+        async function abrirInvitacionJitsiActual() {
           const invitacion = obtenerInvitacionJitsi();
           if (!invitacion) { alert('La videollamada ya no está disponible.'); actualizarInvitacionJitsiEstudiante(); return; }
           ocultarAlertaJitsi();
+          detenerRecordatorioJitsi();
           cerrarJitsi();
           enlaceJitsiActual = String(invitacion.enlace || '').split('#')[0];
           const modal = document.getElementById('jitsiModal');
@@ -12488,33 +13105,76 @@
             cerrarJitsi();
             return;
           }
-          if (invitacion.expiraEn) iniciarCuentaRegresivaJitsi(invitacion.expiraEn, () => {
+          await window.registrarEstadoJitsiEstudianteFirebase?.(invitacion.tipo, invitacion.id, 'unido');
+          try { localStorage.setItem(claveJitsiAlumno('jitsi_invitacion_aceptada'), invitacion.id); } catch (error) {}
+          iniciarMonitorVentanaJitsi(invitacion);
+          if (invitacion.expiraEn) iniciarCuentaRegresivaJitsi(invitacion.expiraEn, async () => {
+            await window.registrarEstadoJitsiEstudianteFirebase?.(invitacion.tipo, invitacion.id, 'finalizada');
             ocultarAlertaJitsi();
+            ocultarAvisoFinAlumnoJitsi();
+            mostrarAvisoJitsiFinalizada();
             cerrarJitsi();
           }, null);
+        }
+
+        async function descartarInvitacionJitsiActual() {
+          const invitacion = obtenerInvitacionJitsi();
+          detenerRecordatorioJitsi();
+          ocultarAlertaJitsi();
+          if (!invitacion?.id) return;
+          try { localStorage.setItem(claveJitsiAlumno('jitsi_invitacion_descartada'), invitacion.id); } catch (error) {}
+          await window.registrarEstadoJitsiEstudianteFirebase?.(invitacion.tipo, invitacion.id, 'rechazado');
         }
 
         function actualizarInvitacionJitsiEstudiante() {
           const datos = datosEstudianteActual();
           const esDocente = Boolean(window.firebaseTeacherUser || (window.firebaseCurrentUser && document.body.classList.contains('teacher-authorized')));
           const invitacionPendienteDocente = Boolean(jitsiOpcionesPendientes?.requerirModerador);
+          const invitacionAnterior = invitacionJitsiActual;
           const invitacion = obtenerInvitacionJitsi();
           invitacionJitsiActual = invitacion;
 
           if (!invitacion) {
+            detenerRecordatorioJitsi();
             ocultarAlertaJitsi();
+            ocultarAvisoFinAlumnoJitsi();
             const modalJitsi = document.getElementById('jitsiModal');
             const modoEstudianteJitsi = modalJitsi?.dataset.jitsiRole === 'student';
-            if (modoEstudianteJitsi || (!esDocente && !invitacionPendienteDocente && modalJitsi?.classList.contains('active'))) cerrarJitsi();
+            const teniaInvitacionAlumno = !esDocente && Boolean(invitacionAnterior?.id);
+            if (modoEstudianteJitsi || (!esDocente && !invitacionPendienteDocente && modalJitsi?.classList.contains('active')) || (teniaInvitacionAlumno && jitsiVentanaExterna)) cerrarJitsi();
+            if (teniaInvitacionAlumno) {
+              window.registrarEstadoJitsiEstudianteFirebase?.(invitacionAnterior.tipo, invitacionAnterior.id, 'finalizada');
+              mostrarAvisoJitsiFinalizada();
+            }
             return;
           }
           if (esDocente) return;
           const clave = `jitsi_invitacion_notificada_${window.firebaseCurrentUser?.uid || datos.email}`;
+          const claveDescartada = claveJitsiAlumno('jitsi_invitacion_descartada');
+          const claveAceptada = claveJitsiAlumno('jitsi_invitacion_aceptada');
+          const claveSalida = claveJitsiAlumno('jitsi_invitacion_salida');
           let ultima = '';
+          let descartada = '';
+          let aceptada = '';
+          let salida = '';
           try { ultima = localStorage.getItem(clave) || ''; } catch (error) {}
-          if (invitacion.id && invitacion.id !== ultima) {
+          try { descartada = localStorage.getItem(claveDescartada) || ''; } catch (error) {}
+          try { aceptada = localStorage.getItem(claveAceptada) || ''; } catch (error) {}
+          try { salida = localStorage.getItem(claveSalida) || ''; } catch (error) {}
+          if (descartada === invitacion.id) return;
+          const esNueva = Boolean(invitacion.id && invitacion.id !== ultima);
+          if (esNueva) {
             try { localStorage.setItem(clave, invitacion.id); } catch (error) {}
-            mostrarAlertaJitsi(invitacion);
+            mostrarAlertaJitsi(invitacion, true);
+            window.registrarEstadoJitsiEstudianteFirebase?.(invitacion.tipo, invitacion.id, 'notificado');
+          } else if (!jitsiInvitacionAbiertaId && salida !== invitacion.id) {
+            mostrarAlertaJitsi(invitacion, false);
+          }
+          const restante = fechaJitsiValida(invitacion.expiraEn) - Date.now();
+          if (restante > 0 && restante <= 30000 && (jitsiInvitacionAbiertaId === invitacion.id || aceptada === invitacion.id)) {
+            mostrarAvisoFinAlumnoJitsi(invitacion);
+          } else if (restante > 30000) {
+            ocultarAvisoFinAlumnoJitsi();
           }
         }
 
@@ -12550,8 +13210,14 @@
         document.getElementById('selectorJitsiGrupalModal')?.addEventListener('click', event => {
           if (event.target?.id === 'selectorJitsiGrupalModal') cerrarSelectorJitsiGrupal();
         });
+        document.getElementById('cerrarHistorialJitsi')?.addEventListener('click', cerrarHistorialJitsiProfesor);
+        document.getElementById('filtroHistorialJitsiTipo')?.addEventListener('change', renderHistorialJitsiProfesor);
+        document.getElementById('filtroHistorialJitsiTexto')?.addEventListener('input', renderHistorialJitsiProfesor);
+        document.getElementById('historialJitsiModal')?.addEventListener('click', event => {
+          if (event.target?.id === 'historialJitsiModal') cerrarHistorialJitsiProfesor();
+        });
         document.getElementById('jitsiLlamadaAceptar')?.addEventListener('click', abrirInvitacionJitsiActual);
-        document.getElementById('jitsiLlamadaDescartar')?.addEventListener('click', ocultarAlertaJitsi);
+        document.getElementById('jitsiLlamadaDescartar')?.addEventListener('click', descartarInvitacionJitsiActual);
         document.getElementById('copiarEnlaceJitsi')?.addEventListener('click', copiarEnlaceJitsi);
         document.getElementById('cerrarJitsi')?.addEventListener('click', cerrarJitsi);
         document.getElementById('jitsiModal')?.addEventListener('click', event => {
@@ -12567,12 +13233,18 @@
             cerrarSelectorJitsiGrupal();
             return;
           }
+          if (document.getElementById('historialJitsiModal')?.classList.contains('active')) {
+            cerrarHistorialJitsiProfesor();
+            return;
+          }
           if (document.getElementById('jitsiModal')?.classList.contains('active')) cerrarJitsi();
         });
         window.addEventListener('firebase-auth-changed', actualizarInvitacionJitsiEstudiante);
         window.addEventListener('firebase-teacher-auth-changed', actualizarInvitacionJitsiEstudiante);
         window.addEventListener('estado-cuenta-estudiante', actualizarInvitacionJitsiEstudiante);
+        window.addEventListener('jitsi-configuracion-remota', event => aplicarConfiguracionJitsiRemota(event.detail || {}));
         window.setTimeout(actualizarInvitacionJitsiEstudiante, 0);
+        window.setTimeout(iniciarSincronizacionConfiguracionJitsi, 500);
          window.setInterval(() => {
            actualizarInvitacionJitsiEstudiante();
            const modal = document.getElementById('jitsiModal');
