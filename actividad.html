@@ -4127,8 +4127,11 @@
             <button class="btn btn-success" id="btnIniciarJitsiGrupal" type="button" onclick="abrirSelectorJitsiGrupal()" title="Seleccionar curso, división y turno para iniciar una videollamada grupal">
               <i class="fa-solid fa-users-viewfinder"></i> Iniciar Jitsi grupal
             </button>
-            <button class="btn btn-secondary" id="btnConfigurarDuracionJitsi" type="button" onclick="abrirConfiguracionDuracionJitsi()" title="Configurar el límite de tiempo de las videollamadas">
-              <i class="fa-solid fa-hourglass-half"></i> Jitsi: <strong id="duracionJitsiProfesorValor">5</strong> min
+            <button class="btn btn-secondary" id="btnConfigurarDuracionJitsiGrupal" type="button" onclick="abrirConfiguracionDuracionJitsi('grupal')" title="Configurar la duración de las llamadas Jitsi grupales">
+              <i class="fa-solid fa-users-clock"></i> Jitsi grupal: <strong id="duracionJitsiGrupalProfesorValor">60</strong> min
+            </button>
+            <button class="btn btn-secondary" id="btnConfigurarDuracionJitsi" type="button" onclick="abrirConfiguracionDuracionJitsi('individual')" title="Configurar la duración de las llamadas Jitsi individuales">
+              <i class="fa-solid fa-hourglass-half"></i> Jitsi individual: <strong id="duracionJitsiProfesorValor">5</strong> min
             </button>
             <button class="btn btn-warning" id="btnPausarCronometrosProfesor" onclick="pausarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-pause"></i> Pausar cronómetros</button>
             <button class="btn btn-secondary" onclick="reiniciarCronometrosDesdeInterfaz(this)"><i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00</button>
@@ -4303,7 +4306,7 @@
       <div class="modal-box jitsi-duration-box" tabindex="-1">
         <div class="jitsi-duration-header">
           <span aria-hidden="true"><i class="fa-solid fa-hourglass-half"></i></span>
-          <div><h3 id="configuracionDuracionJitsiTitulo">Duración de las llamadas Jitsi</h3><p>Este límite se aplicará a llamadas individuales. Las llamadas grupales duran 60 minutos por defecto.</p></div>
+          <div><h3 id="configuracionDuracionJitsiTitulo">Duración de llamada Jitsi</h3><p id="configuracionDuracionJitsiDescripcion">Elegí el límite de tiempo para esta modalidad.</p></div>
         </div>
         <label class="jitsi-duration-field" for="duracionJitsiMinutos">
           <span>Duración máxima</span>
@@ -4314,6 +4317,7 @@
           <button type="button" data-jitsi-minutos="10">10 min</button>
           <button type="button" data-jitsi-minutos="15">15 min</button>
           <button type="button" data-jitsi-minutos="30">30 min</button>
+          <button type="button" data-jitsi-minutos="60">60 min</button>
         </div>
         <p class="jitsi-duration-error" id="duracionJitsiError" role="alert"></p>
         <div class="jitsi-duration-actions">
@@ -11743,11 +11747,16 @@
             return DURACION_JITSI_GRUPAL_PREDETERMINADA;
           }
         }
+        let tipoDuracionJitsiConfigurada = 'individual';
+
         function mostrarDuracionJitsi() {
-          const valor = obtenerDuracionJitsi();
-          const etiqueta = document.getElementById('duracionJitsiProfesorValor');
-          if (etiqueta) etiqueta.textContent = String(valor);
-          return valor;
+          const valorIndividual = obtenerDuracionJitsi();
+          const valorGrupal = obtenerDuracionJitsiGrupal();
+          const etiquetaIndividual = document.getElementById('duracionJitsiProfesorValor');
+          const etiquetaGrupal = document.getElementById('duracionJitsiGrupalProfesorValor');
+          if (etiquetaIndividual) etiquetaIndividual.textContent = String(valorIndividual);
+          if (etiquetaGrupal) etiquetaGrupal.textContent = String(valorGrupal);
+          return valorIndividual;
         }
 
         function cerrarConfiguracionDuracionJitsi() {
@@ -11757,12 +11766,20 @@
           modal.style.display = 'none';
         }
 
-        window.abrirConfiguracionDuracionJitsi = function() {
+        window.abrirConfiguracionDuracionJitsi = function(tipo = 'individual') {
           const modal = document.getElementById('configuracionDuracionJitsiModal');
           const entrada = document.getElementById('duracionJitsiMinutos');
+          const titulo = document.getElementById('configuracionDuracionJitsiTitulo');
+          const descripcion = document.getElementById('configuracionDuracionJitsiDescripcion');
           const error = document.getElementById('duracionJitsiError');
           if (!modal || !entrada) return;
-          entrada.value = String(obtenerDuracionJitsi());
+          tipoDuracionJitsiConfigurada = tipo === 'grupal' ? 'grupal' : 'individual';
+          const esGrupal = tipoDuracionJitsiConfigurada === 'grupal';
+          entrada.value = String(esGrupal ? obtenerDuracionJitsiGrupal() : obtenerDuracionJitsi());
+          if (titulo) titulo.textContent = esGrupal ? 'Duración Jitsi grupal' : 'Duración Jitsi individual';
+          if (descripcion) descripcion.textContent = esGrupal
+            ? 'Este límite se aplicará a las próximas llamadas grupales.'
+            : 'Este límite se aplicará a las próximas llamadas individuales.';
           if (error) error.textContent = '';
           modal.style.display = 'flex';
           modal.classList.add('active');
@@ -11779,7 +11796,8 @@
             entrada?.focus();
             return;
           }
-          try { localStorage.setItem(DURACION_JITSI_CLAVE, String(minutos)); } catch (errorGuardado) {}
+          const claveDuracion = tipoDuracionJitsiConfigurada === 'grupal' ? DURACION_JITSI_GRUPAL_CLAVE : DURACION_JITSI_CLAVE;
+          try { localStorage.setItem(claveDuracion, String(minutos)); } catch (errorGuardado) {}
           mostrarDuracionJitsi();
           cerrarConfiguracionDuracionJitsi();
         }
