@@ -3206,6 +3206,16 @@
             const revisionAnterior = datos.revisionSalidas || {};
             const penalizacionAnterior = Math.max(0, Math.min(10, Number(revisionAnterior.penalizacion) || 0));
             const motivoAnterior = String(revisionAnterior.motivo || "").trim();
+            const notasAcademicas = Object.values(datos.historialResultados || {})
+              .map(resultado => Number(resultado?.notaFinal ?? resultado?.notaIA))
+              .filter(nota => Number.isFinite(nota));
+            const promedioAcademico = notasAcademicas.length
+              ? notasAcademicas.reduce((total, nota) => total + nota, 0) / notasAcademicas.length
+              : null;
+            const notaCalculada = promedioAcademico === null
+              ? null
+              : Number(Math.max(0, promedioAcademico - penalizacionNueva).toFixed(1));
+            const notaConfirmada = revision.notaConfirmada === true && notaCalculada !== null;
             const descuentoModificado =
               penalizacionAnterior !== penalizacionNueva ||
               motivoAnterior !== motivoNuevo;
@@ -3216,7 +3226,12 @@
                 motivo: motivoNuevo,
                 revisadoPor: responsable,
                 revisadoPorUid: user.uid,
-                revisadoEn: serverTimestamp()
+                revisadoEn: serverTimestamp(),
+                notaConfirmada,
+                notaConfirmadaValor: notaConfirmada ? notaCalculada : null,
+                notaConfirmadaPor: notaConfirmada ? responsable : "",
+                notaConfirmadaPorUid: notaConfirmada ? user.uid : "",
+                notaConfirmadaEn: notaConfirmada ? serverTimestamp() : null
               },
               actualizadoEn: serverTimestamp()
             }, { merge: true });
@@ -4497,7 +4512,7 @@
           <strong>Cómo se calcula:</strong> cada actividad obtiene
           <strong>nota del código × 70% + nota de las preguntas × 30%</strong>.
           El promedio general es la suma de las notas finales de las actividades evaluadas dividida por la cantidad de actividades evaluadas.
-          Las actividades pendientes no se incluyen.
+          Las actividades pendientes no se incluyen. El descuento genera una nota calculada, pero la nota definitiva solo se publica cuando el docente la confirma.
         </div>
         <div id="resumenProfesor" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem;"></div>
         <div id="resumenConsultasIAProfesor" style="margin-bottom:1rem;"></div>
@@ -5801,7 +5816,13 @@
       let totalSalidasPestana = 0;
       let eventosSalidasPestana = [];
       let salidaActivaPestana = null;
-      let revisionSalidasActual = { estado: "pendiente", penalizacion: 0, motivo: "" };
+      let revisionSalidasActual = {
+          estado: "pendiente",
+          penalizacion: 0,
+          motivo: "",
+          notaConfirmada: false,
+          notaConfirmadaValor: null
+      };
       let seccionActivaActual = seccionesData[0].id;
 
       // Control de Cronómetros por Módulo (40 minutos = 2400 segundos)
@@ -6647,7 +6668,15 @@
                   estado: datos.revisionSalidas.estado || 'pendiente',
                   penalizacion: Number(datos.revisionSalidas.penalizacion) || 0,
                   motivo: datos.revisionSalidas.motivo || '',
-                  revisadoPor: datos.revisionSalidas.revisadoPor || ''
+                  revisadoPor: datos.revisionSalidas.revisadoPor || '',
+                  notaConfirmada: datos.revisionSalidas.notaConfirmada === true,
+                  notaConfirmadaValor: datos.revisionSalidas.notaConfirmadaValor !== null &&
+                      datos.revisionSalidas.notaConfirmadaValor !== '' &&
+                      Number.isFinite(Number(datos.revisionSalidas.notaConfirmadaValor))
+                      ? Number(datos.revisionSalidas.notaConfirmadaValor)
+                      : null,
+                  notaConfirmadaPor: datos.revisionSalidas.notaConfirmadaPor || '',
+                  notaConfirmadaEn: datos.revisionSalidas.notaConfirmadaEn || null
               };
           }
           if (datos.tiemposRestantes) Object.entries(datos.tiemposRestantes).forEach(([id,v]) => setLocalStorage(`timer_${id}`, Number(v)));
@@ -7800,7 +7829,13 @@
           totalSalidasPestana = 0;
           eventosSalidasPestana = [];
           salidaActivaPestana = null;
-          revisionSalidasActual = { estado: "pendiente", penalizacion: 0, motivo: "" };
+          revisionSalidasActual = {
+              estado: "pendiente",
+              penalizacion: 0,
+              motivo: "",
+              notaConfirmada: false,
+              notaConfirmadaValor: null
+          };
           removeLocalStorage('app_blur_count');
           removeLocalStorage('app_tab_events');
           document.getElementById('blurCount').innerText = '0';
@@ -9785,11 +9820,20 @@
           if (!notas.length) return '—';
           return (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1);
       }
-      function calcularNotaDefinitivaEstudiante(d) {
+      function calcularNotaProvisionalEstudiante(d) {
           const academica = Number(calcularNotaEstudiante(d));
           if (!Number.isFinite(academica)) return '—';
           const penalizacion = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
           return Math.max(0, academica - penalizacion).toFixed(1);
+      }
+      function calcularNotaDefinitivaEstudiante(d) {
+          const revision = d.revisionSalidas || {};
+          if (revision.notaConfirmada !== true) return '—';
+          const confirmada = revision.notaConfirmadaValor === null || revision.notaConfirmadaValor === ''
+              ? NaN
+              : Number(revision.notaConfirmadaValor);
+          if (Number.isFinite(confirmada)) return Math.max(0, Math.min(10, confirmada)).toFixed(1);
+          return calcularNotaProvisionalEstudiante(d);
       }
       function obtenerDetallePromedioEstudiante(d) {
           const historial = d.historialResultados || {};
@@ -9834,11 +9878,23 @@
           const penalizacion = Math.max(0, Math.min(10, Number(document.getElementById('penalizacionRevisionProfesor')?.value) || 0));
           const estado = document.getElementById('estadoRevisionProfesor')?.value || 'pendiente';
           const motivo = document.getElementById('motivoRevisionProfesor')?.value.trim() || '';
+          const notaCalculada = calcularNotaProvisionalEstudiante(d);
+          const notaConfirmada = document.getElementById('confirmarNotaDefinitivaProfesor')?.checked === true;
           if (penalizacion > 0 && !motivo) {
               alert('Escribí una justificación antes de aplicar una penalización.');
               return;
           }
-          const revision = { estado, penalizacion, motivo };
+          if (notaConfirmada && notaCalculada === '—') {
+              alert('Todavía no hay un promedio académico para confirmar.');
+              return;
+          }
+          const revision = {
+              estado,
+              penalizacion,
+              motivo,
+              notaConfirmada,
+              notaConfirmadaValor: notaConfirmada ? Number(notaCalculada) : null
+          };
           const ok = await window.guardarRevisionDocenteFirebase?.(d.uid, revision);
           if (!ok) {
               alert('No se pudo guardar la revisión. Verificá los permisos de Firestore.');
@@ -9846,11 +9902,16 @@
           }
           d.revisionSalidas = {
               ...revision,
-              revisadoPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || window.firebaseTeacherUser?.displayName || window.firebaseCurrentUser?.displayName || ''
+              revisadoPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || window.firebaseTeacherUser?.displayName || window.firebaseCurrentUser?.displayName || '',
+              notaConfirmadaPor: notaConfirmada
+                  ? (window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || '')
+                  : ''
           };
           renderPanelProfesor();
           abrirDetalleEstudianteProfesor(indice);
-          alert('Revisión docente guardada.');
+          alert(notaConfirmada
+              ? `Revisión guardada. Nota definitiva confirmada: ${notaCalculada}/10.`
+              : 'Revisión guardada. La nota definitiva queda pendiente de confirmación docente.');
       }
       async function cambiarEstadoCuentaEstudiante(indice, nuevoEstado, opciones = {}) {
           const d = estudiantesProfesor[indice];
@@ -10486,6 +10547,7 @@
           const ayudas = d.ayudasComprension || {};
           const progreso = calcularProgresoEstudiante(d);
           const promedio = calcularNotaEstudiante(d);
+          const notaCalculada = calcularNotaProvisionalEstudiante(d);
           const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
           const resumenConsultasIA = resumirConsultasIAEstudiante(d);
@@ -10659,7 +10721,8 @@
                   <div class="teacher-detail-stat"><small>Turno</small><strong>${escapeHtml(e.turno || '—')}</strong></div>
                   <div class="teacher-detail-stat"><small>Progreso</small><strong>${progreso}%</strong></div>
                   <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong></div>
-                  <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === '—' ? 'Pendiente' : `${notaDefinitiva}/10`}</strong></div>
+                  <div class="teacher-detail-stat"><small>Nota calculada</small><strong>${notaCalculada === '—' ? 'Pendiente' : `${notaCalculada}/10`}</strong></div>
+                  <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === '—' ? 'Pendiente de confirmación' : `${notaDefinitiva}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Estado de cuenta</small><strong style="color:${colorCuentaDetalle}">${estadoCuentaDetalle}</strong></div>
                   <div class="teacher-detail-stat"><small>Salidas de pestaña</small><strong>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</strong></div>
                   <div class="teacher-detail-stat"><small>Desbloqueos</small><strong>${cantidadDesbloqueos}</strong></div>
@@ -10758,11 +10821,19 @@
                           <div style="margin-top:.7rem;line-height:1.5">
                               Promedio académico: <strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong><br>
                               Penalización: <strong>-${Number(revision.penalizacion || 0).toFixed(1)}</strong><br>
-                              Nota definitiva: <strong>${notaDefinitiva === '—' ? 'Pendiente' : `${notaDefinitiva}/10`}</strong>
+                              Nota calculada: <strong>${notaCalculada === '—' ? 'Pendiente' : `${notaCalculada}/10`}</strong><br>
+                              Nota definitiva: <strong>${notaDefinitiva === '—' ? 'Pendiente de confirmación docente' : `${notaDefinitiva}/10`}</strong>
                               ${revision.revisadoPor ? `<br><small>Última revisión: ${escapeHtml(revision.revisadoPor)}</small>` : ''}
                           </div>
+                          <label style="display:flex;align-items:flex-start;gap:.55rem;margin-top:.8rem;padding:.75rem;border:1px solid rgba(56,189,248,.35);border-radius:7px;background:rgba(56,189,248,.08);cursor:pointer">
+                              <input id="confirmarNotaDefinitivaProfesor" type="checkbox" ${revision.notaConfirmada === true ? 'checked' : ''} ${notaCalculada === '—' ? 'disabled' : ''} style="margin-top:.2rem">
+                              <span>
+                                  <strong>Confirmar nota definitiva</strong><br>
+                                  <small>La nota calculada solo será definitiva después de guardar esta confirmación. Si se modifica el descuento, deberá confirmarse nuevamente.</small>
+                              </span>
+                          </label>
                           <button class="btn btn-warning" style="margin-top:.8rem" onclick="guardarRevisionSalidasProfesor(${indice})">
-                              <i class="fa-solid fa-floppy-disk"></i> Guardar decisión
+                              <i class="fa-solid fa-floppy-disk"></i> Guardar decisión y confirmación
                           </button>
                       </div>
                   </div>
@@ -11264,10 +11335,10 @@
           if (!d || !modal) return;
           const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante';
           const revision = d.revisionSalidas || {};
-          const nota = calcularNotaDefinitivaEstudiante(d);
+          const nota = calcularNotaProvisionalEstudiante(d);
           indiceEditorDescuentoEstudiante = indice;
           document.getElementById('editarDescuentoSubtitulo').textContent = `${nombre} · ${d.email || 'Sin email'}`;
-          document.getElementById('editarDescuentoNotaActual').textContent = nota === '—' ? 'Pendiente' : `${nota}/10`;
+          document.getElementById('editarDescuentoNotaActual').textContent = nota === '—' ? 'Pendiente' : `${nota}/10 calculada`;
           document.getElementById('editarDescuentoPuntos').value = Number(revision.penalizacion || 0).toFixed(1);
           document.getElementById('editarDescuentoMotivo').value = revision.motivo || '';
           const error = document.getElementById('editarDescuentoError');
@@ -11307,7 +11378,9 @@
           const revision = {
               estado: puntos > 0 ? (revisionAnterior.estado === 'pendiente' ? 'penalizacion' : (revisionAnterior.estado || 'penalizacion')) : (revisionAnterior.estado || 'sin_observaciones'),
               penalizacion: puntos,
-              motivo
+              motivo,
+              notaConfirmada: false,
+              notaConfirmadaValor: null
           };
           const ok = await window.guardarRevisionDocenteFirebase?.(d.uid, revision);
           if (boton) {
@@ -11540,7 +11613,7 @@
               ['Trabajando',trabajando,'','fa-laptop-code'],
               ['Con alertas',conAlertas,'','fa-triangle-exclamation'],
               ['Completaron',completos,'','fa-circle-check'],
-              ['Promedio definitivo',promedio,'','fa-chart-line']
+              ['Promedio de notas confirmadas',promedio,'','fa-chart-line']
           ].map(x=>`<div class="teacher-summary-card ${x[2] === 'blocked' && Number(x[1]) > 0 ? 'teacher-blocked-summary' : ''}" style="border:1px solid rgba(148,163,184,.2);"><span class="teacher-summary-icon"><i class="fa-solid ${x[3]}"></i></span><small>${x[0]}</small><strong style="display:block;font-size:1.4rem;margin-top:.2rem;">${x[1]}</strong></div>`).join('');
           renderResumenConsultasIAGeneral(rows);
           document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
@@ -11575,7 +11648,10 @@
               const notaNumero = n === '—' ? NaN : Number(n);
               const notaClase = !Number.isFinite(notaNumero) ? '' : (notaNumero >= 7 ? 'grade-high' : (notaNumero >= 6 ? 'grade-medium' : 'grade-low'));
               const notaIcono = !Number.isFinite(notaNumero) ? 'fa-minus' : (notaNumero >= 7 ? 'fa-star' : (notaNumero >= 6 ? 'fa-circle-half-stroke' : 'fa-triangle-exclamation'));
-              const notaHtml = `<span class="teacher-grade-badge ${notaClase}" title="${Number.isFinite(notaNumero) ? `Nota definitiva: ${n}` : 'Sin nota definitiva'}"><i class="fa-solid ${notaIcono}"></i> ${n}</span>`;
+              const notaCalculada = calcularNotaProvisionalEstudiante(d);
+              const notaHtml = Number.isFinite(notaNumero)
+                  ? `<span class="teacher-grade-badge ${notaClase}" title="Nota definitiva confirmada por el docente: ${n}"><i class="fa-solid ${notaIcono}"></i> ${n}</span>`
+                  : `<span class="teacher-grade-badge" title="${notaCalculada === '—' ? 'Sin nota calculada' : `Nota calculada ${notaCalculada}/10, pendiente de confirmación docente`}"><i class="fa-solid fa-clock"></i> ${notaCalculada === '—' ? '—' : `${notaCalculada} pendiente`}</span>`;
               const descuentoPuntos = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
               const descuentoMotivo = String(d.revisionSalidas?.motivo || '').trim();
               const descuentoTitulo = descuentoPuntos > 0
@@ -11891,12 +11967,21 @@
           const promedioFinalNumero = notasFinales.length ? sumaNotasFinales / notasFinales.length : null;
           const promedioFinal = promedioFinalNumero !== null ? promedioFinalNumero.toFixed(2) : 'Sin evaluar';
           const penalizacionRevision = Math.max(0, Math.min(10, Number(revisionSalidasActual.penalizacion) || 0));
-          const notaDefinitivaNumero = promedioFinalNumero !== null
+          const notaCalculadaNumero = promedioFinalNumero !== null
               ? Math.max(0, promedioFinalNumero - penalizacionRevision)
               : null;
-          const notaDefinitivaPDF = notaDefinitivaNumero !== null ? notaDefinitivaNumero.toFixed(2) : 'Sin evaluar';
+          const notaConfirmadaNumero = revisionSalidasActual.notaConfirmada === true &&
+              revisionSalidasActual.notaConfirmadaValor !== null &&
+              revisionSalidasActual.notaConfirmadaValor !== ''
+              ? Number(revisionSalidasActual.notaConfirmadaValor)
+              : NaN;
+          const notaDefinitivaNumero = Number.isFinite(notaConfirmadaNumero) ? notaConfirmadaNumero : null;
+          const notaCalculadaPDF = notaCalculadaNumero !== null ? notaCalculadaNumero.toFixed(2) : 'Sin evaluar';
+          const notaDefinitivaPDF = notaDefinitivaNumero !== null ? notaDefinitivaNumero.toFixed(2) : 'Pendiente';
           doc.setFontSize(11);
-          doc.text(`Promedio académico: ${promedioFinal}/10 | Nota definitiva: ${notaDefinitivaPDF}/10`, 14, yPos);
+          doc.text(`Promedio académico: ${promedioFinal}/10 | Nota calculada: ${notaCalculadaPDF}/10`, 14, yPos);
+          yPos += 6;
+          doc.text(`Nota definitiva: ${notaDefinitivaNumero !== null ? `${notaDefinitivaPDF}/10 (confirmada por docente)` : 'pendiente de confirmación docente'}`, 14, yPos);
           yPos += 8;
 
           doc.setFont("helvetica", "bold");
@@ -11956,7 +12041,15 @@
           doc.text(lineasMotivoRevision, 14, yPos);
           yPos += lineasMotivoRevision.length * 4 + 1;
           doc.text(
-              `Cálculo definitivo: ${promedioFinal}/10 - ${penalizacionRevision.toFixed(1)} = ${notaDefinitivaPDF}/10`,
+              `Cálculo provisorio: ${promedioFinal}/10 - ${penalizacionRevision.toFixed(1)} = ${notaCalculadaPDF}/10`,
+              14,
+              yPos
+          );
+          yPos += 5;
+          doc.text(
+              notaDefinitivaNumero !== null
+                  ? `Confirmación docente: nota definitiva ${notaDefinitivaPDF}/10`
+                  : 'Confirmación docente: pendiente; este cálculo todavía no es una nota definitiva.',
               14,
               yPos
           );
