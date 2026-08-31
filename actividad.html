@@ -4127,9 +4127,6 @@
             <button class="btn btn-success" id="btnIniciarJitsiGrupal" type="button" onclick="abrirSelectorJitsiGrupal()" title="Seleccionar curso, división y turno para iniciar una videollamada grupal">
               <i class="fa-solid fa-users-viewfinder"></i> Iniciar Jitsi grupal
             </button>
-            <button class="btn btn-danger" id="btnFinalizarJitsiGrupal" type="button" onclick="finalizarJitsiGrupalProfesor()" title="Finalizar la videollamada grupal del curso seleccionado">
-              <i class="fa-solid fa-video-slash"></i> Finalizar Jitsi grupal
-            </button>
             <button class="btn btn-secondary" id="btnConfigurarDuracionJitsi" type="button" onclick="abrirConfiguracionDuracionJitsi()" title="Configurar el límite de tiempo de las videollamadas">
               <i class="fa-solid fa-hourglass-half"></i> Jitsi: <strong id="duracionJitsiProfesorValor">5</strong> min
             </button>
@@ -12375,37 +12372,6 @@
               }
             }
           );
-        };
-        window.finalizarJitsiGrupalProfesor = async function() {
-          const grupo = obtenerGrupoProfesor();
-          if (grupo.error) { alert('Seleccioná en los filtros el curso de la llamada que querés finalizar.'); return; }
-          const activos = grupo.estudiantes.filter(item => item.jitsiGrupal?.disponible === true);
-          if (!activos.length) { alert('No hay una llamada Jitsi grupal activa para esos filtros.'); return; }
-          const confirmacion = await mostrarConfirmacionDocente({
-            tipo: 'danger',
-            icono: 'fa-video-slash',
-            titulo: 'Finalizar Jitsi grupal',
-            mensaje: `La sala dejará de estar disponible para ${activos.length} estudiante(s) de ${grupo.descripcion}.`,
-            detalles: ['Las ventanas Jitsi abiertas por los estudiantes se cerrarán automáticamente.'],
-            confirmarTexto: 'Finalizar llamada',
-            confirmarIcono: 'fa-video-slash',
-            confirmarClase: 'btn-danger'
-          });
-          if (!confirmacion?.confirmado) return;
-          const referencia = activos[0].jitsiGrupal || {};
-          const cerrado = await window.actualizarJitsiGrupalFirebase?.(activos, {
-            disponible: false,
-            id: referencia.id || '', sala: referencia.sala || '', enlace: referencia.enlace || '',
-            curso: grupo.curso, division: grupo.division, turno: grupo.turno
-          });
-          if (!cerrado) {
-            alert('No se pudo finalizar la llamada grupal. Verificá las reglas de Firestore.');
-            return;
-          }
-          activos.forEach(item => { item.jitsiGrupal = { ...(item.jitsiGrupal || {}), disponible: false }; });
-          cerrarJitsi();
-          renderPanelProfesor?.();
-          alert('La llamada Jitsi grupal finalizó correctamente.');
         };
         async function copiarEnlaceJitsi() {
           if (!enlaceJitsiActual) return;
