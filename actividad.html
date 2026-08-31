@@ -3707,6 +3707,51 @@
           return [];
         }
       };
+      window.buscarLlamadasJitsiAntiguasFirebase = async function(opciones = {}) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !(await verificarUsuarioDocente(user))) return { llamadas: [], error: "No autorizado" };
+        const antiguedadHoras = Math.max(1, Math.min(8760, Number(opciones.antiguedadHoras) || 24));
+        const limite = Date.now() - antiguedadHoras * 60 * 60 * 1000;
+        try {
+          const snapshot = await getDocs(collection(database, "controlClase", idClaseActual(), "historialJitsi"));
+          const llamadas = snapshot.docs.map(item => ({ id: item.id, ...item.data() })).filter(item => {
+            const actualizado = item.actualizadoEn?.toMillis?.() || item.actualizadoEn?.seconds * 1000 || item.iniciadaEn?.toMillis?.() || item.iniciadaEn?.seconds * 1000 || 0;
+            const expira = new Date(String(item.expiraEn || '')).getTime();
+            const estadoFinal = ["finalizada", "cancelada"].includes(String(item.estado || ""));
+            const vencida = Number.isFinite(expira) && expira > 0 && expira <= Date.now();
+            return actualizado > 0 && actualizado <= limite && (estadoFinal || vencida);
+          }).sort((a, b) => {
+            const fechaA = a.actualizadoEn?.toMillis?.() || a.actualizadoEn?.seconds * 1000 || 0;
+            const fechaB = b.actualizadoEn?.toMillis?.() || b.actualizadoEn?.seconds * 1000 || 0;
+            return fechaA - fechaB;
+          });
+          return { llamadas, antiguedadHoras };
+        } catch (error) {
+          console.error("Error revisando llamadas Jitsi antiguas:", error);
+          return { llamadas: [], error: error?.message || "No se pudo consultar el historial" };
+        }
+      };
+      window.eliminarLlamadasJitsiAntiguasFirebase = async function(llamadas = []) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !(await verificarUsuarioDocente(user))) return { eliminadas: 0, error: "No autorizado" };
+        const ids = [...new Set((Array.isArray(llamadas) ? llamadas : []).map(item => String(item?.id || "").replace(/[^a-zA-Z0-9._-]/g, "_")).filter(Boolean))].slice(0, 350);
+        if (!ids.length) return { eliminadas: 0 };
+        try {
+          for (let inicio = 0; inicio < ids.length; inicio += 400) {
+            const batch = writeBatch(database);
+            ids.slice(inicio, inicio + 400).forEach(id => batch.delete(doc(database, "controlClase", idClaseActual(), "historialJitsi", id)));
+            await batch.commit();
+          }
+          return { eliminadas: ids.length };
+        } catch (error) {
+          console.error("Error eliminando llamadas Jitsi antiguas:", error);
+          return { eliminadas: 0, error: error?.message || "No se pudo eliminar el historial" };
+        }
+      };
       window.registrarEstadoJitsiEstudianteFirebase = async function(tipo, llamadaId, estado) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!db || !user || !llamadaId) return false;
@@ -4291,6 +4336,9 @@
             </button>
             <button class="btn btn-secondary" id="btnHistorialJitsi" type="button" onclick="abrirHistorialJitsiProfesor()" title="Consultar llamadas e invitaciones Jitsi">
               <i class="fa-solid fa-clock-rotate-left"></i> Historial Jitsi
+            </button>
+            <button class="btn btn-warning" id="btnLimpiarHistorialJitsi" type="button" onclick="abrirLimpiezaHistorialJitsi()" title="Revisar y limpiar documentos Jitsi antiguos">
+              <i class="fa-solid fa-broom"></i> Limpiar Jitsi antiguo
             </button>
             <span class="jitsi-live-summary" id="resumenJitsiProfesor" title="Estado de la llamada Jitsi activa">
               <i class="fa-solid fa-video"></i><strong>0</strong><span>conectados</span>
@@ -11216,7 +11264,8 @@
           const bloqueado = d.pantallaBloqueada === true;
           const pausado = d.controlCronometroIndividual?.pausado === true;
           const jitsiDisponible = d.jitsiDisponible === true || d.jitsiSala?.disponible === true;
-          const llamadaJitsiId = String(d.jitsiGrupal?.disponible === true ? d.jitsiGrupal?.id : d.jitsiSala?.id || '');
+          const jitsiTieneSala = Boolean(d.jitsiSala?.id || d.jitsiGrupal?.id);
+          const llamadaJitsiId = String(d.jitsiGrupal?.id || d.jitsiSala?.id || '');
           const estadoJitsi = llamadaJitsiId ? (window.estadoParticipacionJitsi?.(d, llamadaJitsiId) || 'invitado') : '';
           const etiquetasJitsi = {
             invitado: 'Invitado',
@@ -11248,6 +11297,7 @@
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialJitsiEstudianteProfesor(${indice})"><i class="fa-solid fa-video"></i><span>Historial Jitsi del estudiante</span></button>
             <button class="btn btn-success" onclick="cerrarAccionesEstudiante();abrirJitsiDocente(${indice})"><i class="fa-solid fa-video"></i><span>${jitsiDisponible ? 'Volver a la llamada Jitsi' : 'Iniciar llamada Jitsi'}</span></button>
             ${jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-video-slash"></i><span>Cancelar invitaciÃ³n / finalizar</span></button>` : ''}
+            ${jitsiTieneSala && !jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-broom"></i><span>Limpiar llamada anterior</span></button>` : ''}
             <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();abrirEditorDescuentoEstudiante(${indice})"><i class="fa-solid fa-circle-minus"></i><span>Editar descuento y motivo</span></button>
             <button class="btn btn-danger" ${bloqueado ? 'disabled title="La pantalla ya está bloqueada"' : ''} onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i><span>Bloquear pantalla</span></button>
             <button class="btn student-action-highlight" ${bloqueado ? '' : 'disabled title="La pantalla no está bloqueada"'} onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i><span>Desbloquear pantalla</span></button>
@@ -12443,6 +12493,66 @@
           renderHistorialJitsiProfesor();
         };
 
+        window.abrirLimpiezaHistorialJitsi = async function() {
+          const boton = document.getElementById('btnLimpiarHistorialJitsi');
+          const original = boton?.innerHTML || '';
+          if (boton) {
+            boton.disabled = true;
+            boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Revisando...';
+          }
+          const resultado = await window.buscarLlamadasJitsiAntiguasFirebase?.({ antiguedadHoras: 24 });
+          if (boton) {
+            boton.disabled = false;
+            boton.innerHTML = original;
+          }
+          if (!resultado || resultado.error) {
+            alert(resultado?.error || 'No se pudo revisar el historial Jitsi.');
+            return;
+          }
+          const llamadas = resultado.llamadas || [];
+          if (!llamadas.length) {
+            alert('No se encontraron documentos Jitsi antiguos para limpiar. Las llamadas activas quedaron protegidas.');
+            return;
+          }
+          const resumen = llamadas.slice(0, 12).map(item => {
+            const destino = item.tipo === 'grupal'
+              ? [item.curso, item.division, item.turno].filter(Boolean).join(' · ') || 'Grupo'
+              : item.estudianteNombre || item.estudianteEmail || 'Estudiante';
+            return `${item.id} · ${destino} · ${item.estado || 'vencida'}`;
+          });
+          const confirmacion = await mostrarConfirmacionDocente({
+            tipo: 'warning',
+            icono: 'fa-broom',
+            titulo: 'Limpiar historial Jitsi antiguo',
+            mensaje: `Se encontraron ${llamadas.length} documento(s) antiguos, finalizados, cancelados o vencidos.`,
+            detalles: [
+              'No se eliminarán llamadas activas.',
+              'No se eliminarán documentos de estudiantes ni historiales de bloqueos, descuentos o pestañas.',
+              `Criterio aplicado: más de ${resultado.antiguedadHoras} horas de antigüedad.`,
+              ...resumen,
+              llamadas.length > resumen.length ? `... y ${llamadas.length - resumen.length} documento(s) más.` : ''
+            ].filter(Boolean),
+            campoLabel: 'Escribí LIMPIAR para confirmar',
+            campoPlaceholder: 'LIMPIAR',
+            campoRequerido: true,
+            valorEsperado: 'LIMPIAR',
+            requiereCheck: true,
+            checkTexto: 'Confirmo que solo se borrará el historial Jitsi antiguo detectado.',
+            confirmarTexto: 'Eliminar historial antiguo',
+            confirmarIcono: 'fa-trash-can',
+            confirmarClase: 'btn-danger'
+          });
+          if (!confirmacion?.confirmado) return;
+          const borrado = await window.eliminarLlamadasJitsiAntiguasFirebase?.(llamadas);
+          if (!borrado || borrado.error) {
+            alert(borrado?.error || 'No se pudo completar la limpieza.');
+            return;
+          }
+          historialJitsiCache = (historialJitsiCache || []).filter(item => !llamadas.some(viejo => viejo.id === item.id));
+          renderHistorialJitsiProfesor();
+          alert(`Limpieza completada. Se eliminaron ${borrado.eliminadas} documento(s) Jitsi antiguos.`);
+        };
+
         function cerrarHistorialJitsiProfesor() {
           const modal = document.getElementById('historialJitsiModal');
           if (!modal) return;
@@ -12764,6 +12874,51 @@
             confirmarClase: 'btn-danger'
           });
           if (!confirmacion?.confirmado) return;
+          const idGrupal = String(estudiante.jitsiGrupal?.id || '');
+          if (idGrupal) {
+            const grupo = (window.estudiantesProfesor || estudiantesProfesor || []).filter(item =>
+              String(item.jitsiGrupal?.id || '') === idGrupal
+            );
+            const salaGrupal = estudiante.jitsiGrupal || {};
+            const participantesGrupales = participantesHistorialJitsi(grupo, idGrupal);
+            const cerradoGrupal = await window.actualizarJitsiGrupalFirebase?.(grupo, {
+              disponible: false,
+              id: idGrupal,
+              sala: salaGrupal.sala || '',
+              enlace: salaGrupal.enlace || '',
+              duracionMinutos: salaGrupal.duracionMinutos || 0,
+              expiraEn: '',
+              curso: salaGrupal.curso || '',
+              division: salaGrupal.division || '',
+              turno: salaGrupal.turno || ''
+            });
+            if (!cerradoGrupal) {
+              alert('No se pudo limpiar la llamada grupal anterior. Verificá la autorización docente y las reglas de Firestore.');
+              return;
+            }
+            await window.guardarHistorialJitsiFirebase?.({
+              id: idGrupal,
+              tipo: 'grupal',
+              sala: salaGrupal.sala || '',
+              curso: salaGrupal.curso || '',
+              division: salaGrupal.division || '',
+              turno: salaGrupal.turno || '',
+              duracionMinutos: salaGrupal.duracionMinutos || 0,
+              expiraEn: salaGrupal.expiraEn || '',
+              estado: 'cancelada',
+              motivoFinalizacion: 'Llamada anterior limpiada por el docente',
+              participantes: participantesGrupales,
+              ...metricasParticipantesJitsi(participantesGrupales)
+            });
+            grupo.forEach(item => {
+              item.jitsiGrupal = { ...(item.jitsiGrupal || {}), disponible: false, expiraEn: '' };
+              item.jitsiParticipacion = { llamadaId: idGrupal, tipo: 'grupal', estado: 'finalizada' };
+            });
+            cerrarJitsi();
+            renderPanelProfesor?.();
+            alert('La llamada grupal anterior fue limpiada y dejó de estar disponible.');
+            return;
+          }
           const idLlamada = String(estudiante.jitsiSala?.id || '');
           const participantes = participantesHistorialJitsi([estudiante], idLlamada);
           const cerrado = await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, false, { id: idLlamada });
