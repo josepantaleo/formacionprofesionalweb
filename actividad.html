@@ -12069,22 +12069,23 @@
           cerrarJitsi();
           const nombreVisible = String(nombre || 'Participante').trim() || 'Participante';
           enlaceJitsiActual = enlaceSeguro;
-          jitsiOpcionesPendientes = { ...opciones, estadoConfirmado: estadoTexto };
-          modal.dataset.hostConfirmation = opciones.requerirModerador ? 'true' : 'false';
-          modal.dataset.jitsiRole = opciones.requerirModerador ? 'teacher' : 'student';
+          const modoDocenteJitsi = opciones.requerirModerador === true && opciones.rol !== 'estudiante';
+          jitsiOpcionesPendientes = { ...opciones, requerirModerador: modoDocenteJitsi, estadoConfirmado: estadoTexto };
+          modal.dataset.hostConfirmation = modoDocenteJitsi ? 'true' : 'false';
+          modal.dataset.jitsiRole = modoDocenteJitsi ? 'teacher' : 'student';
           if (nombreElemento) nombreElemento.textContent = nombreVisible;
           if (emailElemento) emailElemento.textContent = String(email || '');
           if (copiarEstado) copiarEstado.textContent = '';
           if (estadoExterno) estadoExterno.textContent = '';
-          if (mensajeExterno) mensajeExterno.textContent = opciones.requerirModerador
+          if (mensajeExterno) mensajeExterno.textContent = modoDocenteJitsi
             ? 'Abrí la sala, iniciá sesión en Jitsi y confirmá que sos anfitrión antes de invitar a los estudiantes.'
             : 'Abrí la sala Jitsi en una pestaña nueva para participar de la videollamada.';
           if (botonConfirmar) {
-            botonConfirmar.hidden = !opciones.requerirModerador;
+            botonConfirmar.hidden = !modoDocenteJitsi;
             botonConfirmar.disabled = false;
             botonConfirmar.innerHTML = '<i class="fa-solid fa-user-shield"></i> Confirmar docente anfitrión';
           }
-          if (estado) estado.textContent = opciones.requerirModerador
+          if (estado) estado.textContent = modoDocenteJitsi
             ? 'Paso 1: abrí Jitsi. Paso 2: ingresá como anfitrión. Paso 3: confirmalo en esta ventana.'
             : (estadoTexto || 'Encuentro en vivo por Jitsi Meet');
           modal.style.display = 'flex';
@@ -12475,7 +12476,7 @@
           const invitacion = obtenerInvitacionJitsi();
           if (!invitacion) { alert('La videollamada ya no está disponible.'); actualizarBotonJitsiEstudiante(); return; }
           ocultarAlertaJitsi();
-          window.abrirJitsiConSala(invitacion.enlace, datos.nombre, datos.email, invitacion.mensaje || invitacion.titulo, { expiraEn: invitacion.expiraEn });
+          window.abrirJitsiConSala(invitacion.enlace, datos.nombre, datos.email, invitacion.mensaje || invitacion.titulo, { expiraEn: invitacion.expiraEn, requerirModerador: false, rol: 'estudiante' });
           if (invitacion.expiraEn) iniciarCuentaRegresivaJitsi(invitacion.expiraEn, () => {
             actualizarBotonJitsiEstudiante();
             cerrarJitsi();
