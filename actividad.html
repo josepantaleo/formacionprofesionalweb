@@ -4424,8 +4424,8 @@
             <option value="solicitudes">Solicitudes pendientes</option>
             <option value="rechazadas">Solicitudes rechazadas</option>
             <option value="inactiva">Cuenta inactiva</option>
-            <option value="conectados">Conectados recientemente</option>
-            <option value="desconectados">Sin actividad reciente</option>
+            <option value="conectados">En línea (últimos 2 minutos)</option>
+            <option value="desconectados">Desconectados (más de 2 minutos)</option>
             <option value="trabajando">Trabajando ahora</option>
             <option value="pausados">Cronómetro pausado</option>
             <option value="finalizados">Actividades finalizadas</option>
@@ -4433,6 +4433,9 @@
             <option value="alertas">Con alertas IA</option>
             <option value="cambios">Con cambios de pestaña</option>
           </select>
+          <button class="btn btn-secondary teacher-online-filter" id="btnSoloEnLineaProfesor" type="button" onclick="alternarFiltroSoloEnLineaProfesor()" aria-pressed="false" title="Mostrar solamente estudiantes con actividad en los últimos 2 minutos">
+            <i class="fa-solid fa-signal"></i> Solo en línea
+          </button>
           <select id="filtroBloqueoProfesor" aria-label="Filtrar por bloqueo de pantalla">
             <option value="">Todos los bloqueos</option>
             <option value="bloqueados">Solo estudiantes bloqueados</option>
@@ -6401,6 +6404,14 @@
               document.getElementById(id)?.addEventListener('input', renderPanelProfesor);
               document.getElementById(id)?.addEventListener('change', renderPanelProfesor);
           });
+          actualizarBotonSoloEnLineaProfesor();
+          if (!window.__conexionProfesorIntervalo) {
+              window.__conexionProfesorIntervalo = setInterval(() => {
+                  if (document.getElementById('panelProfesorModal')?.classList.contains('active')) {
+                      renderPanelProfesor();
+                  }
+              }, 15000);
+          }
       });
 
       function mostrarEstadoFirebase(tipo, texto) {
@@ -9660,6 +9671,72 @@
           if (window.__profesorUnsubscribe) { window.__profesorUnsubscribe(); window.__profesorUnsubscribe = null; }
       }
 
+      const LIMITE_CONEXION_PROFESOR_MS = 2 * 60 * 1000;
+      let estadosConexionProfesor = new Map();
+      let estadosConexionProfesorInicializados = false;
+      let avisoDesconexionProfesorTimeout = null;
+
+      function estudianteEnLineaProfesor(estudiante) {
+          const valor = estudiante?.actualizadoEn;
+          const actualizado = valor?.toDate
+              ? valor.toDate().getTime()
+              : (valor?.seconds ? Number(valor.seconds) * 1000 : new Date(valor || 0).getTime());
+          return Number.isFinite(actualizado) && actualizado > 0 &&
+              Date.now() - actualizado < LIMITE_CONEXION_PROFESOR_MS;
+      }
+
+      function mostrarAvisoDesconexionProfesor(estudiante) {
+          if (!document.getElementById('panelProfesorModal')?.classList.contains('active')) return;
+          let aviso = document.getElementById('avisoDesconexionProfesor');
+          if (!aviso) {
+              aviso = document.createElement('div');
+              aviso.id = 'avisoDesconexionProfesor';
+              aviso.className = 'teacher-offline-alert';
+              aviso.setAttribute('role', 'status');
+              aviso.setAttribute('aria-live', 'polite');
+              document.body.appendChild(aviso);
+          }
+          const nombre = estudiante?.estudiante?.nombre || estudiante?.nombreGoogle || estudiante?.email || 'El estudiante';
+          aviso.innerHTML = `<i class="fa-solid fa-wifi"></i><div><strong>Estudiante desconectado</strong><span>${escapeHtml(nombre)} lleva 2 minutos sin actividad.</span></div>`;
+          aviso.classList.add('active');
+          if (avisoDesconexionProfesorTimeout) clearTimeout(avisoDesconexionProfesorTimeout);
+          avisoDesconexionProfesorTimeout = setTimeout(() => aviso.classList.remove('active'), 6000);
+      }
+
+      function detectarDesconexionesProfesor() {
+          const actuales = new Map();
+          estudiantesProfesor.forEach(estudiante => {
+              if (!estudiante?.uid) return;
+              const conectado = estudianteEnLineaProfesor(estudiante);
+              actuales.set(estudiante.uid, conectado);
+              if (estadosConexionProfesorInicializados &&
+                  estadosConexionProfesor.get(estudiante.uid) === true &&
+                  conectado === false) {
+                  mostrarAvisoDesconexionProfesor(estudiante);
+              }
+          });
+          estadosConexionProfesor = actuales;
+          estadosConexionProfesorInicializados = true;
+      }
+
+      function actualizarBotonSoloEnLineaProfesor() {
+          const activo = document.getElementById('filtroEstadoProfesor')?.value === 'conectados';
+          const boton = document.getElementById('btnSoloEnLineaProfesor');
+          if (!boton) return;
+          boton.classList.toggle('is-active', activo);
+          boton.setAttribute('aria-pressed', String(activo));
+          boton.innerHTML = activo
+              ? '<i class="fa-solid fa-signal"></i> Mostrando en línea'
+              : '<i class="fa-solid fa-signal"></i> Solo en línea';
+      }
+
+      function alternarFiltroSoloEnLineaProfesor() {
+          const filtro = document.getElementById('filtroEstadoProfesor');
+          if (!filtro) return;
+          filtro.value = filtro.value === 'conectados' ? '' : 'conectados';
+          renderPanelProfesor();
+      }
+
       function limpiarFiltrosProfesor() {
           const valoresIniciales = {
               filtroProfesor: '',
@@ -9689,6 +9766,7 @@
 
           const contenedor = document.getElementById('filtrosPanelProfesor');
           contenedor?.classList.remove('has-active-filters');
+          actualizarBotonSoloEnLineaProfesor();
           renderPanelProfesor();
 
           document.getElementById('btnLimpiarFiltrosProfesor')?.focus({ preventScroll: true });
@@ -11321,6 +11399,7 @@
       }
       function renderPanelProfesor() {
           renderBandejaSolicitudesPendientes();
+          detectarDesconexionesProfesor();
           window.setTimeout(() => window.actualizarResumenJitsiProfesor?.(), 0);
           const q = (document.getElementById('filtroProfesor').value || '').toLowerCase().trim();
           const emailFiltro = (document.getElementById('filtroEmailProfesor')?.value || '').toLowerCase().trim();
@@ -11328,6 +11407,7 @@
           const division = document.getElementById('filtroDivisionProfesor')?.value || '';
           const turno = document.getElementById('filtroTurnoProfesor').value;
           const estadoFiltro = document.getElementById('filtroEstadoProfesor')?.value || '';
+          actualizarBotonSoloEnLineaProfesor();
           const bloqueoFiltro = document.getElementById('filtroBloqueoProfesor')?.value || '';
           const progresoFiltro = document.getElementById('filtroProgresoProfesor')?.value || '';
           const salidasFiltro = document.getElementById('filtroSalidasProfesor')?.value || '';
@@ -11345,7 +11425,7 @@
               const descuento = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
               const alerta = obtenerAlertaConsultasIA(d);
               const actualizado = d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().getTime() : 0;
-              const conectado = actualizado > 0 && Date.now() - actualizado < 5 * 60 * 1000;
+              const conectado = actualizado > 0 && Date.now() - actualizado < LIMITE_CONEXION_PROFESOR_MS;
               const trabajando = conectado && progreso < 100;
               const finalizado = progreso >= 100;
               const cuentaInactiva = d.estadoCuenta === 'inactivo';
