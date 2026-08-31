@@ -4405,7 +4405,20 @@
           </button>
         </div>
         <p class="jitsi-copy-status" id="jitsiCopiarEstado" role="status" aria-live="polite"></p>
-        <div id="jitsiFrame" class="jitsi-frame-container" role="region" aria-label="Videollamada Jitsi Meet"></div>
+        <div id="jitsiFrame" class="jitsi-frame-container jitsi-external-container" role="region" aria-label="Acceso a videollamada Jitsi Meet">
+          <div class="jitsi-external-panel">
+            <span class="jitsi-external-icon" aria-hidden="true"><i class="fa-solid fa-arrow-up-right-from-square"></i></span>
+            <div class="jitsi-external-copy">
+              <h4>La videollamada se abre en una pestaña nueva</h4>
+              <p id="jitsiExternalMensaje">Usá el botón para abrir la sala Jitsi sin el límite del modo embebido.</p>
+            </div>
+            <div class="jitsi-external-actions">
+              <button class="btn btn-success" id="abrirJitsiNuevaPestana" type="button"><i class="fa-solid fa-video"></i> Abrir sala Jitsi</button>
+              <button class="btn btn-primary" id="confirmarAnfitrionJitsi" type="button" hidden><i class="fa-solid fa-user-shield"></i> Ya soy anfitrión</button>
+            </div>
+            <p class="jitsi-external-note" id="jitsiExternalEstado" role="status" aria-live="polite"></p>
+          </div>
+        </div>
       </div>
     </div>
     <div id="classStartOverlay" role="status" aria-live="polite" aria-labelledby="classStartTitle">
@@ -11683,12 +11696,14 @@
           }
       }
     </script>
-    <script src="https://meet.jit.si/external_api.js"></script>
     <script>
       (() => {
         let enlaceJitsiActual = '';
         let invitacionJitsiActual = null;
         let jitsiApiActual = null;
+        let jitsiVentanaExterna = null;
+        let jitsiOpcionesPendientes = null;
+        let jitsiConfirmacionAnfitrionEnCurso = false;
         let jitsiTemporizadorIntervalo = null;
         let jitsiTemporizadorVencido = false;
         let jitsiVencimientoActual = 0;
@@ -11914,7 +11929,12 @@
           const copiarEstado = document.getElementById('jitsiCopiarEstado');
           try { jitsiApiActual?.dispose?.(); } catch (error) { console.warn('No se pudo cerrar la instancia Jitsi.', error); }
           jitsiApiActual = null;
-          if (frame) frame.replaceChildren();
+          try {
+            if (jitsiVentanaExterna && !jitsiVentanaExterna.closed) jitsiVentanaExterna.close();
+          } catch (error) {}
+          jitsiVentanaExterna = null;
+          jitsiOpcionesPendientes = null;
+          jitsiConfirmacionAnfitrionEnCurso = false;
           if (copiarEstado) copiarEstado.textContent = '';
           ocultarAlertaUltimoMinutoJitsi();
           const botonExtender = document.getElementById('sumarTiempoJitsi');
@@ -11925,15 +11945,64 @@
           }
         }
 
+        function abrirJitsiEnNuevaPestana() {
+          const estadoExterno = document.getElementById('jitsiExternalEstado');
+          if (!enlaceJitsiActual) return false;
+          try {
+            jitsiVentanaExterna = window.open(enlaceJitsiActual, 'jitsi_sala_actividad');
+            if (!jitsiVentanaExterna) {
+              if (estadoExterno) estadoExterno.textContent = 'El navegador bloqueó la pestaña. Habilitá las ventanas emergentes y volvé a intentar.';
+              return false;
+            }
+            jitsiVentanaExterna.focus?.();
+            if (estadoExterno) estadoExterno.textContent = jitsiOpcionesPendientes?.requerirModerador
+              ? 'Iniciá sesión dentro de Jitsi. Cuando figure que administrás la sala, regresá y presioná “Ya soy anfitrión”.'
+              : 'Sala abierta. Si no la ves, revisá las pestañas del navegador.';
+            return true;
+          } catch (error) {
+            console.error('No se pudo abrir Jitsi en una pestaña nueva:', error);
+            if (estadoExterno) estadoExterno.textContent = 'No se pudo abrir la pestaña Jitsi.';
+            return false;
+          }
+        }
+
+        async function confirmarAnfitrionJitsiManual() {
+          const opciones = jitsiOpcionesPendientes;
+          const boton = document.getElementById('confirmarAnfitrionJitsi');
+          const estado = document.getElementById('jitsiEstado');
+          const estadoExterno = document.getElementById('jitsiExternalEstado');
+          if (!opciones?.requerirModerador || typeof opciones.alConfirmarModerador !== 'function' || jitsiConfirmacionAnfitrionEnCurso) return;
+          jitsiConfirmacionAnfitrionEnCurso = true;
+          if (boton) {
+            boton.disabled = true;
+            boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Habilitando estudiantes...';
+          }
+          if (estado) estado.textContent = 'Confirmando al docente como anfitrión y habilitando estudiantes...';
+          try {
+            const resultado = await opciones.alConfirmarModerador();
+            if (resultado === false) throw new Error('Firebase rechazó la habilitación.');
+            if (resultado?.expiraEn) iniciarCuentaRegresivaJitsi(resultado.expiraEn, resultado.alVencer, resultado.alExtender);
+            if (estado) estado.textContent = opciones.estadoConfirmado || 'Docente confirmado como anfitrión';
+            if (estadoExterno) estadoExterno.textContent = 'Los estudiantes ya recibieron la invitación para ingresar a esta sala.';
+            if (boton) boton.hidden = true;
+            jitsiOpcionesPendientes = { ...opciones, anfitrionConfirmado: true };
+          } catch (error) {
+            console.error('No se pudo habilitar a los estudiantes:', error);
+            if (estado) estado.textContent = 'No se pudo habilitar la invitación de los estudiantes.';
+            if (estadoExterno) estadoExterno.textContent = 'Verificá Firebase y volvé a confirmar cuando estés dentro de la sala.';
+            if (boton) {
+              boton.disabled = false;
+              boton.innerHTML = '<i class="fa-solid fa-user-shield"></i> Ya soy anfitrión';
+            }
+            jitsiConfirmacionAnfitrionEnCurso = false;
+          }
+        }
+
         window.abrirJitsiConSala = function(enlace, nombre, email, estadoTexto, opciones = {}) {
           const enlaceSeguro = String(enlace || '').split('#')[0];
           const coincidencia = enlaceSeguro.match(/^https:\/\/meet\.jit\.si\/([a-zA-Z0-9_-]+)$/);
           if (!coincidencia) {
             alert('No se encontró un enlace válido para la sala Jitsi.');
-            return false;
-          }
-          if (typeof window.JitsiMeetExternalAPI !== 'function') {
-            alert('No se pudo cargar la API de Jitsi Meet. Revisá la conexión a Internet y actualizá la página.');
             return false;
           }
           const modal = document.getElementById('jitsiModal');
@@ -11942,61 +12011,34 @@
           const nombreElemento = document.getElementById('jitsiEstudianteNombre');
           const emailElemento = document.getElementById('jitsiEstudianteEmail');
           const copiarEstado = document.getElementById('jitsiCopiarEstado');
+          const botonConfirmar = document.getElementById('confirmarAnfitrionJitsi');
+          const mensajeExterno = document.getElementById('jitsiExternalMensaje');
+          const estadoExterno = document.getElementById('jitsiExternalEstado');
           if (!modal || !frame) return false;
           detenerCuentaRegresivaJitsi();
           cerrarJitsi();
           const nombreVisible = String(nombre || 'Participante').trim() || 'Participante';
           enlaceJitsiActual = enlaceSeguro;
+          jitsiOpcionesPendientes = { ...opciones, estadoConfirmado: estadoTexto };
           if (nombreElemento) nombreElemento.textContent = nombreVisible;
           if (emailElemento) emailElemento.textContent = String(email || '');
           if (copiarEstado) copiarEstado.textContent = '';
+          if (estadoExterno) estadoExterno.textContent = '';
+          if (mensajeExterno) mensajeExterno.textContent = opciones.requerirModerador
+            ? 'Abrí la sala, iniciá sesión en Jitsi y confirmá que sos anfitrión antes de invitar a los estudiantes.'
+            : 'Abrí la sala Jitsi en una pestaña nueva para participar de la videollamada.';
+          if (botonConfirmar) {
+            botonConfirmar.hidden = !opciones.requerirModerador;
+            botonConfirmar.disabled = false;
+            botonConfirmar.innerHTML = '<i class="fa-solid fa-user-shield"></i> Ya soy anfitrión';
+          }
           if (estado) estado.textContent = opciones.requerirModerador
-            ? 'Ingresá a Jitsi y autenticá tu cuenta. Los estudiantes serán invitados cuando seas anfitrión.'
+            ? 'Paso 1: abrí Jitsi. Paso 2: ingresá como anfitrión. Paso 3: confirmalo en esta ventana.'
             : (estadoTexto || 'Encuentro en vivo por Jitsi Meet');
           modal.style.display = 'flex';
           modal.classList.add('active');
           modal.querySelector('.jitsi-box')?.focus({ preventScroll: true });
-          let moderadorConfirmado = false;
-          let confirmacionEnCurso = false;
-          const confirmarModerador = async () => {
-            if (!opciones.requerirModerador || moderadorConfirmado || confirmacionEnCurso) return;
-            confirmacionEnCurso = true;
-            if (estado) estado.textContent = 'Anfitrión confirmado. Habilitando el acceso de los estudiantes...';
-            try {
-              const resultado = await opciones.alConfirmarModerador?.();
-              if (resultado === false) {
-                if (estado) estado.textContent = 'No se pudo habilitar la invitación en Firebase.';
-                confirmacionEnCurso = false;
-                return;
-              }
-              moderadorConfirmado = true;
-              if (resultado?.expiraEn) iniciarCuentaRegresivaJitsi(resultado.expiraEn, resultado.alVencer, resultado.alExtender);
-              if (estado) estado.textContent = estadoTexto || 'Docente conectado como anfitrión';
-            } catch (error) {
-              console.error('Error habilitando la sala después de confirmar al anfitrión:', error);
-              if (estado) estado.textContent = 'No se pudo habilitar la invitación de los estudiantes.';
-              confirmacionEnCurso = false;
-            }
-          };
-          jitsiApiActual = new window.JitsiMeetExternalAPI('meet.jit.si', {
-            roomName: coincidencia[1],
-            parentNode: frame,
-            width: '100%',
-            height: '100%',
-            userInfo: { email: String(email || ''), displayName: nombreVisible },
-            configOverwrite: { prejoinPageEnabled: true, disableDeepLinking: true }
-          });
-          jitsiApiActual.addEventListener('participantRoleChanged', evento => {
-            if (evento?.role === 'moderator') {
-              confirmarModerador();
-            } else if (opciones.requerirModerador && !moderadorConfirmado && estado) {
-              estado.textContent = 'Todavía no sos anfitrión. Autenticá la cuenta docente dentro de Jitsi.';
-            }
-          });
-          jitsiApiActual.addEventListener('videoConferenceJoined', () => {
-            if (!opciones.requerirModerador && estado) estado.textContent = estadoTexto || 'Conectado a Jitsi Meet';
-          });
-          jitsiApiActual.addEventListener('readyToClose', cerrarJitsi);
+          abrirJitsiEnNuevaPestana();
           return true;
         };
         window.abrirJitsiConEstudiante = function(email, nombre) {
@@ -12423,6 +12465,8 @@
         document.getElementById('configuracionDuracionJitsiModal')?.addEventListener('click', event => {
           if (event.target?.id === 'configuracionDuracionJitsiModal') cerrarConfiguracionDuracionJitsi();
         });
+        document.getElementById('abrirJitsiNuevaPestana')?.addEventListener('click', abrirJitsiEnNuevaPestana);
+        document.getElementById('confirmarAnfitrionJitsi')?.addEventListener('click', confirmarAnfitrionJitsiManual);
         document.getElementById('sumarTiempoJitsi')?.addEventListener('click', sumarCincoMinutosJitsi);
         document.getElementById('pantallaCompletaJitsi')?.addEventListener('click', alternarPantallaCompletaJitsi);
         document.addEventListener('fullscreenchange', () => {
