@@ -6024,7 +6024,7 @@
           if (!pantallaBloqueada) return;
           const destino = evento.target;
           const permitido = destino?.closest?.(
-              '#screenLockOverlay, #passwordModal, #firebaseAuthOverlay, #panelProfesorModal, #accionesEstudianteModal, #historialDesbloqueosModal, #historialDescuentosModal, #historialPestanasModal, #detalleEstudianteProfesorModal, #confirmacionDocenteModal, #editarDescuentoEstudianteModal'
+              '#screenLockOverlay, #passwordModal, #firebaseAuthOverlay, #panelProfesorModal, #accionesEstudianteModal, #historialDesbloqueosModal, #historialDescuentosModal, #historialPestanasModal, #detalleEstudianteProfesorModal, #confirmacionDocenteModal, #editarDescuentoEstudianteModal, #jitsiLlamadaAlerta, #jitsiModal, #jitsiFinAlerta, #jitsiFinalizadaAviso'
           );
           if (permitido) return;
           evento.preventDefault();
@@ -13604,6 +13604,12 @@
         window.addEventListener('firebase-teacher-auth-changed', actualizarInvitacionJitsiEstudiante);
         window.addEventListener('estado-cuenta-estudiante', actualizarInvitacionJitsiEstudiante);
         window.addEventListener('jitsi-configuracion-remota', event => aplicarConfiguracionJitsiRemota(event.detail || {}));
+        window.addEventListener('focus', actualizarInvitacionJitsiEstudiante);
+        window.addEventListener('online', actualizarInvitacionJitsiEstudiante);
+        window.addEventListener('pageshow', actualizarInvitacionJitsiEstudiante);
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') actualizarInvitacionJitsiEstudiante();
+        });
         window.setTimeout(actualizarInvitacionJitsiEstudiante, 0);
         window.setTimeout(iniciarSincronizacionConfiguracionJitsi, 500);
          window.setInterval(() => {
