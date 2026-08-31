@@ -12472,11 +12472,33 @@
         }
 
         function abrirInvitacionJitsiActual() {
-          const datos = datosEstudianteActual();
           const invitacion = obtenerInvitacionJitsi();
           if (!invitacion) { alert('La videollamada ya no está disponible.'); actualizarBotonJitsiEstudiante(); return; }
           ocultarAlertaJitsi();
-          window.abrirJitsiConSala(invitacion.enlace, datos.nombre, datos.email, invitacion.mensaje || invitacion.titulo, { expiraEn: invitacion.expiraEn, requerirModerador: false, rol: 'estudiante' });
+          cerrarJitsi();
+          enlaceJitsiActual = String(invitacion.enlace || '').split('#')[0];
+          const modal = document.getElementById('jitsiModal');
+          if (modal) {
+            modal.dataset.jitsiRole = 'student';
+            modal.dataset.hostConfirmation = 'false';
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+          }
+          jitsiOpcionesPendientes = { rol: 'estudiante', requerirModerador: false, expiraEn: invitacion.expiraEn };
+          try {
+            jitsiVentanaExterna = window.open(enlaceJitsiActual, 'jitsi_sala_actividad');
+            if (!jitsiVentanaExterna) {
+              alert('El navegador bloqueó la pestaña Jitsi. Habilitá las ventanas emergentes y volvé a intentar.');
+              cerrarJitsi();
+              return;
+            }
+            jitsiVentanaExterna.focus?.();
+          } catch (error) {
+            console.error('No se pudo abrir Jitsi para el estudiante:', error);
+            alert('No se pudo abrir la sala Jitsi.');
+            cerrarJitsi();
+            return;
+          }
           if (invitacion.expiraEn) iniciarCuentaRegresivaJitsi(invitacion.expiraEn, () => {
             const boton = document.getElementById('btnJitsiEstudiante');
             if (boton) boton.hidden = true;
