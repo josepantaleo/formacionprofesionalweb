@@ -3494,6 +3494,33 @@
         }
       };
 
+      window.actualizarDisponibilidadJitsiFirebase = async function(uid, disponible) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !(await verificarUsuarioDocente(user))) return false;
+        try {
+          const responsable = user.email || user.displayName || user.uid;
+          await setDoc(doc(database, "estudiantes", uid), {
+            jitsiDisponible: disponible === true,
+            jitsiSala: {
+              disponible: disponible === true,
+              actualizadoPor: responsable,
+              actualizadoPorUid: user.uid,
+              actualizadoEn: serverTimestamp()
+            },
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error actualizando la disponibilidad de Jitsi:", error);
+          window.ultimoErrorJitsi = {
+            code: error?.code || "",
+            message: error?.message || "Error desconocido"
+          };
+          return false;
+        }
+      };
       window.bloquearPantallaEstudianteFirebase = async function(uid, detalle = {}) {
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
@@ -10810,6 +10837,7 @@
           const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante';
           const bloqueado = d.pantallaBloqueada === true;
           const pausado = d.controlCronometroIndividual?.pausado === true;
+          const jitsiDisponible = d.jitsiDisponible === true || d.jitsiSala?.disponible === true;
           const contenido = document.getElementById('accionesEstudianteContenido');
           const subtitulo = document.getElementById('accionesEstudianteSubtitulo');
           const estadoPantalla = document.getElementById('accionesEstudianteEstado');
@@ -10828,7 +10856,8 @@
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial de desbloqueos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDescuentos(${indice})"><i class="fa-solid fa-file-invoice-dollar"></i><span>Historial de descuentos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialPestanas(${indice})"><i class="fa-solid fa-window-restore"></i><span>Historial de pestañas</span></button>
-            <button class="btn btn-success" onclick="cerrarAccionesEstudiante();abrirJitsiDocente(${indice})"><i class="fa-solid fa-video"></i><span>Jitsi Meet</span></button>
+            <button class="btn btn-success" onclick="cerrarAccionesEstudiante();abrirJitsiDocente(${indice})"><i class="fa-solid fa-video"></i><span>${jitsiDisponible ? 'Ingresar a Jitsi' : 'Habilitar sala Jitsi'}</span></button>
+            ${jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-video-slash"></i><span>Cerrar sala Jitsi</span></button>` : ''}
             <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();abrirEditorDescuentoEstudiante(${indice})"><i class="fa-solid fa-circle-minus"></i><span>Editar descuento y motivo</span></button>
             <button class="btn btn-danger" ${bloqueado ? 'disabled title="La pantalla ya está bloqueada"' : ''} onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i><span>Bloquear pantalla</span></button>
             <button class="btn student-action-highlight" ${bloqueado ? '' : 'disabled title="La pantalla no está bloqueada"'} onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i><span>Desbloquear pantalla</span></button>
@@ -11576,14 +11605,56 @@
           modal.querySelector('.jitsi-box')?.focus({ preventScroll: true });
         };
 
-        window.abrirJitsiDocente = function(indice) {
+        window.abrirJitsiDocente = async function(indice) {
           const estudiante = window.estudiantesProfesor?.[indice] || estudiantesProfesor?.[indice];
-          if (!estudiante) {
+          if (!estudiante?.uid) {
+            alert('No se pudo identificar al estudiante seleccionado.');
+            return;
+          }
+          const habilitado = await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, true);
+          if (!habilitado) {
+            alert('No se pudo habilitar la sala Jitsi. Verificá la autorización docente y las reglas de Firestore.');
+            return;
+          }
+          estudiante.jitsiDisponible = true;
+          estudiante.jitsiSala = { ...(estudiante.jitsiSala || {}), disponible: true };
+          renderPanelProfesor?.();
+          const nombre = estudiante.estudiante?.nombre || estudiante.nombreGoogle || estudiante.email || 'Estudiante';
+          window.abrirJitsiConEstudiante(estudiante.email, nombre);
+        };
+
+        window.cerrarSalaJitsiProfesor = async function(indice) {
+          const estudiante = window.estudiantesProfesor?.[indice] || estudiantesProfesor?.[indice];
+          if (!estudiante?.uid) {
             alert('No se pudo identificar al estudiante seleccionado.');
             return;
           }
           const nombre = estudiante.estudiante?.nombre || estudiante.nombreGoogle || estudiante.email || 'Estudiante';
-          window.abrirJitsiConEstudiante(estudiante.email, nombre);
+          const confirmacion = await mostrarConfirmacionDocente({
+            tipo: 'danger',
+            icono: 'fa-video-slash',
+            titulo: 'Cerrar sala Jitsi',
+            mensaje: `La sala dejará de estar disponible para ${nombre}.`,
+            detalles: [
+              'El botón para ingresar desaparecerá de la pantalla del estudiante.',
+              'Si el estudiante tiene la sala abierta, la ventana se cerrará automáticamente.'
+            ],
+            confirmarTexto: 'Cerrar sala',
+            confirmarIcono: 'fa-video-slash',
+            confirmarClase: 'btn-danger'
+          });
+          if (!confirmacion?.confirmado) return;
+
+          const cerrado = await window.actualizarDisponibilidadJitsiFirebase?.(estudiante.uid, false);
+          if (!cerrado) {
+            alert('No se pudo cerrar la sala Jitsi. Verificá la autorización docente y las reglas de Firestore.');
+            return;
+          }
+          estudiante.jitsiDisponible = false;
+          estudiante.jitsiSala = { ...(estudiante.jitsiSala || {}), disponible: false };
+          cerrarJitsi();
+          renderPanelProfesor?.();
+          alert('La sala Jitsi ya no está disponible para el estudiante.');
         };
 
         async function copiarEnlaceJitsi() {
@@ -11615,8 +11686,13 @@
           if (!boton) return;
           const datos = datosEstudianteActual();
           const esDocente = Boolean(window.firebaseTeacherUser);
-          boton.hidden = !datos.email || esDocente;
+          const documento = window.ultimoDocumentoEstudianteFirebase || {};
+          const disponible = documento.jitsiDisponible === true || documento.jitsiSala?.disponible === true;
+          boton.hidden = !datos.email || esDocente || !disponible;
           boton.setAttribute('aria-hidden', boton.hidden ? 'true' : 'false');
+          if (!disponible && !esDocente && document.getElementById('jitsiModal')?.classList.contains('active')) {
+            cerrarJitsi();
+          }
         }
 
         document.getElementById('btnJitsiEstudiante')?.addEventListener('click', () => {
