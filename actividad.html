@@ -11948,7 +11948,7 @@
           } catch (error) {}
           jitsiVentanaExterna = null;
           jitsiOpcionesPendientes = null;
-          if (modal) modal.dataset.hostConfirmation = 'false';
+          if (modal) { modal.dataset.hostConfirmation = 'false'; modal.dataset.jitsiRole = ''; }
           jitsiConfirmacionAnfitrionEnCurso = false;
           if (copiarEstado) copiarEstado.textContent = '';
           ocultarAlertaUltimoMinutoJitsi();
@@ -12071,6 +12071,7 @@
           enlaceJitsiActual = enlaceSeguro;
           jitsiOpcionesPendientes = { ...opciones, estadoConfirmado: estadoTexto };
           modal.dataset.hostConfirmation = opciones.requerirModerador ? 'true' : 'false';
+          modal.dataset.jitsiRole = opciones.requerirModerador ? 'teacher' : 'student';
           if (nombreElemento) nombreElemento.textContent = nombreVisible;
           if (emailElemento) emailElemento.textContent = String(email || '');
           if (copiarEstado) copiarEstado.textContent = '';
@@ -12475,7 +12476,10 @@
           if (!invitacion) { alert('La videollamada ya no está disponible.'); actualizarBotonJitsiEstudiante(); return; }
           ocultarAlertaJitsi();
           window.abrirJitsiConSala(invitacion.enlace, datos.nombre, datos.email, invitacion.mensaje || invitacion.titulo, { expiraEn: invitacion.expiraEn });
-          if (invitacion.expiraEn) iniciarCuentaRegresivaJitsi(invitacion.expiraEn, actualizarBotonJitsiEstudiante, null);
+          if (invitacion.expiraEn) iniciarCuentaRegresivaJitsi(invitacion.expiraEn, () => {
+            actualizarBotonJitsiEstudiante();
+            cerrarJitsi();
+          }, null);
         }
 
         function actualizarBotonJitsiEstudiante() {
@@ -12493,7 +12497,9 @@
 
           if (!invitacion) {
             ocultarAlertaJitsi();
-            if (!esDocente && !invitacionPendienteDocente && document.getElementById('jitsiModal')?.classList.contains('active')) cerrarJitsi();
+            const modalJitsi = document.getElementById('jitsiModal');
+            const modoEstudianteJitsi = modalJitsi?.dataset.jitsiRole === 'student';
+            if (modoEstudianteJitsi || (!esDocente && !invitacionPendienteDocente && modalJitsi?.classList.contains('active'))) cerrarJitsi();
             return;
           }
           if (esDocente) return;
