@@ -4303,7 +4303,7 @@
       <div class="modal-box jitsi-duration-box" tabindex="-1">
         <div class="jitsi-duration-header">
           <span aria-hidden="true"><i class="fa-solid fa-hourglass-half"></i></span>
-          <div><h3 id="configuracionDuracionJitsiTitulo">Duración de las llamadas Jitsi</h3><p>Este límite se aplicará a llamadas individuales y grupales.</p></div>
+          <div><h3 id="configuracionDuracionJitsiTitulo">Duración de las llamadas Jitsi</h3><p>Este límite se aplicará a llamadas individuales. Las llamadas grupales duran 60 minutos por defecto.</p></div>
         </div>
         <label class="jitsi-duration-field" for="duracionJitsiMinutos">
           <span>Duración máxima</span>
@@ -11723,6 +11723,8 @@
         let jitsiAvisoUltimoMinutoEmitido = false;
         const DURACION_JITSI_CLAVE = 'teacher_jitsi_duration_minutes';
         const DURACION_JITSI_PREDETERMINADA = 5;
+        const DURACION_JITSI_GRUPAL_CLAVE = 'teacher_jitsi_group_duration_minutes';
+        const DURACION_JITSI_GRUPAL_PREDETERMINADA = 60;
 
         function obtenerDuracionJitsi() {
           try {
@@ -11733,6 +11735,14 @@
           }
         }
 
+        function obtenerDuracionJitsiGrupal() {
+          try {
+            const valor = Number(localStorage.getItem(DURACION_JITSI_GRUPAL_CLAVE));
+            return Number.isInteger(valor) && valor >= 1 && valor <= 120 ? valor : DURACION_JITSI_GRUPAL_PREDETERMINADA;
+          } catch (error) {
+            return DURACION_JITSI_GRUPAL_PREDETERMINADA;
+          }
+        }
         function mostrarDuracionJitsi() {
           const valor = obtenerDuracionJitsi();
           const etiqueta = document.getElementById('duracionJitsiProfesorValor');
@@ -12334,7 +12344,7 @@
             {
               requerirModerador: true,
               alConfirmarModerador: async () => {
-                const duracionMinutos = obtenerDuracionJitsi();
+                const duracionMinutos = obtenerDuracionJitsiGrupal();
                 const expiraEn = new Date(Date.now() + duracionMinutos * 60000).toISOString();
                 const guardado = await window.actualizarJitsiGrupalFirebase?.(grupo.estudiantes, {
                   disponible: true, id, sala, enlace, duracionMinutos, expiraEn,
@@ -12560,6 +12570,7 @@
         window.addEventListener('estado-cuenta-estudiante', actualizarBotonJitsiEstudiante);
         window.setTimeout(actualizarBotonJitsiEstudiante, 0);
          window.setInterval(() => {
+           actualizarBotonJitsiEstudiante();
            const modal = document.getElementById('jitsiModal');
            if (modal?.dataset.jitsiRole !== 'student') return;
            const invitacion = obtenerInvitacionJitsi();
