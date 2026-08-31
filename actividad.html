@@ -4414,7 +4414,7 @@
             </div>
             <div class="jitsi-external-actions">
               <button class="btn btn-success" id="abrirJitsiNuevaPestana" type="button"><i class="fa-solid fa-video"></i> Abrir sala Jitsi</button>
-              <button class="btn btn-primary" id="confirmarAnfitrionJitsi" type="button" hidden><i class="fa-solid fa-user-shield"></i> Ya soy anfitrión</button>
+              <button class="btn btn-primary" id="confirmarAnfitrionJitsi" type="button" hidden><i class="fa-solid fa-user-shield"></i> Confirmar docente anfitrión</button>
             </div>
             <p class="jitsi-external-note" id="jitsiExternalEstado" role="status" aria-live="polite"></p>
           </div>
@@ -11956,7 +11956,7 @@
             }
             jitsiVentanaExterna.focus?.();
             if (estadoExterno) estadoExterno.textContent = jitsiOpcionesPendientes?.requerirModerador
-              ? 'Iniciá sesión dentro de Jitsi. Cuando figure que administrás la sala, regresá y presioná “Ya soy anfitrión”.'
+              ? 'Iniciá sesión dentro de Jitsi. Cuando figure que administrás la sala, regresá y presioná “Confirmar docente anfitrión”.'
               : 'Sala abierta. Si no la ves, revisá las pestañas del navegador.';
             return true;
           } catch (error) {
@@ -11972,32 +11972,67 @@
           const estado = document.getElementById('jitsiEstado');
           const estadoExterno = document.getElementById('jitsiExternalEstado');
           if (!opciones?.requerirModerador || typeof opciones.alConfirmarModerador !== 'function' || jitsiConfirmacionAnfitrionEnCurso) return;
+
+          const usuarioDocente = window.firebaseTeacherUser || window.firebaseCurrentUser;
+          const autorizado = Boolean(usuarioDocente && await window.esDocenteAutorizadoFirebase?.());
+          if (!autorizado) {
+            alert('Solo una cuenta docente autorizada puede confirmar el rol de anfitrión y habilitar estudiantes.');
+            return;
+          }
+          if (!jitsiVentanaExterna || jitsiVentanaExterna.closed) {
+            alert('Primero abrí la sala Jitsi e ingresá con la cuenta docente.');
+            abrirJitsiEnNuevaPestana();
+            return;
+          }
+
+          const confirmacion = await mostrarConfirmacionDocente({
+            tipo: 'warning',
+            icono: 'fa-user-shield',
+            titulo: 'Confirmar docente anfitrión',
+            mensaje: 'Los estudiantes recibirán el enlace solamente después de esta confirmación.',
+            detalles: [
+              `Cuenta docente: ${usuarioDocente.email || usuarioDocente.displayName || 'Docente autorizado'}`,
+              'La pestaña Jitsi debe permanecer abierta.',
+              'Dentro de Jitsi, tu cuenta debe figurar como moderador o administrador de la sala.'
+            ],
+            requiereCheck: true,
+            checkTexto: 'Confirmo que ingresé con la cuenta docente y Jitsi me muestra como moderador/anfitrión.',
+            confirmarTexto: 'Confirmar e invitar',
+            confirmarIcono: 'fa-user-shield',
+            confirmarClase: 'btn-success'
+          });
+          if (!confirmacion?.confirmado) return;
+
           jitsiConfirmacionAnfitrionEnCurso = true;
           if (boton) {
             boton.disabled = true;
             boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Habilitando estudiantes...';
           }
-          if (estado) estado.textContent = 'Confirmando al docente como anfitrión y habilitando estudiantes...';
+          if (estado) estado.textContent = 'Docente anfitrión confirmado. Habilitando estudiantes...';
           try {
             const resultado = await opciones.alConfirmarModerador();
             if (resultado === false) throw new Error('Firebase rechazó la habilitación.');
             if (resultado?.expiraEn) iniciarCuentaRegresivaJitsi(resultado.expiraEn, resultado.alVencer, resultado.alExtender);
             if (estado) estado.textContent = opciones.estadoConfirmado || 'Docente confirmado como anfitrión';
-            if (estadoExterno) estadoExterno.textContent = 'Los estudiantes ya recibieron la invitación para ingresar a esta sala.';
+            if (estadoExterno) estadoExterno.textContent = 'El docente es el anfitrión. Los estudiantes ya recibieron la invitación.';
             if (boton) boton.hidden = true;
-            jitsiOpcionesPendientes = { ...opciones, anfitrionConfirmado: true };
+            jitsiOpcionesPendientes = {
+              ...opciones,
+              anfitrionConfirmado: true,
+              anfitrionEmail: usuarioDocente.email || '',
+              anfitrionUid: usuarioDocente.uid || ''
+            };
           } catch (error) {
             console.error('No se pudo habilitar a los estudiantes:', error);
             if (estado) estado.textContent = 'No se pudo habilitar la invitación de los estudiantes.';
             if (estadoExterno) estadoExterno.textContent = 'Verificá Firebase y volvé a confirmar cuando estés dentro de la sala.';
             if (boton) {
               boton.disabled = false;
-              boton.innerHTML = '<i class="fa-solid fa-user-shield"></i> Ya soy anfitrión';
+              boton.innerHTML = '<i class="fa-solid fa-user-shield"></i> Confirmar docente anfitrión';
             }
             jitsiConfirmacionAnfitrionEnCurso = false;
           }
         }
-
         window.abrirJitsiConSala = function(enlace, nombre, email, estadoTexto, opciones = {}) {
           const enlaceSeguro = String(enlace || '').split('#')[0];
           const coincidencia = enlaceSeguro.match(/^https:\/\/meet\.jit\.si\/([a-zA-Z0-9_-]+)$/);
@@ -12030,7 +12065,7 @@
           if (botonConfirmar) {
             botonConfirmar.hidden = !opciones.requerirModerador;
             botonConfirmar.disabled = false;
-            botonConfirmar.innerHTML = '<i class="fa-solid fa-user-shield"></i> Ya soy anfitrión';
+            botonConfirmar.innerHTML = '<i class="fa-solid fa-user-shield"></i> Confirmar docente anfitrión';
           }
           if (estado) estado.textContent = opciones.requerirModerador
             ? 'Paso 1: abrí Jitsi. Paso 2: ingresá como anfitrión. Paso 3: confirmalo en esta ventana.'
