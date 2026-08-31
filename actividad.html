@@ -4198,6 +4198,12 @@
       </div>
     </div>
 
+    <div class="modal-overlay" id="jitsiModal" role="dialog" aria-modal="true" aria-labelledby="jitsiTitle" style="display:none">
+      <div class="modal-box jitsi-box">
+        <div class="jitsi-header"><div><h3 id="jitsiTitle"><i class="fa-solid fa-video"></i> Videollamada Jitsi Meet</h3><p id="jitsiEstado">Preparando sala...</p></div><button class="btn btn-secondary" id="cerrarJitsi" type="button" aria-label="Cerrar videollamada">?</button></div>
+        <iframe id="jitsiFrame" title="Videollamada Jitsi Meet" allow="camera; microphone; fullscreen; display-capture" loading="lazy"></iframe>
+      </div>
+    </div>
     <div id="classStartOverlay" role="status" aria-live="polite" aria-labelledby="classStartTitle">
       <div class="class-waiting-card">
         <div style="font-size:3rem;margin-bottom:.6rem;"><i class="fa-solid fa-hourglass-start"></i></div>
@@ -11469,6 +11475,18 @@
               doc.save(`Reporte_JS_${nombre.replace(/\s+/g, '_')}.pdf`);
           }
       }
+    </script>
+    <script>
+      window.abrirJitsiConEstudiante = function(email){
+        const correo=String(email||'').trim().toLowerCase();
+        if(!correo.includes('@')){ alert('No se encontr? un correo v?lido del estudiante.'); return; }
+        const slug=btoa(unescape(encodeURIComponent(correo))).replace(/[^a-zA-Z0-9]/g,'').slice(0,30);
+        const sala='ipem146-clase-'+slug;
+        const modal=document.getElementById('jitsiModal'); const frame=document.getElementById('jitsiFrame'); const estado=document.getElementById('jitsiEstado');
+        if(!modal||!frame)return; frame.src='https://meet.jit.si/'+sala+'#config.prejoinPageEnabled=true&config.disableAP=true';
+        if(estado)estado.textContent='Sala asignada a '+correo; modal.style.display='flex'; modal.classList.add('active');
+      };
+      document.getElementById('cerrarJitsi')?.addEventListener('click',()=>{const m=document.getElementById('jitsiModal'),f=document.getElementById('jitsiFrame');if(f)f.src='';if(m){m.classList.remove('active');m.style.display='none';}});
     </script>
     <script src="mejoras-seguimiento.js"></script>
   </body>
