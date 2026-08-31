@@ -722,3 +722,8 @@ body.teacher-light-mode #configurarLimiteBloqueoModal .tracking-limit-preview{
 @keyframes incomingCallPulse{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.25)}50%{box-shadow:0 0 0 10px rgba(248,113,113,0)}}
 @keyframes incomingCallToast{0%,100%{transform:translateX(0)}50%{transform:translateX(-4px)}}
 @media(max-width:600px){.communication-fab{right:.7rem;bottom:.7rem}.communication-fab span{display:none}.communication-box{width:96vw;padding:.85rem}.webrtc-videos{grid-template-columns:1fr}.webrtc-videos video:last-child{max-width:42%;justify-self:end;margin-top:-5rem;position:relative}}
+
+/* Jitsi Meet */
+.jitsi-box{width:min(1100px,96vw);max-height:94vh;overflow:auto}.jitsi-header{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start}.jitsi-header h3{margin-top:0}.jitsi-header p{margin:.25rem 0;color:var(--text-muted);font-size:.8rem}.jitsi-box iframe{display:block;width:100%;height:68vh;border:0;border-radius:10px;background:#020617}@media(max-width:700px){.jitsi-box{width:98vw;padding:.75rem}.jitsi-box iframe{height:72vh}}
+
+.jitsi-box{width:min(1100px,96vw);max-height:94vh;overflow:auto}.jitsi-header{display:flex;justify-content:space-between;align-items:center}.jitsi-box iframe{display:block;width:100%;height:68vh;border:0;border-radius:10px;background:#020617}@media(max-width:700px){.jitsi-box{width:98vw}.jitsi-box iframe{height:72vh}}
