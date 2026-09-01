@@ -162,6 +162,8 @@
   .student-ai-column.is-minimized .ai-chat-header-actions{margin-top:0}
 }
 
+#mensajeriaDocenteModal{z-index:11500!important}
+#mensajeriaDocenteModal .teacher-message-box{position:relative;z-index:1;max-height:calc(100dvh - 2rem);overflow-y:auto;overscroll-behavior:contain}
 .teacher-message-box{width:min(680px,calc(100vw - 1.25rem));max-width:680px}
 .teacher-message-header{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;margin-bottom:.85rem}
 .teacher-message-heading{display:flex;align-items:flex-start;gap:.65rem;min-width:0}
@@ -207,6 +209,7 @@
 .teacher-message-priority label:last-child input:checked+span{border-color:#ef4444;background:rgba(239,68,68,.12);color:#fecaca}
 .teacher-message-audience{display:flex;align-items:center;gap:.4rem;margin:.7rem 0;padding:.58rem .65rem;border:1px solid rgba(56,189,248,.23);border-radius:6px;background:rgba(56,189,248,.06);color:#bae6fd;font-size:.7rem}
 .teacher-message-status{min-height:1.25rem;margin:.25rem 0;color:var(--text-muted);font-size:.72rem;font-weight:700}
+.teacher-message-status span{display:block;margin-top:.18rem;font-weight:600;line-height:1.35}
 .teacher-message-status.success{color:#86efac}.teacher-message-status.danger{color:#fca5a5}
 .teacher-message-actions{display:flex;justify-content:flex-end;gap:.55rem;margin-top:.65rem}
 .teacher-screen-message{position:fixed;inset:0;z-index:12000;display:grid;place-items:center;padding:1rem;background:rgba(2,6,23,.78);backdrop-filter:blur(4px)}
