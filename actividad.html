@@ -4533,6 +4533,8 @@
                 docente: responsable,
                 docenteUid: user.uid,
                 enviadoEn: serverTimestamp(),
+                recibido: false,
+                recibidoEn: null,
                 leido: false,
                 leidoEn: null
               });
@@ -4563,7 +4565,11 @@
                     prioridad,
                     docente: responsable,
                     docenteUid: user.uid,
-                    enviadoEn: serverTimestamp()
+                    enviadoEn: serverTimestamp(),
+                    recibido: false,
+                    recibidoEn: null,
+                    leido: false,
+                    leidoEn: null
                   }
                 }, { merge: true });
               });
@@ -4588,6 +4594,21 @@
         }
       };
 
+      window.marcarMensajeDocenteRecibidoFirebase = async function(mensajeId) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db || !mensajeId) return false;
+        try {
+          await setDoc(doc(db, "estudiantes", user.uid, "mensajesDocente", mensajeId), {
+            recibido: true,
+            recibidoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error confirmando la recepción del mensaje:", error);
+          return false;
+        }
+      };
+
       window.escucharMensajesDocenteEstudianteFirebase = async function() {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!user || !db) return;
@@ -4604,6 +4625,11 @@
               const fechaB = b.enviadoEn?.toMillis ? b.enviadoEn.toMillis() : new Date(b.enviadoEn || 0).getTime();
               return fechaA - fechaB;
             });
+          mensajes
+            .filter(item => item.recibido !== true)
+            .forEach(item => {
+              void window.marcarMensajeDocenteRecibidoFirebase?.(item.id);
+            });
           window.dispatchEvent(new CustomEvent("mensajes-docente-estudiante", {
             detail: mensajes
           }));
@@ -4612,19 +4638,72 @@
         });
       };
 
-      window.marcarMensajeDocenteLeidoFirebase = async function(mensajeId) {
+      window.marcarMensajeDocenteLeidoFirebase = async function(mensaje = {}) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        const mensajeId = typeof mensaje === "string" ? mensaje : mensaje?.id;
         if (!user || !db || !mensajeId) return false;
         try {
-          await setDoc(doc(db, "estudiantes", user.uid, "mensajesDocente", mensajeId), {
+          const cambios = {
             leido: true,
             leidoEn: serverTimestamp()
-          }, { merge: true });
+          };
+          if (typeof mensaje !== "string" && mensaje?.recibido !== true) {
+            cambios.recibido = true;
+            cambios.recibidoEn = serverTimestamp();
+          }
+          await setDoc(doc(db, "estudiantes", user.uid, "mensajesDocente", mensajeId), cambios, { merge: true });
           return true;
         } catch (error) {
           console.error("Error confirmando la lectura del mensaje:", error);
           return false;
         }
+      };
+
+      window.marcarMensajeDocenteCompatibleFirebase = async function(mensaje = {}, estado = "recibido") {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db || !mensaje?.id || mensaje.estudianteUid !== user.uid) return false;
+        const actualizado = { ...mensaje, canal: undefined };
+        delete actualizado.canal;
+        if (actualizado.recibido !== true || estado === "leido") {
+          actualizado.recibido = true;
+          actualizado.recibidoEn = actualizado.recibidoEn || serverTimestamp();
+        }
+        if (estado === "leido") {
+          actualizado.leido = true;
+          actualizado.leidoEn = serverTimestamp();
+        }
+        try {
+          await setDoc(doc(db, "estudiantes", user.uid), {
+            mensajeDocenteActual: actualizado
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error actualizando el estado del mensaje compatible:", error);
+          return false;
+        }
+      };
+
+      window.escucharHistorialMensajesDocenteFirebase = async function(alActualizar) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado || typeof alActualizar !== "function") return null;
+        const { database } = contextoDocenteFirebase();
+        if (!database) return null;
+        return onSnapshot(collectionGroup(database, "mensajesDocente"), snapshot => {
+          const mensajes = snapshot.docs.map(item => ({
+            id: item.id,
+            ...item.data(),
+            canal: "personal",
+            ruta: item.ref.path
+          }));
+          alActualizar(mensajes);
+        }, error => {
+          console.error("Error cargando estados de mensajes docentes:", error);
+          window.ultimoErrorHistorialMensajesDocente = {
+            code: error?.code || "",
+            message: error?.message || ""
+          };
+          alActualizar([]);
+        });
       };
 
       window.borrarConsultasIAEstudiantesFirebase = async function(uids) {
@@ -4724,7 +4803,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260901-3">
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260901-4">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -15771,7 +15850,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260901-3"></script>
+    <script src="mejoras-seguimiento.js?v=20260901-4"></script>
   </body>
 </html>
 

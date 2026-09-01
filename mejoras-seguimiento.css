@@ -212,6 +212,42 @@
 .teacher-message-status span{display:block;margin-top:.18rem;font-weight:600;line-height:1.35}
 .teacher-message-status.success{color:#86efac}.teacher-message-status.danger{color:#fca5a5}
 .teacher-message-actions{display:flex;justify-content:flex-end;gap:.55rem;margin-top:.65rem}
+.teacher-message-history{display:grid;gap:.6rem;margin-top:1rem;padding-top:.85rem;border-top:1px solid rgba(148,163,184,.22)}
+.teacher-message-history-header{display:flex;align-items:center;justify-content:space-between;gap:.65rem}
+.teacher-message-history-header>div{display:grid;gap:.12rem}
+.teacher-message-history-header strong{display:flex;align-items:center;gap:.4rem;color:#e0f2fe;font-size:.78rem}
+.teacher-message-history-header small{color:var(--text-muted);font-size:.64rem}
+.teacher-message-history-header .btn{min-height:34px;padding:.4rem .55rem;font-size:.66rem}
+.teacher-message-history-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.42rem}
+.teacher-message-history-summary span{display:flex;align-items:center;justify-content:center;gap:.35rem;min-height:38px;padding:.4rem;border:1px solid rgba(148,163,184,.2);border-radius:6px;background:rgba(15,23,42,.38);color:var(--text-muted);font-size:.64rem;font-weight:800}
+.teacher-message-history-summary span:nth-child(1) i{color:#7dd3fc}
+.teacher-message-history-summary span:nth-child(2) i{color:#facc15}
+.teacher-message-history-summary span:nth-child(3) i{color:#86efac}
+.teacher-message-history-summary strong{color:#f8fafc;font-size:.85rem}
+.teacher-message-history-list{display:grid;gap:.45rem;max-height:330px;overflow:auto;overscroll-behavior:contain;padding-right:.15rem}
+.teacher-message-history-empty{display:flex;align-items:center;justify-content:center;gap:.45rem;min-height:70px;padding:.7rem;border:1px dashed rgba(148,163,184,.26);border-radius:6px;color:var(--text-muted);font-size:.7rem}
+.teacher-message-history-item{border:1px solid rgba(148,163,184,.22);border-radius:7px;background:rgba(15,23,42,.3)}
+.teacher-message-history-item>summary{display:flex;align-items:center;justify-content:space-between;gap:.65rem;padding:.65rem;cursor:pointer}
+.teacher-message-history-item>summary::marker{color:#38bdf8}
+.teacher-message-history-main{display:grid;gap:.15rem;min-width:0}
+.teacher-message-history-main strong{color:#e2e8f0;font-size:.72rem;overflow-wrap:anywhere}
+.teacher-message-history-main small{color:var(--text-muted);font-size:.59rem;line-height:1.3}
+.teacher-message-history-counts{display:flex;align-items:center;justify-content:flex-end;gap:.28rem;flex-wrap:wrap}
+.teacher-message-history-counts span{display:inline-flex;align-items:center;gap:.25rem;min-height:25px;padding:.2rem .35rem;border:1px solid rgba(148,163,184,.25);border-radius:5px;font-size:.59rem;font-weight:900}
+.teacher-message-history-counts .sent{color:#7dd3fc}
+.teacher-message-history-counts .received{color:#fde68a}
+.teacher-message-history-counts .read{color:#86efac}
+.teacher-message-history-counts .urgent{color:#fca5a5;border-color:rgba(239,68,68,.4)}
+.teacher-message-history-item>p{margin:0;padding:0 .7rem .65rem;color:#cbd5e1;font-size:.68rem;line-height:1.4;white-space:pre-wrap}
+.teacher-message-recipient-list{display:grid;border-top:1px solid rgba(148,163,184,.18)}
+.teacher-message-recipient{display:grid;grid-template-columns:minmax(130px,1fr) auto minmax(135px,.8fr);align-items:center;gap:.5rem;padding:.5rem .65rem;border-bottom:1px solid rgba(148,163,184,.12)}
+.teacher-message-recipient:last-child{border-bottom:0}
+.teacher-message-recipient-name{min-width:0;color:#e2e8f0;font-size:.66rem;font-weight:800;overflow-wrap:anywhere}
+.teacher-message-delivery{display:inline-flex;align-items:center;gap:.3rem;padding:.28rem .4rem;border-radius:5px;font-size:.61rem;font-weight:900}
+.teacher-message-delivery.enviado{background:rgba(14,165,233,.1);color:#7dd3fc}
+.teacher-message-delivery.recibido{background:rgba(245,158,11,.1);color:#fde68a}
+.teacher-message-delivery.leido{background:rgba(34,197,94,.11);color:#86efac}
+.teacher-message-recipient small{color:var(--text-muted);font-size:.57rem;text-align:right}
 .teacher-screen-message{position:fixed;inset:0;z-index:12000;display:grid;place-items:center;padding:1rem;background:rgba(2,6,23,.78);backdrop-filter:blur(4px)}
 .teacher-screen-message[hidden]{display:none!important}
 .teacher-screen-message-box{display:grid;grid-template-columns:auto minmax(0,1fr);gap:1rem;width:min(620px,calc(100vw - 1.5rem));padding:1.2rem;border:1px solid rgba(56,189,248,.55);border-radius:8px;background:#0f172a;color:#f8fafc;box-shadow:0 24px 70px rgba(0,0,0,.55)}
@@ -237,6 +273,13 @@ body.teacher-light-mode .teacher-message-template-grid button:hover{border-color
 body.teacher-light-mode .teacher-message-template-grid button.active{border-color:#0284c7;background:#e0f2fe;color:#075985}
 body.teacher-light-mode .teacher-message-template-grid button[data-message-template="atencion"].active{border-color:#dc2626;background:#fef2f2;color:#991b1b}
 body.teacher-light-mode .teacher-message-priority label span{color:#334155;border-color:#cbd5e1}
+body.teacher-light-mode .teacher-message-history-header strong,
+body.teacher-light-mode .teacher-message-history-main strong,
+body.teacher-light-mode .teacher-message-recipient-name{color:#0f172a}
+body.teacher-light-mode .teacher-message-history-summary span,
+body.teacher-light-mode .teacher-message-history-item{border-color:#cbd5e1;background:#f8fafc}
+body.teacher-light-mode .teacher-message-history-summary strong{color:#0f172a}
+body.teacher-light-mode .teacher-message-history-item>p{color:#334155}
 @media(max-width:760px){
   .teacher-message-template-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
@@ -247,6 +290,8 @@ body.teacher-light-mode .teacher-message-priority label span{color:#334155;borde
   .teacher-message-form>label.wide,.teacher-message-priority{grid-column:auto}
   .teacher-message-actions{display:grid;grid-template-columns:1fr 1fr}
   .teacher-message-actions .btn{width:100%;justify-content:center}
+  .teacher-message-recipient{grid-template-columns:minmax(0,1fr) auto}
+  .teacher-message-recipient small{grid-column:1/-1;text-align:left}
   .teacher-screen-message-box{grid-template-columns:1fr;padding:1rem}
   .teacher-screen-message-icon{width:2.6rem;height:2.6rem}
   .teacher-screen-message-content>.btn{justify-self:stretch;width:100%}
@@ -255,6 +300,9 @@ body.teacher-light-mode .teacher-message-priority label span{color:#334155;borde
   .teacher-message-templates-heading{display:grid;grid-template-columns:minmax(0,1fr) auto}
   .teacher-message-template-grid{grid-template-columns:1fr}
   .teacher-message-template-grid button{min-height:48px}
+  .teacher-message-history-header .btn span{display:none}
+  .teacher-message-history-item>summary{align-items:flex-start;flex-direction:column}
+  .teacher-message-history-counts{justify-content:flex-start}
 }
 @media(max-width:430px){.teacher-workspace-tabs{grid-template-columns:repeat(5,minmax(0,1fr));gap:.2rem}.teacher-workspace-tab{min-height:40px;padding:.4rem}.teacher-workspace-tab i{font-size:.92rem}.teacher-workspace-panel-heading{display:block}}
 @media(max-width:760px){.teacher-workspace-tab.show-mobile-tooltip::after,.teacher-workspace-tab.show-mobile-tooltip::before{opacity:1;visibility:visible}.teacher-workspace-tab.show-mobile-tooltip::after{transform:translate(-50%,0)}.teacher-workspace-tab.show-mobile-tooltip::before{transform:translateX(-50%)}.teacher-workspace-tab:first-child.show-mobile-tooltip::after,.teacher-workspace-tab:last-child.show-mobile-tooltip::after{transform:translate(0,0)}}
