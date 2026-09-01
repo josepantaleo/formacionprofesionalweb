@@ -7480,54 +7480,99 @@
                       </button>
 
                       <div class="code-playground">
-                          <div class="editor-container">
-                              <div class="editor-header">
-                                  <span><i class="fa-solid fa-code"></i> Editor de Código JS (Tu Resolución)</span>
-                                  <span>JavaScript (ES6)</span>
-                              </div>
-                              <label class="sr-only" for="editor-${sec.id}">Código para ${sec.title}</label>
-                              <textarea id="editor-${sec.id}" class="code-editor" aria-label="Código para ${sec.title}" spellcheck="false" autocapitalize="off" autocomplete="off" ${isFinalized ? 'disabled' : ''}>${savedCode}</textarea>
+                          <div class="student-workflow-guide" aria-label="Pasos para resolver el desafío">
+                              <span><strong>1</strong> Leé la consigna</span>
+                              <span><strong>2</strong> Programá una parte</span>
+                              <span><strong>3</strong> Ejecutá y revisá</span>
+                              <span><strong>4</strong> Pedí una pista si la necesitás</span>
                           </div>
-
-                          <div class="btn-group">
-                              <button class="btn btn-primary" id="btn-run-${sec.id}" onclick="ejecutarCodigo('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
-                                  <i class="fa-solid fa-play"></i> Ejecutar y Probar
-                              </button>
-                              <button class="btn btn-preview" id="btn-preview-${sec.id}" onclick="previsualizarNotaIA('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
-                                  <i class="fa-solid fa-star-half-stroke"></i> Consultar Nota Previa (${3 - contadorPrevisualizaciones[sec.id]} usos)
-                              </button>
-                              <button class="btn btn-ai" id="btn-ai-${sec.id}" onclick="resolverYCompararIA('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
-                                  <i class="fa-solid fa-robot"></i> Resolución y Comparativa IA
-                              </button>
-                              <button class="btn btn-secondary" id="btn-reset-${sec.id}" onclick="restablecerCodigo('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
-                                  <i class="fa-solid fa-rotate-left"></i> Restablecer
-                              </button>
-                          </div>
-
-                          <div class="console-output" id="console-${sec.id}" role="status" aria-live="polite">${isFinalized ? '// Actividad finalizada y bloqueada.' : '// Pulsa "Ejecutar y Probar" para ver la consola...'}</div>
-
-                          <div class="ai-chat-box" id="ai-chat-${sec.id}">
-                              <div class="ai-chat-header">
-                                  <div class="ai-chat-title"><i class="fa-solid fa-comments"></i> Chat de pistas por módulo</div>
-                                  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.2rem">
-                                      <span class="ai-chat-note">${window.firebaseAIRealConfigurada ? "Tutor IA protegido por Firebase App Check" : "Tutor local activo · IA real pendiente de configurar"}</span>
-                                      <span class="ai-chat-sync saved" id="ai-chat-sync-${sec.id}"><i class="fa-solid fa-cloud"></i> Sincronizado</span>
+                          <div class="student-coding-workspace">
+                              <section class="student-code-column" aria-label="Editor y consola">
+                                  <div class="student-code-toolbar">
+                                      <div>
+                                          <strong><i class="fa-solid fa-code"></i> Tu solución</strong>
+                                          <span id="editor-metrics-${sec.id}">0 líneas · 0 caracteres</span>
+                                      </div>
+                                      <div class="student-code-toolbar-actions">
+                                          <span class="student-editor-state ${isFinalized ? 'success' : 'idle'}" id="editor-state-${sec.id}">
+                                              <i class="fa-solid ${isFinalized ? 'fa-circle-check' : 'fa-pen'}"></i>
+                                              ${isFinalized ? 'Actividad entregada' : 'Listo para programar'}
+                                          </span>
+                                          <button class="student-focus-toggle" type="button" onclick="alternarModoEnfoque('${sec.id}', this)" aria-pressed="false" title="Ocultar temporalmente teoría y ayudas">
+                                              <i class="fa-solid fa-expand"></i><span>Enfoque</span>
+                                          </button>
+                                      </div>
                                   </div>
-                              </div>
-                              <div class="ai-chat-messages" id="ai-chat-messages-${sec.id}" aria-live="polite"></div>
-                              <div class="ai-chat-quick-actions">
-                                  <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'consigna')"><i class="fa-solid fa-list-check"></i> Entender consigna</button>
-                                  <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'revisar')"><i class="fa-solid fa-code"></i> Revisar mi código</button>
-                                  <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'pista')"><i class="fa-solid fa-lightbulb"></i> Dame una pista</button>
-                                  <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'error')"><i class="fa-solid fa-bug"></i> Ayúdame con el error</button>
-                                  <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'siguiente')"><i class="fa-solid fa-forward"></i> ¿Qué reviso ahora?</button>
-                                  <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'ejemplo')"><i class="fa-solid fa-flask"></i> Proponer prueba</button>
-                                  <button class="btn btn-chat-danger" type="button" onclick="limpiarChatIA('${sec.id}')"><i class="fa-solid fa-trash-can"></i> Limpiar chat</button>
-                              </div>
-                              <form class="ai-chat-composer" onsubmit="enviarMensajeIA(event, '${sec.id}')">
-                                  <input class="ai-chat-input" id="ai-chat-input-${sec.id}" maxlength="240" autocomplete="off" placeholder="Escribí tu duda sobre este módulo..." aria-label="Pregunta a la IA sobre ${sec.title}" ${isFinalized ? 'disabled' : ''}>
-                                  <button class="btn btn-ai" type="submit" ${isFinalized ? 'disabled' : ''}><i class="fa-solid fa-paper-plane"></i> Enviar</button>
-                              </form>
+                                  <div class="student-ai-editor-actions" aria-label="Ayuda de programación con IA">
+                                      <button type="button" data-ai-editor-action class="student-ai-editor-action" onclick="solicitarAyudaEditor('${sec.id}', 'consigna', this)" ${isFinalized ? 'disabled' : ''} title="Organizar la consigna antes de programar">
+                                          <i class="fa-solid fa-list-ol"></i><span>Planificar</span>
+                                      </button>
+                                      <button type="button" data-ai-editor-action class="student-ai-editor-action" onclick="solicitarAyudaEditor('${sec.id}', 'error', this)" ${isFinalized ? 'disabled' : ''} title="Analizar el error de la última ejecución">
+                                          <i class="fa-solid fa-bug"></i><span>Explicar error</span>
+                                      </button>
+                                      <button type="button" data-ai-editor-action class="student-ai-editor-action" onclick="solicitarAyudaEditor('${sec.id}', 'revisar', this)" ${isFinalized ? 'disabled' : ''} title="Revisar el código actual sin mostrar la solución">
+                                          <i class="fa-solid fa-magnifying-glass-code"></i><span>Revisar código</span>
+                                      </button>
+                                      <button type="button" data-ai-editor-action class="student-ai-editor-action" onclick="solicitarAyudaEditor('${sec.id}', 'ejemplo', this)" ${isFinalized ? 'disabled' : ''} title="Proponer datos para probar el programa">
+                                          <i class="fa-solid fa-flask"></i><span>Crear prueba</span>
+                                      </button>
+                                  </div>
+
+                                  <div class="editor-container">
+                                      <div class="editor-header">
+                                          <span><i class="fa-solid fa-file-code"></i> Editor JavaScript</span>
+                                          <span>ES6</span>
+                                      </div>
+                                      <label class="sr-only" for="editor-${sec.id}">Código para ${sec.title}</label>
+                                      <textarea id="editor-${sec.id}" class="code-editor" aria-label="Código para ${sec.title}" spellcheck="false" autocapitalize="off" autocomplete="off" ${isFinalized ? 'disabled' : ''}>${savedCode}</textarea>
+                                  </div>
+
+                                  <div class="student-run-actions">
+                                      <button class="btn btn-primary student-run-primary" id="btn-run-${sec.id}" onclick="ejecutarCodigo('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
+                                          <i class="fa-solid fa-play"></i> Ejecutar código
+                                      </button>
+                                      <button class="btn btn-preview" id="btn-preview-${sec.id}" onclick="previsualizarNotaIA('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
+                                          <i class="fa-solid fa-star-half-stroke"></i> Nota previa (${3 - contadorPrevisualizaciones[sec.id]})
+                                      </button>
+                                      <button class="btn btn-ai" id="btn-ai-${sec.id}" onclick="resolverYCompararIA('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
+                                          <i class="fa-solid fa-flag-checkered"></i> Entregar y comparar
+                                      </button>
+                                      <button class="btn btn-secondary" id="btn-reset-${sec.id}" onclick="restablecerCodigo('${sec.id}')" ${isFinalized ? 'disabled' : ''} title="Volver al código inicial">
+                                          <i class="fa-solid fa-rotate-left"></i> Restablecer
+                                      </button>
+                                  </div>
+
+                                  <div class="student-console-panel">
+                                      <div class="student-console-header">
+                                          <strong><i class="fa-solid fa-terminal"></i> Consola</strong>
+                                          <small>Resultado de la última ejecución</small>
+                                      </div>
+                                      <div class="console-output" id="console-${sec.id}" role="status" aria-live="polite">${isFinalized ? '// Actividad finalizada y bloqueada.' : '// Ejecutá el código para ver aquí los resultados o errores.'}</div>
+                                  </div>
+                              </section>
+
+                              <aside class="student-ai-column" aria-label="Tutor de programación">
+                                  <div class="ai-chat-box" id="ai-chat-${sec.id}">
+                                      <div class="ai-chat-header">
+                                          <div class="ai-chat-title"><i class="fa-solid fa-graduation-cap"></i> Tutor de programación</div>
+                                          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.2rem">
+                                              <span class="ai-chat-note">${window.firebaseAIRealConfigurada ? "IA segura conectada" : "Tutor local activo"}</span>
+                                              <span class="ai-chat-sync saved" id="ai-chat-sync-${sec.id}"><i class="fa-solid fa-cloud"></i> Sincronizado</span>
+                                          </div>
+                                      </div>
+                                      <div class="student-ai-principle"><i class="fa-solid fa-shield-halved"></i> Te guía con pistas y preguntas. No entrega la solución completa.</div>
+                                      <div class="ai-chat-messages" id="ai-chat-messages-${sec.id}" aria-live="polite"></div>
+                                      <div class="ai-chat-quick-actions">
+                                          <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'pista')"><i class="fa-solid fa-lightbulb"></i> Nueva pista</button>
+                                          <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'siguiente')"><i class="fa-solid fa-forward"></i> Siguiente paso</button>
+                                          <button class="btn btn-chat-danger" type="button" onclick="limpiarChatIA('${sec.id}')"><i class="fa-solid fa-trash-can"></i> Limpiar</button>
+                                      </div>
+                                      <form class="ai-chat-composer" onsubmit="enviarMensajeIA(event, '${sec.id}')">
+                                          <input class="ai-chat-input" id="ai-chat-input-${sec.id}" maxlength="240" autocomplete="off" placeholder="Preguntá sobre tu código o el error..." aria-label="Pregunta a la IA sobre ${sec.title}" ${isFinalized ? 'disabled' : ''}>
+                                          <button class="btn btn-ai" type="submit" ${isFinalized ? 'disabled' : ''} title="Enviar consulta"><i class="fa-solid fa-paper-plane"></i><span>Enviar</span></button>
+                                      </form>
+                                  </div>
+                              </aside>
                           </div>
 
                           <div class="ai-feedback-box ${isFinalized ? 'active' : ''}" id="ai-feedback-${sec.id}">
@@ -7709,6 +7754,10 @@
           document.getElementById(`btn-ai-${sectionId}`).disabled = true;
           document.getElementById(`btn-reset-${sectionId}`).disabled = true;
           document.getElementById(`btn-pause-${sectionId}`).disabled = true;
+          document.querySelectorAll(`#${CSS.escape(sectionId)} [data-ai-editor-action]`).forEach(control => {
+              control.disabled = true;
+          });
+          actualizarEstadoEditorEstudiante(sectionId, "error", "Tiempo agotado");
 
           actividadesFinalizadas[sectionId] = true;
           setLocalStorage(`finalized_${sectionId}`, 'true');
@@ -7921,6 +7970,11 @@
               const el = document.getElementById(`btn-${btn}-${sectionId}`);
               if (el) el.disabled = false;
           });
+          document.querySelectorAll(`#${CSS.escape(sectionId)} [data-ai-editor-action]`).forEach(control => {
+              control.disabled = false;
+          });
+          actualizarMetricasEditor(sectionId);
+          actualizarEstadoEditorEstudiante(sectionId, "idle", "Actividad desbloqueada");
 
           const btnPreview = document.getElementById(`btn-preview-${sectionId}`);
           if (btnPreview) btnPreview.innerText = `Consultar Nota Previa (3 usos)`;
@@ -7957,6 +8011,11 @@
                   const el = document.getElementById(`btn-${btn}-${sec.id}`);
                   if (el) el.disabled = false;
               });
+              document.querySelectorAll(`#${CSS.escape(sec.id)} [data-ai-editor-action]`).forEach(control => {
+                  control.disabled = false;
+              });
+              actualizarMetricasEditor(sec.id);
+              actualizarEstadoEditorEstudiante(sec.id, "idle", "Actividad desbloqueada");
 
               const btnPreview = document.getElementById(`btn-preview-${sec.id}`);
               if (btnPreview) btnPreview.innerText = `Consultar Nota Previa (3 usos)`;
@@ -8005,6 +8064,9 @@
                   const el = document.getElementById(`btn-${btn}-${sectionId}`);
                   if (el) el.disabled = true;
               });
+              document.querySelectorAll(`#${CSS.escape(sectionId)} [data-ai-editor-action]`).forEach(control => {
+                  control.disabled = true;
+              });
 
               alert(`⏸️ Cronómetro y edición pausados por el profesor para el módulo ${sectionId}.`);
           } else {
@@ -8021,6 +8083,9 @@
                   ['run', 'preview', 'ai', 'reset'].forEach(btn => {
                       const el = document.getElementById(`btn-${btn}-${sectionId}`);
                       if (el) el.disabled = false;
+                  });
+                  document.querySelectorAll(`#${CSS.escape(sectionId)} [data-ai-editor-action]`).forEach(control => {
+                      control.disabled = false;
                   });
                   if (
                       moduloCronometroEnCurso === sectionId &&
@@ -8058,6 +8123,9 @@
                       const el = document.getElementById(`btn-${btn}-${sec.id}`);
                       if (el) el.disabled = true;
                   });
+                  document.querySelectorAll(`#${CSS.escape(sec.id)} [data-ai-editor-action]`).forEach(control => {
+                      control.disabled = true;
+                  });
               } else {
                   if (btnPause) {
                       btnPause.innerHTML = `<i class="fa-solid fa-pause"></i> Pausar (Profe)`;
@@ -8069,6 +8137,9 @@
                       ['run', 'preview', 'ai', 'reset'].forEach(btn => {
                           const el = document.getElementById(`btn-${btn}-${sec.id}`);
                           if (el) el.disabled = false;
+                      });
+                      document.querySelectorAll(`#${CSS.escape(sec.id)} [data-ai-editor-action]`).forEach(control => {
+                          control.disabled = false;
                       });
                   }
               }
@@ -8257,6 +8328,8 @@
                       if (statusIcon) statusIcon.remove();
                   }
                   actualizarProgreso();
+                  actualizarMetricasEditor(sectionId);
+                  actualizarEstadoEditorEstudiante(sectionId, "idle", "Código inicial restaurado");
               }
           }
       }
@@ -8362,6 +8435,78 @@
           }
       }
 
+      function actualizarMetricasEditor(sectionId) {
+          const editor = document.getElementById(`editor-${sectionId}`);
+          const indicador = document.getElementById(`editor-metrics-${sectionId}`);
+          if (!editor || !indicador) return;
+          const texto = editor.value || "";
+          const lineas = texto ? texto.split(/\r?\n/).length : 0;
+          indicador.textContent = `${lineas} línea${lineas === 1 ? '' : 's'} · ${texto.length} caracteres`;
+      }
+
+      function actualizarEstadoEditorEstudiante(sectionId, estado = "idle", texto = "") {
+          const indicador = document.getElementById(`editor-state-${sectionId}`);
+          if (!indicador) return;
+          const configuracion = {
+              idle: ["fa-pen", texto || "Listo para programar"],
+              dirty: ["fa-circle", texto || "Cambios sin ejecutar"],
+              running: ["fa-spinner fa-spin", texto || "Ejecutando..."],
+              success: ["fa-circle-check", texto || "Ejecución correcta"],
+              error: ["fa-triangle-exclamation", texto || "Revisá el error"],
+              ai: ["fa-wand-magic-sparkles", texto || "La IA está analizando"]
+          };
+          const [icono, etiqueta] = configuracion[estado] || configuracion.idle;
+          indicador.className = `student-editor-state ${estado}`;
+          indicador.innerHTML = `<i class="fa-solid ${icono}"></i> ${escaparTextoAnalista(etiqueta)}`;
+      }
+
+      function alternarModoEnfoque(sectionId, boton = null) {
+          const seccion = document.getElementById(sectionId);
+          if (!seccion) return;
+          const activo = !seccion.classList.contains("student-focus-mode");
+          seccion.classList.toggle("student-focus-mode", activo);
+          if (boton) {
+              boton.setAttribute("aria-pressed", String(activo));
+              boton.classList.toggle("active", activo);
+              boton.innerHTML = activo
+                  ? '<i class="fa-solid fa-compress"></i><span>Ver todo</span>'
+                  : '<i class="fa-solid fa-expand"></i><span>Enfoque</span>';
+              boton.title = activo
+                  ? "Volver a mostrar teoría y herramientas de comprensión"
+                  : "Ocultar temporalmente teoría y ayudas";
+          }
+          document.querySelector(`#${CSS.escape(sectionId)} .student-coding-workspace`)?.scrollIntoView({
+              behavior: "smooth",
+              block: "start"
+          });
+      }
+
+      async function solicitarAyudaEditor(sectionId, modo, boton = null) {
+          if (!claseHabilitada || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
+          const controles = [...document.querySelectorAll(`#${CSS.escape(sectionId)} [data-ai-editor-action]`)];
+          controles.forEach(control => control.disabled = true);
+          boton?.classList.add("is-loading");
+          actualizarEstadoEditorEstudiante(sectionId, "ai", "Analizando tu código");
+          try {
+              await pedirPistaIA(sectionId, modo);
+              const chat = document.getElementById(`ai-chat-${sectionId}`);
+              chat?.classList.add("is-attention");
+              setTimeout(() => chat?.classList.remove("is-attention"), 1400);
+              document.getElementById(`ai-chat-input-${sectionId}`)?.focus({ preventScroll: true });
+              const ejecucion = historialResultados[sectionId];
+              actualizarEstadoEditorEstudiante(
+                  sectionId,
+                  ejecucion?.exito === true ? "success" : ejecucion?.exito === false ? "error" : "dirty",
+                  "Pista disponible en el tutor"
+              );
+          } finally {
+              boton?.classList.remove("is-loading");
+              controles.forEach(control => {
+                  control.disabled = Boolean(actividadesFinalizadas[sectionId] || modulosPausados[sectionId]);
+              });
+          }
+      }
+
       async function ejecutarCodigo(sectionId) {
           if (!claseHabilitada) return;
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
@@ -8371,6 +8516,7 @@
           if (!editor || !consoleBox) return;
           const code = editor.value;
 
+          actualizarEstadoEditorEstudiante(sectionId, "running");
           consoleBox.style.color = "#fbbf24";
           consoleBox.textContent = "// Ejecutando en un entorno aislado...";
 
@@ -8383,6 +8529,11 @@
           consoleBox.innerText = logs.join("\n");
 
           const esExitoso = Boolean(resultado.ok);
+          actualizarEstadoEditorEstudiante(
+              sectionId,
+              esExitoso ? "success" : "error",
+              esExitoso ? "Código ejecutado correctamente" : "La consola encontró un error"
+          );
 
           if(!historialResultados[sectionId]) historialResultados[sectionId] = {};
           historialResultados[sectionId].codigo = code;
@@ -9688,6 +9839,10 @@
                   const el = document.getElementById(`btn-${btn}-${sectionId}`);
                   if (el) el.disabled = true;
               });
+              document.querySelectorAll(`#${CSS.escape(sectionId)} [data-ai-editor-action]`).forEach(control => {
+                  control.disabled = true;
+              });
+              actualizarEstadoEditorEstudiante(sectionId, "success", "Código entregado");
 
               if (cronometrosActivos[sectionId]) {
                   clearInterval(cronometrosActivos[sectionId]);
@@ -9749,6 +9904,8 @@
 
       function configurarEditores() {
           document.querySelectorAll('.code-editor').forEach(textarea => {
+              const sectionIdInicial = textarea.id.replace('editor-', '');
+              actualizarMetricasEditor(sectionIdInicial);
               textarea.addEventListener('click', (e) => {
                   const secId = e.target.id.replace('editor-', '');
                   iniciarCronometro(secId);
@@ -9757,6 +9914,8 @@
                   const secId = e.target.id.replace('editor-', '');
                   if (!actividadesFinalizadas[secId] && !modulosPausados[secId]) {
                       setLocalStorage(`draft_${e.target.id}`, e.target.value);
+                      actualizarMetricasEditor(secId);
+                      actualizarEstadoEditorEstudiante(secId, "dirty");
                   }
               });
               textarea.addEventListener('keydown', function(e) {
@@ -9767,6 +9926,9 @@
                       this.value = this.value.substring(0, start) + "    " + this.value.substring(end);
                       this.selectionStart = this.selectionEnd = start + 4;
                       setLocalStorage(`draft_${this.id}`, this.value);
+                      const secId = this.id.replace('editor-', '');
+                      actualizarMetricasEditor(secId);
+                      actualizarEstadoEditorEstudiante(secId, "dirty");
                   }
               });
           });
