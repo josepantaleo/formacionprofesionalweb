@@ -2956,6 +2956,14 @@
               }
             }));
           }
+          if (datos.mensajeDocenteActual?.id) {
+            window.dispatchEvent(new CustomEvent("mensaje-docente-compatible", {
+              detail: {
+                ...datos.mensajeDocenteActual,
+                canal: "documento-estudiante"
+              }
+            }));
+          }
         }, error => {
           console.error("Error escuchando reinicio de cambios de pestaña:", error);
         });
@@ -4469,13 +4477,26 @@
       };
 
       window.enviarMensajeDocenteFirebase = async function(uids = [], mensaje = {}) {
+        window.ultimoErrorMensajeDocente = null;
         const autorizado = await window.autorizarDocenteFirebase?.();
-        if (!autorizado) return { ok: false, enviados: 0 };
+        if (!autorizado) {
+          window.ultimoErrorMensajeDocente = {
+            code: "docente-no-autorizado",
+            message: "No se pudo validar una sesión docente autorizada."
+          };
+          return { ok: false, enviados: 0 };
+        }
         const { user, database } = contextoDocenteFirebase();
         const destinatarios = [...new Set((Array.isArray(uids) ? uids : [])
           .map(uid => String(uid || "").trim())
           .filter(Boolean))];
-        if (!user || !database || !destinatarios.length) return { ok: false, enviados: 0 };
+        if (!user || !database || !destinatarios.length) {
+          window.ultimoErrorMensajeDocente = {
+            code: "destinatarios-no-disponibles",
+            message: "No hay una sesión Firebase o destinatarios válidos."
+          };
+          return { ok: false, enviados: 0 };
+        }
         const texto = (valor, maximo) => String(valor || "").trim().slice(0, maximo);
         const tiposPermitidos = ["todos", "grupo", "individual"];
         const prioridadesPermitidas = ["normal", "urgente"];
@@ -4486,7 +4507,13 @@
           ? mensaje.prioridad
           : "normal";
         const contenido = texto(mensaje.contenido, 1000);
-        if (!contenido) return { ok: false, enviados: 0 };
+        if (!contenido) {
+          window.ultimoErrorMensajeDocente = {
+            code: "mensaje-vacio",
+            message: "El contenido del mensaje está vacío."
+          };
+          return { ok: false, enviados: 0 };
+        }
         const mensajeId = `${Date.now()}-${user.uid}`.replace(/[^a-zA-Z0-9._-]/g, "_");
         const responsable = user.email || user.displayName || user.uid;
         let enviados = 0;
@@ -4512,14 +4539,51 @@
             await lote.commit();
             enviados += Math.min(400, destinatarios.length - inicio);
           }
-          return { ok: true, enviados, mensajeId };
+          return { ok: true, enviados, mensajeId, canal: "personal" };
         } catch (error) {
           console.error("Error enviando mensaje docente:", error);
           window.ultimoErrorMensajeDocente = {
             code: error?.code || "",
             message: error?.message || ""
           };
-          return { ok: false, enviados };
+          if (enviados > 0) return { ok: false, enviados };
+          try {
+            for (let inicio = 0; inicio < destinatarios.length; inicio += 400) {
+              const loteCompatible = writeBatch(database);
+              destinatarios.slice(inicio, inicio + 400).forEach(uid => {
+                loteCompatible.set(doc(database, "estudiantes", uid), {
+                  mensajeDocenteActual: {
+                    id: mensajeId,
+                    estudianteUid: uid,
+                    tipoDestino,
+                    destinoDescripcion: texto(mensaje.destinoDescripcion, 200),
+                    asunto: texto(mensaje.asunto, 120),
+                    contenido,
+                    prioridad,
+                    docente: responsable,
+                    docenteUid: user.uid,
+                    enviadoEn: serverTimestamp()
+                  }
+                }, { merge: true });
+              });
+              await loteCompatible.commit();
+            }
+            window.ultimoErrorMensajeDocente = null;
+            return {
+              ok: true,
+              enviados: destinatarios.length,
+              mensajeId,
+              canal: "documento-estudiante",
+              modoCompatibilidad: true
+            };
+          } catch (errorCompatible) {
+            console.error("Error enviando mensaje docente por el canal compatible:", errorCompatible);
+            window.ultimoErrorMensajeDocente = {
+              code: errorCompatible?.code || error?.code || "",
+              message: errorCompatible?.message || error?.message || ""
+            };
+            return { ok: false, enviados: 0 };
+          }
         }
       };
 
@@ -4532,7 +4596,7 @@
         const referencia = collection(db, "estudiantes", user.uid, "mensajesDocente");
         window.__mensajesDocenteEstudianteUnsubscribe = onSnapshot(referencia, snapshot => {
           const mensajes = snapshot.docs
-            .map(item => ({ id: item.id, ...item.data() }))
+            .map(item => ({ id: item.id, ...item.data(), canal: "personal" }))
             .filter(item => item.leido !== true)
             .sort((a, b) => {
               const fechaA = a.enviadoEn?.toMillis ? a.enviadoEn.toMillis() : new Date(a.enviadoEn || 0).getTime();
