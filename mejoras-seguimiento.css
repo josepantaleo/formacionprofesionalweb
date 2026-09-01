@@ -2469,6 +2469,159 @@ body.teacher-light-mode .teacher-filter-group h4{
 .teacher-detail-empty[hidden]{
   display:none!important;
 }
+
+.student-actions-tools{
+  display:grid;
+  grid-template-columns:minmax(200px,1fr) minmax(130px,.6fr) minmax(150px,.7fr);
+  gap:.55rem;
+  margin-bottom:.75rem;
+}
+.student-actions-tools label{
+  display:grid;
+  gap:.25rem;
+  min-width:0;
+  color:var(--text-muted);
+  font-size:.66rem;
+  font-weight:800;
+}
+.student-actions-tools input,
+.student-actions-tools select{
+  width:100%;
+  min-width:0;
+  min-height:36px;
+  box-sizing:border-box;
+}
+.student-actions-search>div{
+  position:relative;
+}
+.student-actions-search i{
+  position:absolute;
+  top:50%;
+  left:.6rem;
+  color:#7dd3fc;
+  transform:translateY(-50%);
+  pointer-events:none;
+}
+.student-actions-search input{
+  padding-left:1.9rem;
+}
+.student-actions-results{
+  min-height:1.1rem;
+  margin-bottom:.55rem;
+  color:#bae6fd;
+  font-size:.7rem;
+  font-weight:800;
+}
+.student-actions-results:empty{
+  display:none;
+}
+.student-actions-grid{
+  display:grid!important;
+  gap:.8rem!important;
+}
+.student-action-group{
+  min-width:0;
+  padding:.65rem;
+  border:1px solid rgba(148,163,184,.2);
+  border-radius:7px;
+  background:rgba(15,23,42,.32);
+}
+.student-action-group h4{
+  margin:0 0 .45rem;
+  color:#7dd3fc;
+  font-size:.75rem;
+}
+.student-action-group-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:.5rem;
+}
+.student-action-group-grid>button[hidden]{
+  display:none!important;
+}
+.teacher-analyst-review{
+  margin:.8rem 0;
+  padding:.8rem;
+  border:1px solid rgba(34,197,94,.38);
+  border-radius:8px;
+  background:rgba(22,101,52,.09);
+}
+.teacher-analyst-review-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:.8rem;
+  margin-bottom:.65rem;
+}
+.teacher-analyst-review h4{
+  margin:0;
+  color:#bbf7d0;
+}
+.teacher-analyst-review-header p{
+  margin:.25rem 0 0;
+  color:var(--text-muted);
+  font-size:.73rem;
+}
+.teacher-analyst-review-score{
+  display:grid;
+  grid-template-columns:auto auto;
+  gap:.15rem .4rem;
+  min-width:150px;
+  padding:.45rem .55rem;
+  border:1px solid rgba(34,197,94,.28);
+  border-radius:6px;
+  background:rgba(15,23,42,.35);
+  font-size:.68rem;
+}
+.teacher-analyst-review-score strong{
+  color:#86efac;
+}
+.teacher-analyst-review-score span{
+  color:var(--text-muted);
+}
+.teacher-analyst-review-score small{
+  grid-column:1/-1;
+  color:#cbd5e1;
+}
+.teacher-analyst-review-list{
+  display:grid;
+  gap:.5rem;
+}
+.teacher-analyst-empty{
+  display:flex;
+  align-items:center;
+  gap:.45rem;
+  padding:.75rem;
+  border:1px dashed rgba(148,163,184,.3);
+  border-radius:6px;
+  color:var(--text-muted);
+  font-size:.75rem;
+}
+body.teacher-light-mode .student-action-group,
+body.teacher-light-mode .student-actions-tools input,
+body.teacher-light-mode .student-actions-tools select,
+body.teacher-light-mode .teacher-analyst-review,
+body.teacher-light-mode .teacher-analyst-review-score{
+  background:#fff;
+  border-color:#cbd5e1;
+}
+body.teacher-light-mode .student-action-group h4,
+body.teacher-light-mode .teacher-analyst-review h4{
+  color:#075985;
+}
+@media(max-width:620px){
+  .student-actions-tools,
+  .student-action-group-grid{
+    grid-template-columns:1fr;
+  }
+  .teacher-analyst-review-header{
+    display:grid;
+  }
+  .teacher-analyst-review-score{
+    width:100%;
+    box-sizing:border-box;
+  }
+}
 .teacher-detail-empty i{
   color:#7dd3fc;
   font-size:1.25rem;

@@ -4727,13 +4727,13 @@
           </button>
         </section>
         <div class="teacher-icon-legend" role="note" aria-label="Leyenda de iconos del panel docente">
-          <strong>Leyenda de acciones:</strong>
-          <span><i class="fa-solid fa-eye" aria-hidden="true"></i> Ver todo</span>
-          <span><i class="fa-solid fa-pause" aria-hidden="true"></i> Pausar/Reanudar</span>
-          <span><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i> Reiniciar a 40:00</span>
-          <span><i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reiniciar pestañas</span>
-          <span><i class="fa-solid fa-comments" aria-hidden="true"></i> Borrar IA</span>
-          <span><i class="fa-solid fa-trash-can" aria-hidden="true"></i> Eliminar estudiante</span>
+          <strong>Leyenda del panel:</strong>
+          <span><i class="fa-solid fa-sliders" aria-hidden="true"></i> Abrir acciones</span>
+          <span><i class="fa-solid fa-signal" aria-hidden="true"></i> En línea</span>
+          <span><i class="fa-solid fa-lock" aria-hidden="true"></i> Pantalla bloqueada</span>
+          <span><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i> Alerta IA</span>
+          <span><i class="fa-solid fa-circle-minus" aria-hidden="true"></i> Descuento aplicado</span>
+          <span><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Nota confirmada</span>
         </div>
         <div class="teacher-section-title"><i class="fa-solid fa-filter"></i> Filtros y orden</div>
         <div id="filtrosPanelProfesor" class="teacher-filter-workspace">
@@ -5144,11 +5144,38 @@
           <span class="student-actions-count">Acciones disponibles</span>
         </div>
         <div class="student-actions-legend" role="note" aria-label="Leyenda de acciones">
-          <span><i class="fa-solid fa-eye"></i> Información</span>
-          <span class="legend-control"><i class="fa-solid fa-clock"></i> Cronómetro</span>
-          <span class="legend-screen"><i class="fa-solid fa-shield-halved"></i> Pantalla</span>
+          <span><i class="fa-solid fa-book-open"></i> Evaluación</span>
+          <span><i class="fa-solid fa-clock-rotate-left"></i> Historiales</span>
+          <span class="legend-control"><i class="fa-solid fa-sliders"></i> Control de clase</span>
+          <span class="legend-screen"><i class="fa-solid fa-video"></i> Comunicación</span>
           <span class="legend-danger"><i class="fa-solid fa-triangle-exclamation"></i> Acción crítica</span>
         </div>
+        <div class="student-actions-tools">
+          <label class="student-actions-search">
+            <span>Buscar acción</span>
+            <div><i class="fa-solid fa-magnifying-glass"></i><input id="filtroAccionesEstudiante" type="search" placeholder="Ej.: nota, pantalla o Jitsi" oninput="filtrarOrdenarAccionesEstudiante()"></div>
+          </label>
+          <label>
+            <span>Categoría</span>
+            <select id="categoriaAccionesEstudiante" onchange="filtrarOrdenarAccionesEstudiante()">
+              <option value="">Todas</option>
+              <option value="evaluacion">Evaluación</option>
+              <option value="historiales">Historiales</option>
+              <option value="control">Control de clase</option>
+              <option value="comunicacion">Comunicación</option>
+              <option value="criticas">Críticas</option>
+            </select>
+          </label>
+          <label>
+            <span>Ordenar</span>
+            <select id="ordenAccionesEstudiante" onchange="filtrarOrdenarAccionesEstudiante()">
+              <option value="recomendado">Orden recomendado</option>
+              <option value="az">Nombre A-Z</option>
+              <option value="za">Nombre Z-A</option>
+            </select>
+          </label>
+        </div>
+        <div class="student-actions-results" id="accionesEstudianteResultados" aria-live="polite"></div>
         <div id="accionesEstudianteContenido" class="student-actions-grid"></div>
       </div>
     </div>
@@ -11740,6 +11767,36 @@
           </div>`;
       }
 
+      function renderAnalistaViabilidadExcelenciaProfesor(analista) {
+          if (!analista || !Array.isArray(analista.preguntas) || !analista.preguntas.length) {
+              return `<div class="teacher-analyst-empty">
+                  <i class="fa-solid fa-circle-info"></i>
+                  <span>El estudiante todavía no entregó respuestas al Analista de Viabilidad y Excelencia.</span>
+              </div>`;
+          }
+          const porcentaje = Number.isFinite(Number(analista.porcentaje))
+              ? `${Number(analista.porcentaje)}%`
+              : 'Pendiente';
+          return `<section class="teacher-analyst-review">
+              <div class="teacher-analyst-review-header">
+                  <div>
+                      <h4><i class="fa-solid fa-user-check"></i> Analista de Viabilidad y Excelencia</h4>
+                      <p>Preguntas respondidas por el estudiante, opciones seleccionadas y respuestas esperadas.</p>
+                  </div>
+                  <div class="teacher-analyst-review-score">
+                      <strong>${escapeHtml(analista.viabilidad || 'Pendiente')}</strong>
+                      <span>Viabilidad</span>
+                      <strong>${escapeHtml(analista.excelencia || 'Pendiente')}</strong>
+                      <span>Excelencia</span>
+                      <small>${Number(analista.correctas || 0)}/${Number(analista.total || analista.preguntas.length)} correctas · ${porcentaje}</small>
+                  </div>
+              </div>
+              <div class="teacher-analyst-review-list">
+                  ${analista.preguntas.map((pregunta, indice) => renderPreguntaProfesor(pregunta, indice)).join('')}
+              </div>
+          </section>`;
+      }
+
       function renderDetalleEvaluacionCodigoProfesor(evaluacionCodigo, salida, sec) {
           if (!evaluacionCodigo) {
               return `<div class="teacher-full-evaluation is-empty">
@@ -11985,8 +12042,7 @@
                               : '<div style="color:var(--text-muted);margin-top:.35rem;">No hay consultas guardadas para este módulo.</div>'}
                       </div>
                       <div style="margin-top:1rem">
-                          <h4>Preguntas y respuestas (${preguntas.length})</h4>
-                          ${preguntas.length ? preguntas.map(renderPreguntaProfesor).join('') : '<p style="color:var(--text-muted);margin-top:.5rem;">El estudiante todavía no entregó las preguntas de esta actividad.</p>'}
+                          ${renderAnalistaViabilidadExcelenciaProfesor(r.analista)}
                       </div>
                   </div>
               </details>`;
@@ -12713,6 +12769,47 @@
           modal?.style.removeProperty('display');
       }
 
+      function clasificarAccionEstudiante(boton) {
+          const texto = String(boton?.textContent || '').toLowerCase();
+          if (/detalle|descuento/.test(texto)) return 'evaluacion';
+          if (/historial|pestaña|pesta/.test(texto)) return 'historiales';
+          if (/jitsi|llamada|video/.test(texto)) return 'comunicacion';
+          if (/eliminar|borrar|reiniciar contador/.test(texto)) return 'criticas';
+          return 'control';
+      }
+
+      function filtrarOrdenarAccionesEstudiante() {
+          const contenedor = document.getElementById('accionesEstudianteContenido');
+          if (!contenedor) return;
+          const texto = String(document.getElementById('filtroAccionesEstudiante')?.value || '').trim().toLowerCase();
+          const categoria = String(document.getElementById('categoriaAccionesEstudiante')?.value || '');
+          const orden = String(document.getElementById('ordenAccionesEstudiante')?.value || 'recomendado');
+          const botones = [...contenedor.querySelectorAll(':scope > button')];
+          let visibles = 0;
+          botones.forEach((boton, indice) => {
+              const etiqueta = String(boton.textContent || '').replace(/\s+/g, ' ').trim();
+              const clase = clasificarAccionEstudiante(boton);
+              boton.dataset.accionCategoria = clase;
+              boton.dataset.accionOrden = String(indice);
+              const mostrar = (!texto || etiqueta.toLowerCase().includes(texto)) && (!categoria || categoria === clase);
+              boton.hidden = !mostrar;
+              if (mostrar) visibles++;
+          });
+          if (orden !== 'recomendado') {
+              botones.sort((a, b) => {
+                  const etiquetaA = String(a.textContent || '').trim();
+                  const etiquetaB = String(b.textContent || '').trim();
+                  return orden === 'za'
+                      ? etiquetaB.localeCompare(etiquetaA, 'es')
+                      : etiquetaA.localeCompare(etiquetaB, 'es');
+              }).forEach(boton => contenedor.appendChild(boton));
+          }
+          const resultado = document.getElementById('accionesEstudianteResultados');
+          if (resultado) resultado.textContent = visibles
+              ? `${visibles} acción${visibles === 1 ? '' : 'es'} disponible${visibles === 1 ? '' : 's'}`
+              : 'No hay acciones que coincidan con los filtros.';
+      }
+
       let indiceEditorDescuentoEstudiante = null;
 
       function cerrarEditorDescuentoEstudiante() {
@@ -12859,6 +12956,13 @@
             <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i><span>Reiniciar contador de pestañas</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i><span>Borrar consultas IA</span></button>
             <button class="btn student-action-danger" onclick="cerrarAccionesEstudiante();eliminarEstudianteProfesor(estudiantesProfesor[${indice}])"><i class="fa-solid fa-trash-can"></i><span>Eliminar estudiante</span></button>`;
+          const filtroAcciones = document.getElementById('filtroAccionesEstudiante');
+          const categoriaAcciones = document.getElementById('categoriaAccionesEstudiante');
+          const ordenAcciones = document.getElementById('ordenAccionesEstudiante');
+          if (filtroAcciones) filtroAcciones.value = '';
+          if (categoriaAcciones) categoriaAcciones.value = '';
+          if (ordenAcciones) ordenAcciones.value = 'recomendado';
+          filtrarOrdenarAccionesEstudiante();
           modal.style.removeProperty('display');
           modal.classList.add('active');
           modal.querySelector('.student-actions-modal-box')?.focus({ preventScroll: true });
