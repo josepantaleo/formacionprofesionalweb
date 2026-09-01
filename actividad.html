@@ -3854,7 +3854,9 @@
           error => console.error("Error escuchando configuración Jitsi:", error)
         );
       };
+      const JITSI_HISTORY_ENABLED = false;
       window.guardarHistorialJitsiFirebase = async function(llamada = {}) {
+        if (!JITSI_HISTORY_ENABLED) return true;
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
         const database = contexto.database;
@@ -3903,6 +3905,7 @@
         }
       };
       window.obtenerHistorialJitsiFirebase = async function() {
+        if (!JITSI_HISTORY_ENABLED) return [];
         window.ultimoErrorHistorialJitsi = null;
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
@@ -3929,6 +3932,7 @@
         }
       };
       window.buscarLlamadasJitsiAntiguasFirebase = async function(opciones = {}) {
+        if (!JITSI_HISTORY_ENABLED) return { llamadas: [], antiguedadHoras: 0 };
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
         const database = contexto.database;
@@ -3955,6 +3959,7 @@
         }
       };
       window.eliminarLlamadasJitsiAntiguasFirebase = async function(llamadas = []) {
+        if (!JITSI_HISTORY_ENABLED) return { eliminadas: 0 };
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
         const database = contexto.database;
@@ -4555,12 +4560,6 @@
             <button class="btn btn-secondary" id="btnConfigurarDuracionJitsi" type="button" onclick="abrirConfiguracionDuracionJitsi('individual')" title="Configurar la duración de las llamadas Jitsi individuales">
               <i class="fa-solid fa-hourglass-half"></i> Jitsi individual: <strong id="duracionJitsiProfesorValor">5</strong> min
             </button>
-            <button class="btn btn-secondary" id="btnHistorialJitsi" type="button" onclick="abrirHistorialJitsiProfesor()" title="Consultar llamadas e invitaciones Jitsi">
-              <i class="fa-solid fa-clock-rotate-left"></i> Historial Jitsi
-            </button>
-            <button class="btn btn-warning" id="btnLimpiarHistorialJitsi" type="button" onclick="abrirLimpiezaHistorialJitsi()" title="Revisar y limpiar documentos Jitsi antiguos">
-              <i class="fa-solid fa-broom"></i> Limpiar Jitsi antiguo
-            </button>
             <span class="jitsi-live-summary" id="resumenJitsiProfesor" title="Estado de la llamada Jitsi activa">
               <i class="fa-solid fa-video"></i><strong>0</strong><span>conectados</span>
             </span>
@@ -4631,13 +4630,26 @@
           <span><i class="fa-solid fa-trash-can" aria-hidden="true"></i> Eliminar estudiante</span>
         </div>
         <div class="teacher-section-title"><i class="fa-solid fa-filter"></i> Filtros y orden</div>
-        <div id="filtrosPanelProfesor" style="display:flex;gap:.6rem;flex-wrap:wrap;margin:1rem 0;">
-          <input id="filtroProfesor" placeholder="Estudiante" aria-label="Filtrar por estudiante" style="flex:1;min-width:150px;">
-          <input id="filtroEmailProfesor" placeholder="Email" aria-label="Filtrar por email" style="flex:1;min-width:180px;">
-          <select id="filtroCursoProfesor"><option value="">Todos los cursos</option></select>
-          <select id="filtroDivisionProfesor" aria-label="Filtrar por división"><option value="">Todas las divisiones</option></select>
-          <select id="filtroTurnoProfesor"><option value="">Todos los turnos</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select>
-          <select id="filtroEstadoProfesor" aria-label="Filtrar por estado">
+        <div id="filtrosPanelProfesor" class="teacher-filter-workspace">
+          <section class="teacher-filter-group teacher-filter-search">
+            <h4><i class="fa-solid fa-magnifying-glass"></i> Búsqueda</h4>
+            <div>
+              <label>Estudiante<input id="filtroProfesor" placeholder="Nombre y apellido" aria-label="Filtrar por estudiante"></label>
+              <label>Email<input id="filtroEmailProfesor" placeholder="Correo electrónico" aria-label="Filtrar por email"></label>
+            </div>
+          </section>
+          <section class="teacher-filter-group">
+            <h4><i class="fa-solid fa-users-rectangle"></i> Curso y grupo</h4>
+            <div>
+              <label>Curso<select id="filtroCursoProfesor"><option value="">Todos los cursos</option></select></label>
+              <label>División<select id="filtroDivisionProfesor" aria-label="Filtrar por división"><option value="">Todas las divisiones</option></select></label>
+              <label>Turno<select id="filtroTurnoProfesor"><option value="">Todos los turnos</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select></label>
+            </div>
+          </section>
+          <section class="teacher-filter-group teacher-filter-academic">
+            <h4><i class="fa-solid fa-chart-line"></i> Estado y seguimiento</h4>
+            <div>
+              <label>Estado<select id="filtroEstadoProfesor" aria-label="Filtrar por estado">
             <option value="">Todos los estados</option>
             <option value="activa">Cuenta activa</option>
             <option value="solicitudes">Solicitudes pendientes</option>
@@ -4651,16 +4663,13 @@
             <option value="pendientes">Actividades pendientes</option>
             <option value="alertas">Con alertas IA</option>
             <option value="cambios">Con cambios de pestaña</option>
-          </select>
-          <button class="btn btn-secondary teacher-online-filter" id="btnSoloEnLineaProfesor" type="button" onclick="alternarFiltroSoloEnLineaProfesor()" aria-pressed="false" title="Mostrar solamente estudiantes con actividad en los últimos 2 minutos">
-            <i class="fa-solid fa-signal"></i> Solo en línea
-          </button>
-          <select id="filtroBloqueoProfesor" aria-label="Filtrar por bloqueo de pantalla">
+              </select></label>
+              <label>Pantalla<select id="filtroBloqueoProfesor" aria-label="Filtrar por bloqueo de pantalla">
             <option value="">Todos los bloqueos</option>
             <option value="bloqueados">Solo estudiantes bloqueados</option>
             <option value="activos">Solo estudiantes activos</option>
-          </select>
-          <select id="filtroProgresoProfesor" aria-label="Filtrar por rango de progreso">
+              </select></label>
+              <label>Progreso<select id="filtroProgresoProfesor" aria-label="Filtrar por rango de progreso">
             <option value="">Todo el progreso</option>
             <option value="0">0%</option>
             <option value="1-25">1–25%</option>
@@ -4668,26 +4677,31 @@
             <option value="51-75">51–75%</option>
             <option value="76-99">76–99%</option>
             <option value="100">100%</option>
-          </select>
-          <select id="filtroSalidasProfesor" aria-label="Filtrar por cambios de pestaña">
+              </select></label>
+              <label>Cambios de pestaña<select id="filtroSalidasProfesor" aria-label="Filtrar por cambios de pestaña">
             <option value="">Todos los cambios</option>
             <option value="0">Sin cambios</option>
             <option value="1">1 o más</option>
             <option value="3">3 o más</option>
             <option value="5">5 o más</option>
             <option value="10">10 o más</option>
-          </select>
-          <select id="filtroNotaProfesor" aria-label="Filtrar por nota definitiva confirmada"><option value="">Todas las notas</option><option value="sin-nota">Pendientes de confirmación</option><option value="0-3.9">0–3,9</option><option value="4-5.9">4–5,9</option><option value="6-6.9">6–6,9</option><option value="7-8.9">7–8,9</option><option value="9-10">9–10</option></select>
-          <select id="filtroDescuentoProfesor" aria-label="Filtrar por descuento de puntos">
+              </select></label>
+              <label>Nota definitiva<select id="filtroNotaProfesor" aria-label="Filtrar por nota definitiva confirmada"><option value="">Todas las notas</option><option value="sin-nota">Pendientes de confirmación</option><option value="0-3.9">0–3,9</option><option value="4-5.9">4–5,9</option><option value="6-6.9">6–6,9</option><option value="7-8.9">7–8,9</option><option value="9-10">9–10</option></select></label>
+              <label>Descuento<select id="filtroDescuentoProfesor" aria-label="Filtrar por descuento de puntos">
             <option value="">Todos los descuentos</option>
             <option value="con-descuento">Con descuento</option>
             <option value="sin-descuento">Sin descuento</option>
             <option value="1">Descuento de 1 punto o más</option>
             <option value="2">Descuento de 2 puntos o más</option>
             <option value="3">Descuento de 3 puntos o más</option>
-          </select>
-          <select id="filtroActualizacionProfesor" aria-label="Filtrar por última actualización"><option value="">Cualquier actualización</option><option value="5m">Últimos 5 minutos</option><option value="15m">Últimos 15 minutos</option><option value="1h">Última hora</option><option value="hoy">Hoy</option><option value="7d">Últimos 7 días</option><option value="sin-fecha">Sin fecha</option></select>
-          <select id="ordenProfesor" aria-label="Ordenar tabla">
+              </select></label>
+              <label>Última actualización<select id="filtroActualizacionProfesor" aria-label="Filtrar por última actualización"><option value="">Cualquier actualización</option><option value="5m">Últimos 5 minutos</option><option value="15m">Últimos 15 minutos</option><option value="1h">Última hora</option><option value="hoy">Hoy</option><option value="7d">Últimos 7 días</option><option value="sin-fecha">Sin fecha</option></select></label>
+            </div>
+          </section>
+          <section class="teacher-filter-group teacher-filter-actions">
+            <h4><i class="fa-solid fa-arrow-down-wide-short"></i> Orden y acciones</h4>
+            <div>
+              <label>Ordenar resultados<select id="ordenProfesor" aria-label="Ordenar tabla">
             <option value="actualizacion-desc">Última actualización: reciente</option>
             <option value="actualizacion-asc">Última actualización: antigua</option>
             <option value="nombre-asc">Estudiante: A–Z</option>
@@ -4709,8 +4723,12 @@
             <option value="salidas-asc">Pestanas: menor primero</option>
             <option value="salidas-desc">Pestanas: mayor primero</option>
             <option value="alertas-desc">Alertas primero</option>
-          </select>
-          <button class="btn btn-secondary" id="btnLimpiarFiltrosProfesor" type="button" onclick="limpiarFiltrosProfesor()" title="Restablecer todos los filtros y el orden"><i class="fa-solid fa-filter-circle-xmark"></i> Limpiar filtros</button>
+              </select></label>
+              <button class="btn btn-secondary teacher-online-filter" id="btnSoloEnLineaProfesor" type="button" onclick="alternarFiltroSoloEnLineaProfesor()" aria-pressed="false" title="Mostrar solamente estudiantes con actividad en los últimos 2 minutos"><i class="fa-solid fa-signal"></i> Solo en línea</button>
+              <button class="btn btn-success" type="button" onclick="exportarCursoProfesorPDF()" title="Exportar el curso seleccionado a PDF"><i class="fa-solid fa-file-pdf"></i> PDF del curso</button>
+              <button class="btn btn-secondary" id="btnLimpiarFiltrosProfesor" type="button" onclick="limpiarFiltrosProfesor()" title="Restablecer todos los filtros y el orden"><i class="fa-solid fa-filter-circle-xmark"></i> Limpiar filtros</button>
+            </div>
+          </section>
         </div>
         <div style="padding:.75rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06);margin-bottom:1rem;font-size:.82rem;line-height:1.5;">
           <strong>Cómo se calcula:</strong> cada actividad obtiene una calificación automática mediante
@@ -4820,34 +4838,6 @@
         </div>
       </div>
     </div>
-    <div class="modal-overlay" id="historialJitsiModal" role="dialog" aria-modal="true" aria-labelledby="historialJitsiTitulo" style="display:none">
-      <div class="modal-box jitsi-history-box" tabindex="-1">
-        <div class="jitsi-history-header">
-          <div>
-            <span aria-hidden="true"><i class="fa-solid fa-clock-rotate-left"></i></span>
-            <div>
-              <h3 id="historialJitsiTitulo">Historial de videollamadas Jitsi</h3>
-              <p>Registro de llamadas individuales y grupales.</p>
-            </div>
-          </div>
-          <button class="btn btn-secondary jitsi-close" id="cerrarHistorialJitsi" type="button" aria-label="Cerrar historial" title="Cerrar">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
-        </div>
-        <div class="jitsi-history-filters">
-          <select id="filtroHistorialJitsiTipo" aria-label="Filtrar historial Jitsi por tipo">
-            <option value="">Todas las llamadas</option>
-            <option value="individual">Individuales</option>
-            <option value="grupal">Grupales</option>
-          </select>
-          <input id="filtroHistorialJitsiTexto" type="search" placeholder="Curso, estudiante o docente" aria-label="Buscar en historial Jitsi">
-        </div>
-        <div class="jitsi-history-summary" id="resumenHistorialJitsi" role="status"></div>
-        <div class="jitsi-history-list" id="listaHistorialJitsi">
-          <p class="jitsi-history-empty">Cargando historial...</p>
-        </div>
-      </div>
-    </div>
     <div class="modal-overlay" id="jitsiModal" role="dialog" aria-modal="true" aria-labelledby="jitsiTitle" style="display:none">
       <div class="modal-box jitsi-box" tabindex="-1">
         <div class="jitsi-header">
@@ -4921,7 +4911,12 @@
             <h3 id="detalleEstudianteProfesorTitle"><i class="fa-solid fa-user-graduate"></i> Detalle del estudiante</h3>
             <p id="detalleEstudianteProfesorSubtitulo">Información completa de actividades y respuestas.</p>
           </div>
-          <button class="btn btn-secondary" onclick="cerrarDetalleEstudianteProfesor()">Cerrar</button>
+          <div class="btn-group">
+            <button class="btn btn-success" type="button" onclick="exportarDetalleEstudianteProfesorPDF()">
+              <i class="fa-solid fa-file-pdf"></i> Exportar detalle
+            </button>
+            <button class="btn btn-secondary" onclick="cerrarDetalleEstudianteProfesor()">Cerrar</button>
+          </div>
         </div>
         <div id="detalleEstudianteProfesorContenido"></div>
       </div>
@@ -10550,6 +10545,20 @@
       function cerrarDetalleEstudianteProfesor() {
           document.getElementById('detalleEstudianteProfesorModal').classList.remove('active');
       }
+      let detalleEstudianteProfesorIndiceActual = null;
+
+      function filtrarDesafiosDetalleProfesor(valor = '') {
+          const filtro = String(valor || '');
+          const actividades = document.querySelectorAll('#detalleEstudianteProfesorContenido .teacher-activity[data-detail-status]');
+          let visibles = 0;
+          actividades.forEach(actividad => {
+              const mostrar = !filtro || actividad.dataset.detailStatus?.split(' ').includes(filtro);
+              actividad.hidden = !mostrar;
+              if (mostrar) visibles++;
+          });
+          const estado = document.getElementById('estadoFiltroDetalleProfesor');
+          if (estado) estado.textContent = `${visibles} desafío${visibles === 1 ? '' : 's'} visible${visibles === 1 ? '' : 's'}`;
+      }
       async function guardarNotaDesafioProfesor(indice, sectionId) {
           const d = estudiantesProfesor[indice];
           const input = document.getElementById(`notaDesafioDocente-${sectionId}`);
@@ -11415,9 +11424,63 @@
           </div>`;
       }
 
+      function renderDetalleEvaluacionCodigoProfesor(evaluacionCodigo, salida, sec) {
+          if (!evaluacionCodigo) {
+              return `<div class="teacher-full-evaluation is-empty">
+                  <strong><i class="fa-solid fa-circle-info"></i> Análisis automático pendiente</strong>
+                  <p>El estudiante todavía no entregó una ejecución evaluable para este desafío.</p>
+              </div>`;
+          }
+          const conceptos = Array.isArray(evaluacionCodigo.conceptos) ? evaluacionCodigo.conceptos : [];
+          const cumplidos = conceptos.filter(item => item.cumple).map(item => item.nombre);
+          const faltantes = conceptos.filter(item => !item.cumple).map(item => item.nombre);
+          const metricas = evaluacionCodigo.metricas || {};
+          const ejecucion = evaluacionCodigo.ejecucion || {};
+          const criterios = Array.isArray(evaluacionCodigo.criterios) ? evaluacionCodigo.criterios : [];
+          const mejoras = Array.isArray(evaluacionCodigo.mejoras) ? evaluacionCodigo.mejoras : [];
+          const limites = Array.isArray(evaluacionCodigo.limites) ? evaluacionCodigo.limites : [];
+          return `<details class="teacher-full-evaluation" open>
+              <summary><i class="fa-solid fa-list-check"></i> Detalle completo del análisis automático</summary>
+              <div class="teacher-full-evaluation-grid">
+                  <div><small>Nota estricta</small><strong>${Number(evaluacionCodigo.nota || 0).toFixed(1)}/10</strong></div>
+                  <div><small>Sintaxis</small><strong>${evaluacionCodigo.sintaxis?.valida ? 'Válida' : 'Con errores'}</strong></div>
+                  <div><small>Ejecución</small><strong>${ejecucion.ok ? 'Correcta' : 'No validada'}</strong></div>
+                  <div><small>Comportamiento</small><strong>${Math.round(Number(metricas.comportamiento || 0) * 100)}%</strong></div>
+                  <div><small>Requisitos</small><strong>${Math.round(Number(metricas.requisitos || 0) * 100)}%</strong></div>
+                  <div><small>Referencia</small><strong>${Math.round(Number(metricas.referencia || 0) * 100)}%</strong></div>
+                  <div><small>Identificadores exigidos</small><strong>${Math.round(Number(metricas.nombresExigidos ?? 1) * 100)}%</strong></div>
+                  <div><small>Instrucciones</small><strong>${Number(metricas.instruccionesEstimadas || 0)}</strong></div>
+              </div>
+              <div class="teacher-full-evaluation-columns">
+                  <section>
+                      <h5><i class="fa-solid fa-circle-check"></i> Evidencias encontradas</h5>
+                      <p>${cumplidos.length ? cumplidos.map(x => `<span class="teacher-evidence-chip is-ok">${escapeHtml(x)}</span>`).join('') : '<span class="teacher-empty-evidence">Ninguna registrada.</span>'}</p>
+                  </section>
+                  <section>
+                      <h5><i class="fa-solid fa-triangle-exclamation"></i> Evidencias faltantes</h5>
+                      <p>${faltantes.length ? faltantes.map(x => `<span class="teacher-evidence-chip is-missing">${escapeHtml(x)}</span>`).join('') : '<span class="teacher-empty-evidence">No se detectaron faltantes.</span>'}</p>
+                  </section>
+              </div>
+              ${criterios.length ? `<div class="teacher-evaluation-list"><h5><i class="fa-solid fa-scale-balanced"></i> Criterios y evidencias</h5><ul>${criterios.map(c => `<li><strong>${escapeHtml(c.nombre)}:</strong> ${Number(c.puntos || 0)}/${Number(c.peso || 0)} (${escapeHtml(c.estado || 'pendiente')}). ${escapeHtml(c.evidencia || '')}</li>`).join('')}</ul></div>` : ''}
+              <div class="teacher-full-evaluation-columns">
+                  <section>
+                      <h5><i class="fa-solid fa-terminal"></i> Salida real</h5>
+                      <pre class="teacher-code">${escapeHtml(ejecucion.salida || salida || '// Sin salida registrada')}</pre>
+                  </section>
+                  <section>
+                      <h5><i class="fa-solid fa-bullseye"></i> Resultado de referencia</h5>
+                      <pre class="teacher-code teacher-code-expected">${escapeHtml(ejecucion.salidaEsperada || sec?.aiSolution || '// No definido')}</pre>
+                  </section>
+              </div>
+              ${mejoras.length ? `<div class="teacher-evaluation-list is-improvement"><h5><i class="fa-solid fa-arrow-up-right-dots"></i> Mejoras prioritarias</h5><ul>${mejoras.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
+              ${limites.length ? `<div class="teacher-evaluation-list is-limit"><h5><i class="fa-solid fa-gavel"></i> Límites aplicados</h5><ul>${limites.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
+          </details>`;
+      }
+
       function abrirDetalleEstudianteProfesor(indice) {
           const d = estudiantesProfesor[indice];
           if (!d) return;
+          detalleEstudianteProfesorIndiceActual = indice;
           const e = d.estudiante || {};
           const historial = d.historialResultados || {};
           const chatIA = d.chatIA || {};
@@ -11497,7 +11560,21 @@
               const formulaActividad = r.notaCodigo !== undefined && r.notaPreguntas !== undefined
                   ? `(${r.notaCodigo} × 0,70) + (${r.notaPreguntas} × 0,30) = ${notaAutomatica}`
                   : 'La fórmula se completará al entregar código y preguntas.';
-              return `<details class="teacher-activity" ${numero === 0 ? 'open' : ''}>
+              const estadosDetalle = [
+                  (!evaluacionCodigo?.sintaxis?.valida || evaluacionCodigo?.ejecucion?.ok === false || Boolean(r.error)) ? 'errores' : '',
+                  (!finalizadas[sec.id] || r.notaPreguntas === undefined || notaAutomatica === undefined) ? 'pendientes' : '',
+                  tieneNotaDocente ? 'modificadas' : '',
+                  finalizadas[sec.id] ? 'finalizadas' : '',
+                  notaFinal === null ? 'sin-nota' : '',
+                  notaFinal !== null && Number(notaFinal) >= 6 ? 'aprobadas' : '',
+                  notaFinal !== null && Number(notaFinal) < 6 ? 'desaprobadas' : '',
+                  finalizadas[sec.id] && notaFinal !== null &&
+                      evaluacionCodigo?.sintaxis?.valida !== false &&
+                      evaluacionCodigo?.ejecucion?.ok !== false &&
+                      !r.error && !tieneNotaDocente ? 'completas' : ''
+              ].filter(Boolean).join(' ');
+              const estadoDetalleFinal = estadosDetalle || 'completas';
+              return `<details class="teacher-activity" data-section-id="${sec.id}" data-detail-status="${estadoDetalleFinal}" ${numero === 0 ? 'open' : ''}>
                   <summary>${escapeHtml(sec.title)} · ${estado} · Nota vigente ${notaFinal !== null ? `${notaFinal}/10` : 'pendiente'}${tieneNotaDocente ? ' (docente)' : ''}</summary>
                   <div class="teacher-activity-content">
                       <div class="teacher-detail-summary">
@@ -11561,6 +11638,7 @@
                       <pre class="teacher-code">${escapeHtml(codigo)}</pre>
                       <h4 style="margin-top:.8rem">Salida de ejecución</h4>
                       <pre class="teacher-code" style="color:#7dd3fc">${escapeHtml(salida)}</pre>
+                      ${renderDetalleEvaluacionCodigoProfesor(evaluacionCodigo, salida, sec)}
                       ${r.analisisIA ? `<div style="margin-top:.8rem"><strong>Análisis automático:</strong><div style="margin-top:.35rem;color:#cbd5e1">${escapeHtml(r.analisisIA)}</div></div>` : ''}
                       <div style="margin-top:.8rem">
                           <h4>Chat guiado con IA (${mensajesChat.length} mensajes)</h4>
@@ -11656,6 +11734,21 @@
               </div>
               <div style="position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;padding:.7rem;margin-bottom:1rem;border:1px solid rgba(56,189,248,.35);border-radius:8px;background:rgba(15,23,42,.96);box-shadow:0 8px 18px rgba(0,0,0,.22)">
                   <strong style="color:var(--primary)"><i class="fa-solid fa-layer-group"></i> Secciones del informe</strong>
+                  <div class="teacher-detail-filter">
+                      <label for="filtroDesafiosDetalleProfesor">Mostrar desafíos</label>
+                      <select id="filtroDesafiosDetalleProfesor" onchange="filtrarDesafiosDetalleProfesor(this.value)">
+                          <option value="">Todos</option>
+                          <option value="errores">Con errores</option>
+                          <option value="pendientes">Pendientes</option>
+                          <option value="modificadas">Nota docente modificada</option>
+                          <option value="finalizadas">Finalizados</option>
+                          <option value="sin-nota">Sin nota vigente</option>
+                          <option value="aprobadas">Nota vigente 6 o más</option>
+                          <option value="desaprobadas">Nota vigente menor a 6</option>
+                          <option value="completas">Completos sin observaciones</option>
+                      </select>
+                      <span id="estadoFiltroDetalleProfesor">${seccionesData.length} desafíos visibles</span>
+                  </div>
                   <div class="btn-group">
                       <button class="btn btn-primary" onclick="document.querySelectorAll('#detalleEstudianteProfesorContenido .teacher-activity').forEach(x=>x.open=true)">
                           <i class="fa-solid fa-angles-down"></i> Expandir todo
@@ -12391,7 +12484,6 @@
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial de desbloqueos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDescuentos(${indice})"><i class="fa-solid fa-file-invoice-dollar"></i><span>Historial de descuentos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialPestanas(${indice})"><i class="fa-solid fa-window-restore"></i><span>Historial de pestañas</span></button>
-            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialJitsiEstudianteProfesor(${indice})"><i class="fa-solid fa-video"></i><span>Historial Jitsi del estudiante</span></button>
             <button class="btn btn-success" onclick="cerrarAccionesEstudiante();abrirJitsiDocente(${indice})"><i class="fa-solid fa-video"></i><span>${jitsiDisponible ? 'Volver a la llamada Jitsi' : 'Iniciar llamada Jitsi'}</span></button>
             ${jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-video-slash"></i><span>Cancelar invitaciÃ³n / finalizar</span></button>` : ''}
             ${jitsiTieneSala && !jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-broom"></i><span>Limpiar llamada anterior</span></button>` : ''}
@@ -12863,6 +12955,183 @@
           guardarDesafioActualFirebase();
         }
       });
+
+      function agregarTextoPDFProfesor(doc, texto, y, opciones = {}) {
+          const margen = opciones.margen || 14;
+          const ancho = opciones.ancho || 182;
+          const altoLinea = opciones.altoLinea || 4.2;
+          const lineas = doc.splitTextToSize(String(texto || ''), ancho);
+          for (const linea of lineas) {
+              if (y > 282) {
+                  doc.addPage();
+                  y = 18;
+              }
+              doc.text(linea, margen, y);
+              y += altoLinea;
+          }
+          return y;
+      }
+
+      function nombreArchivoPDFProfesor(valor) {
+          return String(valor || 'reporte')
+              .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+              .replace(/[^a-z0-9_-]+/gi, '_')
+              .replace(/^_+|_+$/g, '')
+              .slice(0, 80) || 'reporte';
+      }
+
+      function guardarPDFProfesor(doc, nombre) {
+          doc.save(`${nombreArchivoPDFProfesor(nombre)}.pdf`);
+      }
+
+      function exportarDetalleEstudianteProfesorPDF() {
+          if (!window.jspdf?.jsPDF) {
+              alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.');
+              return;
+          }
+          const d = estudiantesProfesor[detalleEstudianteProfesorIndiceActual];
+          if (!d) {
+              alert('Abrí primero el detalle de un estudiante.');
+              return;
+          }
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          const e = d.estudiante || {};
+          const historial = d.historialResultados || {};
+          const finalizadas = d.finalizadas || {};
+          const notasDocente = d.notasDesafiosDocente || {};
+          const nombre = e.nombre || d.nombreGoogle || d.email || 'Estudiante';
+          let y = 18;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(15);
+          doc.text('IPEM 146 - Detalle completo del estudiante', 14, y);
+          y += 8;
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          y = agregarTextoPDFProfesor(doc, `Estudiante: ${nombre}\nEmail: ${d.email || 'Sin email'}\nCurso: ${e.curso || 'Sin curso'} ${e.division || ''} · Turno: ${e.turno || 'Sin turno'}\nFecha de emisión: ${new Date().toLocaleString('es-AR')}`, y);
+          y += 3;
+          doc.line(14, y, 196, y);
+          y += 6;
+          doc.setFont('helvetica', 'bold');
+          y = agregarTextoPDFProfesor(doc, `Progreso: ${calcularProgresoEstudiante(d)}% · Promedio académico: ${calcularNotaEstudiante(d)} · Nota definitiva: ${calcularNotaDefinitivaEstudiante(d)}`, y);
+          doc.setFont('helvetica', 'normal');
+
+          const actividadesVisibles = [...document.querySelectorAll('#detalleEstudianteProfesorContenido .teacher-activity[data-section-id]')]
+              .filter(elemento => !elemento.hidden)
+              .map(elemento => elemento.dataset.sectionId);
+          const filtroSeleccionado = document.getElementById('filtroDesafiosDetalleProfesor');
+          const filtroActivo = String(filtroSeleccionado?.value || '');
+          const seccionesExportar = filtroActivo
+              ? seccionesData.filter(sec => actividadesVisibles.includes(sec.id))
+              : seccionesData;
+          if (!seccionesExportar.length) {
+              alert('El filtro seleccionado no tiene desafíos para exportar.');
+              return;
+          }
+          y = agregarTextoPDFProfesor(doc, `Filtro exportado: ${filtroSeleccionado?.selectedOptions?.[0]?.textContent || 'Todos'} · Desafíos incluidos: ${seccionesExportar.length}`, y);
+
+          seccionesExportar.forEach((sec, indice) => {
+              const r = historial[sec.id] || {};
+              const evaluacion = r.evaluacionCodigo || {};
+              const ajuste = notasDocente[sec.id] || {};
+              const notaVigente = obtenerNotaDesafioEstudiante(d, sec.id, r);
+              const codigo = r.codigo || d.codigos?.[sec.id] || '// Sin código guardado';
+              if (y > 248) {
+                  doc.addPage();
+                  y = 18;
+              }
+              y += 5;
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(11);
+              y = agregarTextoPDFProfesor(doc, `${indice + 1}. ${sec.title}`, y);
+              doc.setFontSize(8.5);
+              y = agregarTextoPDFProfesor(doc, `Estado: ${finalizadas[sec.id] ? 'Finalizada' : 'Pendiente'} · Nota automática: ${r.notaFinal ?? r.notaIA ?? 'Pendiente'} · Nota vigente: ${notaVigente ?? 'Pendiente'}${ajuste.nota !== undefined && ajuste.nota !== null ? ' (corrección docente)' : ''}`, y);
+              doc.setFont('helvetica', 'normal');
+              y = agregarTextoPDFProfesor(doc, `Consigna: ${sec.exerciseDesc || 'Sin consigna'}`, y);
+              if (evaluacion.nota !== undefined) {
+                  const metricas = evaluacion.metricas || {};
+                  y = agregarTextoPDFProfesor(doc, `Análisis estricto: ${evaluacion.nota}/10 · Sintaxis: ${evaluacion.sintaxis?.valida ? 'válida' : 'con errores'} · Ejecución: ${evaluacion.ejecucion?.ok ? 'correcta' : 'no validada'} · Requisitos: ${Math.round(Number(metricas.requisitos || 0) * 100)}% · Referencia: ${Math.round(Number(metricas.referencia || 0) * 100)}% · Comportamiento: ${Math.round(Number(metricas.comportamiento || 0) * 100)}%`, y);
+                  if (evaluacion.limites?.length) y = agregarTextoPDFProfesor(doc, `Límites: ${evaluacion.limites.join(' | ')}`, y);
+                  if (evaluacion.mejoras?.length) y = agregarTextoPDFProfesor(doc, `Mejoras: ${evaluacion.mejoras.join(' | ')}`, y);
+              }
+              if (ajuste.nota !== undefined && ajuste.nota !== null) {
+                  y = agregarTextoPDFProfesor(doc, `Corrección docente: ${ajuste.nota}/10 · Docente: ${ajuste.modificadaPor || 'Sin registrar'} · Observación: ${ajuste.motivo || 'Sin observación'}`, y);
+              }
+              doc.setFont('courier', 'normal');
+              doc.setFontSize(7.5);
+              y = agregarTextoPDFProfesor(doc, `Código entregado:\n${codigo}`, y, { altoLinea: 3.5 });
+              doc.setFont('helvetica', 'normal');
+              y = agregarTextoPDFProfesor(doc, `Salida: ${r.salida || 'Sin salida registrada'}`, y);
+              y += 2;
+              doc.line(14, y, 196, y);
+          });
+          guardarPDFProfesor(doc, `Detalle_docente_${nombre}_${e.curso || ''}_${e.division || ''}`);
+      }
+
+      function exportarCursoProfesorPDF() {
+          if (!window.jspdf?.jsPDF) {
+              alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.');
+              return;
+          }
+          const curso = String(document.getElementById('filtroCursoProfesor')?.value || '').trim();
+          const division = String(document.getElementById('filtroDivisionProfesor')?.value || '').trim();
+          const turno = String(document.getElementById('filtroTurnoProfesor')?.value || '').trim();
+          if (!curso) {
+              alert('Seleccioná un curso en el panel docente antes de exportar el PDF general.');
+              document.getElementById('filtroCursoProfesor')?.focus();
+              return;
+          }
+          const estudiantes = estudiantesProfesor.filter(d => {
+              const e = d.estudiante || {};
+              return String(e.curso || '') === curso &&
+                  (!division || String(e.division || '') === division) &&
+                  (!turno || String(e.turno || '') === turno);
+          }).sort((a, b) => String(a.estudiante?.nombre || a.email || '').localeCompare(String(b.estudiante?.nombre || b.email || ''), 'es'));
+          if (!estudiantes.length) {
+              alert('No hay estudiantes para el curso y los filtros seleccionados.');
+              return;
+          }
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF();
+          const grupo = [curso, division, turno].filter(Boolean).join(' · ');
+          const notas = estudiantes.map(calcularNotaDefinitivaEstudiante).filter(x => x !== '—').map(Number);
+          const promedioCurso = notas.length ? (notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(1) : 'Pendiente';
+          let y = 18;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(15);
+          doc.text('IPEM 146 - Informe general por curso', 14, y);
+          y += 8;
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          y = agregarTextoPDFProfesor(doc, `Grupo: ${grupo}\nEstudiantes: ${estudiantes.length} · Promedio de notas confirmadas: ${promedioCurso}\nFecha de emisión: ${new Date().toLocaleString('es-AR')}`, y);
+          y += 4;
+          doc.line(14, y, 196, y);
+
+          estudiantes.forEach((d, indice) => {
+              const e = d.estudiante || {};
+              const historial = d.historialResultados || {};
+              const finalizadas = d.finalizadas || {};
+              const errores = seccionesData.filter(sec => {
+                  const evaluacion = historial[sec.id]?.evaluacionCodigo;
+                  return evaluacion?.sintaxis?.valida === false || evaluacion?.ejecucion?.ok === false || Boolean(historial[sec.id]?.error);
+              }).length;
+              const pendientes = seccionesData.filter(sec => !finalizadas[sec.id] || historial[sec.id]?.notaPreguntas === undefined).length;
+              const modificadas = Object.values(d.notasDesafiosDocente || {}).filter(item => item?.nota !== undefined && item?.nota !== null).length;
+              if (y > 270) {
+                  doc.addPage();
+                  y = 18;
+              }
+              y += 6;
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(10);
+              y = agregarTextoPDFProfesor(doc, `${indice + 1}. ${e.nombre || d.nombreGoogle || 'Sin nombre'} · ${d.email || 'Sin email'}`, y);
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(8.5);
+              y = agregarTextoPDFProfesor(doc, `División: ${e.division || '—'} · Turno: ${e.turno || '—'} · Progreso: ${calcularProgresoEstudiante(d)}% · Promedio: ${calcularNotaEstudiante(d)} · Nota definitiva: ${calcularNotaDefinitivaEstudiante(d)} · Errores: ${errores} · Pendientes: ${pendientes} · Notas modificadas: ${modificadas} · Salidas de pestaña: ${Number(d.salidasPestana || 0)}`, y);
+              doc.line(14, y, 196, y);
+          });
+          guardarPDFProfesor(doc, `Informe_curso_${grupo}`);
+      }
 
       async function exportarResultadosPDF() {
           if (!window.jspdf?.jsPDF) {
