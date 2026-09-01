@@ -1435,3 +1435,105 @@ body.teacher-light-mode .teacher-mobile-quick-action{
 body.teacher-light-mode #teacherMobileResults strong{
   color:#0f172a;
 }
+
+/* Edicion docente de la nota de cada desafio. */
+.teacher-challenge-grade-editor{
+  margin:0 0 .9rem;
+  padding:.85rem;
+  border:1px solid rgba(245,158,11,.38);
+  border-radius:8px;
+  background:rgba(245,158,11,.07);
+}
+.teacher-challenge-grade-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:.75rem;
+  margin-bottom:.7rem;
+}
+.teacher-challenge-grade-heading h4{
+  margin:0;
+  color:#fde68a;
+}
+.teacher-challenge-grade-heading p{
+  margin:.25rem 0 0;
+  color:var(--text-muted);
+  font-size:.76rem;
+  line-height:1.45;
+}
+.teacher-challenge-grade-fields{
+  display:grid;
+  grid-template-columns:minmax(130px,.35fr) minmax(220px,1fr);
+  gap:.65rem;
+}
+.teacher-challenge-grade-fields label{
+  display:grid;
+  gap:.3rem;
+  color:#cbd5e1;
+  font-size:.74rem;
+  font-weight:800;
+}
+.teacher-challenge-grade-fields input{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+.teacher-challenge-grade-actions{
+  display:flex;
+  gap:.5rem;
+  flex-wrap:wrap;
+  margin-top:.7rem;
+}
+.teacher-challenge-grade-status{
+  display:inline-flex;
+  align-items:center;
+  flex:0 0 auto;
+  padding:.3rem .45rem;
+  border:1px solid rgba(148,163,184,.3);
+  border-radius:5px;
+  color:#cbd5e1;
+  font-size:.68rem;
+  font-weight:800;
+}
+.teacher-challenge-grade-status.saving{
+  border-color:rgba(245,158,11,.5);
+  color:#fde68a;
+}
+.teacher-challenge-grade-status.saved{
+  border-color:rgba(34,197,94,.45);
+  background:rgba(34,197,94,.1);
+  color:#bbf7d0;
+}
+.teacher-challenge-grade-status.error{
+  border-color:rgba(239,68,68,.5);
+  background:rgba(239,68,68,.1);
+  color:#fecaca;
+}
+.teacher-detail-stat.teacher-grade-adjusted{
+  border-color:rgba(245,158,11,.5);
+  background:rgba(245,158,11,.1);
+}
+body.teacher-light-mode .teacher-challenge-grade-editor{
+  border-color:#f59e0b;
+  background:#fffbeb;
+}
+body.teacher-light-mode .teacher-challenge-grade-heading h4,
+body.teacher-light-mode .teacher-challenge-grade-fields label{
+  color:#78350f;
+}
+@media(max-width:700px){
+  .teacher-challenge-grade-heading{
+    display:grid;
+  }
+  .teacher-challenge-grade-fields{
+    grid-template-columns:1fr;
+  }
+  .teacher-challenge-grade-actions{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  .teacher-challenge-grade-actions .btn{
+    width:100%;
+    justify-content:center;
+  }
+}
