@@ -2358,7 +2358,7 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, onSnapshot, getDocs, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, collectionGroup, onSnapshot, getDocs, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
       import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
       import { getAI, getTemplateGenerativeModel, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
 
@@ -2869,6 +2869,7 @@
         const valores = Object.fromEntries(partes.map(parte => [parte.type, parte.value]));
         return `${valores.year}-${valores.month}-${valores.day}`;
       }
+      window.idClaseActual = idClaseActual;
 
       window.escucharInicioClaseFirebase = function() {
         const { user, database } = contextoDocenteFirebase();
@@ -3978,6 +3979,102 @@
           return { eliminadas: 0, error: error?.message || "No se pudo eliminar el historial" };
         }
       };
+      window.revisarHistorialJitsiAdministradorFirebase = async function() {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database) {
+          return { ok: false, error: "No hay una sesión administrativa activa." };
+        }
+        if (!usuarioEsAdministradorPrincipal(user)) {
+          return { ok: false, error: "Solo el administrador principal puede revisar y eliminar este historial." };
+        }
+        try {
+          const snapshot = await getDocs(collectionGroup(database, "historialJitsi"));
+          const documentos = snapshot.docs
+            .map(item => ({ id: item.id, path: item.ref.path }))
+            .filter(item => /^controlClase\/[^/]+\/historialJitsi\/[^/]+$/.test(item.path));
+          return {
+            ok: true,
+            claseId: "*",
+            cantidad: documentos.length,
+            documentos
+          };
+        } catch (error) {
+          console.error("Error revisando el historial Jitsi administrativo:", error);
+          return {
+            ok: false,
+            code: error?.code || "unknown",
+            error: error?.message || "No se pudo consultar el historial Jitsi."
+          };
+        }
+      };
+      window.eliminarHistorialJitsiAdministradorFirebase = async function(documentos = []) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database) {
+          return { ok: false, eliminadas: 0, error: "No hay una sesión administrativa activa." };
+        }
+        if (!usuarioEsAdministradorPrincipal(user)) {
+          return { ok: false, eliminadas: 0, error: "Solo el administrador principal puede ejecutar esta operación." };
+        }
+        const rutas = [...new Set(
+          (Array.isArray(documentos) ? documentos : [])
+            .map(item => String(item?.path || ""))
+            .filter(path => /^controlClase\/[^/]+\/historialJitsi\/[^/]+$/.test(path))
+        )];
+        if (!rutas.length) return { ok: true, eliminadas: 0, claseId: "*" };
+        let eliminadas = 0;
+        const operacionId = crearIdAuditoriaDocente();
+        try {
+          for (let inicio = 0; inicio < rutas.length; inicio += 450) {
+            const grupo = rutas.slice(inicio, inicio + 450);
+            const lote = writeBatch(database);
+            grupo.forEach(path => {
+              lote.delete(doc(database, path));
+            });
+            await lote.commit();
+            eliminadas += grupo.length;
+          }
+          try {
+            await setDoc(doc(database, "historialAdministracion", operacionId), {
+              id: operacionId,
+              tipo: "eliminacion_historial_jitsi",
+              claseId: "*",
+              documentosEliminados: eliminadas,
+              administradorEmail: normalizarEmailDocente(user.email),
+              administradorUid: user.uid,
+              ejecutadoEn: serverTimestamp()
+            });
+            return {
+              ok: true,
+              eliminadas,
+              claseId: "*",
+              operacionId,
+              auditoriaRegistrada: true
+            };
+          } catch (errorAuditoria) {
+            console.error("El historial Jitsi se eliminó, pero falló la auditoría administrativa:", errorAuditoria);
+            return {
+              ok: true,
+              eliminadas,
+              claseId: "*",
+              operacionId,
+              auditoriaRegistrada: false,
+              advertencia: errorAuditoria?.message || "No se pudo registrar la auditoría."
+            };
+          }
+        } catch (error) {
+          console.error("Error eliminando definitivamente el historial Jitsi:", error);
+          return {
+            ok: false,
+            eliminadas,
+            code: error?.code || "unknown",
+            error: error?.message || "No se pudo completar la eliminación definitiva."
+          };
+        }
+      };
       window.registrarEstadoJitsiEstudianteFirebase = async function(tipo, llamadaId, estado) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!db || !user || !llamadaId) return false;
@@ -4620,6 +4717,15 @@
           </summary>
           <div id="listaDocentesAutorizados" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.55rem;margin-top:.75rem"></div>
         </details>
+        <section id="mantenimientoJitsiAdministrador" class="teacher-admin-maintenance" hidden>
+          <div>
+            <h3><i class="fa-solid fa-database"></i> Mantenimiento administrativo</h3>
+            <p>El historial Jitsi nuevo está desactivado. Esta operación elimina definitivamente los documentos históricos que todavía existan en Firestore.</p>
+          </div>
+          <button class="btn btn-danger" id="btnEliminarHistorialJitsiFirestore" type="button" onclick="abrirEliminacionHistorialJitsiAdministrador()">
+            <i class="fa-solid fa-trash-can"></i> Eliminar historial Jitsi
+          </button>
+        </section>
         <div class="teacher-icon-legend" role="note" aria-label="Leyenda de iconos del panel docente">
           <strong>Leyenda de acciones:</strong>
           <span><i class="fa-solid fa-eye" aria-hidden="true"></i> Ver todo</span>
@@ -4919,6 +5025,41 @@
           </div>
         </div>
         <div id="detalleEstudianteProfesorContenido"></div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="eliminarHistorialJitsiAdminModal" role="alertdialog" aria-modal="true" aria-labelledby="eliminarHistorialJitsiAdminTitulo">
+      <div class="modal-box teacher-danger-operation-box" tabindex="-1">
+        <div class="teacher-danger-operation-header">
+          <span aria-hidden="true"><i class="fa-solid fa-triangle-exclamation"></i></span>
+          <div>
+            <h3 id="eliminarHistorialJitsiAdminTitulo">Eliminar historial Jitsi de Firestore</h3>
+            <p>La eliminación es definitiva y no se puede deshacer.</p>
+          </div>
+        </div>
+        <div id="resumenEliminacionHistorialJitsi" class="teacher-danger-operation-summary" role="status" aria-live="polite">
+          Presioná “Revisar documentos” para contar el historial existente.
+        </div>
+        <div class="teacher-danger-operation-scope">
+          <strong>Alcance</strong>
+          <span id="alcanceEliminacionHistorialJitsi">Todas las clases y fechas</span>
+          <small>Las salas y llamadas Jitsi activas no se eliminan. Solo se borra la subcolección histórica.</small>
+        </div>
+        <label class="teacher-danger-operation-confirm" for="confirmacionEliminarHistorialJitsi">
+          Escribí <strong>BORRAR JITSI</strong> para habilitar la eliminación
+          <input id="confirmacionEliminarHistorialJitsi" type="text" autocomplete="off" spellcheck="false" placeholder="BORRAR JITSI" oninput="actualizarConfirmacionEliminarHistorialJitsi()">
+        </label>
+        <div class="teacher-danger-operation-actions">
+          <button class="btn btn-secondary" type="button" onclick="cerrarEliminacionHistorialJitsiAdministrador()">
+            <i class="fa-solid fa-xmark"></i> Cancelar
+          </button>
+          <button class="btn btn-secondary" id="btnRevisarHistorialJitsiFirestore" type="button" onclick="revisarHistorialJitsiAdministrador()">
+            <i class="fa-solid fa-magnifying-glass"></i> Revisar documentos
+          </button>
+          <button class="btn btn-danger" id="btnConfirmarEliminarHistorialJitsi" type="button" onclick="eliminarHistorialJitsiAdministrador()" disabled>
+            <i class="fa-solid fa-trash-can"></i> Eliminar definitivamente
+          </button>
+        </div>
       </div>
     </div>
 
@@ -6314,7 +6455,7 @@
           if (!pantallaBloqueada) return;
           const destino = evento.target;
           const permitido = destino?.closest?.(
-              '#screenLockOverlay, #passwordModal, #firebaseAuthOverlay, #panelProfesorModal, #accionesEstudianteModal, #historialDesbloqueosModal, #historialDescuentosModal, #historialPestanasModal, #detalleEstudianteProfesorModal, #confirmacionDocenteModal, #editarDescuentoEstudianteModal, #jitsiLlamadaAlerta, #jitsiModal, #jitsiFinAlerta, #jitsiFinalizadaAviso'
+              '#screenLockOverlay, #passwordModal, #firebaseAuthOverlay, #panelProfesorModal, #accionesEstudianteModal, #historialDesbloqueosModal, #historialDescuentosModal, #historialPestanasModal, #detalleEstudianteProfesorModal, #eliminarHistorialJitsiAdminModal, #confirmacionDocenteModal, #editarDescuentoEstudianteModal, #jitsiLlamadaAlerta, #jitsiModal, #jitsiFinAlerta, #jitsiFinalizadaAviso'
           );
           if (permitido) return;
           evento.preventDefault();
@@ -10358,9 +10499,130 @@
           }).join('');
       }
 
+      let documentosHistorialJitsiAdministrador = [];
+
+      function actualizarMantenimientoJitsiAdministrador() {
+          const seccion = document.getElementById('mantenimientoJitsiAdministrador');
+          if (!seccion) return;
+          seccion.hidden = window.esAdministradorPrincipalDocente?.() !== true;
+      }
+
+      function actualizarConfirmacionEliminarHistorialJitsi() {
+          const confirmacion = document.getElementById('confirmacionEliminarHistorialJitsi');
+          const boton = document.getElementById('btnConfirmarEliminarHistorialJitsi');
+          if (!boton) return;
+          boton.disabled = String(confirmacion?.value || '').trim().toUpperCase() !== 'BORRAR JITSI' ||
+              documentosHistorialJitsiAdministrador.length === 0;
+      }
+
+      function abrirEliminacionHistorialJitsiAdministrador() {
+          if (window.esAdministradorPrincipalDocente?.() !== true) {
+              alert('Solo la cuenta administradora principal puede realizar esta operación.');
+              return;
+          }
+          documentosHistorialJitsiAdministrador = [];
+          const modal = document.getElementById('eliminarHistorialJitsiAdminModal');
+          const resumen = document.getElementById('resumenEliminacionHistorialJitsi');
+          const alcance = document.getElementById('alcanceEliminacionHistorialJitsi');
+          const confirmacion = document.getElementById('confirmacionEliminarHistorialJitsi');
+          if (resumen) resumen.textContent = 'Presioná “Revisar documentos” para contar el historial existente.';
+          if (alcance) alcance.textContent = 'Todas las clases y fechas';
+          if (confirmacion) confirmacion.value = '';
+          actualizarConfirmacionEliminarHistorialJitsi();
+          modal?.classList.add('active');
+          setTimeout(() => modal?.querySelector('.teacher-danger-operation-box')?.focus(), 0);
+      }
+
+      function cerrarEliminacionHistorialJitsiAdministrador() {
+          document.getElementById('eliminarHistorialJitsiAdminModal')?.classList.remove('active');
+          documentosHistorialJitsiAdministrador = [];
+      }
+
+      document.getElementById('eliminarHistorialJitsiAdminModal')?.addEventListener('click', evento => {
+          if (evento.target?.id === 'eliminarHistorialJitsiAdminModal') {
+              cerrarEliminacionHistorialJitsiAdministrador();
+          }
+      });
+      document.addEventListener('keydown', evento => {
+          if (evento.key === 'Escape' &&
+              document.getElementById('eliminarHistorialJitsiAdminModal')?.classList.contains('active')) {
+              evento.preventDefault();
+              cerrarEliminacionHistorialJitsiAdministrador();
+          }
+      });
+
+      async function revisarHistorialJitsiAdministrador() {
+          const boton = document.getElementById('btnRevisarHistorialJitsiFirestore');
+          const resumen = document.getElementById('resumenEliminacionHistorialJitsi');
+          const original = boton?.innerHTML || '';
+          if (boton) {
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Revisando...';
+          }
+          if (resumen) resumen.textContent = 'Consultando Firestore...';
+          const resultado = await window.revisarHistorialJitsiAdministradorFirebase?.();
+          if (boton) {
+              boton.disabled = false;
+              boton.innerHTML = original;
+          }
+          if (!resultado?.ok) {
+              documentosHistorialJitsiAdministrador = [];
+              if (resumen) resumen.textContent = resultado?.error || 'No se pudo revisar el historial.';
+              actualizarConfirmacionEliminarHistorialJitsi();
+              return;
+          }
+          documentosHistorialJitsiAdministrador = resultado.documentos || [];
+          if (resumen) {
+              resumen.innerHTML = resultado.cantidad
+                  ? `<strong>${resultado.cantidad}</strong> documento${resultado.cantidad === 1 ? '' : 's'} histórico${resultado.cantidad === 1 ? '' : 's'} listo${resultado.cantidad === 1 ? '' : 's'} para eliminar.`
+                  : '<strong>No hay documentos históricos Jitsi.</strong> No es necesario ejecutar la eliminación.';
+          }
+          actualizarConfirmacionEliminarHistorialJitsi();
+      }
+
+      async function eliminarHistorialJitsiAdministrador() {
+          const confirmacion = String(document.getElementById('confirmacionEliminarHistorialJitsi')?.value || '').trim().toUpperCase();
+          if (confirmacion !== 'BORRAR JITSI' || !documentosHistorialJitsiAdministrador.length) return;
+          const cantidadEsperada = documentosHistorialJitsiAdministrador.length;
+          if (!confirm(`Se eliminarán definitivamente ${cantidadEsperada} documento(s) históricos Jitsi de todas las clases y fechas. ¿Continuar?`)) return;
+          const boton = document.getElementById('btnConfirmarEliminarHistorialJitsi');
+          const resumen = document.getElementById('resumenEliminacionHistorialJitsi');
+          if (boton) {
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Eliminando...';
+          }
+          if (resumen) resumen.textContent = 'Eliminando documentos por lotes. No cierres esta ventana.';
+          const resultado = await window.eliminarHistorialJitsiAdministradorFirebase?.(
+              documentosHistorialJitsiAdministrador
+          );
+          if (!resultado?.ok) {
+              if (boton) {
+                  boton.innerHTML = '<i class="fa-solid fa-trash-can"></i> Reintentar eliminación';
+                  boton.disabled = false;
+              }
+              if (resumen) {
+                  resumen.textContent = `${resultado?.error || 'No se pudo completar la eliminación.'} Eliminados antes del error: ${Number(resultado?.eliminadas || 0)}.`;
+              }
+              return;
+          }
+          documentosHistorialJitsiAdministrador = [];
+          if (resumen) {
+              resumen.innerHTML = resultado.auditoriaRegistrada === false
+                  ? `<strong>Eliminación completada con advertencia.</strong> Se borraron ${resultado.eliminadas} documento(s), pero no se pudo registrar la auditoría. Publicá las reglas actualizadas y revisá la consola.`
+                  : `<strong>Eliminación completada.</strong> Se borraron ${resultado.eliminadas} documento(s) y se registró la operación administrativa.`;
+          }
+          if (boton) {
+              boton.innerHTML = '<i class="fa-solid fa-circle-check"></i> Historial eliminado';
+              boton.disabled = true;
+          }
+          const confirmacionInput = document.getElementById('confirmacionEliminarHistorialJitsi');
+          if (confirmacionInput) confirmacionInput.value = '';
+      }
+
       function abrirPanelProfesor() {
           document.getElementById('panelProfesorModal').classList.add('active');
           actualizarBotonPausaCronometros();
+          actualizarMantenimientoJitsiAdministrador();
           const controlSonido = document.getElementById('sonidoSolicitudesProfesor');
           if (controlSonido) controlSonido.checked = sonidoSolicitudesActivo;
           renderDocentesAutorizados();
@@ -10548,16 +10810,70 @@
       let detalleEstudianteProfesorIndiceActual = null;
 
       function filtrarDesafiosDetalleProfesor(valor = '') {
-          const filtro = String(valor || '');
-          const actividades = document.querySelectorAll('#detalleEstudianteProfesorContenido .teacher-activity[data-detail-status]');
+          const selector = document.getElementById('filtroDesafiosDetalleProfesor');
+          if (selector && arguments.length > 0 && valor !== selector.value) {
+              selector.value = String(valor || '');
+          }
+          const filtro = String(selector?.value || valor || '');
+          const busqueda = String(document.getElementById('buscarDesafioDetalleProfesor')?.value || '')
+              .trim().toLowerCase();
+          const orden = String(document.getElementById('ordenDesafiosDetalleProfesor')?.value || 'original');
+          const contenedor = document.getElementById('listaDesafiosDetalleProfesor');
+          const actividades = [...document.querySelectorAll(
+              '#detalleEstudianteProfesorContenido .teacher-activity[data-detail-status]'
+          )];
           let visibles = 0;
           actividades.forEach(actividad => {
-              const mostrar = !filtro || actividad.dataset.detailStatus?.split(' ').includes(filtro);
+              const coincideEstado = !filtro || actividad.dataset.detailStatus?.split(' ').includes(filtro);
+              const coincideTexto = !busqueda || String(actividad.dataset.detailSearch || '').includes(busqueda);
+              const mostrar = coincideEstado && coincideTexto;
               actividad.hidden = !mostrar;
               if (mostrar) visibles++;
           });
+          if (contenedor) {
+              const ordenadas = [...actividades].sort((a, b) => {
+                  if (orden === 'nota-desc') {
+                      return Number(b.dataset.detailGrade || -1) - Number(a.dataset.detailGrade || -1);
+                  }
+                  if (orden === 'nota-asc') {
+                      const notaA = a.dataset.detailGrade === '' ? 99 : Number(a.dataset.detailGrade);
+                      const notaB = b.dataset.detailGrade === '' ? 99 : Number(b.dataset.detailGrade);
+                      return notaA - notaB;
+                  }
+                  if (orden === 'titulo') {
+                      return String(a.dataset.detailSearch || '').localeCompare(
+                          String(b.dataset.detailSearch || ''),
+                          'es'
+                      );
+                  }
+                  if (orden === 'estado') {
+                      return Number(b.dataset.detailPriority || 0) - Number(a.dataset.detailPriority || 0);
+                  }
+                  return Number(a.dataset.detailOrder || 0) - Number(b.dataset.detailOrder || 0);
+              });
+              ordenadas.forEach(actividad => contenedor.appendChild(actividad));
+          }
           const estado = document.getElementById('estadoFiltroDetalleProfesor');
-          if (estado) estado.textContent = `${visibles} desafío${visibles === 1 ? '' : 's'} visible${visibles === 1 ? '' : 's'}`;
+          if (estado) estado.textContent = `${visibles} de ${actividades.length} desafío${actividades.length === 1 ? '' : 's'}`;
+          const vacio = document.getElementById('sinResultadosDetalleProfesor');
+          if (vacio) vacio.hidden = visibles > 0;
+          document.querySelectorAll('[data-detail-filter-chip]').forEach(boton => {
+              const activo = String(boton.dataset.detailFilterChip || '') === filtro;
+              boton.classList.toggle('is-active', activo);
+              boton.setAttribute('aria-pressed', activo ? 'true' : 'false');
+          });
+      }
+      function aplicarFiltroRapidoDetalleProfesor(valor = '') {
+          const selector = document.getElementById('filtroDesafiosDetalleProfesor');
+          if (selector) selector.value = String(valor || '');
+          filtrarDesafiosDetalleProfesor();
+      }
+      function alternarDesafiosVisiblesDetalleProfesor(expandir) {
+          document.querySelectorAll(
+              '#listaDesafiosDetalleProfesor .teacher-activity:not([hidden])'
+          ).forEach(actividad => {
+              actividad.open = expandir === true;
+          });
       }
       async function guardarNotaDesafioProfesor(indice, sectionId) {
           const d = estudiantesProfesor[indice];
@@ -11574,8 +11890,26 @@
                       !r.error && !tieneNotaDocente ? 'completas' : ''
               ].filter(Boolean).join(' ');
               const estadoDetalleFinal = estadosDetalle || 'completas';
-              return `<details class="teacher-activity" data-section-id="${sec.id}" data-detail-status="${estadoDetalleFinal}" ${numero === 0 ? 'open' : ''}>
-                  <summary>${escapeHtml(sec.title)} · ${estado} · Nota vigente ${notaFinal !== null ? `${notaFinal}/10` : 'pendiente'}${tieneNotaDocente ? ' (docente)' : ''}</summary>
+              const prioridadDetalle = estadosDetalle.includes('errores') ? 4
+                  : (estadosDetalle.includes('pendientes') ? 3 : (tieneNotaDocente ? 2 : 1));
+              const etiquetasEstado = [
+                  estadosDetalle.includes('errores') ? '<span class="teacher-activity-badge is-error">Error</span>' : '',
+                  estadosDetalle.includes('pendientes') ? '<span class="teacher-activity-badge is-pending">Pendiente</span>' : '',
+                  tieneNotaDocente ? '<span class="teacher-activity-badge is-adjusted">Nota docente</span>' : '',
+                  notaFinal !== null && Number(notaFinal) >= 6 ? '<span class="teacher-activity-badge is-approved">Aprobado</span>' : '',
+                  notaFinal !== null && Number(notaFinal) < 6 ? '<span class="teacher-activity-badge is-failed">A revisar</span>' : ''
+              ].filter(Boolean).join('');
+              return `<details class="teacher-activity" data-section-id="${sec.id}" data-detail-status="${estadoDetalleFinal}"
+                  data-detail-search="${escapeHtml(`${sec.title} ${estado} ${estadoDetalleFinal}`.toLowerCase())}"
+                  data-detail-grade="${notaFinal === null ? '' : Number(notaFinal)}"
+                  data-detail-priority="${prioridadDetalle}" data-detail-order="${numero}" ${numero === 0 ? 'open' : ''}>
+                  <summary>
+                      <span class="teacher-activity-summary-main">
+                          <strong>${escapeHtml(sec.title)}</strong>
+                          <small>${estado} · Nota vigente ${notaFinal !== null ? `${notaFinal}/10` : 'pendiente'}</small>
+                      </span>
+                      <span class="teacher-activity-badges">${etiquetasEstado}</span>
+                  </summary>
                   <div class="teacher-activity-content">
                       <div class="teacher-detail-summary">
                           <div class="teacher-detail-stat"><small>Estado</small><strong>${estado}</strong></div>
@@ -11732,11 +12066,25 @@
                   <div class="teacher-detail-stat"><small>Desbloqueos</small><strong>${cantidadDesbloqueos}</strong></div>
                   <div class="teacher-detail-stat"><small>Última actualización</small><strong>${escapeHtml(fecha)}</strong></div>
               </div>
-              <div style="position:sticky;top:0;z-index:3;display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;padding:.7rem;margin-bottom:1rem;border:1px solid rgba(56,189,248,.35);border-radius:8px;background:rgba(15,23,42,.96);box-shadow:0 8px 18px rgba(0,0,0,.22)">
-                  <strong style="color:var(--primary)"><i class="fa-solid fa-layer-group"></i> Secciones del informe</strong>
-                  <div class="teacher-detail-filter">
-                      <label for="filtroDesafiosDetalleProfesor">Mostrar desafíos</label>
-                      <select id="filtroDesafiosDetalleProfesor" onchange="filtrarDesafiosDetalleProfesor(this.value)">
+              <div class="teacher-detail-toolbar">
+                  <div class="teacher-detail-toolbar-title">
+                      <strong><i class="fa-solid fa-layer-group"></i> Desafíos del informe</strong>
+                      <span id="estadoFiltroDetalleProfesor">${seccionesData.length} de ${seccionesData.length} desafíos</span>
+                  </div>
+                  <div class="teacher-detail-quick-filters" aria-label="Filtros rápidos de desafíos">
+                      <button type="button" data-detail-filter-chip="" class="is-active" aria-pressed="true" onclick="aplicarFiltroRapidoDetalleProfesor('')">Todos</button>
+                      <button type="button" data-detail-filter-chip="errores" aria-pressed="false" onclick="aplicarFiltroRapidoDetalleProfesor('errores')">Errores</button>
+                      <button type="button" data-detail-filter-chip="pendientes" aria-pressed="false" onclick="aplicarFiltroRapidoDetalleProfesor('pendientes')">Pendientes</button>
+                      <button type="button" data-detail-filter-chip="modificadas" aria-pressed="false" onclick="aplicarFiltroRapidoDetalleProfesor('modificadas')">Corregidos</button>
+                  </div>
+                  <div class="teacher-detail-controls">
+                      <label class="teacher-detail-search">
+                          <span>Buscar</span>
+                          <div><i class="fa-solid fa-magnifying-glass"></i><input id="buscarDesafioDetalleProfesor" type="search" placeholder="Título o estado" oninput="filtrarDesafiosDetalleProfesor()"></div>
+                      </label>
+                      <label>
+                          <span>Mostrar</span>
+                          <select id="filtroDesafiosDetalleProfesor" onchange="filtrarDesafiosDetalleProfesor(this.value)">
                           <option value="">Todos</option>
                           <option value="errores">Con errores</option>
                           <option value="pendientes">Pendientes</option>
@@ -11746,15 +12094,25 @@
                           <option value="aprobadas">Nota vigente 6 o más</option>
                           <option value="desaprobadas">Nota vigente menor a 6</option>
                           <option value="completas">Completos sin observaciones</option>
-                      </select>
-                      <span id="estadoFiltroDetalleProfesor">${seccionesData.length} desafíos visibles</span>
+                          </select>
+                      </label>
+                      <label>
+                          <span>Ordenar</span>
+                          <select id="ordenDesafiosDetalleProfesor" onchange="filtrarDesafiosDetalleProfesor()">
+                              <option value="original">Orden del curso</option>
+                              <option value="estado">Prioridad: errores primero</option>
+                              <option value="nota-asc">Nota: menor primero</option>
+                              <option value="nota-desc">Nota: mayor primero</option>
+                              <option value="titulo">Título: A-Z</option>
+                          </select>
+                      </label>
                   </div>
-                  <div class="btn-group">
-                      <button class="btn btn-primary" onclick="document.querySelectorAll('#detalleEstudianteProfesorContenido .teacher-activity').forEach(x=>x.open=true)">
-                          <i class="fa-solid fa-angles-down"></i> Expandir todo
+                  <div class="teacher-detail-toolbar-actions">
+                      <button class="btn btn-primary" type="button" onclick="alternarDesafiosVisiblesDetalleProfesor(true)">
+                          <i class="fa-solid fa-angles-down"></i> Expandir visibles
                       </button>
-                      <button class="btn btn-secondary" onclick="document.querySelectorAll('#detalleEstudianteProfesorContenido .teacher-activity').forEach(x=>x.open=false)">
-                          <i class="fa-solid fa-angles-up"></i> Contraer todo
+                      <button class="btn btn-secondary" type="button" onclick="alternarDesafiosVisiblesDetalleProfesor(false)">
+                          <i class="fa-solid fa-angles-up"></i> Contraer visibles
                       </button>
                   </div>
               </div>
@@ -11868,8 +12226,14 @@
               <div style="display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;margin:1rem 0 .7rem;">
                   <h3 style="margin:0;color:var(--primary)">Actividades</h3>
               </div>
-              ${actividadesHtml}`;
+              <div id="sinResultadosDetalleProfesor" class="teacher-detail-empty" hidden>
+                  <i class="fa-solid fa-filter-circle-xmark"></i>
+                  <strong>No hay desafíos que coincidan.</strong>
+                  <span>Modificá la búsqueda o elegí otro filtro.</span>
+              </div>
+              <div id="listaDesafiosDetalleProfesor">${actividadesHtml}</div>`;
           document.getElementById('detalleEstudianteProfesorModal').classList.add('active');
+          filtrarDesafiosDetalleProfesor();
       }
 
       function cerrarHistorialDesbloqueos() {
@@ -13020,15 +13384,19 @@
               .filter(elemento => !elemento.hidden)
               .map(elemento => elemento.dataset.sectionId);
           const filtroSeleccionado = document.getElementById('filtroDesafiosDetalleProfesor');
-          const filtroActivo = String(filtroSeleccionado?.value || '');
-          const seccionesExportar = filtroActivo
-              ? seccionesData.filter(sec => actividadesVisibles.includes(sec.id))
-              : seccionesData;
+          const busquedaActiva = String(document.getElementById('buscarDesafioDetalleProfesor')?.value || '').trim();
+          const seccionesExportar = actividadesVisibles
+              .map(sectionId => seccionesData.find(sec => sec.id === sectionId))
+              .filter(Boolean);
           if (!seccionesExportar.length) {
               alert('El filtro seleccionado no tiene desafíos para exportar.');
               return;
           }
-          y = agregarTextoPDFProfesor(doc, `Filtro exportado: ${filtroSeleccionado?.selectedOptions?.[0]?.textContent || 'Todos'} · Desafíos incluidos: ${seccionesExportar.length}`, y);
+          const detalleFiltroPDF = [
+              filtroSeleccionado?.selectedOptions?.[0]?.textContent || 'Todos',
+              busquedaActiva ? `búsqueda: ${busquedaActiva}` : ''
+          ].filter(Boolean).join(' · ');
+          y = agregarTextoPDFProfesor(doc, `Vista exportada: ${detalleFiltroPDF} · Desafíos incluidos: ${seccionesExportar.length}`, y);
 
           seccionesExportar.forEach((sec, indice) => {
               const r = historial[sec.id] || {};
