@@ -4684,7 +4684,7 @@
       };
 
       window.escucharHistorialMensajesDocenteFirebase = async function(alActualizar) {
-        const autorizado = await window.autorizarDocenteFirebase?.();
+        const autorizado = await window.esDocenteAutorizadoFirebase?.();
         if (!autorizado || typeof alActualizar !== "function") return null;
         const { database } = contextoDocenteFirebase();
         if (!database) return null;
@@ -4803,7 +4803,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260901-4">
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260901-5">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -15850,7 +15850,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260901-4"></script>
+    <script src="mejoras-seguimiento.js?v=20260901-5"></script>
   </body>
 </html>
 
