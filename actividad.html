@@ -3097,7 +3097,22 @@
 
       window.guardarProgresoFirebase = async function(payload) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
-        if (!user || !db) return false;
+        if (!user) {
+          window.ultimoErrorGuardadoFirebase = {
+            code: "auth-required",
+            message: "No hay una sesión autenticada.",
+            projectId: firebaseConfig.projectId
+          };
+          return false;
+        }
+        if (!db) {
+          window.ultimoErrorGuardadoFirebase = {
+            code: "firebase-not-initialized",
+            message: "Firestore no está inicializado.",
+            projectId: firebaseConfig.projectId
+          };
+          return false;
+        }
         try {
           const ref = doc(db, "estudiantes", user.uid);
           await setDoc(ref, {
@@ -3114,7 +3129,12 @@
           console.error("Firebase save error:", error);
           window.ultimoErrorGuardadoFirebase = {
             code: error?.code || '',
-            message: error?.message || 'Error desconocido'
+            message: error?.message || 'Error desconocido',
+            projectId: firebaseConfig.projectId,
+            uid: user.uid,
+            email: user.email || '',
+            emailVerified: user.emailVerified === true,
+            operation: "create-or-update-student"
           };
           return false;
         }
@@ -6791,6 +6811,58 @@
           }
       }
 
+      function diagnosticarErrorRegistroEstudiante() {
+          const error = window.ultimoErrorGuardadoFirebase || {};
+          const user = window.firebaseCurrentUser || {};
+          const codigo = String(error.code || '').toLowerCase();
+          if (!user.emailVerified) {
+              return {
+                  titulo: 'Correo no verificado',
+                  detalle: `La cuenta ${user.email || 'actual'} todavía no figura como verificada en Google.`,
+                  accion: 'Verificá el correo, cerrá sesión y volvé a ingresar antes de guardar los datos.'
+              };
+          }
+          if (codigo === 'auth-required') {
+              return {
+                  titulo: 'Sesión vencida',
+                  detalle: 'No hay una sesión autenticada disponible para guardar el estudiante.',
+                  accion: 'Cerrá esta ventana e ingresá nuevamente con Google.'
+              };
+          }
+          if (codigo === 'firebase-not-initialized') {
+              return {
+                  titulo: 'Firestore no está inicializado',
+                  detalle: `La aplicación no pudo conectarse al proyecto ${error.projectId || 'Firebase'}.`,
+                  accion: 'Revisá la configuración de Firebase y que la página se abra desde un servidor web.'
+              };
+          }
+          if (codigo === 'permission-denied' || codigo === 'failed-precondition') {
+              const documentoExistenteIncompleto = Boolean(
+                  window.ultimoDocumentoEstudianteFirebase &&
+                  (!window.ultimoDocumentoEstudianteFirebase.estadoCuenta ||
+                   !window.ultimoDocumentoEstudianteFirebase.email ||
+                   !window.ultimoDocumentoEstudianteFirebase.uid)
+              );
+              if (documentoExistenteIncompleto) {
+                  return {
+                      titulo: 'Documento existente incompleto',
+                      detalle: 'Firestore encontró un registro previo de este UID, pero no tiene todos los campos necesarios para actualizarlo.',
+                      accion: 'El administrador debe completar o eliminar ese documento en estudiantes/{uid}; después intentá nuevamente.'
+                  };
+              }
+              return {
+                  titulo: 'Reglas de Firestore no coinciden',
+                  detalle: `Firestore rechazó la operación en ${error.projectId || 'el proyecto configurado'}.`,
+                  accion: 'Publicá la versión actualizada de REGLAS.TXT en ese mismo proyecto y verificá que el correo esté verificado.'
+              };
+          }
+          return {
+              titulo: 'No se pudo guardar',
+              detalle: error.message || 'Firebase devolvió un error no identificado.',
+              accion: 'Revisá la conexión y la consola de Firebase para obtener el detalle técnico.'
+          };
+      }
+
       function construirPaqueteAvanceFirebase() {
           const nombre = document.getElementById('studentName')?.value.trim() || '';
           const curso = document.getElementById('studentCourse')?.value.trim() || '';
@@ -7022,7 +7094,7 @@
           const modal=document.createElement('div'); modal.className='modal-overlay'; modal.style.display='flex';
           modal.innerHTML=`<div class="modal-box" style="max-width:520px;width:92%;"><h3>👨‍🎓 Datos del estudiante</h3><p>Primera vez con este correo. Completá tus datos para comenzar.</p><div class="input-group"><label>Nombre y Apellido</label><input id="nuevoNombre" type="text" required></div><div class="input-group"><label>Curso</label><select id="nuevoCurso" required><option value="">Seleccionar curso</option><option>1° Año</option><option>2° Año</option><option>3° Año</option><option>4° Año</option><option>5° Año</option><option>6° Año</option><option>7° Año</option></select></div><div class="input-group"><label>División</label><select id="nuevoDivision" required><option value="">Seleccionar división</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option></select></div><div class="input-group"><label>Turno</label><select id="nuevoTurno" required><option value="">Seleccionar turno</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select></div><div id="nuevoError" role="alert" style="display:none;color:#fca5a5">Seleccioná obligatoriamente curso, división y turno.</div><div class="modal-actions"><button class="btn btn-primary" id="confirmarNuevo" type="button">Comenzar actividad</button></div></div>`;
           document.body.appendChild(modal); const n=modal.querySelector('#nuevoNombre'); n.value=window.firebaseCurrentUser?.displayName||''; n.focus();
-          modal.querySelector('#confirmarNuevo').onclick=async()=>{const nombre=n.value.trim(),curso=modal.querySelector('#nuevoCurso').value.trim(),division=modal.querySelector('#nuevoDivision').value.trim().toUpperCase(),turno=modal.querySelector('#nuevoTurno').value;if(!nombre||!curso||!division||!turno){const error=modal.querySelector('#nuevoError');error.style.display='block';const primerFaltante=!nombre?n:!curso?modal.querySelector('#nuevoCurso'):!division?modal.querySelector('#nuevoDivision'):modal.querySelector('#nuevoTurno');primerFaltante.focus();return;}modal.querySelector('#nuevoError').style.display='none';document.getElementById('studentName').value=nombre;document.getElementById('studentCourse').value=curso;document.getElementById('studentDivision').value=division;document.getElementById('studentTurno').value=turno;setLocalStorage('app_student_name',nombre);setLocalStorage('app_student_course',curso);setLocalStorage('app_student_division',division);setLocalStorage('app_student_turno',turno);const guardado=await guardarIdentificacionFirebase();if(!guardado){const codigo=window.ultimoErrorGuardadoFirebase?.code||'';modal.querySelector('#nuevoError').textContent=`No se pudieron guardar los datos${codigo?` (${codigo})`:''}. Publicá REGLAS.txt y volvé a intentar.`;modal.querySelector('#nuevoError').style.display='block';return;}modal.remove();resolve();};
+          modal.querySelector('#confirmarNuevo').onclick=async()=>{const nombre=n.value.trim(),curso=modal.querySelector('#nuevoCurso').value.trim(),division=modal.querySelector('#nuevoDivision').value.trim().toUpperCase(),turno=modal.querySelector('#nuevoTurno').value;if(!nombre||!curso||!division||!turno){const error=modal.querySelector('#nuevoError');error.textContent='Seleccioná obligatoriamente curso, división y turno.';error.style.display='block';const primerFaltante=!nombre?n:!curso?modal.querySelector('#nuevoCurso'):!division?modal.querySelector('#nuevoDivision'):modal.querySelector('#nuevoTurno');primerFaltante.focus();return;}modal.querySelector('#nuevoError').style.display='none';document.getElementById('studentName').value=nombre;document.getElementById('studentCourse').value=curso;document.getElementById('studentDivision').value=division;document.getElementById('studentTurno').value=turno;setLocalStorage('app_student_name',nombre);setLocalStorage('app_student_course',curso);setLocalStorage('app_student_division',division);setLocalStorage('app_student_turno',turno);const guardado=await guardarIdentificacionFirebase();if(!guardado){const diagnostico=diagnosticarErrorRegistroEstudiante();const error=modal.querySelector('#nuevoError');error.innerHTML=`<strong>${escapeHtml(diagnostico.titulo)}</strong><br>${escapeHtml(diagnostico.detalle)}<br><small>${escapeHtml(diagnostico.accion)}</small>`;error.style.display='block';return;}modal.remove();resolve();};
         });
       }
 
