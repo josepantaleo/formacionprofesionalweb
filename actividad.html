@@ -5140,7 +5140,7 @@
             <option value="alertas-desc">Alertas primero</option>
               </select></label>
               <button class="btn btn-secondary teacher-online-filter" id="btnSoloEnLineaProfesor" type="button" onclick="alternarFiltroSoloEnLineaProfesor()" aria-pressed="false" title="Mostrar solamente estudiantes con actividad en los últimos 2 minutos"><i class="fa-solid fa-signal"></i> Solo en línea</button>
-              <button class="btn btn-success" type="button" onclick="exportarCursoProfesorPDF()" title="Exportar el curso seleccionado a PDF"><i class="fa-solid fa-file-pdf"></i> PDF del curso</button>
+              <button class="btn btn-success" type="button" onclick="exportarCursoProfesorPDF()" title="Exportar el informe completo del curso, división y turno seleccionados"><i class="fa-solid fa-file-pdf"></i> PDF completo del grupo</button>
               <button class="btn btn-secondary" id="btnLimpiarFiltrosProfesor" type="button" onclick="limpiarFiltrosProfesor()" title="Restablecer todos los filtros y el orden"><i class="fa-solid fa-filter-circle-xmark"></i> Limpiar filtros</button>
             </div>
           </section>
@@ -13962,7 +13962,7 @@
           guardarPDFProfesor(doc, `Detalle_docente_${nombre}_${e.curso || ''}_${e.division || ''}`);
       }
 
-      function exportarCursoProfesorPDF() {
+      async function exportarCursoProfesorPDF() {
           if (!window.jspdf?.jsPDF) {
               alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.');
               return;
@@ -13970,61 +13970,327 @@
           const curso = String(document.getElementById('filtroCursoProfesor')?.value || '').trim();
           const division = String(document.getElementById('filtroDivisionProfesor')?.value || '').trim();
           const turno = String(document.getElementById('filtroTurnoProfesor')?.value || '').trim();
-          if (!curso) {
-              alert('Seleccioná un curso en el panel docente antes de exportar el PDF general.');
-              document.getElementById('filtroCursoProfesor')?.focus();
+          const camposFaltantes = [
+              !curso ? { nombre: 'curso', id: 'filtroCursoProfesor' } : null,
+              !division ? { nombre: 'división', id: 'filtroDivisionProfesor' } : null,
+              !turno ? { nombre: 'turno', id: 'filtroTurnoProfesor' } : null
+          ].filter(Boolean);
+          if (camposFaltantes.length) {
+              alert(`Seleccioná ${camposFaltantes.map(item => item.nombre).join(', ')} para identificar el grupo exacto que se exportará.`);
+              document.getElementById(camposFaltantes[0].id)?.focus();
               return;
           }
           const estudiantes = estudiantesProfesor.filter(d => {
               const e = d.estudiante || {};
               return String(e.curso || '') === curso &&
-                  (!division || String(e.division || '') === division) &&
-                  (!turno || String(e.turno || '') === turno);
+                  String(e.division || '') === division &&
+                  String(e.turno || '') === turno;
           }).sort((a, b) => String(a.estudiante?.nombre || a.email || '').localeCompare(String(b.estudiante?.nombre || b.email || ''), 'es'));
           if (!estudiantes.length) {
-              alert('No hay estudiantes para el curso y los filtros seleccionados.');
+              alert('No hay estudiantes para la combinación de curso, división y turno seleccionada.');
               return;
           }
+          const historialNotasPorUid = new Map(await Promise.all(estudiantes.map(async d => {
+              if (!d.uid || typeof window.obtenerHistorialNotasDesafiosFirebase !== 'function') {
+                  return [d.uid || d.email || '', []];
+              }
+              try {
+                  const historial = await window.obtenerHistorialNotasDesafiosFirebase(d.uid);
+                  return [d.uid, Array.isArray(historial) ? historial : []];
+              } catch (_) {
+                  return [d.uid, []];
+              }
+          })));
           const { jsPDF } = window.jspdf;
           const doc = new jsPDF();
-          const grupo = [curso, division, turno].filter(Boolean).join(' · ');
-          const notas = estudiantes.map(calcularNotaDefinitivaEstudiante).filter(x => x !== '—').map(Number);
-          const promedioCurso = notas.length ? (notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(1) : 'Pendiente';
+          const grupo = `${curso} · División ${division} · Turno ${turno}`;
+          const fechaEmision = new Date().toLocaleString('es-AR');
+          const formatearFechaPDF = valor => {
+              if (!valor) return 'Sin registrar';
+              try {
+                  const fecha = valor.toDate
+                      ? valor.toDate()
+                      : (valor.seconds ? new Date(Number(valor.seconds) * 1000) : new Date(valor));
+                  return Number.isNaN(fecha.getTime()) ? 'Sin registrar' : fecha.toLocaleString('es-AR');
+              } catch (_) {
+                  return 'Sin registrar';
+              }
+          };
+          const textoEstadoCuenta = d => {
+              const estado = d.estadoCuenta || 'activo';
+              if (estado === 'pendiente') return 'Pendiente de aprobación';
+              if (estado === 'rechazado') return 'Solicitud rechazada';
+              if (estado === 'inactivo') return 'Cuenta inactiva';
+              return 'Cuenta activa';
+          };
+          const contarSituacionDesafios = d => {
+              const historial = d.historialResultados || {};
+              const finalizadas = d.finalizadas || {};
+              return seccionesData.reduce((resumen, sec) => {
+                  const resultado = historial[sec.id] || {};
+                  const evaluacion = resultado.evaluacionCodigo || {};
+                  const nota = obtenerNotaDesafioEstudiante(d, sec.id, resultado);
+                  const conError = evaluacion.sintaxis?.valida === false ||
+                      evaluacion.ejecucion?.ok === false || Boolean(resultado.error);
+                  const pendiente = !finalizadas[sec.id] ||
+                      resultado.notaPreguntas === undefined || nota === null;
+                  if (conError) resumen.errores += 1;
+                  if (pendiente) resumen.pendientes += 1;
+                  if (d.notasDesafiosDocente?.[sec.id]?.nota !== undefined &&
+                      d.notasDesafiosDocente?.[sec.id]?.nota !== null) resumen.modificadas += 1;
+                  if (finalizadas[sec.id]) resumen.finalizadas += 1;
+                  return resumen;
+              }, { errores: 0, pendientes: 0, modificadas: 0, finalizadas: 0 });
+          };
+          const estadisticas = estudiantes.map(d => ({ estudiante: d, ...contarSituacionDesafios(d) }));
+          const notasAcademicas = estudiantes.map(calcularNotaEstudiante).filter(x => x !== '—').map(Number);
+          const notasDefinitivas = estudiantes.map(calcularNotaDefinitivaEstudiante).filter(x => x !== '—').map(Number);
+          const promedio = valores => valores.length
+              ? (valores.reduce((a, b) => a + b, 0) / valores.length).toFixed(1)
+              : 'Pendiente';
+          const progresoPromedio = (
+              estudiantes.reduce((total, d) => total + calcularProgresoEstudiante(d), 0) /
+              estudiantes.length
+          ).toFixed(1);
+          const activas = estudiantes.filter(d => !['pendiente', 'rechazado', 'inactivo'].includes(d.estadoCuenta)).length;
+          const pendientesCuenta = estudiantes.filter(d => d.estadoCuenta === 'pendiente').length;
+          const inactivas = estudiantes.filter(d => ['rechazado', 'inactivo'].includes(d.estadoCuenta)).length;
+          const totalErrores = estadisticas.reduce((total, item) => total + item.errores, 0);
+          const totalPendientes = estadisticas.reduce((total, item) => total + item.pendientes, 0);
+          const totalModificadas = estadisticas.reduce((total, item) => total + item.modificadas, 0);
+          const totalSalidas = estudiantes.reduce((total, d) => total + Number(d.salidasPestana || 0), 0);
+          const totalDesbloqueos = estudiantes.reduce((total, d) => total + Number(d.cantidadDesbloqueos || 0), 0);
           let y = 18;
           doc.setFont('helvetica', 'bold');
+          doc.setFontSize(18);
+          doc.text('IPEM 146', 14, y);
+          y += 9;
           doc.setFontSize(15);
-          doc.text('IPEM 146 - Informe general por curso', 14, y);
-          y += 8;
+          doc.text('Informe completo del grupo', 14, y);
+          y += 10;
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          y = agregarTextoPDFProfesor(doc, `Curso: ${curso}\nDivisión: ${division}\nTurno: ${turno}\nFecha de emisión: ${fechaEmision}`, y, { altoLinea: 5 });
+          y += 6;
+          doc.line(14, y, 196, y);
+          y += 9;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(12);
+          y = agregarTextoPDFProfesor(doc, 'Resumen institucional del grupo', y);
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9);
-          y = agregarTextoPDFProfesor(doc, `Grupo: ${grupo}\nEstudiantes: ${estudiantes.length} · Promedio de notas confirmadas: ${promedioCurso}\nFecha de emisión: ${new Date().toLocaleString('es-AR')}`, y);
-          y += 4;
-          doc.line(14, y, 196, y);
+          y = agregarTextoPDFProfesor(doc, [
+              `Estudiantes: ${estudiantes.length} · Cuentas activas: ${activas} · Solicitudes pendientes: ${pendientesCuenta} · Inactivas o rechazadas: ${inactivas}`,
+              `Progreso promedio: ${progresoPromedio}% · Promedio académico: ${promedio(notasAcademicas)}/10 · Promedio definitivo confirmado: ${promedio(notasDefinitivas)}/10`,
+              `Desafíos con errores: ${totalErrores} · Desafíos pendientes: ${totalPendientes} · Notas corregidas por docentes: ${totalModificadas}`,
+              `Cambios de pestaña: ${totalSalidas} · Desbloqueos registrados: ${totalDesbloqueos}`
+          ].join('\n'), y, { altoLinea: 5 });
+          y += 5;
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(12);
+          y = agregarTextoPDFProfesor(doc, 'Nómina y situación general', y);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8.5);
+          estadisticas.forEach((item, indice) => {
+              const d = item.estudiante;
+              const e = d.estudiante || {};
+              const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
+              y = agregarTextoPDFProfesor(
+                  doc,
+                  `${indice + 1}. ${e.nombre || d.nombreGoogle || 'Sin nombre'} · ${d.email || 'Sin email'}\n` +
+                  `Estado: ${textoEstadoCuenta(d)} · Progreso: ${calcularProgresoEstudiante(d)}% · Promedio: ${calcularNotaEstudiante(d)}/10 · Nota definitiva: ${notaDefinitiva === '—' ? 'Pendiente' : `${notaDefinitiva}/10`} · Errores: ${item.errores} · Pendientes: ${item.pendientes} · Correcciones docentes: ${item.modificadas}`,
+                  y,
+                  { altoLinea: 4 }
+              );
+              y += 2;
+          });
 
           estudiantes.forEach((d, indice) => {
+              doc.addPage();
+              y = 18;
               const e = d.estudiante || {};
               const historial = d.historialResultados || {};
               const finalizadas = d.finalizadas || {};
-              const errores = seccionesData.filter(sec => {
-                  const evaluacion = historial[sec.id]?.evaluacionCodigo;
-                  return evaluacion?.sintaxis?.valida === false || evaluacion?.ejecucion?.ok === false || Boolean(historial[sec.id]?.error);
-              }).length;
-              const pendientes = seccionesData.filter(sec => !finalizadas[sec.id] || historial[sec.id]?.notaPreguntas === undefined).length;
-              const modificadas = Object.values(d.notasDesafiosDocente || {}).filter(item => item?.nota !== undefined && item?.nota !== null).length;
-              if (y > 270) {
-                  doc.addPage();
-                  y = 18;
-              }
-              y += 6;
+              const notasDocente = d.notasDesafiosDocente || {};
+              const revision = d.revisionSalidas || {};
+              const eventos = Array.isArray(d.eventosSalidasPestana) ? d.eventosSalidasPestana : [];
+              const chatIA = d.chatIA || {};
+              const codigos = d.codigos || {};
+              const tiempos = d.tiemposRestantes || {};
+              const previews = d.contadorPrevisualizaciones || {};
+              const ayudas = d.ayudasComprension || {};
+              const historialNotasDesafios = historialNotasPorUid.get(d.uid || d.email || '') || [];
+              const resumen = estadisticas[indice];
               doc.setFont('helvetica', 'bold');
-              doc.setFontSize(10);
-              y = agregarTextoPDFProfesor(doc, `${indice + 1}. ${e.nombre || d.nombreGoogle || 'Sin nombre'} · ${d.email || 'Sin email'}`, y);
+              doc.setFontSize(15);
+              y = agregarTextoPDFProfesor(doc, `${indice + 1}. ${e.nombre || d.nombreGoogle || 'Estudiante sin nombre'}`, y);
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(9);
+              y = agregarTextoPDFProfesor(doc, [
+                  `Email: ${d.email || 'Sin email'} · UID: ${d.uid || 'Sin registrar'}`,
+                  `Grupo: ${grupo} · Estado: ${textoEstadoCuenta(d)}`,
+                  `Última actualización: ${formatearFechaPDF(d.actualizadoEn)}`,
+                  `Progreso: ${calcularProgresoEstudiante(d)}% · Promedio académico: ${calcularNotaEstudiante(d)}/10 · Nota calculada: ${calcularNotaProvisionalEstudiante(d)}/10 · Nota definitiva: ${calcularNotaDefinitivaEstudiante(d) === '—' ? 'Pendiente' : `${calcularNotaDefinitivaEstudiante(d)}/10`}`,
+                  `Desafíos finalizados: ${resumen.finalizadas}/${seccionesData.length} · Con errores: ${resumen.errores} · Pendientes: ${resumen.pendientes} · Notas docentes: ${resumen.modificadas}`,
+                  d.estadoCuenta === 'inactivo' ? `Baja: ${d.bajaMotivo || 'Sin motivo'} · Fecha: ${formatearFechaPDF(d.bajaFecha)} · Responsable: ${d.bajaPor || 'Sin registrar'}` : '',
+                  d.estadoCuenta === 'rechazado' ? `Rechazo: ${d.rechazoMotivo || 'Sin motivo'} · Fecha: ${formatearFechaPDF(d.rechazadoEn)} · Responsable: ${d.rechazadoPor || 'Sin registrar'}` : ''
+              ].filter(Boolean).join('\n'), y, { altoLinea: 4.5 });
+              y += 3;
+              doc.line(14, y, 196, y);
+              y += 7;
+
+              doc.setFont('helvetica', 'bold');
+              doc.setFontSize(11);
+              y = agregarTextoPDFProfesor(doc, 'Revisión docente, nota final y seguimiento', y);
               doc.setFont('helvetica', 'normal');
               doc.setFontSize(8.5);
-              y = agregarTextoPDFProfesor(doc, `División: ${e.division || '—'} · Turno: ${e.turno || '—'} · Progreso: ${calcularProgresoEstudiante(d)}% · Promedio: ${calcularNotaEstudiante(d)} · Nota definitiva: ${calcularNotaDefinitivaEstudiante(d)} · Errores: ${errores} · Pendientes: ${pendientes} · Notas modificadas: ${modificadas} · Salidas de pestaña: ${Number(d.salidasPestana || 0)}`, y);
-              doc.line(14, y, 196, y);
+              y = agregarTextoPDFProfesor(doc, [
+                  `Estado de revisión: ${revision.estado || 'Pendiente'} · Descuento: ${Number(revision.penalizacion || 0).toFixed(1)} punto(s)`,
+                  `Fundamento: ${revision.motivo || 'Sin fundamento registrado'}`,
+                  `Revisado por: ${revision.revisadoPor || 'Sin registrar'} · Fecha: ${formatearFechaPDF(revision.revisadoEn)}`,
+                  `Confirmación de nota final: ${revision.notaConfirmada === true ? 'Confirmada' : 'Pendiente'}${revision.notaModificadaManualmente === true ? ' · Modificada manualmente por el docente' : ''}`,
+                  `Cambios de pestaña: ${Number(d.salidasPestana || 0)} · Pantalla bloqueada: ${d.pantallaBloqueada === true ? 'Sí' : 'No'} · Desbloqueos: ${Number(d.cantidadDesbloqueos || 0)}`,
+                  d.ultimoDesbloqueo || d.desbloqueoPantalla
+                      ? `Último desbloqueo: ${formatearFechaPDF((d.ultimoDesbloqueo || d.desbloqueoPantalla).en)} · Docente: ${(d.ultimoDesbloqueo || d.desbloqueoPantalla).por || 'Sin registrar'} · Motivo: ${(d.ultimoDesbloqueo || d.desbloqueoPantalla).motivo || 'Sin motivo'}`
+                      : 'Último desbloqueo: sin registros'
+              ].join('\n'), y, { altoLinea: 4.2 });
+
+              if (eventos.length) {
+                  y += 3;
+                  doc.setFont('helvetica', 'bold');
+                  y = agregarTextoPDFProfesor(doc, `Recorrido de cambios de pestaña (${eventos.length})`, y);
+                  doc.setFont('helvetica', 'normal');
+                  eventos.forEach((evento, posicion) => {
+                      const duracion = evento.duracionSegundos === null || evento.duracionSegundos === undefined
+                          ? 'duración no registrada'
+                          : `${evento.duracionSegundos} segundos`;
+                      const justificacion = evento.justificacion
+                          ? `${evento.justificacion.motivo || 'Justificada'}: ${evento.justificacion.detalle || 'Sin detalle'}`
+                          : 'Sin justificación';
+                      const revisionEvento = evento.revisionDocente || evento.revision || {};
+                      y = agregarTextoPDFProfesor(
+                          doc,
+                          `${posicion + 1}. ${formatearFechaPDF(evento.salidaEn)} · Actividad: ${evento.seccion || 'Sin identificar'} · ${duracion} · ${justificacion}` +
+                          `${revisionEvento.estado ? ` · Revisión docente: ${revisionEvento.estado}` : ''}`,
+                          y,
+                          { margen: 18, ancho: 178, altoLinea: 3.8 }
+                      );
+                  });
+              } else {
+                  y = agregarTextoPDFProfesor(doc, 'Recorrido de pestañas: no se registraron cambios.', y);
+              }
+
+              seccionesData.forEach((sec, desafioIndice) => {
+                  const r = historial[sec.id] || {};
+                  const evaluacion = r.evaluacionCodigo || {};
+                  const ajuste = notasDocente[sec.id] || {};
+                  const notaVigente = obtenerNotaDesafioEstudiante(d, sec.id, r);
+                  const notaAutomatica = r.notaFinal ?? r.notaIA;
+                  const codigo = r.codigo || codigos[sec.id] || '// Sin código guardado';
+                  const mensajes = Array.isArray(chatIA[sec.id]) ? chatIA[sec.id] : [];
+                  const ayudaModulo = ayudas[sec.id] || {};
+                  const consultasPalabras = Object.values(ayudaModulo.palabras || {})
+                      .reduce((total, item) => total + Number(item?.consultas || 0), 0);
+                  const historialNotaDesafio = historialNotasDesafios.filter(item => item.sectionId === sec.id);
+                  if (y > 235) {
+                      doc.addPage();
+                      y = 18;
+                  } else {
+                      y += 6;
+                  }
+                  doc.setFont('helvetica', 'bold');
+                  doc.setFontSize(11);
+                  y = agregarTextoPDFProfesor(doc, `Desafío ${desafioIndice + 1}: ${sec.title}`, y);
+                  doc.setFontSize(8.5);
+                  y = agregarTextoPDFProfesor(doc, [
+                      `Estado: ${finalizadas[sec.id] ? 'Finalizado' : 'Pendiente'}`,
+                      `Nota del código (70%): ${r.notaCodigo ?? 'Pendiente'} · Nota de preguntas (30%): ${r.notaPreguntas ?? 'Pendiente'} · Nota automática: ${notaAutomatica ?? 'Pendiente'} · Nota vigente: ${notaVigente ?? 'Pendiente'}${ajuste.nota !== undefined && ajuste.nota !== null ? ' (corregida por docente)' : ''}`,
+                      `Tiempo restante: ${formatearTiempoProfesor(tiempos[sec.id] ?? 2400)} · Consultas de nota previa: ${Number(previews[sec.id] || 0)}/3`,
+                      `Ayudas pedagógicas: palabras consultadas ${consultasPalabras} · pasos abiertos ${Number(ayudaModulo.pasosVistos || 0)} · material de apoyo ${Number(ayudaModulo.materialApoyoVistas || 0)} · verificación ${Number(ayudaModulo.verificacion?.intentos || 0)} intento(s)`
+                  ].join('\n'), y, { altoLinea: 4 });
+                  doc.setFont('helvetica', 'normal');
+                  y = agregarTextoPDFProfesor(doc, `Consigna: ${sec.exerciseDesc || 'Sin consigna registrada'}`, y, { altoLinea: 3.8 });
+
+                  if (ajuste.nota !== undefined && ajuste.nota !== null) {
+                      y = agregarTextoPDFProfesor(doc, [
+                          `Corrección docente: ${ajuste.nota}/10 · Valor automático anterior: ${ajuste.notaAutomatica ?? notaAutomatica ?? 'Sin nota'}`,
+                          `Docente: ${ajuste.modificadaPor || 'Sin registrar'} · Fecha: ${formatearFechaPDF(ajuste.modificadaEn)}`,
+                          `Observación: ${ajuste.motivo || 'Sin observación'}`
+                      ].join('\n'), y, { altoLinea: 3.8 });
+                  }
+                  if (historialNotaDesafio.length) {
+                      doc.setFont('helvetica', 'bold');
+                      y = agregarTextoPDFProfesor(doc, `Historial de cambios de nota (${historialNotaDesafio.length})`, y);
+                      doc.setFont('helvetica', 'normal');
+                      historialNotaDesafio.forEach((cambio, cambioIndice) => {
+                          y = agregarTextoPDFProfesor(
+                              doc,
+                              `${cambioIndice + 1}. ${formatearFechaPDF(cambio.cambiadoEn)} · Docente: ${cambio.docente || 'Sin registrar'} · Valor anterior: ${cambio.valorAnterior ?? 'Sin nota'} · Valor nuevo: ${cambio.valorNuevo ?? 'Sin nota'} · Motivo: ${cambio.motivo || 'Sin motivo'}`,
+                              y,
+                              { margen: 18, ancho: 178, altoLinea: 3.7 }
+                          );
+                      });
+                  } else {
+                      y = agregarTextoPDFProfesor(doc, 'Historial de cambios de nota: sin modificaciones históricas disponibles.', y);
+                  }
+
+                  if (evaluacion.nota !== undefined) {
+                      const metricas = evaluacion.metricas || {};
+                      const conceptos = Array.isArray(evaluacion.conceptos) ? evaluacion.conceptos : [];
+                      const criterios = Array.isArray(evaluacion.criterios) ? evaluacion.criterios : [];
+                      y = agregarTextoPDFProfesor(doc, [
+                          `Análisis automático estricto: ${Number(evaluacion.nota).toFixed(1)}/10 · Sintaxis: ${evaluacion.sintaxis?.valida ? 'válida' : 'con errores'} · Ejecución: ${evaluacion.ejecucion?.ok ? 'correcta' : 'no validada'}`,
+                          `Métricas: requisitos ${Math.round(Number(metricas.requisitos || 0) * 100)}% · referencia ${Math.round(Number(metricas.referencia || 0) * 100)}% · comportamiento ${Math.round(Number(metricas.comportamiento || 0) * 100)}% · identificadores ${Math.round(Number(metricas.nombresExigidos ?? 1) * 100)}%`,
+                          conceptos.length ? `Conceptos: ${conceptos.map(item => `${item.nombre || 'Sin nombre'} (${item.cumple ? 'cumple' : 'falta'})`).join(' | ')}` : '',
+                          criterios.length ? `Criterios: ${criterios.map(item => `${item.nombre || 'Criterio'} ${item.puntos ?? 0}/${item.peso ?? 0} (${item.estado || 'pendiente'}): ${item.evidencia || 'sin evidencia'}`).join(' | ')}` : '',
+                          Array.isArray(evaluacion.mejoras) && evaluacion.mejoras.length ? `Mejoras prioritarias: ${evaluacion.mejoras.join(' | ')}` : '',
+                          Array.isArray(evaluacion.limites) && evaluacion.limites.length ? `Límites aplicados: ${evaluacion.limites.join(' | ')}` : '',
+                          r.error ? `Error registrado: ${r.error}` : ''
+                      ].filter(Boolean).join('\n'), y, { altoLinea: 3.7 });
+                  } else {
+                      y = agregarTextoPDFProfesor(doc, `Análisis automático: ${r.analisisIA || 'Pendiente'}`, y);
+                  }
+
+                  doc.setFont('courier', 'normal');
+                  doc.setFontSize(7);
+                  y = agregarTextoPDFProfesor(doc, `Código entregado:\n${codigo}`, y, { altoLinea: 3.2 });
+                  doc.setFont('helvetica', 'normal');
+                  doc.setFontSize(8);
+                  y = agregarTextoPDFProfesor(doc, `Salida de ejecución:\n${r.salida || evaluacion.ejecucion?.salida || 'Sin salida registrada'}`, y, { altoLinea: 3.6 });
+
+                  if (mensajes.length) {
+                      doc.setFont('helvetica', 'bold');
+                      y = agregarTextoPDFProfesor(doc, `Tutor IA (${mensajes.length} mensajes)`, y);
+                      doc.setFont('helvetica', 'normal');
+                      mensajes.forEach((mensaje, mensajeIndice) => {
+                          y = agregarTextoPDFProfesor(
+                              doc,
+                              `${mensajeIndice + 1}. ${mensaje.rol === 'student' ? 'Estudiante' : 'Tutor IA'}: ${mensaje.texto || 'Sin texto'}`,
+                              y,
+                              { margen: 18, ancho: 178, altoLinea: 3.6 }
+                          );
+                      });
+                  } else {
+                      y = agregarTextoPDFProfesor(doc, 'Tutor IA: sin consultas guardadas.', y);
+                  }
+                  y = agregarAnalistaViabilidadExcelenciaPDF(doc, r.analista, y);
+                  y += 2;
+                  doc.line(14, y, 196, y);
+              });
           });
-          guardarPDFProfesor(doc, `Informe_curso_${grupo}`);
+
+          const cantidadPaginas = doc.internal.getNumberOfPages();
+          for (let pagina = 1; pagina <= cantidadPaginas; pagina += 1) {
+              doc.setPage(pagina);
+              doc.setFont('helvetica', 'normal');
+              doc.setFontSize(7.5);
+              doc.setTextColor(90);
+              doc.text(`IPEM 146 · ${grupo}`, 14, 9);
+              const pie = `Página ${pagina} de ${cantidadPaginas} · Emitido ${fechaEmision}`;
+              doc.text(pie, 196 - doc.getTextWidth(pie), 290);
+              doc.setTextColor(0);
+          }
+          guardarPDFProfesor(doc, `Informe_completo_${curso}_division_${division}_turno_${turno}`);
       }
 
       async function exportarResultadosPDF() {
