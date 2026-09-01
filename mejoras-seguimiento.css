@@ -980,6 +980,149 @@ body.student-screen-locked .jitsi-finished-toast{
   }
 }
 
+.teacher-challenge-grade-history{
+  margin-top:.75rem;
+  padding-top:.75rem;
+  border-top:1px solid rgba(148,163,184,.2);
+}
+.teacher-challenge-grade-history[hidden]{
+  display:none;
+}
+.teacher-challenge-grade-history-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.6rem;
+  margin-bottom:.55rem;
+  color:#e2e8f0;
+  font-size:.76rem;
+}
+.teacher-challenge-grade-history-title span{
+  color:var(--text-muted);
+}
+.teacher-challenge-grade-history-list{
+  display:grid;
+  gap:.5rem;
+  max-height:320px;
+  overflow:auto;
+}
+.teacher-challenge-grade-history-item{
+  padding:.65rem;
+  border:1px solid rgba(148,163,184,.22);
+  border-radius:7px;
+  background:rgba(15,23,42,.55);
+}
+.teacher-challenge-grade-history-change{
+  display:flex;
+  align-items:center;
+  gap:.45rem;
+  flex-wrap:wrap;
+}
+.teacher-challenge-grade-history-change span{
+  color:#cbd5e1;
+  text-decoration:line-through;
+}
+.teacher-challenge-grade-history-change strong{
+  color:#fde68a;
+  font-size:.92rem;
+}
+.teacher-challenge-grade-history-change em{
+  padding:.2rem .35rem;
+  border-radius:4px;
+  background:rgba(56,189,248,.12);
+  color:#bae6fd;
+  font-size:.64rem;
+  font-style:normal;
+  font-weight:800;
+}
+.teacher-challenge-grade-history-meta{
+  display:flex;
+  gap:.35rem .8rem;
+  flex-wrap:wrap;
+  margin-top:.4rem;
+  color:var(--text-muted);
+  font-size:.67rem;
+}
+.teacher-challenge-grade-history-item p{
+  margin:.45rem 0 0;
+  color:#cbd5e1;
+  font-size:.72rem;
+  line-height:1.45;
+}
+.teacher-challenge-grade-history-empty{
+  padding:.7rem;
+  color:var(--text-muted);
+  text-align:center;
+  font-size:.74rem;
+}
+.student-teacher-grade-notice{
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr);
+  gap:.7rem;
+  align-items:start;
+  margin:0 0 1rem;
+  padding:.8rem;
+  border:2px solid #f59e0b;
+  border-radius:8px;
+  background:rgba(245,158,11,.12);
+  box-shadow:0 6px 18px rgba(0,0,0,.16);
+}
+.student-teacher-grade-notice[hidden]{
+  display:none;
+}
+.student-teacher-grade-icon{
+  display:grid;
+  place-items:center;
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  background:#f59e0b;
+  color:#111827;
+}
+.student-teacher-grade-content{
+  display:grid;
+  gap:.22rem;
+  min-width:0;
+}
+.student-teacher-grade-content strong{
+  color:#fef3c7;
+  font-size:.98rem;
+}
+.student-teacher-grade-content span{
+  color:#e2e8f0;
+  font-size:.78rem;
+  line-height:1.4;
+}
+.student-teacher-grade-content small{
+  color:#fcd34d;
+  font-size:.69rem;
+}
+.student-teacher-grade-inline{
+  margin:0 0 .65rem;
+  padding:.6rem .7rem;
+  border:1px solid rgba(245,158,11,.5);
+  border-radius:6px;
+  background:rgba(245,158,11,.12);
+  color:#fde68a;
+}
+body.teacher-light-mode .teacher-challenge-grade-history-item{
+  border-color:#cbd5e1;
+  background:#fff;
+}
+body.teacher-light-mode .teacher-challenge-grade-history-title{
+  color:#0f172a;
+}
+@media(max-width:520px){
+  .student-teacher-grade-notice{
+    grid-template-columns:36px minmax(0,1fr);
+    padding:.7rem;
+  }
+  .student-teacher-grade-icon{
+    width:36px;
+    height:36px;
+  }
+}
+
 @media(max-width:520px){
   body{
     padding-bottom:env(safe-area-inset-bottom);
