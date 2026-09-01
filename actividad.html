@@ -3373,7 +3373,7 @@
               valorNuevo,
               notaAutomatica: Number.isFinite(notaAutomatica) ? notaAutomatica : null,
               motivo: motivoNuevo,
-              docente: user.email || user.displayName || user.uid,
+              docente: user.email || "",
               docenteUid: user.uid,
               cambiadoEn: serverTimestamp()
             });
@@ -10256,7 +10256,16 @@
                   estado.className = 'teacher-challenge-grade-status error';
                   estado.textContent = 'No se pudo guardar';
               }
-              alert('No se pudo guardar la nota del desafío. Verificá los permisos de Firestore.');
+              const errorFirebase = window.ultimoErrorNotaDesafioDocente || {};
+              const codigo = String(errorFirebase.code || '');
+              const detalle = String(errorFirebase.message || '');
+              const orientacion = codigo.includes('permission-denied')
+                  ? 'Publicá la versión actualizada de REGLAS.TXT en Firebase Console y verificá que la cuenta figure activa en docentesAutorizados.'
+                  : 'Revisá la conexión, la autenticación docente y la consola de Firebase.';
+              alert(
+                  `No se pudo guardar la nota del desafío.${codigo ? `\n\nCódigo: ${codigo}` : ''}` +
+                  `${detalle ? `\nDetalle: ${detalle}` : ''}\n\n${orientacion}`
+              );
               return;
           }
           const notaAutomatica = Number(
@@ -10307,7 +10316,13 @@
           if (!confirmacion?.confirmado) return;
           const ok = await window.guardarNotaDesafioDocenteFirebase?.(d.uid, sectionId, { restaurar: true });
           if (!ok) {
-              alert('No se pudo restaurar la nota automática. Verificá los permisos de Firestore.');
+              const errorFirebase = window.ultimoErrorNotaDesafioDocente || {};
+              const codigo = String(errorFirebase.code || '');
+              const detalle = String(errorFirebase.message || '');
+              alert(
+                  `No se pudo restaurar la nota automática.${codigo ? `\n\nCódigo: ${codigo}` : ''}` +
+                  `${detalle ? `\nDetalle: ${detalle}` : ''}\n\nPublicá la versión actualizada de REGLAS.TXT y verificá la autorización docente.`
+              );
               return;
           }
           const nuevasNotas = { ...(d.notasDesafiosDocente || {}) };
