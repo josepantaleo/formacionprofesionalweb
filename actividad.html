@@ -8732,6 +8732,25 @@
               "interpolacion": /`[\s\S]*\$\{[\s\S]*\}[\s\S]*`/
           };
           const conceptos = Array.isArray(sec?.conceptosDetectar) ? sec.conceptosDetectar : [];
+          const referencia = normalizarEvaluacion(sec?.aiSolution || "");
+          const palabrasClaveReferencia = [...new Set(
+              (referencia.match(/\b(?:const|let|var|function|if|else|for|while|return|switch|map|filter|reduce|push|pop|shift|replace|trim|tolowercase|touppercase|typeof|prompt|localstorage|innertext|style)\b/g) || [])
+          )];
+          const nombresExigidos = [...new Set(
+              String(sec?.exerciseDesc || "").match(/['"`]([A-Za-z_$][\w$]*)['"`]/g)?.map(x => x.slice(1, -1)) || []
+          )];
+          const estructurasReferenciaCumplidas = palabrasClaveReferencia.filter(token =>
+              new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(limpia)
+          );
+          const nombresExigidosCumplidos = nombresExigidos.filter(nombre =>
+              new RegExp(`\\b${nombre.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(fuente)
+          );
+          const coberturaReferencia = palabrasClaveReferencia.length
+              ? estructurasReferenciaCumplidas.length / palabrasClaveReferencia.length
+              : (referencia ? 0.65 : 0.5);
+          const coberturaNombresExigidos = nombresExigidos.length
+              ? nombresExigidosCumplidos.length / nombresExigidos.length
+              : 1;
           const evidenciasConceptos = conceptos.map(concepto => {
               const nombre = String(concepto);
               const clave = normalizarEvaluacion(nombre);
@@ -8771,8 +8790,10 @@
           const suficiencia = Math.min(1, instruccionesEstimadas / Math.max(2, Math.min(6, conceptos.length + 1)));
           const puntajeEstructura = esPlantilla ? 0 : Math.max(0, Math.min(1,
               proporcionConceptos * 0.55 +
-              suficiencia * 0.3 +
-              (complejidad || conceptos.length <= 1 ? 0.15 : 0.05)
+              suficiencia * 0.2 +
+              coberturaReferencia * 0.15 +
+              coberturaNombresExigidos * 0.1 +
+              (complejidad || conceptos.length <= 1 ? 0.05 : 0)
           ));
           const puntajeCalidad = esPlantilla ? 0 : Math.max(0, Math.min(1,
               0.35 +
@@ -8802,7 +8823,10 @@
                   return { proporcion: puntajeEjecucion, evidencia: resultadoEjecucion?.ok ? "La ejecución terminó sin excepciones." : (error || "Todavía no hay una ejecución correcta registrada.") };
               }
               if (/concept|consigna|requis|estructura solicit|contenido/.test(texto)) {
-                  return { proporcion: proporcionConceptos, evidencia: `${conceptosCumplidos}/${evidenciasConceptos.length || conceptos.length || 1} conceptos esperados detectados.` };
+                  return { proporcion: proporcionConceptos * 0.75 + coberturaNombresExigidos * 0.25, evidencia: `${conceptosCumplidos}/${evidenciasConceptos.length || conceptos.length || 1} conceptos esperados detectados; nombres exigidos: ${nombresExigidosCumplidos.length}/${nombresExigidos.length || 0}.` };
+              }
+              if (/referencia|solucion esperada|correspondencia|implement/.test(texto)) {
+                  return { proporcion: coberturaReferencia * 0.7 + coberturaNombresExigidos * 0.3, evidencia: `Estructuras clave de referencia: ${estructurasReferenciaCumplidas.length}/${palabrasClaveReferencia.length || 0}; identificadores exigidos: ${nombresExigidosCumplidos.length}/${nombresExigidos.length || 0}.` };
               }
               if (/salida|resultado|objetivo|comport|evidencia|prueba/.test(texto)) {
                   return { proporcion: puntajeComportamiento, evidencia: salidaEsperada ? `Coincidencia orientativa con la salida de referencia: ${Math.round(similitudSalida * 100)}%.` : "Se verificó la existencia de una salida, pero este módulo no define una salida de referencia automática." };
@@ -8850,6 +8874,14 @@
               nota = Math.min(nota, 5);
               limites.push("Código insuficiente para demostrar una solución completa: nota máxima 5.");
           }
+          if (!esPlantilla && coberturaNombresExigidos < 0.5) {
+              nota = Math.min(nota, 5);
+              limites.push("Faltan identificadores o funciones expresamente solicitados en la consigna: nota máxima 5.");
+          }
+          if (!esPlantilla && referencia && coberturaReferencia < 0.45) {
+              nota = Math.min(nota, 6);
+              limites.push("La implementación no demuestra suficientes estructuras de la solución esperada: nota máxima 6.");
+          }
           if (resultadoEjecucion?.ok && salidaEsperada && similitudSalida < 0.35) {
               nota = Math.min(nota, 6);
               limites.push("La salida difiere sustancialmente de la referencia: nota máxima 6.");
@@ -8869,6 +8901,8 @@
           else mejoras.push(error ? `Corregir la ejecución: ${error}` : "Ejecutar el código antes de entregar.");
           if (conceptosCumplidos) fortalezas.push(`Se verificaron ${conceptosCumplidos}/${evidenciasConceptos.length || conceptos.length || 1} conceptos esperados.`);
           if (evidenciasConceptos.some(x => !x.cumple)) mejoras.push("Completar las estructuras que exige la consigna.");
+          if (coberturaNombresExigidos < 1 && nombresExigidos.length) mejoras.push(`Incorporar los identificadores exigidos: ${nombresExigidos.filter(nombre => !nombresExigidosCumplidos.includes(nombre)).join(", ")}.`);
+          if (referencia && coberturaReferencia < 0.75) mejoras.push("Comparar la estructura de tu solución con las acciones y métodos pedidos, sin copiar la referencia.");
           if (puntajeComportamiento >= 0.8) fortalezas.push("La salida coincide razonablemente con el comportamiento de referencia.");
           else if (salidaEsperada) mejoras.push("Revisar la salida: no coincide suficientemente con el comportamiento esperado.");
           if (puntajeCalidad < 0.65) mejoras.push("Mejorar nombres, declaraciones y organización del código.");
@@ -8901,6 +8935,8 @@
                   sintaxis: puntajeSintaxis,
                   ejecucion: puntajeEjecucion,
                   requisitos: Number(proporcionConceptos.toFixed(3)),
+                  referencia: Number(coberturaReferencia.toFixed(3)),
+                  nombresExigidos: Number(coberturaNombresExigidos.toFixed(3)),
                   comportamiento: Number(puntajeComportamiento.toFixed(3)),
                   estructura: Number(puntajeEstructura.toFixed(3)),
                   calidad: Number(puntajeCalidad.toFixed(3))
@@ -8943,12 +8979,17 @@
           if (!pasos.length) {
               pasos.push("La solución presenta evidencias suficientes. Justificá tus decisiones antes de entregar.");
           }
+          const referencia = Number(evaluacion?.metricas?.referencia ?? 0);
+          const nombres = Number(evaluacion?.metricas?.nombresExigidos ?? 1);
+          if (referencia < 0.75 || nombres < 1) {
+              pasos.push(`La correspondencia estricta todavía es incompleta: ${Math.round(referencia * 100)}% de estructuras clave y ${Math.round(nombres * 100)}% de identificadores exigidos.`);
+          }
           return {
-              resumen: evaluacion?.nota >= 8
-                  ? "La solución muestra un avance sólido."
+              resumen: evaluacion?.nota >= 8 && referencia >= 0.75 && nombres >= 1
+                  ? "La solución muestra un avance sólido y evidencia la mayoría de los requisitos explícitos."
                   : evaluacion?.nota >= 5
-                      ? "La solución es parcial y necesita una revisión dirigida."
-                      : "Todavía faltan evidencias importantes para considerar resuelto el desafío.",
+                      ? "La solución es parcial: la nota considera requisitos explícitos, estructura, ejecución y comportamiento."
+                      : "Todavía faltan evidencias importantes para considerar resuelto el desafío; la estimación se limitó por los requisitos ausentes.",
               pasos: pasos.slice(0, 5),
               preguntaGuia: sec?.preguntasSocraticas?.[0] ||
                   "¿Qué parte del código cambiarías primero para acercarte al objetivo y por qué?"
@@ -9932,10 +9973,11 @@
               else if (puntaje === 3) analisis = "⚠️ <strong>Evaluación Estricta (3/10):</strong> Código demasiado escueto.";
               else if (puntaje === 10) analisis = "✅ <strong>¡Excelente Trabajo! (10/10):</strong> Cumple rigurosamente con los parámetros ideales.";
 
-              analisis = `<strong>Evaluación automática orientativa (${puntaje}/10):</strong> ${diagnostico.resumen}` +
+              analisis = `<strong>Estimación orientativa estricta (${puntaje}/10):</strong> ${diagnostico.resumen}` +
                   `<br><strong>Guía de mejora:</strong><ol>${diagnostico.pasos.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ol>` +
                   `<br><strong>Fortalezas:</strong> ${evaluacion.fortalezas.length ? evaluacion.fortalezas.map(escaparTextoAnalista).join(" · ") : "Todavía no se observan evidencias suficientes."}` +
                   `<br><strong>Mejoras:</strong> ${evaluacion.mejoras.length ? evaluacion.mejoras.map(escaparTextoAnalista).join(" · ") : "No se detectaron mejoras prioritarias."}` +
+                  `<br><strong>Correspondencia con lo pedido:</strong> ${Math.round((evaluacion.metricas.referencia || 0) * 100)}% de estructuras clave y ${Math.round((evaluacion.metricas.nombresExigidos || 1) * 100)}% de identificadores exigidos.` +
                   `<hr><strong>Desglose verificable:</strong><ul>${evaluacion.criterios.map(c => `<li>${escaparTextoAnalista(c.nombre)}: ${c.puntos}/${c.peso} puntos (${c.estado}). ${escaparTextoAnalista(c.evidencia)}</li>`).join("")}</ul>` +
                   (evaluacion.limites.length ? `<strong>Límites aplicados:</strong><ul>${evaluacion.limites.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ul>` : "") +
                   `<strong>Ejecución del estudiante:</strong> ${resultadoAlumno.ok ? "correcta" : `fallida: ${escaparTextoAnalista(resultadoAlumno.error || "error no especificado")}`}.<br>` +
