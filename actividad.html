@@ -3573,6 +3573,7 @@
             "historialNotasDesafios",
             "historialPestanas",
             "revisionesPestanas",
+            "revisionesPestanasEstudiante",
             "historialRevisionesPestanas"
           ];
           let documentosAsociadosEliminados = 0;
@@ -4319,6 +4320,57 @@
         }
       };
 
+      window.obtenerResumenPestanasEstudianteFirebase = async function() {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db) return { historial: [], revisiones: [] };
+        try {
+          const [historialSnapshot, revisionesSnapshot] = await Promise.all([
+            getDocs(collection(db, "estudiantes", user.uid, "historialPestanas")),
+            getDocs(collection(db, "estudiantes", user.uid, "revisionesPestanasEstudiante"))
+          ]);
+          const historial = historialSnapshot.docs
+            .map(item => ({ id: item.id, ...item.data() }))
+            .sort((a, b) => new Date(b.salidaEn || 0).getTime() - new Date(a.salidaEn || 0).getTime());
+          const revisiones = revisionesSnapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+          return { historial, revisiones };
+        } catch (error) {
+          console.error("Error consultando el resumen de pestañas del estudiante:", error);
+          window.ultimoErrorResumenPestanasEstudiante = {
+            code: error?.code || "",
+            message: error?.message || ""
+          };
+          return { historial: [], revisiones: [] };
+        }
+      };
+
+      window.sincronizarRevisionesPublicasPestanasFirebase = async function(uid, revisiones = []) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return false;
+        const { user, database } = contextoDocenteFirebase();
+        if (!user || !database || !uid || !Array.isArray(revisiones)) return false;
+        const estadosPermitidos = ["pendiente", "revisada", "justificada", "no_justificada", "permitida", "advertencia"];
+        try {
+          for (const revision of revisiones) {
+            const grupoId = String(revision?.salidaGrupoId || "").trim().slice(0, 160);
+            if (!grupoId) continue;
+            const documentoId = grupoId.replace(/[^a-zA-Z0-9._-]/g, "_");
+            const estado = estadosPermitidos.includes(revision.estado) ? revision.estado : "pendiente";
+            await setDoc(doc(database, "estudiantes", uid, "revisionesPestanasEstudiante", documentoId), {
+              salidaGrupoId: grupoId,
+              estado,
+              revisado: estado !== "pendiente",
+              contabiliza: revision.contabiliza !== false,
+              revisadoEn: revision.revisadoEn || serverTimestamp(),
+              actualizadoEn: serverTimestamp()
+            }, { merge: true });
+          }
+          return true;
+        } catch (error) {
+          console.error("Error sincronizando revisiones públicas de pestañas:", error);
+          return false;
+        }
+      };
+
       window.obtenerHistorialRevisionesPestanasFirebase = async function(uid, salidaGrupoId = "") {
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
@@ -4371,8 +4423,23 @@
           };
           const eventoId = `${Date.now()}-${user.uid}`.replace(/[^a-zA-Z0-9._-]/g, "_");
           const historialReferencia = doc(database, "estudiantes", uid, "historialRevisionesPestanas", eventoId);
+          const resumenPublicoReferencia = doc(
+            database,
+            "estudiantes",
+            uid,
+            "revisionesPestanasEstudiante",
+            documentoId
+          );
           const lote = writeBatch(database);
           lote.set(referencia, actual);
+          lote.set(resumenPublicoReferencia, {
+            salidaGrupoId: grupoId,
+            estado,
+            revisado: estado !== "pendiente",
+            contabiliza: actual.contabiliza,
+            revisadoEn: serverTimestamp(),
+            actualizadoEn: serverTimestamp()
+          });
           lote.set(historialReferencia, {
             id: eventoId,
             estudianteUid: uid,
@@ -12960,9 +13027,9 @@
           const etiquetasJitsi = {
             invitado: 'Invitado',
             notificado: 'Notificado',
-            unido: 'PulsÃ³ Unirse ahora',
-            rechazado: 'RechazÃ³',
-            salio: 'SaliÃ³ o cerrÃ³ la pestaÃ±a',
+            unido: 'Pulsó Unirse ahora',
+            rechazado: 'Rechazó',
+            salio: 'Salió o cerró la pestaña',
             finalizada: 'Finalizada'
           };
           const contenido = document.getElementById('accionesEstudianteContenido');
@@ -12985,7 +13052,7 @@
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDescuentos(${indice})"><i class="fa-solid fa-file-invoice-dollar"></i><span>Historial de descuentos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialPestanas(${indice})"><i class="fa-solid fa-window-restore"></i><span>Historial de pestañas</span></button>
             <button class="btn btn-success" onclick="cerrarAccionesEstudiante();abrirJitsiDocente(${indice})"><i class="fa-solid fa-video"></i><span>${jitsiDisponible ? 'Volver a la llamada Jitsi' : 'Iniciar llamada Jitsi'}</span></button>
-            ${jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-video-slash"></i><span>Cancelar invitaciÃ³n / finalizar</span></button>` : ''}
+            ${jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-video-slash"></i><span>Cancelar invitación / finalizar</span></button>` : ''}
             ${jitsiTieneSala && !jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-broom"></i><span>Limpiar llamada anterior</span></button>` : ''}
             <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();abrirEditorDescuentoEstudiante(${indice})"><i class="fa-solid fa-circle-minus"></i><span>Editar descuento y motivo</span></button>
             <button class="btn btn-danger" ${bloqueado ? 'disabled title="La pantalla ya está bloqueada"' : ''} onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i><span>Bloquear pantalla</span></button>
@@ -14051,7 +14118,7 @@
           });
           cerrarConfiguracionDuracionJitsi();
           if (guardadoRemoto === false) {
-            alert('La duraciÃ³n se guardÃ³ en este dispositivo, pero no se pudo sincronizar con Firebase.');
+            alert('La duración se guardó en este dispositivo, pero no se pudo sincronizar con Firebase.');
           }
         }
 
@@ -14113,7 +14180,7 @@
           const titulo = document.getElementById('jitsiFinTitulo');
           const mensaje = document.getElementById('jitsiFinMensaje');
           if (titulo) titulo.textContent = 'Quedan 30 segundos';
-          if (mensaje) mensaje.textContent = 'La videollamada finalizarÃ¡ automÃ¡ticamente.';
+          if (mensaje) mensaje.textContent = 'La videollamada finalizará automáticamente.';
           if (alerta) alerta.hidden = false;
           reproducirSonidoLlamadaJitsi();
         }
@@ -14144,7 +14211,7 @@
             if (!vigente || vigente.id !== invitacion.id || alerta?.hidden) return;
             try { localStorage.setItem(claveRecordatorio, invitacion.id); } catch (error) {}
             const mensaje = document.getElementById('jitsiLlamadaMensaje');
-            if (mensaje) mensaje.textContent = 'Recordatorio: la invitaciÃ³n sigue pendiente. PodÃ©s unirte ahora o rechazarla.';
+            if (mensaje) mensaje.textContent = 'Recordatorio: la invitación sigue pendiente. Podés unirte ahora o rechazarla.';
             reproducirSonidoLlamadaJitsi();
           }, 30000);
         }
@@ -14430,7 +14497,7 @@
           resumen.innerHTML = `<span><strong>${filtrado.length}</strong> llamadas</span><span><strong>${totales.unidos}</strong> ingresos</span><span><strong>${totales.rechazados}</strong> rechazos</span><span><strong>${totales.salieron}</strong> salidas</span>`;
           lista.innerHTML = filtrado.map(item => {
             const destino = item.tipo === 'grupal'
-              ? [item.curso, item.division, item.turno].filter(Boolean).join(' Â· ') || 'Grupo'
+              ? [item.curso, item.division, item.turno].filter(Boolean).join(' · ') || 'Grupo'
               : item.estudianteNombre || item.estudianteEmail || 'Estudiante';
             const estado = String(item.estado || 'activa');
             const participantes = Array.isArray(item.participantes) ? item.participantes : [];
@@ -14440,7 +14507,7 @@
             return `<article class="jitsi-history-item">
               <div class="jitsi-history-item-head"><span class="jitsi-history-type is-${escapeHtml(item.tipo || 'individual')}"><i class="fa-solid ${item.tipo === 'grupal' ? 'fa-users' : 'fa-user'}"></i>${item.tipo === 'grupal' ? 'Grupal' : 'Individual'}</span><span class="jitsi-history-status is-${escapeHtml(estado)}">${escapeHtml(estado)}</span></div>
               <h4>${escapeHtml(destino)}</h4>
-              <p><i class="fa-solid fa-calendar"></i> ${escapeHtml(fechaHistorialJitsi(item.iniciadaEn))} Â· <i class="fa-solid fa-clock"></i> ${Number(item.duracionMinutos || 0)} min</p>
+              <p><i class="fa-solid fa-calendar"></i> ${escapeHtml(fechaHistorialJitsi(item.iniciadaEn))} · <i class="fa-solid fa-clock"></i> ${Number(item.duracionMinutos || 0)} min</p>
               <p><i class="fa-solid fa-chalkboard-user"></i> ${escapeHtml(item.docente || 'Docente')}</p>
               <div class="jitsi-history-stats"><span>Invitados <strong>${Number(item.invitados || 0)}</strong></span><span>Notificados <strong>${Number(item.notificados || 0)}</strong></span><span>Se unieron <strong>${Number(item.unidos || 0)}</strong></span><span>Rechazaron <strong>${Number(item.rechazados || 0)}</strong></span><span>Salieron <strong>${Number(item.salieron || 0)}</strong></span></div>
               ${detalleParticipantes}
@@ -15454,7 +15521,7 @@
             if (!confirmacion?.confirmado) return;
             const revocada = await jitsiOpcionesPendientes?.alCerrarManual?.();
             if (revocada === false) {
-              alert('No se pudo retirar la invitaciÃ³n del estudiante. VerificÃ¡ Firebase e intentÃ¡ nuevamente.');
+              alert('No se pudo retirar la invitación del estudiante. Verificá Firebase e intentá nuevamente.');
               return;
             }
           }
