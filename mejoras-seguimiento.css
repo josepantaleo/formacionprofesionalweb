@@ -2756,6 +2756,69 @@ body.teacher-light-mode .teacher-detail-quick-filters button.is-active{
     grid-template-columns:repeat(2,minmax(0,1fr));
   }
 }
+
+/* Corrección de distribución del panel docente: evita columnas comprimidas
+   provocadas por las reglas antiguas de #filtrosPanelProfesor. */
+#panelProfesorModal #filtrosPanelProfesor.teacher-filter-workspace{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  align-items:stretch;
+  gap:.75rem !important;
+}
+#panelProfesorModal #filtrosPanelProfesor.teacher-filter-workspace > .teacher-filter-group{
+  width:100%;
+  min-width:0;
+  box-sizing:border-box;
+}
+#panelProfesorModal #filtrosPanelProfesor.teacher-filter-workspace > .teacher-filter-academic,
+#panelProfesorModal #filtrosPanelProfesor.teacher-filter-workspace > .teacher-filter-actions{
+  grid-column:1 / -1 !important;
+}
+#panelProfesorModal #filtrosPanelProfesor .teacher-filter-actions > div{
+  grid-template-columns:minmax(260px,1.35fr) repeat(3,minmax(150px,1fr)) !important;
+  align-items:stretch;
+}
+#panelProfesorModal #filtrosPanelProfesor .teacher-filter-actions label,
+#panelProfesorModal #filtrosPanelProfesor .teacher-filter-actions .btn{
+  min-width:0;
+  width:100%;
+  box-sizing:border-box;
+}
+#panelProfesorModal .teacher-icon-legend{
+  grid-template-columns:auto repeat(6,minmax(120px,1fr)) !important;
+}
+#panelProfesorModal .teacher-icon-legend span{
+  min-height:32px;
+  white-space:nowrap;
+}
+@media(max-width:820px){
+  #panelProfesorModal #filtrosPanelProfesor.teacher-filter-workspace{
+    grid-template-columns:1fr !important;
+  }
+  #panelProfesorModal #filtrosPanelProfesor.teacher-filter-workspace > .teacher-filter-group,
+  #panelProfesorModal #filtrosPanelProfesor.teacher-filter-workspace > .teacher-filter-academic,
+  #panelProfesorModal #filtrosPanelProfesor.teacher-filter-workspace > .teacher-filter-actions{
+    grid-column:1 / -1 !important;
+  }
+  #panelProfesorModal #filtrosPanelProfesor .teacher-filter-actions > div{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+  #panelProfesorModal .teacher-icon-legend{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+  #panelProfesorModal .teacher-icon-legend strong{
+    grid-column:1 / -1;
+  }
+}
+@media(max-width:560px){
+  #panelProfesorModal #filtrosPanelProfesor .teacher-filter-actions > div,
+  #panelProfesorModal .teacher-icon-legend{
+    grid-template-columns:1fr !important;
+  }
+  #panelProfesorModal .teacher-icon-legend strong{
+    grid-column:auto;
+  }
+}
 @media(max-width:820px){
   .student-workflow-guide{
     grid-template-columns:repeat(2,minmax(0,1fr));
