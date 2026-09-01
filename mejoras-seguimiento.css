@@ -152,6 +152,15 @@
 @media(max-width:900px){.tab-history-quick{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:620px){.tab-history-quick{grid-template-columns:repeat(2,minmax(0,1fr))}.tab-history-toolbar{display:grid;grid-template-columns:1fr 1fr}.tab-history-toolbar .btn{width:100%;justify-content:center}.tab-history-results{grid-column:1/-1;margin-left:0;text-align:center}.tab-excursion-insight{grid-template-columns:1fr}.tab-excursion-time{justify-content:space-between}.tab-excursion-primary{grid-template-columns:auto minmax(0,1fr)}}
 @media(max-width:700px){.student-tab-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.student-tab-list article{grid-template-columns:auto minmax(0,1fr)}.student-tab-list .tab-review-badge{grid-column:2;justify-self:start}.tab-auto-alerts-list{grid-template-columns:1fr}}
+@media(max-width:760px){
+  .student-coding-workspace.tutor-minimized{grid-template-columns:1fr}
+  .student-ai-column.is-minimized{width:100%}
+  .student-ai-column.is-minimized .ai-chat-box,
+  .student-ai-column.is-minimized .ai-chat-header{min-height:52px}
+  .student-ai-column.is-minimized .ai-chat-header{flex-direction:row;justify-content:space-between;padding:.5rem .65rem}
+  .student-ai-column.is-minimized .ai-chat-title span{display:inline}
+  .student-ai-column.is-minimized .ai-chat-header-actions{margin-top:0}
+}
 @media(max-width:430px){.teacher-workspace-tabs{grid-template-columns:repeat(5,minmax(0,1fr));gap:.2rem}.teacher-workspace-tab{min-height:40px;padding:.4rem}.teacher-workspace-tab i{font-size:.92rem}.teacher-workspace-panel-heading{display:block}}
 @media(max-width:760px){.teacher-workspace-tab.show-mobile-tooltip::after,.teacher-workspace-tab.show-mobile-tooltip::before{opacity:1;visibility:visible}.teacher-workspace-tab.show-mobile-tooltip::after{transform:translate(-50%,0)}.teacher-workspace-tab.show-mobile-tooltip::before{transform:translateX(-50%)}.teacher-workspace-tab:first-child.show-mobile-tooltip::after,.teacher-workspace-tab:last-child.show-mobile-tooltip::after{transform:translate(0,0)}}
 @media(max-width:520px){.tracking-limit-presets{grid-template-columns:repeat(2,1fr)}.tracking-limit-control{grid-template-columns:1fr}.tracking-limit-actions .btn{flex:1}}
@@ -1807,6 +1816,10 @@ body.teacher-light-mode .teacher-challenge-grade-fields label{
   grid-template-columns:minmax(0,1.55fr) minmax(300px,.85fr);
   gap:.8rem;
   align-items:start;
+  transition:grid-template-columns .2s ease;
+}
+.student-coding-workspace.tutor-minimized{
+  grid-template-columns:minmax(0,1fr) 52px;
 }
 .student-code-column,
 .student-ai-column{
@@ -1996,11 +2009,77 @@ body.teacher-light-mode .teacher-challenge-grade-fields label{
 .student-ai-column{
   position:sticky;
   top:.65rem;
+  transition:width .2s ease;
 }
 .student-ai-column .ai-chat-box{
   margin:0;
   border-color:rgba(56,189,248,.42);
   box-shadow:0 8px 22px rgba(0,0,0,.16);
+}
+.ai-chat-header-actions{
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+}
+.ai-chat-status{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:.2rem;
+}
+.ai-chat-minimize{
+  display:grid;
+  place-items:center;
+  flex:0 0 2rem;
+  width:2rem;
+  height:2rem;
+  padding:0;
+  border:1px solid rgba(56,189,248,.35);
+  border-radius:6px;
+  background:rgba(15,23,42,.62);
+  color:#bae6fd;
+  cursor:pointer;
+}
+.ai-chat-minimize:hover{
+  border-color:#38bdf8;
+  background:rgba(56,189,248,.14);
+}
+.ai-chat-minimize:focus-visible{
+  outline:2px solid #38bdf8;
+  outline-offset:2px;
+}
+.student-ai-column.is-minimized{
+  width:52px;
+}
+.student-ai-column.is-minimized .ai-chat-box{
+  min-height:220px;
+  border-color:rgba(56,189,248,.55);
+}
+.student-ai-column.is-minimized .ai-chat-box>:not(.ai-chat-header){
+  display:none!important;
+}
+.student-ai-column.is-minimized .ai-chat-header{
+  min-height:220px;
+  box-sizing:border-box;
+  flex-direction:column;
+  justify-content:flex-start;
+  padding:.55rem .4rem;
+}
+.student-ai-column.is-minimized .ai-chat-title{
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+}
+.student-ai-column.is-minimized .ai-chat-title span,
+.student-ai-column.is-minimized .ai-chat-status{
+  display:none;
+}
+.student-ai-column.is-minimized .ai-chat-header-actions{
+  margin-top:auto;
+}
+.student-ai-column.is-minimized .ai-chat-minimize{
+  width:2.15rem;
+  height:2.15rem;
 }
 .student-ai-column .ai-chat-messages{
   height:clamp(300px,48vh,500px);

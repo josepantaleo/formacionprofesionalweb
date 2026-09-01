@@ -7693,6 +7693,7 @@
 
               const savedCode = getLocalStorage(`draft_editor-${sec.id}`) || sec.initialCode;
               const isFinalized = getLocalStorage(`finalized_${sec.id}`) === 'true';
+              const tutorMinimizado = getLocalStorage(`ai_tutor_minimized_${sec.id}`) === 'true';
               if (isFinalized) actividadesFinalizadas[sec.id] = true;
               contadorPrevisualizaciones[sec.id] = parseInt(getLocalStorage(`preview_count_${sec.id}`) || '0');
 
@@ -7794,7 +7795,7 @@
                               <span><strong>3</strong> Ejecutá y revisá</span>
                               <span><strong>4</strong> Pedí una pista si la necesitás</span>
                           </div>
-                          <div class="student-coding-workspace">
+                          <div class="student-coding-workspace ${tutorMinimizado ? 'tutor-minimized' : ''}">
                               <section class="student-code-column" aria-label="Editor y consola">
                                   <div class="student-code-toolbar">
                                       <div>
@@ -7859,13 +7860,19 @@
                                   </div>
                               </section>
 
-                              <aside class="student-ai-column" aria-label="Tutor de programación">
+                              <aside class="student-ai-column ${tutorMinimizado ? 'is-minimized' : ''}" aria-label="Tutor de programación">
                                   <div class="ai-chat-box" id="ai-chat-${sec.id}">
                                       <div class="ai-chat-header">
-                                          <div class="ai-chat-title"><i class="fa-solid fa-graduation-cap"></i> Tutor de programación</div>
-                                          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.2rem">
-                                              <span class="ai-chat-note">${window.firebaseAIRealConfigurada ? "IA segura conectada" : "Tutor local activo"}</span>
-                                              <span class="ai-chat-sync saved" id="ai-chat-sync-${sec.id}"><i class="fa-solid fa-cloud"></i> Sincronizado</span>
+                                          <div class="ai-chat-title"><i class="fa-solid fa-graduation-cap"></i><span>Tutor de programación</span></div>
+                                          <div class="ai-chat-header-actions">
+                                              <div class="ai-chat-status">
+                                                  <span class="ai-chat-note">${window.firebaseAIRealConfigurada ? "IA segura conectada" : "Tutor local activo"}</span>
+                                                  <span class="ai-chat-sync saved" id="ai-chat-sync-${sec.id}"><i class="fa-solid fa-cloud"></i> Sincronizado</span>
+                                              </div>
+                                              <button class="ai-chat-minimize" type="button" onclick="alternarTutorProgramacion('${sec.id}', this)" aria-expanded="${String(!tutorMinimizado)}" title="${tutorMinimizado ? 'Restaurar Tutor de programación' : 'Minimizar Tutor de programación'}">
+                                                  <i class="fa-solid ${tutorMinimizado ? 'fa-chevron-left' : 'fa-chevron-right'}"></i>
+                                                  <span class="sr-only">${tutorMinimizado ? 'Restaurar Tutor de programación' : 'Minimizar Tutor de programación'}</span>
+                                              </button>
                                           </div>
                                       </div>
                                       <div class="student-ai-principle"><i class="fa-solid fa-shield-halved"></i> Te guía con pistas y preguntas. No entrega la solución completa.</div>
@@ -8795,6 +8802,31 @@
               behavior: "smooth",
               block: "start"
           });
+      }
+
+      function alternarTutorProgramacion(sectionId, boton = null) {
+          const seccion = document.getElementById(sectionId);
+          const columna = seccion?.querySelector('.student-ai-column');
+          const espacio = seccion?.querySelector('.student-coding-workspace');
+          if (!columna || !espacio) return;
+          const minimizar = !columna.classList.contains('is-minimized');
+          columna.classList.toggle('is-minimized', minimizar);
+          espacio.classList.toggle('tutor-minimized', minimizar);
+          setLocalStorage(`ai_tutor_minimized_${sectionId}`, String(minimizar));
+          const control = boton || columna.querySelector('.ai-chat-minimize');
+          if (control) {
+              const accion = minimizar
+                  ? 'Restaurar Tutor de programación'
+                  : 'Minimizar Tutor de programación';
+              control.setAttribute('aria-expanded', String(!minimizar));
+              control.title = accion;
+              control.innerHTML = `
+                  <i class="fa-solid ${minimizar ? 'fa-chevron-left' : 'fa-chevron-right'}"></i>
+                  <span class="sr-only">${accion}</span>`;
+          }
+          if (!minimizar) {
+              columna.querySelector('.ai-chat-input')?.focus({ preventScroll: true });
+          }
       }
 
       async function solicitarAyudaEditor(sectionId, modo, boton = null) {
