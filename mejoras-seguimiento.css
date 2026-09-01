@@ -173,6 +173,25 @@
 .teacher-message-scope button{display:flex;align-items:center;justify-content:center;gap:.4rem;min-height:42px;padding:.55rem;border:1px solid rgba(148,163,184,.28);border-radius:6px;background:rgba(15,23,42,.5);color:#cbd5e1;font:inherit;font-size:.72rem;font-weight:800;cursor:pointer}
 .teacher-message-scope button:hover{border-color:rgba(56,189,248,.55)}
 .teacher-message-scope button.active{border-color:#38bdf8;background:rgba(14,165,233,.15);color:#bae6fd;box-shadow:inset 0 -2px 0 #38bdf8}
+.teacher-message-templates{display:grid;gap:.55rem;margin-bottom:.8rem;padding:.7rem;border:1px solid rgba(148,163,184,.22);border-radius:7px;background:rgba(15,23,42,.3)}
+.teacher-message-templates-heading{display:flex;align-items:center;justify-content:space-between;gap:.7rem}
+.teacher-message-templates-heading>div{display:grid;gap:.12rem;min-width:0}
+.teacher-message-templates-heading strong{display:flex;align-items:center;gap:.38rem;color:#e0f2fe;font-size:.75rem}
+.teacher-message-templates-heading strong i{color:#facc15}
+.teacher-message-templates-heading>div>span{color:var(--text-muted);font-size:.66rem}
+.teacher-message-templates-heading label{display:flex;align-items:center;gap:.38rem;color:var(--text-muted);font-size:.66rem;font-weight:800;white-space:nowrap}
+.teacher-message-templates-heading input{width:4.5rem;min-height:34px;padding:.35rem .45rem;box-sizing:border-box;text-align:center}
+.teacher-message-template-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.4rem}
+.teacher-message-template-grid button{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:.48rem;min-width:0;min-height:52px;padding:.5rem;border:1px solid rgba(148,163,184,.25);border-radius:6px;background:rgba(15,23,42,.48);color:#cbd5e1;text-align:left;cursor:pointer}
+.teacher-message-template-grid button>i{display:grid;place-items:center;width:1.8rem;height:1.8rem;border-radius:5px;background:rgba(56,189,248,.1);color:#7dd3fc}
+.teacher-message-template-grid button>span{display:grid;gap:.08rem;min-width:0}
+.teacher-message-template-grid button strong{font-size:.68rem;line-height:1.2;overflow-wrap:anywhere}
+.teacher-message-template-grid button small{color:var(--text-muted);font-size:.58rem;line-height:1.2;overflow-wrap:anywhere}
+.teacher-message-template-grid button:hover{border-color:rgba(56,189,248,.58);background:rgba(14,165,233,.08)}
+.teacher-message-template-grid button:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}
+.teacher-message-template-grid button.active{border-color:#38bdf8;background:rgba(14,165,233,.16);color:#e0f2fe;box-shadow:inset 0 -2px 0 #38bdf8}
+.teacher-message-template-grid button[data-message-template="atencion"]>i{background:rgba(239,68,68,.12);color:#fca5a5}
+.teacher-message-template-grid button[data-message-template="atencion"].active{border-color:#ef4444;background:rgba(239,68,68,.12);box-shadow:inset 0 -2px 0 #ef4444}
 .teacher-message-form{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
 .teacher-message-form>label{display:grid;gap:.28rem;color:var(--text-muted);font-size:.71rem;font-weight:800}
 .teacher-message-form>label.wide,.teacher-message-priority{grid-column:1/-1}
@@ -208,8 +227,19 @@ body.teacher-light-mode .teacher-message-box{background:#fff;color:#0f172a}
 body.teacher-light-mode .teacher-message-heading h3{color:#0f172a}
 body.teacher-light-mode .teacher-message-scope button{background:#fff;color:#334155;border-color:#cbd5e1}
 body.teacher-light-mode .teacher-message-scope button.active{background:#e0f2fe;color:#075985;border-color:#0284c7}
+body.teacher-light-mode .teacher-message-templates{border-color:#cbd5e1;background:#f8fafc}
+body.teacher-light-mode .teacher-message-templates-heading strong{color:#0f172a}
+body.teacher-light-mode .teacher-message-template-grid button{border-color:#cbd5e1;background:#fff;color:#334155}
+body.teacher-light-mode .teacher-message-template-grid button:hover{border-color:#0284c7;background:#f0f9ff}
+body.teacher-light-mode .teacher-message-template-grid button.active{border-color:#0284c7;background:#e0f2fe;color:#075985}
+body.teacher-light-mode .teacher-message-template-grid button[data-message-template="atencion"].active{border-color:#dc2626;background:#fef2f2;color:#991b1b}
 body.teacher-light-mode .teacher-message-priority label span{color:#334155;border-color:#cbd5e1}
+@media(max-width:760px){
+  .teacher-message-template-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 @media(max-width:620px){
+  .teacher-message-templates-heading{align-items:flex-start}
+  .teacher-message-templates-heading label{align-items:flex-end;flex-direction:column;gap:.18rem}
   .teacher-message-form{grid-template-columns:1fr}
   .teacher-message-form>label.wide,.teacher-message-priority{grid-column:auto}
   .teacher-message-actions{display:grid;grid-template-columns:1fr 1fr}
@@ -217,6 +247,11 @@ body.teacher-light-mode .teacher-message-priority label span{color:#334155;borde
   .teacher-screen-message-box{grid-template-columns:1fr;padding:1rem}
   .teacher-screen-message-icon{width:2.6rem;height:2.6rem}
   .teacher-screen-message-content>.btn{justify-self:stretch;width:100%}
+}
+@media(max-width:430px){
+  .teacher-message-templates-heading{display:grid;grid-template-columns:minmax(0,1fr) auto}
+  .teacher-message-template-grid{grid-template-columns:1fr}
+  .teacher-message-template-grid button{min-height:48px}
 }
 @media(max-width:430px){.teacher-workspace-tabs{grid-template-columns:repeat(5,minmax(0,1fr));gap:.2rem}.teacher-workspace-tab{min-height:40px;padding:.4rem}.teacher-workspace-tab i{font-size:.92rem}.teacher-workspace-panel-heading{display:block}}
 @media(max-width:760px){.teacher-workspace-tab.show-mobile-tooltip::after,.teacher-workspace-tab.show-mobile-tooltip::before{opacity:1;visibility:visible}.teacher-workspace-tab.show-mobile-tooltip::after{transform:translate(-50%,0)}.teacher-workspace-tab.show-mobile-tooltip::before{transform:translateX(-50%)}.teacher-workspace-tab:first-child.show-mobile-tooltip::after,.teacher-workspace-tab:last-child.show-mobile-tooltip::after{transform:translate(0,0)}}
