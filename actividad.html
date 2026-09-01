@@ -3574,6 +3574,7 @@
             "historialPestanas",
             "revisionesPestanas",
             "revisionesPestanasEstudiante",
+            "mensajesDocente",
             "historialRevisionesPestanas"
           ];
           let documentosAsociadosEliminados = 0;
@@ -4467,6 +4468,100 @@
         }
       };
 
+      window.enviarMensajeDocenteFirebase = async function(uids = [], mensaje = {}) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return { ok: false, enviados: 0 };
+        const { user, database } = contextoDocenteFirebase();
+        const destinatarios = [...new Set((Array.isArray(uids) ? uids : [])
+          .map(uid => String(uid || "").trim())
+          .filter(Boolean))];
+        if (!user || !database || !destinatarios.length) return { ok: false, enviados: 0 };
+        const texto = (valor, maximo) => String(valor || "").trim().slice(0, maximo);
+        const tiposPermitidos = ["todos", "grupo", "individual"];
+        const prioridadesPermitidas = ["normal", "urgente"];
+        const tipoDestino = tiposPermitidos.includes(mensaje.tipoDestino)
+          ? mensaje.tipoDestino
+          : "individual";
+        const prioridad = prioridadesPermitidas.includes(mensaje.prioridad)
+          ? mensaje.prioridad
+          : "normal";
+        const contenido = texto(mensaje.contenido, 1000);
+        if (!contenido) return { ok: false, enviados: 0 };
+        const mensajeId = `${Date.now()}-${user.uid}`.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const responsable = user.email || user.displayName || user.uid;
+        let enviados = 0;
+        try {
+          for (let inicio = 0; inicio < destinatarios.length; inicio += 400) {
+            const lote = writeBatch(database);
+            destinatarios.slice(inicio, inicio + 400).forEach(uid => {
+              lote.set(doc(database, "estudiantes", uid, "mensajesDocente", mensajeId), {
+                id: mensajeId,
+                estudianteUid: uid,
+                tipoDestino,
+                destinoDescripcion: texto(mensaje.destinoDescripcion, 200),
+                asunto: texto(mensaje.asunto, 120),
+                contenido,
+                prioridad,
+                docente: responsable,
+                docenteUid: user.uid,
+                enviadoEn: serverTimestamp(),
+                leido: false,
+                leidoEn: null
+              });
+            });
+            await lote.commit();
+            enviados += Math.min(400, destinatarios.length - inicio);
+          }
+          return { ok: true, enviados, mensajeId };
+        } catch (error) {
+          console.error("Error enviando mensaje docente:", error);
+          window.ultimoErrorMensajeDocente = {
+            code: error?.code || "",
+            message: error?.message || ""
+          };
+          return { ok: false, enviados };
+        }
+      };
+
+      window.escucharMensajesDocenteEstudianteFirebase = async function() {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db) return;
+        if (window.__mensajesDocenteEstudianteUnsubscribe) {
+          window.__mensajesDocenteEstudianteUnsubscribe();
+        }
+        const referencia = collection(db, "estudiantes", user.uid, "mensajesDocente");
+        window.__mensajesDocenteEstudianteUnsubscribe = onSnapshot(referencia, snapshot => {
+          const mensajes = snapshot.docs
+            .map(item => ({ id: item.id, ...item.data() }))
+            .filter(item => item.leido !== true)
+            .sort((a, b) => {
+              const fechaA = a.enviadoEn?.toMillis ? a.enviadoEn.toMillis() : new Date(a.enviadoEn || 0).getTime();
+              const fechaB = b.enviadoEn?.toMillis ? b.enviadoEn.toMillis() : new Date(b.enviadoEn || 0).getTime();
+              return fechaA - fechaB;
+            });
+          window.dispatchEvent(new CustomEvent("mensajes-docente-estudiante", {
+            detail: mensajes
+          }));
+        }, error => {
+          console.error("Error escuchando mensajes del docente:", error);
+        });
+      };
+
+      window.marcarMensajeDocenteLeidoFirebase = async function(mensajeId) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db || !mensajeId) return false;
+        try {
+          await setDoc(doc(db, "estudiantes", user.uid, "mensajesDocente", mensajeId), {
+            leido: true,
+            leidoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error confirmando la lectura del mensaje:", error);
+          return false;
+        }
+      };
+
       window.borrarConsultasIAEstudiantesFirebase = async function(uids) {
         const autorizado = await window.autorizarDocenteFirebase?.();
         if (!autorizado) return false;
@@ -4738,6 +4833,9 @@
             </button>
             <button class="btn btn-secondary" id="btnConfigurarLimiteBloqueo" type="button" onclick="abrirConfiguracionLimiteBloqueo()" title="Modificar cuántas salidas producen el bloqueo">
               <i class="fa-solid fa-arrow-up-9-1"></i> Bloqueo: <strong id="limiteBloqueoProfesorValor">5</strong> salidas
+            </button>
+            <button class="btn btn-primary" id="btnMensajeDocente" type="button" onclick="abrirMensajeriaDocente()" title="Enviar un aviso en pantalla a todos, a un grupo o a un estudiante">
+              <i class="fa-solid fa-bullhorn"></i> Enviar mensaje
             </button>
             <button class="btn btn-primary" onclick="abrirEditorDesafiosFirebase()"><i class="fa-solid fa-puzzle-piece"></i> Editar desafíos</button>
             <button class="btn btn-secondary teacher-panel-close" onclick="cerrarPanelProfesor()" aria-label="Cerrar panel" title="Cerrar panel"><i class="fa-solid fa-xmark"></i></button>
@@ -6555,7 +6653,7 @@
           if (!pantallaBloqueada) return;
           const destino = evento.target;
           const permitido = destino?.closest?.(
-              '#screenLockOverlay, #passwordModal, #firebaseAuthOverlay, #panelProfesorModal, #accionesEstudianteModal, #historialDesbloqueosModal, #historialDescuentosModal, #historialPestanasModal, #detalleEstudianteProfesorModal, #eliminarHistorialJitsiAdminModal, #confirmacionDocenteModal, #editarDescuentoEstudianteModal, #jitsiLlamadaAlerta, #jitsiModal, #jitsiFinAlerta, #jitsiFinalizadaAviso'
+              '#screenLockOverlay, #passwordModal, #firebaseAuthOverlay, #panelProfesorModal, #accionesEstudianteModal, #historialDesbloqueosModal, #historialDescuentosModal, #historialPestanasModal, #detalleEstudianteProfesorModal, #eliminarHistorialJitsiAdminModal, #confirmacionDocenteModal, #editarDescuentoEstudianteModal, #mensajeriaDocenteModal, #mensajeDocentePantalla, #jitsiLlamadaAlerta, #jitsiModal, #jitsiFinAlerta, #jitsiFinalizadaAviso'
           );
           if (permitido) return;
           evento.preventDefault();
@@ -7590,6 +7688,7 @@
           window.escucharInicioClaseFirebase?.();
           window.escucharReinicioSalidasFirebase?.();
           window.escucharNotasDocenteEstudianteFirebase?.();
+          window.escucharMensajesDocenteEstudianteFirebase?.();
           if (datosFirebase) await restaurarDesdeFirebase(datosFirebase);
 
           const photo = document.getElementById('firebaseUserPhoto');
@@ -13083,6 +13182,7 @@
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial de desbloqueos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDescuentos(${indice})"><i class="fa-solid fa-file-invoice-dollar"></i><span>Historial de descuentos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialPestanas(${indice})"><i class="fa-solid fa-window-restore"></i><span>Historial de pestañas</span></button>
+            <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirMensajeriaDocente('${escapeHtml(d.uid)}')"><i class="fa-solid fa-message"></i><span>Enviar mensaje en pantalla</span></button>
             <button class="btn btn-success" onclick="cerrarAccionesEstudiante();abrirJitsiDocente(${indice})"><i class="fa-solid fa-video"></i><span>${jitsiDisponible ? 'Volver a la llamada Jitsi' : 'Iniciar llamada Jitsi'}</span></button>
             ${jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-video-slash"></i><span>Cancelar invitación / finalizar</span></button>` : ''}
             ${jitsiTieneSala && !jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-broom"></i><span>Limpiar llamada anterior</span></button>` : ''}

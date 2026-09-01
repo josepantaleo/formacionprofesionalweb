@@ -111,6 +111,7 @@ function asegurarPaneles(){
  cargarFormulario(window.configuracionSeguimientoActual||{});
  asegurarTemaPanelDocente();
  asegurarPopupLimite();
+ asegurarMensajeriaDocente();
  actualizarIndicadorLimite();
  asegurarPestanasPanelDocente();
 }
@@ -227,6 +228,74 @@ function abrirConfiguracionLimiteBloqueo(){
  asegurarPopupLimite();const modal=document.getElementById("configurarLimiteBloqueoModal");modal._actualizarLimite?.(limiteActual());modal.querySelector("#limiteBloqueoError").style.display="none";modal.classList.add("active");setTimeout(()=>modal.querySelector("#limiteBloqueoNumero")?.focus(),0);
 }
 window.abrirConfiguracionLimiteBloqueo=abrirConfiguracionLimiteBloqueo;
+function estudiantesActivosMensajeria(){
+ return (Array.isArray(estudiantesProfesor)?estudiantesProfesor:[]).filter(d=>d?.uid&&d.estadoCuenta!=="pendiente"&&d.estadoCuenta!=="inactivo");
+}
+function claveGrupoMensaje(d){
+ const e=d?.estudiante||{};
+ return [txt(e.curso),txt(e.division),txt(e.turno)].join("|||");
+}
+function descripcionGrupoMensaje(clave){
+ return String(clave||"").split("|||").filter(Boolean).join(" · ")||"Grupo sin identificar";
+}
+function actualizarDestinosMensajeria(){
+ const modal=document.getElementById("mensajeriaDocenteModal");if(!modal)return;const estudiantes=estudiantesActivosMensajeria(),grupos=new Map();
+ estudiantes.forEach(d=>{const clave=claveGrupoMensaje(d);if(!clave.replace(/\|/g,""))return;if(!grupos.has(clave))grupos.set(clave,[]);grupos.get(clave).push(d)});
+ const grupo=modal.querySelector("#mensajeDocenteGrupo"),individual=modal.querySelector("#mensajeDocenteEstudiante");
+ if(grupo)grupo.innerHTML='<option value="">Seleccionar grupo</option>'+[...grupos.entries()].sort((a,b)=>descripcionGrupoMensaje(a[0]).localeCompare(descripcionGrupoMensaje(b[0]),"es",{numeric:true})).map(([clave,lista])=>`<option value="${escapeHtml(clave)}">${escapeHtml(descripcionGrupoMensaje(clave))} (${lista.length})</option>`).join("");
+ if(individual)individual.innerHTML='<option value="">Seleccionar estudiante</option>'+estudiantes.sort((a,b)=>txt(a.estudiante?.nombre||a.nombreGoogle||a.email).localeCompare(txt(b.estudiante?.nombre||b.nombreGoogle||b.email),"es")).map(d=>`<option value="${escapeHtml(d.uid)}">${escapeHtml(d.estudiante?.nombre||d.nombreGoogle||d.email||"Estudiante")} · ${escapeHtml(d.email||"Sin correo")}</option>`).join("");
+ actualizarResumenDestinatariosMensaje();
+}
+function destinatariosMensajeActuales(){
+ const modal=document.getElementById("mensajeriaDocenteModal"),estudiantes=estudiantesActivosMensajeria(),tipo=modal?.dataset.scope||"todos";
+ if(tipo==="grupo"){const clave=modal.querySelector("#mensajeDocenteGrupo")?.value||"";return estudiantes.filter(d=>claveGrupoMensaje(d)===clave)}
+ if(tipo==="individual"){const uid=modal.querySelector("#mensajeDocenteEstudiante")?.value||"";return estudiantes.filter(d=>d.uid===uid)}
+ return estudiantes;
+}
+function actualizarResumenDestinatariosMensaje(){
+ const modal=document.getElementById("mensajeriaDocenteModal");if(!modal)return;const tipo=modal.dataset.scope||"todos",destinatarios=destinatariosMensajeActuales(),resumen=modal.querySelector("#mensajeDocenteDestinatariosResumen");
+ modal.querySelector(".teacher-message-group-field").hidden=tipo!=="grupo";modal.querySelector(".teacher-message-student-field").hidden=tipo!=="individual";
+ modal.querySelectorAll("[data-message-scope]").forEach(b=>{const activo=b.dataset.messageScope===tipo;b.classList.toggle("active",activo);b.setAttribute("aria-pressed",String(activo))});
+ if(resumen)resumen.innerHTML=`<i class="fa-solid fa-users"></i> El aviso llegará a <strong>${destinatarios.length}</strong> estudiante${destinatarios.length===1?"":"s"} conectado${destinatarios.length===1?"":"s"} al sistema.`;
+}
+function asegurarMensajeriaDocente(){
+ if(document.getElementById("mensajeriaDocenteModal"))return;
+ const modal=document.createElement("div");modal.id="mensajeriaDocenteModal";modal.className="modal-overlay";modal.dataset.scope="todos";modal.setAttribute("role","dialog");modal.setAttribute("aria-modal","true");modal.setAttribute("aria-labelledby","mensajeriaDocenteTitulo");
+ modal.innerHTML=`<div class="modal-box teacher-message-box" tabindex="-1"><div class="teacher-message-header"><div class="teacher-message-heading"><span><i class="fa-solid fa-bullhorn"></i></span><div><h3 id="mensajeriaDocenteTitulo">Enviar mensaje en pantalla</h3><p>El estudiante deberá confirmar que leyó el aviso.</p></div></div><button class="btn btn-secondary teacher-message-close" type="button" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button></div><div class="teacher-message-scope" role="group" aria-label="Destinatarios"><button type="button" data-message-scope="todos" class="active" aria-pressed="true"><i class="fa-solid fa-users"></i><span>Todos</span></button><button type="button" data-message-scope="grupo" aria-pressed="false"><i class="fa-solid fa-people-group"></i><span>Grupo</span></button><button type="button" data-message-scope="individual" aria-pressed="false"><i class="fa-solid fa-user"></i><span>Estudiante</span></button></div><div class="teacher-message-form"><label class="teacher-message-group-field" hidden>Curso, división y turno<select id="mensajeDocenteGrupo"><option value="">Seleccionar grupo</option></select></label><label class="teacher-message-student-field" hidden>Estudiante<select id="mensajeDocenteEstudiante"><option value="">Seleccionar estudiante</option></select></label><label>Asunto<input id="mensajeDocenteAsunto" maxlength="120" placeholder="Ej.: Indicaciones para la actividad"></label><label class="wide">Mensaje<textarea id="mensajeDocenteContenido" maxlength="1000" placeholder="Escribí un mensaje claro y breve para mostrar en pantalla."></textarea><small><span id="mensajeDocenteCaracteres">0</span>/1000 caracteres</small></label><fieldset class="wide teacher-message-priority"><legend>Prioridad</legend><label><input type="radio" name="mensajeDocentePrioridad" value="normal" checked><span><i class="fa-solid fa-circle-info"></i> Normal</span></label><label><input type="radio" name="mensajeDocentePrioridad" value="urgente"><span><i class="fa-solid fa-triangle-exclamation"></i> Urgente</span></label></fieldset></div><div id="mensajeDocenteDestinatariosResumen" class="teacher-message-audience"></div><div id="mensajeDocenteEstado" class="teacher-message-status" role="status"></div><div class="teacher-message-actions"><button class="btn btn-secondary" id="cancelarMensajeDocente" type="button">Cancelar</button><button class="btn btn-primary" id="enviarMensajeDocente" type="button"><i class="fa-solid fa-paper-plane"></i> Enviar mensaje</button></div></div>`;
+ document.body.appendChild(modal);const cerrar=()=>modal.classList.remove("active");modal.querySelector(".teacher-message-close").onclick=cerrar;modal.querySelector("#cancelarMensajeDocente").onclick=cerrar;modal.onclick=e=>{if(e.target===modal)cerrar()};
+ modal.querySelectorAll("[data-message-scope]").forEach(b=>b.onclick=()=>{modal.dataset.scope=b.dataset.messageScope;actualizarResumenDestinatariosMensaje()});
+ modal.querySelector("#mensajeDocenteGrupo").onchange=actualizarResumenDestinatariosMensaje;modal.querySelector("#mensajeDocenteEstudiante").onchange=actualizarResumenDestinatariosMensaje;
+ modal.querySelector("#mensajeDocenteContenido").oninput=e=>modal.querySelector("#mensajeDocenteCaracteres").textContent=String(e.target.value.length);
+ modal.querySelector("#enviarMensajeDocente").onclick=enviarMensajeDesdePanelDocente;
+}
+function abrirMensajeriaDocente(uid=""){
+ asegurarMensajeriaDocente();const modal=document.getElementById("mensajeriaDocenteModal");actualizarDestinosMensajeria();modal.dataset.scope=uid?"individual":"todos";if(uid)modal.querySelector("#mensajeDocenteEstudiante").value=uid;modal.querySelector("#mensajeDocenteEstado").textContent="";actualizarResumenDestinatariosMensaje();modal.classList.add("active");setTimeout(()=>modal.querySelector(uid?"#mensajeDocenteContenido":"#mensajeDocenteAsunto")?.focus(),0);
+}
+window.abrirMensajeriaDocente=abrirMensajeriaDocente;
+async function enviarMensajeDesdePanelDocente(){
+ const modal=document.getElementById("mensajeriaDocenteModal"),boton=modal.querySelector("#enviarMensajeDocente"),estado=modal.querySelector("#mensajeDocenteEstado"),tipo=modal.dataset.scope||"todos",destinatarios=destinatariosMensajeActuales(),asunto=txt(modal.querySelector("#mensajeDocenteAsunto").value),contenido=txt(modal.querySelector("#mensajeDocenteContenido").value),prioridad=modal.querySelector('input[name="mensajeDocentePrioridad"]:checked')?.value||"normal";
+ if(!destinatarios.length){estado.className="teacher-message-status danger";estado.textContent="Seleccioná al menos un destinatario.";return}
+ if(!contenido){estado.className="teacher-message-status danger";estado.textContent="Escribí el mensaje que querés enviar.";modal.querySelector("#mensajeDocenteContenido").focus();return}
+ const destinoDescripcion=tipo==="todos"?"Toda la clase":tipo==="grupo"?descripcionGrupoMensaje(modal.querySelector("#mensajeDocenteGrupo").value):(destinatarios[0]?.estudiante?.nombre||destinatarios[0]?.email||"Estudiante");
+ const confirmado=confirm(`Se enviará un mensaje ${prioridad} a ${destinatarios.length} estudiante${destinatarios.length===1?"":"s"} (${destinoDescripcion}). ¿Continuar?`);if(!confirmado)return;
+ const original=boton.innerHTML;boton.disabled=true;boton.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';estado.className="teacher-message-status";estado.textContent="Distribuyendo el aviso...";
+ const resultado=await window.enviarMensajeDocenteFirebase?.(destinatarios.map(d=>d.uid),{tipoDestino:tipo,destinoDescripcion,asunto,contenido,prioridad})||{ok:false,enviados:0};boton.disabled=false;boton.innerHTML=original;
+ if(!resultado.ok){estado.className="teacher-message-status danger";estado.textContent=`No se pudo enviar el mensaje${window.ultimoErrorMensajeDocente?.code?` (${window.ultimoErrorMensajeDocente.code})`:""}. Verificá las reglas de Firestore.`;return}
+ estado.className="teacher-message-status success";estado.innerHTML=`<i class="fa-solid fa-circle-check"></i> Mensaje enviado a <strong>${resultado.enviados}</strong> estudiante${resultado.enviados===1?"":"s"}.`;modal.querySelector("#mensajeDocenteAsunto").value="";modal.querySelector("#mensajeDocenteContenido").value="";modal.querySelector("#mensajeDocenteCaracteres").textContent="0";setTimeout(()=>modal.classList.remove("active"),1200);
+}
+let mensajesDocentePendientes=[],mensajeDocenteVisible=null;
+function asegurarAvisoMensajeDocente(){
+ if(document.getElementById("mensajeDocentePantalla"))return;const overlay=document.createElement("div");overlay.id="mensajeDocentePantalla";overlay.className="teacher-screen-message";overlay.setAttribute("role","alertdialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-labelledby","mensajeDocentePantallaTitulo");overlay.hidden=true;
+ overlay.innerHTML=`<div class="teacher-screen-message-box" tabindex="-1"><div class="teacher-screen-message-icon"><i class="fa-solid fa-bullhorn"></i></div><div class="teacher-screen-message-content"><div class="teacher-screen-message-meta"><span id="mensajeDocentePantallaPrioridad">Mensaje del docente</span><span id="mensajeDocentePantallaCantidad"></span></div><h2 id="mensajeDocentePantallaTitulo">Mensaje del docente</h2><p id="mensajeDocentePantallaTexto"></p><small id="mensajeDocentePantallaFecha"></small><div id="mensajeDocentePantallaEstado" class="teacher-screen-message-status" role="status"></div><button class="btn btn-primary" id="confirmarMensajeDocentePantalla" type="button"><i class="fa-solid fa-check"></i> Entendido</button></div></div>`;document.body.appendChild(overlay);overlay.querySelector("#confirmarMensajeDocentePantalla").onclick=confirmarLecturaMensajeDocente;
+}
+function mostrarSiguienteMensajeDocente(){
+ asegurarAvisoMensajeDocente();const overlay=document.getElementById("mensajeDocentePantalla");if(mensajeDocenteVisible||!mensajesDocentePendientes.length){if(!mensajeDocenteVisible)overlay.hidden=true;return}
+ mensajeDocenteVisible=mensajesDocentePendientes[0];const urgente=mensajeDocenteVisible.prioridad==="urgente";overlay.classList.toggle("urgent",urgente);overlay.hidden=false;overlay.querySelector("#mensajeDocentePantallaPrioridad").textContent=urgente?"Aviso urgente del docente":"Mensaje del docente";overlay.querySelector("#mensajeDocentePantallaTitulo").textContent=mensajeDocenteVisible.asunto||"Mensaje del docente";overlay.querySelector("#mensajeDocentePantallaTexto").textContent=mensajeDocenteVisible.contenido||"";overlay.querySelector("#mensajeDocentePantallaCantidad").textContent=mensajesDocentePendientes.length>1?`${mensajesDocentePendientes.length} mensajes pendientes`:"";const fecha=ms(mensajeDocenteVisible.enviadoEn);overlay.querySelector("#mensajeDocentePantallaFecha").textContent=`Enviado por ${mensajeDocenteVisible.docente||"Docente autorizado"}${fecha?` · ${new Date(fecha).toLocaleString("es-AR")}`:""}`;overlay.querySelector("#mensajeDocentePantallaEstado").textContent="";setTimeout(()=>overlay.querySelector("#confirmarMensajeDocentePantalla")?.focus(),0);
+}
+async function confirmarLecturaMensajeDocente(){
+ if(!mensajeDocenteVisible)return;const overlay=document.getElementById("mensajeDocentePantalla"),boton=overlay.querySelector("#confirmarMensajeDocentePantalla"),estado=overlay.querySelector("#mensajeDocentePantallaEstado"),original=boton.innerHTML;boton.disabled=true;boton.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Confirmando...';const ok=await window.marcarMensajeDocenteLeidoFirebase?.(mensajeDocenteVisible.id);boton.disabled=false;boton.innerHTML=original;if(!ok){estado.textContent="No se pudo confirmar la lectura. Revisá la conexión e intentá nuevamente.";return}mensajesDocentePendientes=mensajesDocentePendientes.filter(m=>m.id!==mensajeDocenteVisible.id);mensajeDocenteVisible=null;overlay.hidden=true;mostrarSiguienteMensajeDocente();
+}
+window.addEventListener("mensajes-docente-estudiante",evento=>{if(esSesionDocenteActual())return;const recibidos=Array.isArray(evento.detail)?evento.detail:[],actualId=mensajeDocenteVisible?.id||"";mensajesDocentePendientes=recibidos.filter(m=>m.id!==actualId);if(mensajeDocenteVisible)mensajesDocentePendientes.unshift(mensajeDocenteVisible);mostrarSiguienteMensajeDocente()});
 function renderIncidencias(){
  const panel=document.getElementById("incidenciasSeguimientoProfesor");if(!panel||!Array.isArray(estudiantesProfesor))return;
  const activos=estudiantesProfesor.filter(x=>x.estadoCuenta==="activo"),items=activos.map(estudiante=>{
