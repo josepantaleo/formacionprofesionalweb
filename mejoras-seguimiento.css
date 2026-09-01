@@ -1940,6 +1940,42 @@ body.teacher-light-mode .teacher-challenge-grade-fields label{
   font-size:.65rem;
   white-space:normal;
 }
+.student-ai-hint-levels{
+  display:flex;
+  align-items:center;
+  gap:.35rem;
+  padding:0 .65rem .55rem;
+  color:var(--text-muted);
+  font-size:.65rem;
+  font-weight:800;
+}
+.student-ai-hint-levels>span{
+  display:inline-flex;
+  align-items:center;
+  gap:.3rem;
+  margin-right:auto;
+}
+.student-ai-hint-levels button{
+  width:1.7rem;
+  height:1.7rem;
+  padding:0;
+  border:1px solid rgba(56,189,248,.35);
+  border-radius:5px;
+  background:rgba(56,189,248,.1);
+  color:#bae6fd;
+  font:inherit;
+  font-size:.68rem;
+  cursor:pointer;
+}
+.student-ai-hint-levels button:hover,
+.student-ai-hint-levels button:focus-visible{
+  border-color:#38bdf8;
+  background:rgba(14,116,144,.28);
+}
+.student-ai-hint-levels button:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
 .student-ai-column .ai-chat-composer{
   align-items:stretch;
 }
@@ -2034,6 +2070,13 @@ body.teacher-light-mode .student-focus-toggle{
   }
   .student-ai-column .ai-chat-quick-actions .btn:last-child{
     grid-column:1/-1;
+  }
+  .student-ai-hint-levels{
+    flex-wrap:wrap;
+  }
+  .student-ai-hint-levels>span{
+    width:100%;
+    margin-right:0;
   }
   .student-ai-column .ai-chat-composer{
     display:grid;

@@ -7565,7 +7565,15 @@
                                       <div class="ai-chat-quick-actions">
                                           <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'pista')"><i class="fa-solid fa-lightbulb"></i> Nueva pista</button>
                                           <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'siguiente')"><i class="fa-solid fa-forward"></i> Siguiente paso</button>
+                                          <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'casos')"><i class="fa-solid fa-vial"></i> Casos de prueba</button>
+                                          <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'linea')"><i class="fa-solid fa-list-ol"></i> Error por línea</button>
                                           <button class="btn btn-chat-danger" type="button" onclick="limpiarChatIA('${sec.id}')"><i class="fa-solid fa-trash-can"></i> Limpiar</button>
+                                      </div>
+                                      <div class="student-ai-hint-levels" aria-label="Nivel de pista progresiva">
+                                          <span><i class="fa-solid fa-stairs"></i> Pista progresiva</span>
+                                          <button type="button" data-ai-editor-action onclick="pedirPistaIA('${sec.id}', 'pista1')">1</button>
+                                          <button type="button" data-ai-editor-action onclick="pedirPistaIA('${sec.id}', 'pista2')">2</button>
+                                          <button type="button" data-ai-editor-action onclick="pedirPistaIA('${sec.id}', 'pista3')">3</button>
                                       </div>
                                       <form class="ai-chat-composer" onsubmit="enviarMensajeIA(event, '${sec.id}')">
                                           <input class="ai-chat-input" id="ai-chat-input-${sec.id}" maxlength="240" autocomplete="off" placeholder="Preguntá sobre tu código o el error..." aria-label="Pregunta a la IA sobre ${sec.title}" ${isFinalized ? 'disabled' : ''}>
@@ -9113,6 +9121,10 @@
           const lineasUtiles = lineas
               .map((texto, indice) => ({ numero: indice + 1, texto: texto.trim() }))
               .filter(x => x.texto && !x.texto.startsWith("//"));
+          const lineasConContenido = lineas.map((texto, indice) => ({
+              numero: indice + 1,
+              texto: texto.trim()
+          }));
           const esPlantilla = !fuente.trim() ||
               (sec.initialCode && fuente.trim() === String(sec.initialCode).trim());
           const marcadoresPendientes = lineasUtiles
@@ -9133,9 +9145,15 @@
               .filter(x => !x.cumple).map(x => x.nombre).slice(0, 3);
           const errorTexto = String(historial.error || (historial.exito === false ? historial.salida : "") || "").trim();
           const coincidenciaLinea = errorTexto.match(/(?:line|línea)\s*(\d+)/i);
+          const lineaSospechosa = lineasConContenido.find(x =>
+              /\b(?:prompt|Number|parseInt|parseFloat)\s*\(/.test(x.texto) ||
+              /\b(?:if|while|for)\b/.test(x.texto) ||
+              /\b(?:undefined|null)\b/.test(x.texto)
+          )?.numero || lineasUtiles[0]?.numero || null;
 
           return {
               esPlantilla,
+              lineas: lineasConContenido,
               lineasUtiles,
               marcadoresPendientes,
               delimitadores,
@@ -9145,6 +9163,7 @@
               conceptosPendientes,
               errorTexto,
               lineaError: coincidenciaLinea ? Number(coincidenciaLinea[1]) : null,
+              lineaSospechosa,
               tieneSalida: /\bconsole\.(log|info|warn|error)\s*\(/.test(fuente),
               tieneDecision: /\b(if|switch)\b/.test(fuente),
               tieneRepeticion: /\b(for|while|do)\b/.test(fuente),
@@ -9247,7 +9266,9 @@
           const texto = normalizarEvaluacion(`${pregunta} ${modo}`);
           const diagnostico = diagnosticarCodigoChatIA(code, sec, evaluacion, historial);
           const pendientes = diagnostico.conceptosPendientes;
-          const nivelPista = obtenerNivelPistaIA(sectionId, pregunta);
+          const nivelPista = /^pista[123]$/.test(modo)
+              ? Number(modo.slice(-1))
+              : obtenerNivelPistaIA(sectionId, pregunta);
           const preguntaSocratica = (sec.preguntasSocraticas || [])[Math.min(nivelPista - 1, Math.max(0, (sec.preguntasSocraticas || []).length - 1))];
 
           if (/^(hola|buenas|buen dia|buenas tardes|buenas noches)\b/.test(texto)) {
@@ -9342,11 +9363,38 @@
                   : diagnostico.tieneRepeticion
                       ? "una colección con varios elementos y otra vacía o con un solo elemento"
                       : "dos valores de entrada claramente diferentes";
+              const casos = diagnostico.tieneDecision
+                  ? "Caso 1: condición verdadera · Caso 2: condición falsa · Caso 3: valor límite (igual al umbral)."
+                  : diagnostico.tieneRepeticion
+                      ? "Caso 1: colección con varios elementos · Caso 2: colección vacía · Caso 3: un solo elemento."
+                      : "Caso 1: entrada habitual · Caso 2: entrada mínima · Caso 3: entrada inesperada o límite.";
               return construirRespuestaIA(
                   "Plan de prueba",
                   `tu código ${diagnostico.tieneDecision ? "contiene decisiones" : diagnostico.tieneRepeticion ? "contiene una repetición" : "necesita validar su resultado con más de un caso"}.`,
-                  `Probá ${foco}. Antes de ejecutar, anotá la salida que esperás en cada caso.`,
+                  `${casos} Probá ${foco}. Antes de ejecutar, anotá la salida que esperás en cada caso.`,
                   "¿La salida real coincide exactamente con lo esperado en ambos casos?"
+              );
+          }
+          if (modo === "linea" || /por linea|por línea|linea|línea/.test(texto)) {
+              const linea = diagnostico.lineaError || diagnostico.lineaSospechosa;
+              const contexto = linea
+                  ? diagnostico.lineas.find(x => x.numero === linea)
+                  : diagnostico.lineasUtiles[0];
+              if (!contexto) {
+                  return construirRespuestaIA(
+                      "Todavía no hay una línea para analizar",
+                      "el editor está vacío o conserva la plantilla inicial.",
+                      "Escribí una primera instrucción, ejecutá el programa y volvé a pedir la explicación por línea.",
+                      "¿Qué línea esperás que produzca el primer resultado?"
+                  );
+              }
+              return construirRespuestaIA(
+                  `Análisis de la línea ${contexto.numero}`,
+                  `la instrucción es: ${contexto.texto}`,
+                  diagnostico.errorTexto
+                      ? `El error registrado apunta a esta zona. Revisá qué variables existen antes de la línea ${contexto.numero}, qué tipo de dato recibe y qué resultado debería producir.`
+                      : "No hay un error de ejecución registrado; revisá el dato que entra, la operación que realiza y el valor que deja disponible para la siguiente línea.",
+                  `¿Qué valor tiene cada variable justo antes de ejecutar la línea ${contexto.numero}?`
               );
           }
           if (/solucion|codigo completo|respuesta completa|hacelo por mi|dame el codigo/.test(texto)) {
@@ -9439,7 +9487,12 @@
               pista: "Dame una pista para avanzar.",
               error: "Ayúdame a revisar un posible error.",
               siguiente: "¿Qué debería revisar ahora?",
-              ejemplo: "Proponeme una prueba para verificar mi solución."
+              ejemplo: "Proponeme una prueba para verificar mi solución.",
+              casos: "Generá tres casos de prueba y decime qué debería observar en cada uno.",
+              linea: "Explicame el error o la línea más importante de mi código.",
+              pista1: "Dame una pista de nivel 1: ayudame a ubicar el concepto sin decirme cómo resolverlo.",
+              pista2: "Dame una pista de nivel 2: ayudame a convertir el concepto en un paso concreto.",
+              pista3: "Dame una pista de nivel 3: indicame qué cambio mínimo puedo probar ahora."
           };
           const pregunta = textos[modo] || textos.pista;
           agregarMensajeChatIA(sectionId, "student", pregunta);
