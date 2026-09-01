@@ -5018,6 +5018,12 @@
             <p id="detalleEstudianteProfesorSubtitulo">Información completa de actividades y respuestas.</p>
           </div>
           <div class="btn-group">
+            <button class="btn btn-secondary" id="btnDetalleEstudianteAnterior" type="button" onclick="navegarDetalleEstudianteProfesor(-1)" title="Estudiante anterior">
+              <i class="fa-solid fa-arrow-left"></i> Anterior
+            </button>
+            <button class="btn btn-secondary" id="btnDetalleEstudianteSiguiente" type="button" onclick="navegarDetalleEstudianteProfesor(1)" title="Estudiante siguiente">
+              Siguiente <i class="fa-solid fa-arrow-right"></i>
+            </button>
             <button class="btn btn-success" type="button" onclick="exportarDetalleEstudianteProfesorPDF()">
               <i class="fa-solid fa-file-pdf"></i> Exportar detalle
             </button>
@@ -10836,6 +10842,38 @@
       }
       let detalleEstudianteProfesorIndiceActual = null;
 
+      function obtenerIndicesDetalleEstudiantesVisibles() {
+          return [...document.querySelectorAll('#tablaProfesorBody .btn-abrir-acciones-estudiante')]
+              .map(boton => Number(boton.dataset.estudianteIndex))
+              .filter(indice => Number.isInteger(indice) && estudiantesProfesor[indice]);
+      }
+
+      function actualizarNavegacionDetalleEstudianteProfesor() {
+          const indices = obtenerIndicesDetalleEstudiantesVisibles();
+          const posicion = indices.indexOf(detalleEstudianteProfesorIndiceActual);
+          const anterior = document.getElementById('btnDetalleEstudianteAnterior');
+          const siguiente = document.getElementById('btnDetalleEstudianteSiguiente');
+          const hayAnterior = posicion > 0;
+          const haySiguiente = posicion >= 0 && posicion < indices.length - 1;
+          if (anterior) {
+              anterior.disabled = !hayAnterior;
+              anterior.title = hayAnterior ? 'Estudiante anterior en la vista filtrada' : 'No hay un estudiante anterior visible';
+          }
+          if (siguiente) {
+              siguiente.disabled = !haySiguiente;
+              siguiente.title = haySiguiente ? 'Estudiante siguiente en la vista filtrada' : 'No hay un estudiante siguiente visible';
+          }
+      }
+
+      function navegarDetalleEstudianteProfesor(direccion) {
+          const indices = obtenerIndicesDetalleEstudiantesVisibles();
+          const posicion = indices.indexOf(detalleEstudianteProfesorIndiceActual);
+          if (posicion < 0) return;
+          const destino = indices[posicion + Number(direccion || 0)];
+          if (destino === undefined) return;
+          abrirDetalleEstudianteProfesor(destino);
+      }
+
       function filtrarDesafiosDetalleProfesor(valor = '') {
           const selector = document.getElementById('filtroDesafiosDetalleProfesor');
           if (selector && arguments.length > 0 && valor !== selector.value) {
@@ -12289,6 +12327,7 @@
               </div>
               <div id="listaDesafiosDetalleProfesor">${actividadesHtml}</div>`;
           document.getElementById('detalleEstudianteProfesorModal').classList.add('active');
+          actualizarNavegacionDetalleEstudianteProfesor();
           filtrarDesafiosDetalleProfesor();
       }
 
@@ -13250,6 +13289,9 @@
                   fila.parentNode.insertBefore(filaAcciones, fila.nextSibling);
               }
           });
+          if (document.getElementById('detalleEstudianteProfesorModal')?.classList.contains('active')) {
+              actualizarNavegacionDetalleEstudianteProfesor();
+          }
       }
       function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
       async function eliminarEstudianteProfesor(estudiante) {
@@ -13452,6 +13494,42 @@
           doc.save(`${nombreArchivoPDFProfesor(nombre)}.pdf`);
       }
 
+      function agregarAnalistaViabilidadExcelenciaPDF(doc, analista, y) {
+          const preguntas = Array.isArray(analista?.preguntas) ? analista.preguntas : [];
+          if (!preguntas.length) {
+              return agregarTextoPDFProfesor(doc, 'Analista de Viabilidad y Excelencia: sin respuestas entregadas.', y);
+          }
+          doc.setFont('helvetica', 'bold');
+          y = agregarTextoPDFProfesor(
+              doc,
+              `Analista de Viabilidad y Excelencia · Viabilidad: ${analista.viabilidad || 'Pendiente'} · Excelencia: ${analista.excelencia || 'Pendiente'} · Resultado: ${Number(analista.correctas || 0)}/${Number(analista.total || preguntas.length)} (${Number(analista.porcentaje || 0)}%)`,
+              y
+          );
+          doc.setFont('helvetica', 'normal');
+          preguntas.forEach((pregunta, indice) => {
+              const opciones = Array.isArray(pregunta.opciones) ? pregunta.opciones : [];
+              const seleccionadas = Array.isArray(pregunta.seleccionadas) ? pregunta.seleccionadas : [];
+              const correctas = Array.isArray(pregunta.correctas)
+                  ? pregunta.correctas
+                  : opciones.map((opcion, posicion) => opcion?.correcta === true ? posicion : null).filter(posicion => posicion !== null);
+              const esCorrecta = JSON.stringify([...seleccionadas].sort((a,b) => a-b)) ===
+                  JSON.stringify([...correctas].sort((a,b) => a-b));
+              const seleccionTexto = seleccionadas.length
+                  ? seleccionadas.map(posicion => `${String.fromCharCode(65 + posicion)}) ${opciones[posicion]?.texto || opciones[posicion]?.t || 'Opción'}`).join(' | ')
+                  : 'Sin selección';
+              const correctaTexto = correctas.length
+                  ? correctas.map(posicion => `${String.fromCharCode(65 + posicion)}) ${opciones[posicion]?.texto || opciones[posicion]?.t || 'Opción'}`).join(' | ')
+                  : 'No definida';
+              y = agregarTextoPDFProfesor(
+                  doc,
+                  `${indice + 1}. ${pregunta.pregunta || 'Pregunta sin texto'} · ${pregunta.categoria || pregunta.tipo || 'ANÁLISIS'} · ${esCorrecta ? 'Respuesta correcta' : 'Respuesta incorrecta'}\nRespuesta del estudiante: ${seleccionTexto}\nRespuesta correcta esperada: ${correctaTexto}`,
+                  y,
+                  { altoLinea: 3.8 }
+              );
+          });
+          return y;
+      }
+
       function exportarDetalleEstudianteProfesorPDF() {
           if (!window.jspdf?.jsPDF) {
               alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.');
@@ -13534,6 +13612,7 @@
               y = agregarTextoPDFProfesor(doc, `Código entregado:\n${codigo}`, y, { altoLinea: 3.5 });
               doc.setFont('helvetica', 'normal');
               y = agregarTextoPDFProfesor(doc, `Salida: ${r.salida || 'Sin salida registrada'}`, y);
+              y = agregarAnalistaViabilidadExcelenciaPDF(doc, r.analista, y);
               y += 2;
               doc.line(14, y, 196, y);
           });
