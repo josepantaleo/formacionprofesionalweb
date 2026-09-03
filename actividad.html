@@ -628,6 +628,20 @@
       textarea.code-editor.editor-enhanced.wrap-lines{white-space:pre-wrap;overflow-wrap:anywhere}
       .editor-search-status{color:#94a3b8;white-space:nowrap}
       .editor-cursor-position{color:#7dd3fc;white-space:nowrap;font-variant-numeric:tabular-nums}
+      .codemirror-host{position:relative;min-height:180px;background:var(--bg-editor);border-top:1px solid rgba(148,163,184,.18)}
+      .codemirror-host .cm-editor{min-height:180px;height:100%;font:400 .9rem/1.5 "Fira Code",monospace}
+      .codemirror-host .cm-scroller{overflow:auto;min-height:180px}
+      .codemirror-host .cm-content{padding:1rem 1rem 1.5rem}
+      .codemirror-host .cm-gutters{background:#111827;color:#64748b;border-right:1px solid rgba(148,163,184,.18)}
+      .codemirror-host .cm-activeLineGutter,.codemirror-host .cm-activeLine{background:rgba(56,189,248,.08)}
+      .codemirror-host.cm-disabled{opacity:.72;filter:saturate(.7);pointer-events:none}
+      .codemirror-source-hidden{display:none!important}
+      .cm-remote-cursors{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+      .cm-remote-cursor{position:absolute;width:2px;height:1.45em;border-radius:2px;background:#fbbf24;box-shadow:0 0 0 1px rgba(251,191,36,.2);animation:cmCursorBlink 1.1s infinite}
+      .cm-remote-cursor.student{background:#4ade80;box-shadow:0 0 0 1px rgba(74,222,128,.2)}
+      .cm-remote-cursor.teacher{background:#fbbf24;box-shadow:0 0 0 1px rgba(251,191,36,.2)}
+      .cm-remote-cursor-label{position:absolute;left:4px;top:-1.1em;padding:.1rem .25rem;border-radius:3px;background:rgba(15,23,42,.92);color:#fde68a;font:600 .58rem/1.2 Inter,sans-serif;white-space:nowrap}
+      @keyframes cmCursorBlink{0%,45%{opacity:1}46%,100%{opacity:.55}}
 
       .console-output {
         background: #000;
@@ -2378,6 +2392,28 @@
       import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
       import { getAI, getTemplateGenerativeModel, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
       import * as Y from "https://cdn.jsdelivr.net/npm/yjs@13.6.31/+esm";
+      import { EditorState } from "https://cdn.jsdelivr.net/npm/@codemirror/state@6.5.2/+esm";
+      import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from "https://cdn.jsdelivr.net/npm/@codemirror/view@6.36.5/+esm";
+      import { defaultKeymap, indentWithTab } from "https://cdn.jsdelivr.net/npm/@codemirror/commands@6.8.1/+esm";
+      import { javascript } from "https://cdn.jsdelivr.net/npm/@codemirror/lang-javascript@6.2.3/+esm";
+      import { closeBrackets, closeBracketsKeymap, autocompletion, completionKeymap } from "https://cdn.jsdelivr.net/npm/@codemirror/autocomplete@6.18.6/+esm";
+      import { basicSetup } from "https://cdn.jsdelivr.net/npm/codemirror@6.0.1/+esm";
+      window.CodeMirror6 = {
+        EditorState,
+        EditorView,
+        keymap,
+        lineNumbers,
+        highlightActiveLine,
+        drawSelection,
+        defaultKeymap,
+        indentWithTab,
+        javascript,
+        closeBrackets,
+        closeBracketsKeymap,
+        autocompletion,
+        completionKeymap,
+        basicSetup
+      };
 
       // ============================================================
       // PEGA AQUÍ LA CONFIGURACIÓN DE TU PROYECTO FIREBASE
@@ -3671,6 +3707,7 @@
           quitarModoCooperacion = sesion.onModoCooperacion?.(({ activo, pausada }) => {
             if (activo && !pausada) {
               textarea.disabled = false;
+              textarea.__setCodeMirrorDisabled?.(false);
               textarea.dataset.edicionLibreCooperacion = "true";
               delete textarea.dataset.edicionCooperativaPausada;
               if (estadoElemento) {
@@ -3681,6 +3718,7 @@
             }
             if (activo && pausada) {
               textarea.disabled = true;
+              textarea.__setCodeMirrorDisabled?.(true);
               textarea.dataset.edicionLibreCooperacion = "true";
               textarea.dataset.edicionCooperativaPausada = "true";
               if (estadoElemento) {
@@ -3691,6 +3729,7 @@
             }
             if (textarea.dataset.edicionLibreCooperacion === "true") {
               textarea.disabled = bloqueadoAntesCooperacion;
+              textarea.__setCodeMirrorDisabled?.(bloqueadoAntesCooperacion);
               delete textarea.dataset.edicionLibreCooperacion;
               delete textarea.dataset.edicionCooperativaPausada;
             }
@@ -3699,6 +3738,7 @@
             quitarModoCooperacion();
             if (textarea.dataset.edicionLibreCooperacion === "true") {
               textarea.disabled = bloqueadoAntesCooperacion;
+              textarea.__setCodeMirrorDisabled?.(bloqueadoAntesCooperacion);
               delete textarea.dataset.edicionLibreCooperacion;
               delete textarea.dataset.edicionCooperativaPausada;
             }
@@ -3746,10 +3786,16 @@
             });
           }, 1100);
         };
-        const actualizarCursor = () => sesion.actualizarPresencia({
-          inicio: textarea.selectionStart,
-          fin: textarea.selectionEnd
-        });
+        const actualizarCursor = () => {
+          const seleccion = textarea.__getCodeMirrorSelection?.() || {
+            inicio: textarea.selectionStart,
+            fin: textarea.selectionEnd
+          };
+          sesion.actualizarPresencia({
+            inicio: seleccion.inicio,
+            fin: seleccion.fin
+          });
+        };
         textarea.value = sesion.texto.toString();
         if (sesion.rol === "estudiante") {
           setLocalStorage(`draft_editor-${sectionId}`, textarea.value);
@@ -3760,18 +3806,24 @@
         textarea.addEventListener("input", aplicarLocal);
         textarea.addEventListener("keyup", actualizarCursor);
         textarea.addEventListener("click", actualizarCursor);
+        textarea.addEventListener("cm-selection-change", actualizarCursor);
         sesion.texto.observe(aplicarRemoto);
         const quitarEstado = sesion.onStatus(info => {
           if (!estadoElemento) return;
           estadoElemento.className = `student-editor-state crdt-${info.estado}`;
           estadoElemento.innerHTML = `<i class="fa-solid ${info.estado === "synced" ? "fa-people-arrows" : info.estado === "error" ? "fa-triangle-exclamation" : "fa-arrows-rotate fa-spin"}"></i> ${info.detalle}`;
         });
+        const quitarPresenciaRemota = sesion.onPresence?.(participantes => {
+          textarea.__renderRemoteCursors?.(participantes);
+        }) || (() => {});
         const desvincular = () => {
           textarea.removeEventListener("input", aplicarLocal);
           textarea.removeEventListener("keyup", actualizarCursor);
           textarea.removeEventListener("click", actualizarCursor);
+          textarea.removeEventListener("cm-selection-change", actualizarCursor);
           sesion.texto.unobserve(aplicarRemoto);
           quitarEstado();
+          quitarPresenciaRemota();
           clearTimeout(temporizadorEscritura);
           sesion.actualizarPresencia({ inicio: textarea.selectionStart, fin: textarea.selectionEnd, escribiendo: false });
           textarea.__quitarModoCooperacionCRDT?.();
@@ -5650,7 +5702,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260903-17">
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260903-18">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -11615,9 +11667,119 @@
           return salida || " ";
       }
 
+      function inicializarEditorCodeMirror(textarea) {
+          if (!textarea || textarea.__codeMirrorView) return textarea?.__codeMirrorView || null;
+          const CM = window.CodeMirror6;
+          if (!CM) {
+              window.CodeMirrorDisponible = false;
+              return null;
+          }
+          const {
+              EditorState,
+              EditorView,
+              keymap,
+              lineNumbers,
+              highlightActiveLine,
+              drawSelection,
+              defaultKeymap,
+              indentWithTab,
+              javascript,
+              closeBrackets,
+              closeBracketsKeymap,
+              autocompletion,
+              completionKeymap,
+              basicSetup
+          } = CM;
+          const host = document.createElement("div");
+          host.className = "codemirror-host";
+          textarea.parentNode.insertBefore(host, textarea);
+          textarea.classList.add("codemirror-source-hidden");
+          const cursors = document.createElement("div");
+          cursors.className = "cm-remote-cursors";
+          host.appendChild(cursors);
+          let sincronizando = false;
+          const actualizarTextarea = update => {
+              if (!update.docChanged || sincronizando) return;
+              const valor = update.state.doc.toString();
+              textarea.value = valor;
+              textarea.dispatchEvent(new Event("input", { bubbles: true }));
+          };
+          const atajos = keymap.of([
+              ...defaultKeymap,
+              ...closeBracketsKeymap,
+              ...completionKeymap,
+              indentWithTab,
+              { key: "Mod-s", run: () => { window.guardarAhoraFirebase?.(); return true; } },
+              { key: "Mod-Enter", run: () => { window.ejecutarCodigo?.(textarea.id.replace("editor-", "")); return true; } }
+          ]);
+          const view = new EditorView({
+              state: EditorState.create({
+                  doc: textarea.value || "",
+                  extensions: [
+                      basicSetup,
+                      lineNumbers(),
+                      javascript(),
+                      closeBrackets(),
+                      autocompletion(),
+                      highlightActiveLine(),
+                      drawSelection(),
+                      atajos,
+                      EditorView.updateListener.of(update => {
+                          actualizarTextarea(update);
+                          if (update.selectionSet) textarea.dispatchEvent(new Event("cm-selection-change"));
+                      })
+                  ]
+              }),
+              parent: host
+          });
+          textarea.__codeMirrorView = view;
+          textarea.__codeMirrorHost = host;
+          textarea.__syncCodeMirror = valor => {
+              if (view.state.doc.toString() === String(valor || "")) return;
+              sincronizando = true;
+              view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: String(valor || "") } });
+              sincronizando = false;
+          };
+          textarea.__getCodeMirrorSelection = () => ({
+              inicio: view.state.selection.main.from,
+              fin: view.state.selection.main.to
+          });
+          textarea.__setCodeMirrorDisabled = deshabilitado => {
+              host.classList.toggle("cm-disabled", Boolean(deshabilitado));
+              host.setAttribute("aria-disabled", String(Boolean(deshabilitado)));
+          };
+          textarea.__renderRemoteCursors = participantes => {
+              cursors.innerHTML = "";
+              const propio = window.firebaseTeacherUser?.uid || window.firebaseCurrentUser?.uid;
+              (participantes || []).filter(item => item?.autorUid && item.autorUid !== propio).forEach(item => {
+                  const posicion = Math.max(0, Math.min(view.state.doc.length, Number(item.cursorInicio) || 0));
+                  const coordenadas = view.coordsAtPos(posicion);
+                  if (!coordenadas) return;
+                  const rect = host.getBoundingClientRect();
+                  const marcador = document.createElement("span");
+                  marcador.className = `cm-remote-cursor ${item.rol === "docente" ? "teacher" : "student"}`;
+                  marcador.style.left = `${coordenadas.left - rect.left}px`;
+                  marcador.style.top = `${coordenadas.top - rect.top}px`;
+                  const etiqueta = document.createElement("span");
+                  etiqueta.className = "cm-remote-cursor-label";
+                  etiqueta.textContent = item.nombre || (item.rol === "docente" ? "Docente" : "Estudiante");
+                  marcador.appendChild(etiqueta);
+                  cursors.appendChild(marcador);
+              });
+          };
+          textarea.addEventListener("crdt-remote-change", () => textarea.__syncCodeMirror?.(textarea.value));
+          textarea.__setCodeMirrorDisabled(textarea.disabled);
+          return view;
+      }
+      window.inicializarEditorCodeMirror = inicializarEditorCodeMirror;
+
       function mejorarEditorCodigo(textarea) {
           if (!textarea || textarea.dataset.editorMejorado === "true") return;
           textarea.dataset.editorMejorado = "true";
+          if (window.CodeMirrorDisponible !== false && window.CodeMirror6) {
+              const editorCM = inicializarEditorCodeMirror(textarea);
+              if (editorCM) return;
+          }
           const contenedor = textarea.closest(".editor-container");
           if (!contenedor) return;
           const shell = document.createElement("div");
@@ -17339,7 +17501,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260903-17"></script>
+    <script src="mejoras-seguimiento.js?v=20260903-18"></script>
   </body>
 </html>
 
