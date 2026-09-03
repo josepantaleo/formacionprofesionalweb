@@ -12894,7 +12894,7 @@
                               <h4 style="margin:0;color:#bbf7d0"><i class="fa-solid fa-people-arrows"></i> Colaboración docente-estudiante</h4>
                               <small style="display:block;margin-top:.2rem;color:#94a3b8">Editá este desafío simultáneamente con el estudiante.</small>
                           </div>
-                          <button class="btn btn-success" type="button" style="min-height:44px;font-weight:800" onclick="window.abrirEditorColaborativoProfesor ? window.abrirEditorColaborativoProfesor(${indice}, '${sec.id}') : alert('No se cargó el módulo colaborativo. Actualizá la página con Ctrl + F5.')">
+                          <button class="btn btn-success btn-trabajar-vivo" type="button" style="min-height:44px;font-weight:800" data-collab-student-index="${indice}" data-collab-section="${escapeHtml(sec.id)}" onclick="return false;">
                               <i class="fa-solid fa-code-branch"></i> TRABAJAR EN VIVO
                           </button>
                       </div>

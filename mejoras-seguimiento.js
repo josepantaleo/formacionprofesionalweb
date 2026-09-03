@@ -459,11 +459,22 @@ function asegurarEditorColaborativoDocente(){
  modal.querySelector("#guardarEditorColaborativo").onclick=async()=>{const estado=modal.querySelector("#editorColaborativoGuardado"),boton=modal.querySelector("#guardarEditorColaborativo");boton.disabled=true;estado.textContent="Sincronizando...";try{await modal.__crdtSession?.flush();estado.textContent="Cambios sincronizados";estado.className="success"}catch{estado.textContent="No se pudo sincronizar";estado.className="danger"}finally{boton.disabled=false}};
 }
 async function abrirEditorColaborativoProfesor(indice,sectionId){
- const d=estudiantesProfesor?.[indice];if(!d?.uid||!sectionId)return;asegurarEditorColaborativoDocente();const modal=document.getElementById("editorColaborativoDocenteModal"),sec=(typeof seccionesData!=="undefined"?seccionesData:[]).find(x=>x.id===sectionId),codigo=d.codigos?.[sectionId]||d.historialResultados?.[sectionId]?.codigo||"";
+ const d=estudiantesProfesor?.[indice];if(!d?.uid||!sectionId){alert("No se pudo identificar al estudiante o al desafío.");return;}asegurarEditorColaborativoDocente();const modal=document.getElementById("editorColaborativoDocenteModal"),sec=(typeof seccionesData!=="undefined"?seccionesData:[]).find(x=>x.id===sectionId),codigo=d.codigos?.[sectionId]||d.historialResultados?.[sectionId]?.codigo||"";
  modal.dataset.uid=d.uid;modal.dataset.sectionId=sectionId;document.getElementById("editorColaborativoAlumno").textContent=`${d.estudiante?.nombre||d.nombreGoogle||d.email||"Estudiante"} · ${sec?.title||sectionId}`;const editor=document.getElementById("editorColaborativoCodigo"),estado=document.getElementById("editorColaborativoEstado");editor.value=codigo;editor.disabled=true;estado.textContent="Conectando al documento colaborativo...";modal.classList.add("active");
  try{if(modal.__crdtSession)await modal.__crdtSession.destroy();modal.__crdtSession=await window.iniciarEditorCRDTDocente?.({uid:d.uid,sectionId,codigoInicial:codigo,textarea:editor,estado});editor.disabled=false;editor.focus();document.getElementById("editorColaborativoGuardado").textContent="Sincronización automática activa"}catch(error){console.error(error);const codigoError=String(error?.code||""),detalle=codigoError.includes("permission-denied")?"Firestore rechazó el acceso. Publicá reglas.txt en ipem146js con la cuenta administradora.":codigoError.includes("auth")?"La cuenta docente no está autorizada.":String(error?.message||"Revisá la conexión y las reglas de Firestore.");estado.textContent="No se pudo iniciar la colaboración";const salida=document.getElementById("editorColaborativoGuardado");salida.textContent=detalle;salida.className="danger"}
 }
 window.abrirEditorColaborativoProfesor=abrirEditorColaborativoProfesor;
+document.addEventListener("click",event=>{
+ const boton=event.target.closest?.(".btn-trabajar-vivo,[data-collab-student-index]");
+ if(!boton)return;
+ event.preventDefault();event.stopPropagation();
+ const indice=Number(boton.dataset.collabStudentIndex),sectionId=boton.dataset.collabSection;
+ if(!Number.isInteger(indice)||!sectionId){alert("El botón no tiene asociado un desafío válido.");return;}
+ Promise.resolve(window.abrirEditorColaborativoProfesor?.(indice,sectionId)).catch(error=>{
+  console.error("Error al abrir colaboración",error);
+  alert(`No se pudo abrir el editor colaborativo: ${error?.message||"error desconocido"}`);
+ });
+},true);
 window.addEventListener("profesor-data",()=>{
  const modal=document.getElementById("editorColaborativoDocenteModal");if(!modal?.classList.contains("active"))return;
  if(modal.__crdtSession)return;
