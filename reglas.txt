@@ -1,7 +1,7 @@
 rules_version = '2';
 
-// Actualizado el 1 de septiembre de 2026.
-// Incluye auditoría segura, mensajería con recepción/lectura y mantenimiento administrativo.
+// Actualizado el 3 de septiembre de 2026.
+// Incluye auditoría segura, mensajería, colaboración CRDT, presencia y aportes.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
@@ -851,7 +851,9 @@ service cloud.firestore {
           'creadoEn',
           'creadoPor',
           'actualizadoEn',
-          'actualizadoPor'
+          'actualizadoPor',
+          'modoCooperacionActiva',
+          'edicionCooperativaPausada'
         ]) &&
         request.resource.data.uid == uid &&
         request.resource.data.sectionId == sectionId &&
@@ -863,7 +865,9 @@ service cloud.firestore {
         request.resource.data.creadoPor.size() <= 254 &&
         request.resource.data.actualizadoEn == request.time &&
         request.resource.data.get('actualizadoPor', '') is string &&
-        request.resource.data.get('actualizadoPor', '').size() <= 254;
+        request.resource.data.get('actualizadoPor', '').size() <= 254 &&
+        request.resource.data.get('modoCooperacionActiva', false) is bool &&
+        request.resource.data.get('edicionCooperativaPausada', false) is bool;
       allow delete: if isTeacher();
 
       // Las actualizaciones Yjs son inmutables y se pueden aplicar en cualquier orden.
@@ -927,6 +931,7 @@ service cloud.firestore {
             'autorUid',
             'cursorInicio',
             'cursorFin',
+            'escribiendo',
             'activoEn'
           ]) &&
           request.resource.data.keys().hasOnly([
@@ -938,6 +943,7 @@ service cloud.firestore {
             'autorUid',
             'cursorInicio',
             'cursorFin',
+            'escribiendo',
             'activoEn'
           ]) &&
           request.resource.data.clienteId == clienteId &&
@@ -956,9 +962,107 @@ service cloud.firestore {
           request.resource.data.cursorInicio >= 0 &&
           request.resource.data.cursorFin is int &&
           request.resource.data.cursorFin >= 0 &&
+          request.resource.data.escribiendo is bool &&
           request.resource.data.activoEn == request.time;
         allow delete: if request.auth.uid == resource.data.autorUid ||
           isTeacher();
+      }
+
+      // Conversación asociada a cada desafío colaborativo.
+      match /mensajes/{mensajeId} {
+        allow get, list: if ownsDocument(uid) || isTeacher();
+        allow create: if (ownsDocument(uid) || isTeacher()) &&
+          request.resource.data.keys().hasAll([
+            'id',
+            'uid',
+            'sectionId',
+            'texto',
+            'rol',
+            'autorUid',
+            'autorNombre',
+            'creadoEn'
+          ]) &&
+          request.resource.data.keys().hasOnly([
+            'id',
+            'uid',
+            'sectionId',
+            'texto',
+            'rol',
+            'autorUid',
+            'autorNombre',
+            'creadoEn'
+          ]) &&
+          request.resource.data.id == mensajeId &&
+          request.resource.data.uid == uid &&
+          request.resource.data.sectionId == sectionId &&
+          request.resource.data.texto is string &&
+          request.resource.data.texto.size() > 0 &&
+          request.resource.data.texto.size() <= 1200 &&
+          request.resource.data.rol in ['estudiante', 'docente'] &&
+          (
+            request.resource.data.rol == 'estudiante'
+              ? ownsDocument(uid)
+              : isTeacher()
+          ) &&
+          request.resource.data.autorUid == request.auth.uid &&
+          request.resource.data.autorNombre is string &&
+          request.resource.data.autorNombre.size() > 0 &&
+          request.resource.data.autorNombre.size() <= 254 &&
+          request.resource.data.creadoEn == request.time;
+        allow update: if false;
+        allow delete: if isTeacher();
+      }
+
+      // Registro resumido de las contribuciones realizadas en el editor.
+      match /historialAportes/{aporteId} {
+        allow get, list: if ownsDocument(uid) || isTeacher();
+        allow create: if (ownsDocument(uid) || isTeacher()) &&
+          request.resource.data.keys().hasAll([
+            'id',
+            'uid',
+            'sectionId',
+            'rol',
+            'autorUid',
+            'autorNombre',
+            'textoAgregado',
+            'caracteresAgregados',
+            'caracteresEliminados',
+            'creadoEn'
+          ]) &&
+          request.resource.data.keys().hasOnly([
+            'id',
+            'uid',
+            'sectionId',
+            'rol',
+            'autorUid',
+            'autorNombre',
+            'textoAgregado',
+            'caracteresAgregados',
+            'caracteresEliminados',
+            'creadoEn'
+          ]) &&
+          request.resource.data.id == aporteId &&
+          request.resource.data.uid == uid &&
+          request.resource.data.sectionId == sectionId &&
+          request.resource.data.rol in ['estudiante', 'docente'] &&
+          (
+            request.resource.data.rol == 'estudiante'
+              ? ownsDocument(uid)
+              : isTeacher()
+          ) &&
+          request.resource.data.autorUid == request.auth.uid &&
+          request.resource.data.autorNombre is string &&
+          request.resource.data.autorNombre.size() > 0 &&
+          request.resource.data.autorNombre.size() <= 254 &&
+          request.resource.data.textoAgregado is string &&
+          request.resource.data.textoAgregado.size() <= 500 &&
+          request.resource.data.caracteresAgregados is int &&
+          request.resource.data.caracteresAgregados >= 0 &&
+          request.resource.data.caracteresEliminados is int &&
+          request.resource.data.caracteresEliminados >= 0 &&
+          request.resource.data.creadoEn == request.time;
+        allow update: if false;
+        allow delete: if isTeacher();
       }
     }
 

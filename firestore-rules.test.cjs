@@ -68,6 +68,17 @@ async function main() {
     creadoPor: "student@example.com",
     actualizadoEn: serverTimestamp()
   }));
+  await assertSucceeds(setDoc(metaRef, {
+    uid,
+    sectionId: "sec-3",
+    semilla: "AQID",
+    creadoEn: serverTimestamp(),
+    creadoPor: "student@example.com",
+    actualizadoEn: serverTimestamp(),
+    actualizadoPor: teacherEmail,
+    modoCooperacionActiva: true,
+    edicionCooperativaPausada: false
+  }, { merge: true }));
 
   const updateStudentRef = doc(studentDb, "estudiantes", uid, "colaboracionCodigo", "sec-3", "actualizaciones", "u-student");
   await assertSucceeds(setDoc(updateStudentRef, {
@@ -92,6 +103,59 @@ async function main() {
     rol: "docente",
     autorUid: teacherUid,
     autorEmail: teacherEmail,
+    creadoEn: serverTimestamp()
+  }));
+
+  const presenceStudentRef = doc(studentDb, "estudiantes", uid, "colaboracionCodigo", "sec-3", "presencia", "student-client");
+  await assertSucceeds(setDoc(presenceStudentRef, {
+    clienteId: "student-client",
+    uid,
+    sectionId: "sec-3",
+    rol: "estudiante",
+    nombre: "Estudiante",
+    autorUid: uid,
+    cursorInicio: 2,
+    cursorFin: 4,
+    escribiendo: true,
+    activoEn: serverTimestamp()
+  }));
+
+  const messageTeacherRef = doc(teacherDb, "estudiantes", uid, "colaboracionCodigo", "sec-3", "mensajes", "m-teacher");
+  await assertSucceeds(setDoc(messageTeacherRef, {
+    id: "m-teacher",
+    uid,
+    sectionId: "sec-3",
+    texto: "Revisá la condición.",
+    rol: "docente",
+    autorUid: teacherUid,
+    autorNombre: "Docente",
+    creadoEn: serverTimestamp()
+  }));
+
+  const contributionStudentRef = doc(studentDb, "estudiantes", uid, "colaboracionCodigo", "sec-3", "historialAportes", "a-student");
+  await assertSucceeds(setDoc(contributionStudentRef, {
+    id: "a-student",
+    uid,
+    sectionId: "sec-3",
+    rol: "estudiante",
+    autorUid: uid,
+    autorNombre: "Estudiante",
+    textoAgregado: "const total = 2;",
+    caracteresAgregados: 16,
+    caracteresEliminados: 0,
+    creadoEn: serverTimestamp()
+  }));
+
+  await assertSucceeds(getDoc(messageTeacherRef));
+  await assertSucceeds(getDoc(contributionStudentRef));
+  await assertFails(setDoc(doc(otherDb, "estudiantes", uid, "colaboracionCodigo", "sec-3", "mensajes", "m-other"), {
+    id: "m-other",
+    uid,
+    sectionId: "sec-3",
+    texto: "No autorizado",
+    rol: "estudiante",
+    autorUid: "student-2",
+    autorNombre: "Otro",
     creadoEn: serverTimestamp()
   }));
 
