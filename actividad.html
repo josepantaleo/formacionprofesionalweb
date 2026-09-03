@@ -3310,6 +3310,66 @@
         };
       }
 
+      function escaparCodigoColaborativo(valor) {
+        return String(valor || "").replace(/[&<>"']/g, caracter => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "\"": "&quot;",
+          "'": "&#39;"
+        }[caracter]));
+      }
+
+      function instalarResaltadoAutoresCRDT(textarea, sesion) {
+        if (!textarea || !sesion) return () => {};
+        if (textarea.__quitarResaltadoAutoresCRDT) textarea.__quitarResaltadoAutoresCRDT();
+        const anteriorPadre = textarea.parentNode;
+        const escenario = document.createElement("div");
+        escenario.className = "collab-code-stage";
+        anteriorPadre.insertBefore(escenario, textarea);
+        escenario.appendChild(textarea);
+        const capa = document.createElement("div");
+        capa.className = "collab-code-overlay";
+        capa.setAttribute("aria-hidden", "true");
+        const contenido = document.createElement("pre");
+        contenido.className = "collab-code-overlay-content";
+        capa.appendChild(contenido);
+        escenario.insertBefore(capa, textarea);
+        textarea.classList.add("collab-source-editor");
+
+        const renderizar = () => {
+          const fragmentos = sesion.texto.toDelta();
+          contenido.innerHTML = fragmentos.map(fragmento => {
+            const rol = fragmento.attributes?.autorRol === "docente"
+              ? "teacher"
+              : fragmento.attributes?.autorRol === "estudiante"
+                ? "student"
+                : "base";
+            return `<span class="${rol}">${escaparCodigoColaborativo(fragmento.insert)}</span>`;
+          }).join("") || " ";
+          contenido.style.transform = `translate(${-textarea.scrollLeft}px, ${-textarea.scrollTop}px)`;
+        };
+        const sincronizarScroll = () => {
+          contenido.style.transform = `translate(${-textarea.scrollLeft}px, ${-textarea.scrollTop}px)`;
+        };
+        textarea.addEventListener("scroll", sincronizarScroll);
+        textarea.__renderizarAportesCRDT = renderizar;
+        renderizar();
+
+        const quitar = () => {
+          textarea.removeEventListener("scroll", sincronizarScroll);
+          textarea.classList.remove("collab-source-editor");
+          delete textarea.__renderizarAportesCRDT;
+          delete textarea.__quitarResaltadoAutoresCRDT;
+          if (escenario.parentNode) {
+            escenario.parentNode.insertBefore(textarea, escenario);
+            escenario.remove();
+          }
+        };
+        textarea.__quitarResaltadoAutoresCRDT = quitar;
+        return quitar;
+      }
+
       async function iniciarSesionCodigoCRDT({ uid, sectionId, codigoInicial = "", rol = "estudiante" }) {
         if (!uid || !sectionId) throw new Error("crdt-invalid-target");
         if (rol === "docente" && !(await window.autorizarDocenteFirebase?.())) {
@@ -3340,7 +3400,7 @@
           const snapshot = await transaction.get(metaRef);
           if (snapshot.exists() && snapshot.data().semilla) return snapshot.data().semilla;
           const temporal = new Y.Doc();
-          temporal.getText("codigo").insert(0, String(codigoInicial || ""));
+          temporal.getText("codigo").insert(0, String(codigoInicial || ""), { autorRol: "base" });
           const semillaNueva = bytesABase64(Y.encodeStateAsUpdate(temporal));
           transaction.set(metaRef, {
             uid,
@@ -3431,6 +3491,7 @@
           texto,
           clienteId,
           rol,
+          autorUid: user.uid,
           onStatus(fn) { estadoListeners.add(fn); return () => estadoListeners.delete(fn); },
           actualizarPresencia,
           async flush() { clearTimeout(temporizador); await publicarCola(); },
@@ -3463,6 +3524,7 @@
           textarea.value = siguiente;
           const posicion = Math.min(siguiente.length, inicio);
           textarea.setSelectionRange(posicion, Math.min(siguiente.length, fin));
+          textarea.__renderizarAportesCRDT?.();
           if (sesion.rol === "estudiante") {
             setLocalStorage(`draft_editor-${sectionId}`, siguiente);
             actualizarMetricasEditor(sectionId);
@@ -3477,8 +3539,12 @@
           const cambio = diferenciaTextoCRDT(anterior, siguiente);
           sesion.documento.transact(() => {
             if (cambio.eliminar) sesion.texto.delete(cambio.inicio, cambio.eliminar);
-            if (cambio.insertar) sesion.texto.insert(cambio.inicio, cambio.insertar);
+            if (cambio.insertar) sesion.texto.insert(cambio.inicio, cambio.insertar, {
+              autorRol: sesion.rol,
+              autorUid: sesion.autorUid
+            });
           }, origenLocal);
+          textarea.__renderizarAportesCRDT?.();
           sesion.actualizarPresencia({ inicio: textarea.selectionStart, fin: textarea.selectionEnd });
         };
         const actualizarCursor = () => sesion.actualizarPresencia({
@@ -3490,6 +3556,7 @@
           setLocalStorage(`draft_editor-${sectionId}`, textarea.value);
           actualizarMetricasEditor(sectionId);
         }
+        const quitarResaltadoAutores = instalarResaltadoAutoresCRDT(textarea, sesion);
         textarea.dataset.crdtActivo = "true";
         textarea.addEventListener("input", aplicarLocal);
         textarea.addEventListener("keyup", actualizarCursor);
@@ -3506,6 +3573,7 @@
           textarea.removeEventListener("click", actualizarCursor);
           sesion.texto.unobserve(aplicarRemoto);
           quitarEstado();
+          quitarResaltadoAutores();
           delete textarea.__desvincularCRDT;
         };
         textarea.__desvincularCRDT = desvincular;
@@ -3544,6 +3612,86 @@
             if (estado) estado.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Colaboración no disponible';
           }
         }));
+      };
+
+      // Chat asociado al mismo documento colaborativo: cada desafío conserva
+      // una conversación independiente entre el estudiante y el docente.
+      window.escucharChatColaborativoFirebase = function(uid, sectionId, alActualizar) {
+        const docente = Boolean(window.firebaseTeacherUser);
+        const contexto = docente
+          ? contextoDocenteFirebase()
+          : { user: window.firebaseCurrentUser, database: db };
+        if (!contexto.user || !contexto.database || !uid || !sectionId || typeof alActualizar !== "function") return null;
+        return onSnapshot(
+          collection(contexto.database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes"),
+          snapshot => {
+            const mensajes = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+            mensajes.sort((a, b) => {
+              const fechaA = a.creadoEn?.toMillis?.() || a.creadoEn?.seconds * 1000 || 0;
+              const fechaB = b.creadoEn?.toMillis?.() || b.creadoEn?.seconds * 1000 || 0;
+              return fechaA - fechaB;
+            });
+            alActualizar(mensajes);
+          },
+          error => {
+            console.error("No se pudo cargar el chat colaborativo:", error);
+            alActualizar([], error);
+          }
+        );
+      };
+
+      window.enviarChatColaborativoFirebase = async function({ uid, sectionId, texto, rol = "estudiante" } = {}) {
+        const contenido = String(texto || "").trim().slice(0, 1200);
+        const esDocente = rol === "docente";
+        const contexto = esDocente
+          ? contextoDocenteFirebase()
+          : { user: window.firebaseCurrentUser, database: db };
+        const user = contexto.user || (esDocente ? await window.firebaseTeacherAuthReady : await window.firebaseAuthReady);
+        const database = contexto.database;
+        if (!user || !database || !uid || !sectionId || !contenido) return false;
+        if (esDocente && !(await verificarUsuarioDocente(user))) return false;
+        if (!esDocente && user.uid !== uid) return false;
+        try {
+          const id = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 8)}`;
+          await setDoc(doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes", id), {
+            id,
+            uid,
+            sectionId,
+            texto: contenido,
+            rol: esDocente ? "docente" : "estudiante",
+            autorUid: user.uid,
+            autorNombre: user.displayName || user.email || (esDocente ? "Docente" : "Estudiante"),
+            creadoEn: serverTimestamp()
+          });
+          return true;
+        } catch (error) {
+          console.error("No se pudo enviar el mensaje colaborativo:", error);
+          return false;
+        }
+      };
+
+      window.escucharHistorialAportesColaborativoFirebase = function(uid, sectionId, alActualizar) {
+        const docente = Boolean(window.firebaseTeacherUser);
+        const contexto = docente
+          ? contextoDocenteFirebase()
+          : { user: window.firebaseCurrentUser, database: db };
+        if (!contexto.user || !contexto.database || !uid || !sectionId || typeof alActualizar !== "function") return null;
+        return onSnapshot(
+          collection(contexto.database, "estudiantes", uid, "colaboracionCodigo", sectionId, "historialAportes"),
+          snapshot => {
+            const aportes = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+            aportes.sort((a, b) => {
+              const fechaA = a.creadoEn?.toMillis?.() || a.creadoEn?.seconds * 1000 || 0;
+              const fechaB = b.creadoEn?.toMillis?.() || b.creadoEn?.seconds * 1000 || 0;
+              return fechaB - fechaA;
+            });
+            alActualizar(aportes);
+          },
+          error => {
+            console.error("No se pudo cargar el historial de aportes:", error);
+            alActualizar([], error);
+          }
+        );
       };
 
       window.guardarProgramacionDocenteFirebase = async function(uid, programacion = {}) {
@@ -5284,7 +5432,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260901-5">
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260903-7">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -8534,6 +8682,9 @@
                                           <button class="student-focus-toggle" type="button" onclick="alternarModoEnfoque('${sec.id}', this)" aria-pressed="false" title="Ocultar temporalmente teoría y ayudas">
                                               <i class="fa-solid fa-expand"></i><span>Enfoque</span>
                                           </button>
+                                          <button class="student-focus-toggle student-collab-chat-trigger" type="button" onclick="abrirChatColaborativoEstudiante('${sec.id}')" title="Chatear con el docente durante la colaboración">
+                                              <i class="fa-solid fa-comments"></i><span>Chat docente</span>
+                                          </button>
                                       </div>
                                   </div>
                                   <div class="student-ai-editor-actions" aria-label="Ayuda de programación con IA">
@@ -8555,6 +8706,12 @@
                                       <div class="editor-header">
                                           <span><i class="fa-solid fa-file-code"></i> Editor JavaScript</span>
                                           <span>ES6</span>
+                                      </div>
+                                      <div class="collab-author-legend" aria-label="Referencias de autoría del código">
+                                          <strong><i class="fa-solid fa-palette"></i> Cooperación:</strong>
+                                          <span class="collab-author-key student">Estudiante</span>
+                                          <span class="collab-author-key teacher">Docente</span>
+                                          <span class="collab-author-key base">Código inicial</span>
                                       </div>
                                       <label class="sr-only" for="editor-${sec.id}">Código para ${sec.title}</label>
                                       <textarea id="editor-${sec.id}" class="code-editor" aria-label="Código para ${sec.title}" spellcheck="false" autocapitalize="off" autocomplete="off" ${isFinalized ? 'disabled' : ''}>${savedCode}</textarea>
@@ -16610,7 +16767,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260903-3"></script>
+    <script src="mejoras-seguimiento.js?v=20260903-5"></script>
   </body>
 </html>
 
