@@ -641,6 +641,8 @@
         font-size: 0.85rem;
         white-space: pre-wrap;
       }
+      .console-tabs{display:flex;gap:.25rem;padding:.35rem;background:#111827;border:1px solid var(--border);border-bottom:0}.console-tabs button{padding:.3rem .55rem;border:1px solid transparent;border-radius:4px;background:transparent;color:#94a3b8;font-size:.68rem;cursor:pointer}.console-tabs button.active{background:#1e293b;color:#e0f2fe;border-color:#38bdf8}
+      .editor-error-line{background:rgba(239,68,68,.25)!important;box-shadow:inset 3px 0 #ef4444}
 
       /* Estilos de la Caja de IA Comparativa */
       .ai-feedback-box {
@@ -5646,7 +5648,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260903-13">
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260903-15">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -8952,9 +8954,13 @@
                                   <div class="student-console-panel">
                                       <div class="student-console-header">
                                           <strong><i class="fa-solid fa-terminal"></i> Consola</strong>
-                                          <small>Resultado de la última ejecución</small>
+                                          <div style="display:flex;gap:.4rem;align-items:center"><button class="btn btn-secondary" type="button" onclick="limpiarConsola('${sec.id}')" style="padding:.25rem .45rem;font-size:.68rem"><i class="fa-solid fa-eraser"></i> Limpiar</button><button class="btn btn-secondary" type="button" onclick="ejecutarPasoAPaso('${sec.id}')" style="padding:.25rem .45rem;font-size:.68rem"><i class="fa-solid fa-forward-step"></i> Paso a paso</button></div>
                                       </div>
-                                      <div class="console-output" id="console-${sec.id}" role="status" aria-live="polite">${isFinalized ? '// Actividad finalizada y bloqueada.' : '// Ejecutá el código para ver aquí los resultados o errores.'}</div>
+                                      <div class="console-tabs" role="tablist"><button type="button" class="active" data-console-tab="${sec.id}-salida" onclick="cambiarPestanaConsola('${sec.id}','salida')">Salida</button><button type="button" data-console-tab="${sec.id}-errores" onclick="cambiarPestanaConsola('${sec.id}','errores')">Errores</button><button type="button" data-console-tab="${sec.id}-avisos" onclick="cambiarPestanaConsola('${sec.id}','avisos')">Avisos</button><button type="button" data-console-tab="${sec.id}-variables" onclick="cambiarPestanaConsola('${sec.id}','variables')">Variables</button></div>
+                                      <div class="console-output" id="console-${sec.id}" data-console-panel="salida" role="status" aria-live="polite">${isFinalized ? '// Actividad finalizada y bloqueada.' : '// Ejecutá el código para ver aquí los resultados o errores.'}</div>
+                                      <div class="console-output" id="console-errors-${sec.id}" data-console-panel="errores" role="status" aria-live="polite" hidden></div>
+                                      <div class="console-output" id="console-warnings-${sec.id}" data-console-panel="avisos" role="status" aria-live="polite" hidden></div>
+                                      <div class="console-output" id="console-vars-${sec.id}" data-console-panel="variables" role="status" aria-live="polite" hidden>// Las variables inspeccionables aparecerán después de ejecutar.</div>
                                   </div>
                               </section>
 
@@ -9883,6 +9889,53 @@
           indicador.innerHTML = `<i class="fa-solid ${icono}"></i> ${escaparTextoAnalista(etiqueta)}`;
       }
 
+      function cambiarPestanaConsola(sectionId, panel) {
+          document.querySelectorAll(`#${CSS.escape(sectionId)} [data-console-panel]`).forEach(elemento => {
+              elemento.hidden = elemento.dataset.consolePanel !== panel;
+          });
+          document.querySelectorAll(`#${CSS.escape(sectionId)} [data-console-tab]`).forEach(boton => {
+              boton.classList.toggle("active", boton.dataset.consoleTab === `${sectionId}-${panel}`);
+          });
+      }
+      function limpiarConsola(sectionId) {
+          ["console", "console-errors", "console-warnings", "console-vars"].forEach(prefijo => {
+              const elemento = document.getElementById(`${prefijo}-${sectionId}`);
+              if (elemento) elemento.textContent = prefijo === "console-vars" ? "// Variables inspeccionables aparecerán después de ejecutar." : "";
+          });
+          cambiarPestanaConsola(sectionId, "salida");
+      }
+      function diagnosticoErrorEducativo(error, code) {
+          const texto = String(error || "");
+          const coincidencia = texto.match(/(?:line|línea)\s*(\d+)/i);
+          const linea = coincidencia ? Number(coincidencia[1]) : 0;
+          let ayuda = "Revisá la sintaxis y ejecutá nuevamente.";
+          if (/Unexpected token|Unexpected end|expected/i.test(texto)) ayuda = "Falta cerrar una llave, paréntesis o corchete, o hay un símbolo fuera de lugar.";
+          else if (/is not defined/i.test(texto)) ayuda = "La variable se usa antes de declararla o está escrita con otro nombre.";
+          else if (/not a function/i.test(texto)) ayuda = "El valor elegido no es una función. Revisá el método y el tipo de dato.";
+          return `${linea ? `Línea ${linea}: ` : ""}${ayuda}`;
+      }
+      function resaltarLineaError(sectionId, error) {
+          const editor = document.getElementById(`editor-${sectionId}`);
+          if (!editor) return;
+          editor.classList.remove("editor-error-line");
+          const coincidencia = String(error || "").match(/(?:line|línea)\s*(\d+)/i);
+          if (!coincidencia) return;
+          const linea = Math.max(1, Number(coincidencia[1]));
+          const inicio = editor.value.split(/\r?\n/).slice(0, linea - 1).join("\n").length + (linea > 1 ? 1 : 0);
+          const fin = inicio + (editor.value.split(/\r?\n/)[linea - 1] || "").length;
+          editor.focus();
+          editor.setSelectionRange(inicio, fin);
+          editor.classList.add("editor-error-line");
+      }
+      function ejecutarPasoAPaso(sectionId) {
+          const editor = document.getElementById(`editor-${sectionId}`);
+          const salida = document.getElementById(`console-${sectionId}`);
+          if (!editor || !salida) return;
+          const lineas = editor.value.split(/\r?\n/).map((linea, indice) => `${String(indice + 1).padStart(3, " ")} │ ${linea}`);
+          salida.textContent = lineas.length ? `Simulación paso a paso:\n${lineas.join("\n")}` : "No hay código para recorrer.";
+          cambiarPestanaConsola(sectionId, "salida");
+      }
+
       function alternarModoEnfoque(sectionId, boton = null) {
           const seccion = document.getElementById(sectionId);
           if (!seccion) return;
@@ -9973,8 +10026,26 @@
           const logs = Array.isArray(resultado.logs) ? resultado.logs : [];
           if (!resultado.ok) logs.push("[EXCEPCIÓN]: " + resultado.error);
           if (logs.length === 0) logs.push("// Ejecutado sin salida en consola.");
+          const salidaLogs = logs.filter(log => !/^\[(?:ERROR|AVISO|EXCEPCIÓN)\]/i.test(log));
+          const avisosLogs = logs.filter(log => /^\[AVISO\]/i.test(log));
+          const erroresLogs = logs.filter(log => /^\[(?:ERROR|EXCEPCIÓN)\]/i.test(log));
           consoleBox.style.color = resultado.ok ? "#10b981" : "#ef4444";
-          consoleBox.innerText = logs.join("\n");
+          consoleBox.innerText = salidaLogs.join("\n") || "// Sin salida normal.";
+          const erroresBox = document.getElementById(`console-errors-${sectionId}`);
+          const avisosBox = document.getElementById(`console-warnings-${sectionId}`);
+          const variablesBox = document.getElementById(`console-vars-${sectionId}`);
+          if (erroresBox) erroresBox.textContent = erroresLogs.length ? erroresLogs.join("\n") + "\n\n" + diagnosticoErrorEducativo(resultado.error, code) : "// No se detectaron errores.";
+          if (avisosBox) avisosBox.textContent = avisosLogs.length ? avisosLogs.join("\n") : "// No se registraron avisos.";
+          if (variablesBox) {
+              const variables = [...new Set([...code.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g)].map(match => match[1]))];
+              variablesBox.textContent = variables.length ? variables.map(nombre => `${nombre}  →  declarada en el código`).join("\n") : "// No se detectaron variables declaradas.";
+          }
+          if (!resultado.ok) {
+              resaltarLineaError(sectionId, resultado.error);
+              cambiarPestanaConsola(sectionId, "errores");
+          } else {
+              cambiarPestanaConsola(sectionId, "salida");
+          }
 
           const esExitoso = Boolean(resultado.ok);
           actualizarEstadoEditorEstudiante(
@@ -17166,7 +17237,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260903-13"></script>
+    <script src="mejoras-seguimiento.js?v=20260903-15"></script>
   </body>
 </html>
 
