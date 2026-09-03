@@ -1,0 +1,13 @@
+{
+  "name": "formacion-profesional-web",
+  "private": true,
+  "scripts": {
+    "test:rules": "firebase emulators:exec --only firestore --project ipem146js \"node tests/firestore-rules.test.cjs\"",
+    "test:crdt": "node tests/crdt-merge.test.cjs"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.0",
+    "firebase": "^12.3.0",
+    "yjs": "^13.6.31"
+  }
+}

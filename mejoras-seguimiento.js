@@ -450,6 +450,27 @@ function abrirProgramacionDocente(indice){
  cargarHistorialProgramacionDocente(d.uid);
 }
 window.abrirProgramacionDocente=abrirProgramacionDocente;
+function asegurarEditorColaborativoDocente(){
+ if(document.getElementById("editorColaborativoDocenteModal"))return;
+ const modal=document.createElement("div");modal.id="editorColaborativoDocenteModal";modal.className="modal-overlay";modal.setAttribute("role","dialog");modal.setAttribute("aria-modal","true");
+ modal.innerHTML=`<div class="modal-box teacher-collab-box"><div class="teacher-program-header"><div><h3><i class="fa-solid fa-code-branch"></i> Editor colaborativo en vivo</h3><p id="editorColaborativoAlumno"></p><small id="editorColaborativoEstado">Conectando...</small></div><button class="btn btn-secondary" id="cerrarEditorColaborativo" type="button"><i class="fa-solid fa-xmark"></i></button></div><div class="teacher-collab-presence"><i class="fa-solid fa-people-arrows"></i><span>Los cambios se fusionan automáticamente mientras ambos escriben.</span></div><textarea id="editorColaborativoCodigo" class="teacher-collab-editor" spellcheck="false"></textarea><div class="teacher-program-actions"><span id="editorColaborativoGuardado" role="status">Sincronización automática</span><button class="btn btn-primary" id="guardarEditorColaborativo" type="button"><i class="fa-solid fa-arrows-rotate"></i> Sincronizar ahora</button></div></div>`;
+ document.body.appendChild(modal);
+ const cerrar=async()=>{modal.classList.remove("active");if(modal.__crdtSession){await modal.__crdtSession.destroy();modal.__crdtSession=null;}};modal.querySelector("#cerrarEditorColaborativo").onclick=cerrar;modal.onclick=e=>{if(e.target===modal)cerrar()};
+ modal.querySelector("#guardarEditorColaborativo").onclick=async()=>{const estado=modal.querySelector("#editorColaborativoGuardado"),boton=modal.querySelector("#guardarEditorColaborativo");boton.disabled=true;estado.textContent="Sincronizando...";try{await modal.__crdtSession?.flush();estado.textContent="Cambios sincronizados";estado.className="success"}catch{estado.textContent="No se pudo sincronizar";estado.className="danger"}finally{boton.disabled=false}};
+}
+async function abrirEditorColaborativoProfesor(indice,sectionId){
+ const d=estudiantesProfesor?.[indice];if(!d?.uid||!sectionId)return;asegurarEditorColaborativoDocente();const modal=document.getElementById("editorColaborativoDocenteModal"),sec=(typeof seccionesData!=="undefined"?seccionesData:[]).find(x=>x.id===sectionId),codigo=d.codigos?.[sectionId]||d.historialResultados?.[sectionId]?.codigo||"";
+ modal.dataset.uid=d.uid;modal.dataset.sectionId=sectionId;document.getElementById("editorColaborativoAlumno").textContent=`${d.estudiante?.nombre||d.nombreGoogle||d.email||"Estudiante"} · ${sec?.title||sectionId}`;const editor=document.getElementById("editorColaborativoCodigo"),estado=document.getElementById("editorColaborativoEstado");editor.value=codigo;editor.disabled=true;estado.textContent="Conectando al documento colaborativo...";modal.classList.add("active");
+ try{if(modal.__crdtSession)await modal.__crdtSession.destroy();modal.__crdtSession=await window.iniciarEditorCRDTDocente?.({uid:d.uid,sectionId,codigoInicial:codigo,textarea:editor,estado});editor.disabled=false;editor.focus();document.getElementById("editorColaborativoGuardado").textContent="Sincronización automática activa"}catch(error){console.error(error);estado.textContent="No se pudo iniciar la colaboración";document.getElementById("editorColaborativoGuardado").textContent="Revisá la sesión docente y las reglas de Firestore";document.getElementById("editorColaborativoGuardado").className="danger"}
+}
+window.abrirEditorColaborativoProfesor=abrirEditorColaborativoProfesor;
+window.addEventListener("profesor-data",()=>{
+ const modal=document.getElementById("editorColaborativoDocenteModal");if(!modal?.classList.contains("active"))return;
+ if(modal.__crdtSession)return;
+ const d=estudiantesProfesor?.find(x=>x.uid===modal.dataset.uid),editor=modal.querySelector("#editorColaborativoCodigo");if(!d||!editor||document.activeElement===editor)return;
+ const codigo=d.codigos?.[modal.dataset.sectionId]||d.historialResultados?.[modal.dataset.sectionId]?.codigo||"";
+ if(editor.value!==codigo){editor.value=codigo;modal.dataset.version=String(d.colaboracionDocente?.version||0);modal.querySelector("#editorColaborativoEstado").textContent=`Versión ${modal.dataset.version} · actualizado desde el estudiante`;}
+});
 function filtrarTabla(){
  const ef=document.getElementById("filtroSeguimientoProfesor")?.value||"",df=txt(document.getElementById("filtroDominioSeguimientoProfesor")?.value).toLowerCase();
  [...document.querySelectorAll("#tablaProfesorBody>tr:not(.teacher-actions-row)")].forEach(fila=>{
