@@ -622,11 +622,12 @@
       .editor-enhancement-toolbar button,.editor-enhancement-toolbar select{padding:.3rem .42rem;border:1px solid rgba(148,163,184,.28);border-radius:4px;background:#1e293b;color:#cbd5e1;font:inherit;cursor:pointer}
       .editor-enhancement-body{position:relative;min-height:180px;overflow:hidden}
       .editor-line-numbers{position:absolute;inset:0 auto 0 0;width:2.8rem;padding:.95rem .45rem .95rem 0;background:#111827;color:#64748b;text-align:right;font:400 .9rem/1.5 "Fira Code",monospace;white-space:pre;overflow:hidden;user-select:none}
-      .editor-syntax-layer{position:absolute;inset:0;z-index:0;margin:0;padding:.95rem 1rem .95rem 3.35rem;color:#dbeafe;font:400 .9rem/1.5 "Fira Code",monospace;white-space:pre-wrap;overflow:hidden;pointer-events:none;tab-size:4}
+      .editor-syntax-layer{position:absolute;inset:0;z-index:0;margin:0;padding:.95rem 1rem .95rem 3.35rem;color:#dbeafe;font:400 .9rem/1.5 "Fira Code",monospace;font-variant-ligatures:none;letter-spacing:0;white-space:pre;overflow:hidden;pointer-events:none;tab-size:4}
       .editor-syntax-layer .kw{color:#c084fc}.editor-syntax-layer .str{color:#86efac}.editor-syntax-layer .num{color:#fbbf24}.editor-syntax-layer .com{color:#64748b}.editor-syntax-layer .fn{color:#67e8f9}
-      textarea.code-editor.editor-enhanced{position:relative;z-index:1;height:180px;padding-left:3.35rem;color:transparent;-webkit-text-fill-color:transparent;background:transparent;caret-color:#f8fafc;white-space:pre;overflow:auto}
+      textarea.code-editor.editor-enhanced{position:relative;z-index:1;height:180px;padding:.95rem 1rem .95rem 3.35rem;color:transparent;-webkit-text-fill-color:transparent;background:transparent;caret-color:#f8fafc;white-space:pre;overflow:auto;font-variant-ligatures:none;letter-spacing:0;tab-size:4}
       textarea.code-editor.editor-enhanced.wrap-lines{white-space:pre-wrap;overflow-wrap:anywhere}
       .editor-search-status{color:#94a3b8;white-space:nowrap}
+      .editor-cursor-position{color:#7dd3fc;white-space:nowrap;font-variant-numeric:tabular-nums}
 
       .console-output {
         background: #000;
@@ -643,6 +644,7 @@
       }
       .console-tabs{display:flex;gap:.25rem;padding:.35rem;background:#111827;border:1px solid var(--border);border-bottom:0}.console-tabs button{padding:.3rem .55rem;border:1px solid transparent;border-radius:4px;background:transparent;color:#94a3b8;font-size:.68rem;cursor:pointer}.console-tabs button.active{background:#1e293b;color:#e0f2fe;border-color:#38bdf8}
       .editor-error-line{background:rgba(239,68,68,.25)!important;box-shadow:inset 3px 0 #ef4444}
+      .editor-enhancement-body textarea:focus{outline:2px solid rgba(56,189,248,.55);outline-offset:-2px}
 
       /* Estilos de la Caja de IA Comparativa */
       .ai-feedback-box {
@@ -5648,7 +5650,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260903-15">
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260903-17">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -8954,7 +8956,7 @@
                                   <div class="student-console-panel">
                                       <div class="student-console-header">
                                           <strong><i class="fa-solid fa-terminal"></i> Consola</strong>
-                                          <div style="display:flex;gap:.4rem;align-items:center"><button class="btn btn-secondary" type="button" onclick="limpiarConsola('${sec.id}')" style="padding:.25rem .45rem;font-size:.68rem"><i class="fa-solid fa-eraser"></i> Limpiar</button><button class="btn btn-secondary" type="button" onclick="ejecutarPasoAPaso('${sec.id}')" style="padding:.25rem .45rem;font-size:.68rem"><i class="fa-solid fa-forward-step"></i> Paso a paso</button></div>
+                                          <div style="display:flex;gap:.4rem;align-items:center"><button class="btn btn-secondary" type="button" onclick="limpiarConsola('${sec.id}')" style="padding:.25rem .45rem;font-size:.68rem"><i class="fa-solid fa-eraser"></i> Limpiar</button><button class="btn btn-secondary" type="button" onclick="ejecutarPasoAPaso('${sec.id}')" style="padding:.25rem .45rem;font-size:.68rem"><i class="fa-solid fa-forward-step"></i> Avanzar línea</button><button class="btn btn-secondary" type="button" onclick="ejecutarPruebasDesafio('${sec.id}')" style="padding:.25rem .45rem;font-size:.68rem"><i class="fa-solid fa-vial"></i> Probar solución</button></div>
                                       </div>
                                       <div class="console-tabs" role="tablist"><button type="button" class="active" data-console-tab="${sec.id}-salida" onclick="cambiarPestanaConsola('${sec.id}','salida')">Salida</button><button type="button" data-console-tab="${sec.id}-errores" onclick="cambiarPestanaConsola('${sec.id}','errores')">Errores</button><button type="button" data-console-tab="${sec.id}-avisos" onclick="cambiarPestanaConsola('${sec.id}','avisos')">Avisos</button><button type="button" data-console-tab="${sec.id}-variables" onclick="cambiarPestanaConsola('${sec.id}','variables')">Variables</button></div>
                                       <div class="console-output" id="console-${sec.id}" data-console-panel="salida" role="status" aria-live="polite">${isFinalized ? '// Actividad finalizada y bloqueada.' : '// Ejecutá el código para ver aquí los resultados o errores.'}</div>
@@ -9927,13 +9929,104 @@
           editor.setSelectionRange(inicio, fin);
           editor.classList.add("editor-error-line");
       }
-      function ejecutarPasoAPaso(sectionId) {
+      const depuradoresActivos = new Map();
+      function nombresVariablesDepuracion(code) {
+          return [...new Set([...String(code || "").matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g)].map(match => match[1]))].slice(0, 30);
+      }
+      function instrumentarCodigoDepuracion(code) {
+          const nombres = nombresVariablesDepuracion(code);
+          return String(code || "").split(/\r?\n/).map((linea, indice) => {
+              const valores = nombres.map(nombre => `"${nombre}":typeof ${nombre}==="undefined"?undefined:${nombre}`).join(",");
+              return `await __debug(${indice + 1},{${valores}});${linea}`;
+          }).join("\n");
+      }
+      function iniciarDepuradorReal(sectionId, code) {
           const editor = document.getElementById(`editor-${sectionId}`);
           const salida = document.getElementById(`console-${sectionId}`);
+          const variables = document.getElementById(`console-vars-${sectionId}`);
           if (!editor || !salida) return;
-          const lineas = editor.value.split(/\r?\n/).map((linea, indice) => `${String(indice + 1).padStart(3, " ")} │ ${linea}`);
-          salida.textContent = lineas.length ? `Simulación paso a paso:\n${lineas.join("\n")}` : "No hay código para recorrer.";
+          const workerSource = `
+            const serializar=v=>{try{return typeof v==="string"?v:JSON.stringify(v)}catch{return String(v)}};
+            self.onmessage=async e=>{
+              if(e.data.tipo!=="iniciar")return;
+              const logs=[],consola={log:(...a)=>logs.push("[LOG]: "+a.map(serializar).join(" ")),info:(...a)=>logs.push("[INFO]: "+a.map(serializar).join(" ")),warn:(...a)=>logs.push("[AVISO]: "+a.map(serializar).join(" ")),error:(...a)=>logs.push("[ERROR]: "+a.map(serializar).join(" "))};
+              let continuar=()=>{};let detenido=false;
+              self.onmessage=ev=>{if(ev.data.tipo==="continuar")continuar();if(ev.data.tipo==="detener"){detenido=true;continuar();}};
+              const __debug=async(linea,vars)=>{if(detenido)throw new Error("Depuración detenida");self.postMessage({tipo:"pausa",linea,vars,logs});await new Promise(r=>continuar=r);};
+              try{const ejecutar=new Function("__debug","console",'"use strict";return (async()=>{'+e.data.codigo+'})();');await ejecutar(__debug,consola);self.postMessage({tipo:"fin",ok:true,logs});}catch(error){self.postMessage({tipo:"fin",ok:false,logs,error:error?.message||String(error)});}
+            };
+          `;
+          const url = URL.createObjectURL(new Blob([workerSource], {type:"text/javascript"}));
+          const worker = new Worker(url);
+          const sesion = { worker, linea: 0, continuar(){worker.postMessage({tipo:"continuar"});}, detener(){worker.postMessage({tipo:"detener"});worker.terminate();URL.revokeObjectURL(url);}, };
+          depuradoresActivos.set(sectionId, sesion);
+          worker.onmessage = evento => {
+              const dato = evento.data || {};
+              if (dato.tipo === "pausa") {
+                  sesion.linea = dato.linea;
+                  const lineas = editor.value.split(/\r?\n/);
+                  const inicio = lineas.slice(0, dato.linea - 1).join("\n").length + (dato.linea > 1 ? 1 : 0);
+                  editor.focus(); editor.setSelectionRange(inicio, inicio + (lineas[dato.linea - 1] || "").length);
+                  salida.textContent = `Depuración pausada en la línea ${dato.linea}.\n${dato.logs.join("\n") || "// Sin salida todavía."}`;
+                  variables.textContent = Object.entries(dato.vars || {}).map(([nombre, valor]) => `${nombre} → ${valor === undefined ? "undefined" : JSON.stringify(valor)}`).join("\n") || "// No hay variables declaradas.";
+                  cambiarPestanaConsola(sectionId, "variables");
+              } else if (dato.tipo === "fin") {
+                  salida.textContent = dato.logs.join("\n") || (dato.ok ? "// Ejecución finalizada." : `// Error: ${dato.error}`);
+                  if (!dato.ok) { resaltarLineaError(sectionId, dato.error); cambiarPestanaConsola(sectionId, "errores"); }
+                  depuradoresActivos.delete(sectionId);
+                  worker.terminate(); URL.revokeObjectURL(url);
+              }
+          };
+          worker.postMessage({tipo:"iniciar", codigo:instrumentarCodigoDepuracion(code)});
+      }
+      function ejecutarPasoAPaso(sectionId) {
+          const editor = document.getElementById(`editor-${sectionId}`);
+          if (!editor) return;
+          const existente = depuradoresActivos.get(sectionId);
+          if (existente) { existente.continuar(); return; }
+          iniciarDepuradorReal(sectionId, editor.value);
+      }
+      function obtenerPruebasDesafio(sec) {
+          const porDesafio = {
+              "sec-1": [["Declara variables", /\b(const|let|var)\b/], ["Usa console.log", /console\.log\s*\(/]],
+              "sec-2": [["Usa const y let", /\bconst\b[\s\S]*\blet\b/], ["Calcula un total", /console\.log\s*\(/]],
+              "sec-3": [["Usa tipos primitivos", /\b(typeof|null|true|false)\b/], ["Muestra resultados", /console\.log\s*\(/]],
+              "sec-4": [["Usa comparación o lógica", /(>=|<=|===|&&|\|\|)/], ["Muestra aprobación", /console\.log\s*\(/]],
+              "sec-5": [["Incluye una condición", /\bif\b/], ["Muestra clasificación", /console\.log\s*\(/]],
+              "sec-6": [["Convierte valores", /(Number|parseFloat|parseInt)/], ["Muestra conversión", /console\.log\s*\(/]],
+              "sec-7": [["Usa una colección", /(Array|\[|\])/], ["Registra el resultado", /console\.log\s*\(/]],
+              "sec-8": [["Usa repetición", /\b(for|while|forEach)\b/], ["Genera una salida", /console\.log\s*\(/]],
+              "sec-9": [["Usa un objeto", /[{]\s*[A-Za-z_$]/], ["Muestra el perfil", /console\.log\s*\(/]],
+              "sec-10": [["Usa inventario", /(stock|inventario|cantidad)/i], ["Muestra el resultado", /console\.log\s*\(/]],
+              "sec-11": [["Genera texto o mails", /(mail|email|mensaje)/i], ["Muestra la salida", /console\.log\s*\(/]],
+              "sec-12": [["Valida contraseña", /(password|contrase|length)/i], ["Incluye una condición", /\bif\b/]],
+              "sec-13": [["Manipula el DOM", /(document|querySelector|getElementById)/], ["Crea una interacción", /(textContent|innerHTML|addEventListener)/]],
+              "sec-14": [["Valida datos", /(valid|if|&&|\|\|)/i], ["Entrega un resultado", /console\.log\s*\(/]],
+              "sec-15": [["Guarda preferencias", /(localStorage|tema|theme)/i], ["Ejecuta una acción", /(setItem|getItem)/]],
+              "sec-16": [["Usa datos climáticos", /(clima|temperatura|fetch|weather)/i], ["Controla errores", /(try|catch|console\.log)/]],
+              "sec-17": [["Valida notas", /(nota|promedio|>=|<=)/i], ["Muestra una conclusión", /console\.log\s*\(/]],
+              "sec-18": [["Usa eventos de teclado", /(keydown|keyup|tecla|event)/i], ["Registra la acción", /console\.log\s*\(/]],
+              "sec-19": [["Organiza el programa", /\b(function|const|let)\b/], ["Produce una salida", /console\.log\s*\(/]]
+          };
+          return porDesafio[sec?.id] || [["El código es válido", /.*/], ["Produce una salida", /console\.log\s*\(/]];
+      }
+      async function ejecutarPruebasDesafio(sectionId) {
+          const sec = seccionesData.find(item => item.id === sectionId);
+          const editor = document.getElementById(`editor-${sectionId}`);
+          const salida = document.getElementById(`console-${sectionId}`);
+          if (!sec || !editor || !salida) return;
+          const resultado = await ejecutarCodigoAislado(editor.value);
+          const pruebas = obtenerPruebasDesafio(sec);
+          const sintaxis = validarSintaxisCodigo(editor.value);
+          const lineas = [
+              `Pruebas automáticas · ${sec.title}`,
+              `${resultado.ok ? "✓" : "✗"} Ejecución sin excepciones`,
+              `${sintaxis.valida ? "✓" : "✗"} Sintaxis JavaScript válida`,
+              ...pruebas.map(([nombre, patron]) => `${patron.test(editor.value) ? "✓" : "✗"} ${nombre}`)
+          ];
+          salida.textContent = lineas.join("\n");
           cambiarPestanaConsola(sectionId, "salida");
+          actualizarEstadoEditorEstudiante(sectionId, resultado.ok && sintaxis.valida ? "success" : "error", resultado.ok && sintaxis.valida ? "Pruebas completadas" : "Revisá las pruebas fallidas");
       }
 
       function alternarModoEnfoque(sectionId, boton = null) {
@@ -11531,7 +11624,7 @@
           shell.className = "editor-enhancement-shell";
           const barra = document.createElement("div");
           barra.className = "editor-enhancement-toolbar";
-          barra.innerHTML = `<input type="search" placeholder="Buscar en el código" aria-label="Buscar en el código"><button type="button" data-editor-find>Buscar</button><button type="button" data-editor-replace>Reemplazar</button><button type="button" data-editor-complete title="Completar palabra (Ctrl+Espacio)">Completar</button><span class="editor-search-status" aria-live="polite"></span><label>Fuente <select data-editor-font><option value="0.8">Pequeña</option><option value="0.9" selected>Normal</option><option value="1">Grande</option><option value="1.1">Muy grande</option></select></label><button type="button" data-editor-wrap aria-pressed="false">Ajustar líneas</button>`;
+          barra.innerHTML = `<input type="search" placeholder="Buscar en el código" aria-label="Buscar en el código"><button type="button" data-editor-find>Buscar</button><button type="button" data-editor-replace>Reemplazar</button><button type="button" data-editor-complete title="Completar palabra (Ctrl+Espacio)">Completar</button><span class="editor-search-status" aria-live="polite"></span><span class="editor-cursor-position" aria-live="polite">Línea 1, columna 1</span><label>Fuente <select data-editor-font><option value="0.8">Pequeña</option><option value="0.9" selected>Normal</option><option value="1">Grande</option><option value="1.1">Muy grande</option></select></label><button type="button" data-editor-wrap aria-pressed="false">Ajustar líneas</button>`;
           const cuerpo = document.createElement("div");
           cuerpo.className = "editor-enhancement-body";
           const gutter = document.createElement("div");
@@ -11548,6 +11641,12 @@
               capa.innerHTML = resaltarJavaScriptEditor(textarea.value);
               capa.scrollTop = textarea.scrollTop;
               capa.scrollLeft = textarea.scrollLeft;
+              capa.style.height = `${textarea.scrollHeight}px`;
+              gutter.scrollTop = textarea.scrollTop;
+              const antes = textarea.value.slice(0, textarea.selectionStart);
+              const numeroLinea = antes.split("\n").length;
+              const numeroColumna = antes.length - antes.lastIndexOf("\n");
+              barra.querySelector(".editor-cursor-position").textContent = `Línea ${numeroLinea}, columna ${numeroColumna}`;
           };
           const buscar = () => {
               const termino = barra.querySelector("input").value;
@@ -11592,6 +11691,9 @@
           };
           textarea.addEventListener("input", actualizar);
           textarea.addEventListener("scroll", actualizar);
+          textarea.addEventListener("select", actualizar);
+          textarea.addEventListener("keyup", actualizar);
+          textarea.addEventListener("click", actualizar);
           textarea.addEventListener("keydown", e => {
               if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
                   e.preventDefault();
@@ -17237,7 +17339,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260903-15"></script>
+    <script src="mejoras-seguimiento.js?v=20260903-17"></script>
   </body>
 </html>
 
