@@ -3248,6 +3248,31 @@
       const ORIGEN_FIRESTORE_CRDT = Symbol("firestore-crdt");
       const sesionesCodigoCRDT = new Map();
 
+      function mensajeErrorCRDT(error) {
+        const codigo = String(error?.code || "");
+        if (codigo.includes("permission-denied")) {
+          return "Firestore rechazó la colaboración. Publicá reglas.txt en el proyecto ipem146js con una cuenta administradora.";
+        }
+        if (codigo.includes("unauthenticated") || codigo.includes("auth")) {
+          return "La sesión no está autorizada para colaborar. Volvé a iniciar sesión.";
+        }
+        if (codigo.includes("unavailable") || codigo.includes("network")) {
+          return "No se pudo conectar con Firestore. Revisá Internet e intentá nuevamente.";
+        }
+        return String(error?.message || "No se pudo iniciar la colaboración CRDT.");
+      }
+
+      function mostrarErrorCRDTEstudiante(error) {
+        let aviso = document.getElementById("avisoErrorCRDT");
+        if (!aviso) {
+          aviso = document.createElement("div");
+          aviso.id = "avisoErrorCRDT";
+          aviso.style.cssText = "position:fixed;left:1rem;right:1rem;bottom:1rem;z-index:13000;max-width:760px;margin:auto;padding:.8rem 1rem;border:1px solid #ef4444;border-radius:8px;background:#450a0a;color:#fecaca;box-shadow:0 15px 40px rgba(0,0,0,.45);font-size:.78rem;line-height:1.45";
+          document.body.appendChild(aviso);
+        }
+        aviso.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation"></i> Colaboración en vivo no disponible</strong><br>${mensajeErrorCRDT(error)}`;
+      }
+
       function bytesABase64(bytes) {
         let binario = "";
         const bloque = 0x8000;
@@ -3510,6 +3535,12 @@
             vincularTextareaCodigoCRDT(textarea, sesion, sec.id, estado);
           } catch (error) {
             console.error(`No se pudo iniciar CRDT en ${sec.id}:`, error);
+            window.ultimoErrorCRDT = {
+              code: error?.code || "",
+              message: error?.message || "",
+              sectionId: sec.id
+            };
+            mostrarErrorCRDTEstudiante(error);
             if (estado) estado.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Colaboración no disponible';
           }
         }));
@@ -16575,7 +16606,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260903-2"></script>
+    <script src="mejoras-seguimiento.js?v=20260903-3"></script>
   </body>
 </html>
 
