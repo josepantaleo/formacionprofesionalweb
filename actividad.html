@@ -13442,7 +13442,7 @@
           contenido.innerHTML = `
             ${llamadaJitsiId ? `<div class="student-action-jitsi-state"><i class="fa-solid fa-signal"></i><span>Estado Jitsi</span><strong>${escapeHtml(etiquetasJitsi[estadoJitsi] || 'Invitado')}</strong></div>` : ''}
             <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i><span>Ver detalle completo</span></button>
-            <button class="btn btn-success" onclick="cerrarAccionesEstudiante();abrirProgramacionDocente(${indice})"><i class="fa-solid fa-clipboard-list"></i><span>Editar programación y comentarios</span></button>
+            <button class="btn btn-success" onclick="cerrarAccionesEstudiante();(window.abrirProgramacionDocente ? window.abrirProgramacionDocente(${indice}) : alert('La herramienta de programación todavía está cargando. Actualizá la página e intentá nuevamente.'))"><i class="fa-solid fa-clipboard-list"></i><span>Editar programación y comentarios</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial de desbloqueos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDescuentos(${indice})"><i class="fa-solid fa-file-invoice-dollar"></i><span>Historial de descuentos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialPestanas(${indice})"><i class="fa-solid fa-window-restore"></i><span>Historial de pestañas</span></button>
@@ -16236,7 +16236,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260901-5"></script>
+    <script src="mejoras-seguimiento.js?v=20260903-1"></script>
   </body>
 </html>
 
