@@ -46,6 +46,86 @@ textarea.collab-source-editor{position:relative!important;z-index:1!important;co
 .collab-presence-strip{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin:.5rem 0;padding:.45rem .55rem;border:1px solid rgba(56,189,248,.25);border-radius:6px;background:rgba(14,116,144,.1);color:#bae6fd;font-size:.66rem}.collab-presence-strip .online-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.14)}.collab-presence-strip .paused-dot{background:#f87171;box-shadow:0 0 0 3px rgba(248,113,113,.14)}.collab-presence-name{font-weight:800}.collab-presence-meta{color:var(--text-muted)}
 .collab-chat-tools{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}.collab-quick-replies{display:flex;gap:.35rem;flex-wrap:wrap;margin:.35rem 0}.collab-quick-replies button{padding:.3rem .45rem;border:1px solid rgba(56,189,248,.28);border-radius:999px;background:rgba(14,116,144,.12);color:#bae6fd;font-size:.64rem;cursor:pointer}.collab-quick-replies button:hover{background:rgba(14,116,144,.25)}.collab-call-state{display:inline-flex;align-items:center;gap:.3rem;font-size:.64rem}.collab-call-state.connected{color:#86efac}.collab-call-state.rejected{color:#fca5a5}.collab-call-state.finished{color:#fbbf24}
 @media(max-width:600px){.collab-chat-compose{grid-template-columns:1fr}.collab-chat-compose .btn{min-height:40px}.collab-chat-message{max-width:96%}}
+
+/* Editor colaborativo: contenido visible, bloqueo real y controles adaptables. */
+#editorColaborativoDocenteModal .teacher-collab-box{
+  width:min(920px,calc(100vw - 1rem));
+  max-height:calc(100dvh - 1rem);
+  overscroll-behavior:contain;
+}
+#editorColaborativoDocenteModal .codemirror-host,
+#editorColaborativoDocenteModal .codemirror-host .cm-editor,
+#editorColaborativoDocenteModal .codemirror-host .cm-scroller{
+  min-height:clamp(260px,42vh,420px);
+}
+#editorColaborativoDocenteModal .teacher-program-actions{
+  align-items:flex-start;
+}
+#editorColaborativoDocenteModal .teacher-program-actions>div{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  width:min(100%,590px);
+}
+#editorColaborativoDocenteModal .teacher-program-actions .btn,
+#editorColaborativoDocenteModal .collab-chat-tools .btn{
+  width:100%;
+  min-width:0;
+  justify-content:center;
+  white-space:normal;
+}
+#editorColaborativoDocenteModal .collab-chat-tools{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+@media(max-width:600px){
+  #editorColaborativoDocenteModal{
+    padding:.25rem;
+  }
+  #editorColaborativoDocenteModal .teacher-collab-box{
+    width:calc(100vw - .5rem);
+    max-height:calc(100dvh - .5rem);
+    padding:.65rem!important;
+  }
+  #editorColaborativoDocenteModal .teacher-program-header{
+    position:sticky;
+    top:-.65rem;
+    z-index:8;
+    margin:-.65rem -.65rem .65rem;
+    padding:.65rem;
+    border-bottom:1px solid rgba(148,163,184,.22);
+    background:#0f172a;
+  }
+  #editorColaborativoDocenteModal .teacher-program-header>div{
+    min-width:0;
+  }
+  #editorColaborativoDocenteModal .teacher-program-header h3,
+  #editorColaborativoDocenteModal .teacher-program-header p{
+    overflow-wrap:anywhere;
+  }
+  #editorColaborativoDocenteModal .codemirror-host,
+  #editorColaborativoDocenteModal .codemirror-host .cm-editor,
+  #editorColaborativoDocenteModal .codemirror-host .cm-scroller{
+    min-height:250px;
+  }
+  #editorColaborativoDocenteModal .teacher-program-actions{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #editorColaborativoDocenteModal .teacher-program-actions>div{
+    grid-template-columns:1fr;
+    width:100%;
+  }
+  #editorColaborativoDocenteModal .collab-chat-tools,
+  #editorColaborativoDocenteModal .collab-quick-replies{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  #editorColaborativoDocenteModal .collab-chat-header,
+  #editorColaborativoDocenteModal .collab-history-header{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+}
 .tracking-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:.7rem;flex-wrap:wrap;margin-bottom:.75rem}
 .tracking-panel-heading h4{margin:0;color:#bae6fd}
 .tracking-config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.65rem}

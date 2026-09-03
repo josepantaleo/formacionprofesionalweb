@@ -5702,7 +5702,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260903-18">
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260903-19">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -11724,10 +11724,14 @@
                       highlightActiveLine(),
                       drawSelection(),
                       atajos,
-                      EditorView.updateListener.of(update => {
-                          actualizarTextarea(update);
-                          if (update.selectionSet) textarea.dispatchEvent(new Event("cm-selection-change"));
-                      })
+                       EditorView.updateListener.of(update => {
+                           actualizarTextarea(update);
+                           if (update.selectionSet) {
+                               const seleccion = update.state.selection.main;
+                               textarea.setSelectionRange(seleccion.from, seleccion.to);
+                               textarea.dispatchEvent(new Event("cm-selection-change"));
+                           }
+                       })
                   ]
               }),
               parent: host
@@ -11744,9 +11748,17 @@
               inicio: view.state.selection.main.from,
               fin: view.state.selection.main.to
           });
+          textarea.__getCodeMirrorSelectedText = () => {
+              const seleccion = view.state.selection.main;
+              return view.state.sliceDoc(seleccion.from, seleccion.to);
+          };
           textarea.__setCodeMirrorDisabled = deshabilitado => {
-              host.classList.toggle("cm-disabled", Boolean(deshabilitado));
-              host.setAttribute("aria-disabled", String(Boolean(deshabilitado)));
+              const bloqueado = Boolean(deshabilitado);
+              host.classList.toggle("cm-disabled", bloqueado);
+              host.setAttribute("aria-disabled", String(bloqueado));
+              view.contentDOM.contentEditable = bloqueado ? "false" : "true";
+              view.contentDOM.tabIndex = bloqueado ? -1 : 0;
+              if (bloqueado && view.hasFocus) view.contentDOM.blur();
           };
           textarea.__renderRemoteCursors = participantes => {
               cursors.innerHTML = "";
@@ -17501,7 +17513,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260903-18"></script>
+    <script src="mejoras-seguimiento.js?v=20260903-19"></script>
   </body>
 </html>
 
