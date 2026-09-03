@@ -2706,169 +2706,1314 @@ for (const clave of Object.keys(producto)) {
             ================================================== -->
 
         <section id="arrays-avanzados" class="clase">
-          <h2 class="titulo-clase">Arrays avanzados</h2>
+  <h2 class="titulo-clase">Arrays avanzados</h2>
 
-          <p>Métodos para buscar, transformar, ordenar y filtrar.</p>
+  <p class="descripcion">
+    En esta clase vamos a trabajar con arrays de forma profesional:
+    transformar datos, buscar información, filtrar resultados, ordenar,
+    calcular valores, combinar métodos y trabajar con arrays de objetos.
+  </p>
 
-          <div class="card">
-            <h3>Evitar modificaciones accidentales</h3>
-            <p>
-              Métodos como <code>map</code>, <code>filter</code> y
-              <code>slice</code> crean nuevos arrays. Esto hace que el programa
-              sea más predecible.
-            </p>
-          </div>
+  <div class="card">
+    <h2>🎯 Objetivos</h2>
+    <ul>
+      <li>Comprender cómo procesar arrays sin modificar accidentalmente el original.</li>
+      <li>Utilizar <code>map()</code>, <code>filter()</code>, <code>find()</code> y <code>reduce()</code>.</li>
+      <li>Usar <code>some()</code> y <code>every()</code> para realizar comprobaciones.</li>
+      <li>Ordenar arrays correctamente con <code>sort()</code>.</li>
+      <li>Combinar varios métodos en una misma operación.</li>
+      <li>Procesar arrays de objetos, una situación muy habitual en aplicaciones reales.</li>
+    </ul>
+  </div>
 
-          <div class="codigo">
-            <pre><code>const frutas = ["Manzana", "Banana"];
+  <div class="card">
+    <h2>🧠 ¿Qué significa trabajar un array de forma avanzada?</h2>
+    <p>
+      Un array avanzado no significa solamente tener muchos elementos.
+      Significa poder <strong>analizar, transformar, buscar, seleccionar y
+      resumir información</strong> utilizando métodos de JavaScript.
+    </p>
+    <p>
+      Por ejemplo, una aplicación escolar podría tener un array con todos
+      los estudiantes y obtener solamente los aprobados, calcular el
+      promedio, buscar un estudiante o contar cuántos tienen una determinada nota.
+    </p>
+  </div>
 
-const frutasActualizadas = [
-    ...frutas,
-    "Naranja"
-];
+  <div class="card">
+    <h2>1️⃣ map() — Transformar elementos</h2>
+    <p>
+      <code>map()</code> recorre todos los elementos y devuelve un
+      <strong>nuevo array</strong> con el resultado de la transformación.
+    </p>
+  </div>
 
-console.log(frutas);
-console.log(frutasActualizadas);</code></pre>
-          </div>
+  <div class="codigo">
+    <pre><code>const numeros = [1, 2, 3, 4, 5];
 
-          <div class="codigo">
-            <pre><code>const numeros = [1, 2, 3, 4, 5];
+const dobles = numeros.map(numero => numero * 2);
 
-const dobles =
-    numeros.map(n => n * 2);
+console.log(numeros);
+console.log(dobles);</code></pre>
+  </div>
 
-const pares =
-    numeros.filter(n => n % 2 === 0);
+  <div class="nota">
+    <strong>💡 Recordá</strong>
+    <p>
+      <code>map()</code> tiene la misma cantidad de elementos que el array
+      original. Lo que cambia es el valor de cada elemento.
+    </p>
+  </div>
 
-const encontrado =
-    numeros.find(n => n === 3);
+  <div class="card">
+    <h2>2️⃣ filter() — Seleccionar elementos</h2>
+    <p>
+      <code>filter()</code> crea un nuevo array solamente con los elementos
+      que cumplen una condición.
+    </p>
+  </div>
 
-console.log(dobles);
+  <div class="codigo">
+    <pre><code>const edades = [12, 15, 18, 21, 14, 25];
 
-console.log(pares);
+const mayores = edades.filter(edad => edad >= 18);
+
+console.log(mayores);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>3️⃣ find() — Encontrar un elemento</h2>
+    <p>
+      <code>find()</code> devuelve el <strong>primer elemento</strong> que
+      cumple la condición. Si no encuentra ninguno, devuelve <code>undefined</code>.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const numeros = [5, 8, 12, 20, 30];
+
+const encontrado = numeros.find(numero => numero > 10);
 
 console.log(encontrado);</code></pre>
-          </div>
+  </div>
 
-          <div class="codigo">
-            <pre><code>const precios = [
-    100,
-    250,
-    80,
-    120
-];
+  <div class="card">
+    <h2>4️⃣ findIndex() — Buscar la posición</h2>
+    <p>
+      Es parecido a <code>find()</code>, pero devuelve la posición del primer
+      elemento que cumple la condición. Si no existe, devuelve <code>-1</code>.
+    </p>
+  </div>
 
-const total = precios.reduce(
-    (acumulador, precio) => {
+  <div class="codigo">
+    <pre><code>const nombres = ["Ana", "Juan", "Martín", "Lucía"];
 
-        return acumulador + precio;
+const posicion = nombres.findIndex(nombre => nombre === "Martín");
 
-    },
-    0
+console.log(posicion);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>5️⃣ reduce() — Obtener un único resultado</h2>
+    <p>
+      <code>reduce()</code> permite recorrer un array y convertir todos sus
+      valores en un único resultado: una suma, un promedio, un contador,
+      un objeto, etc.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const notas = [7, 8, 10, 6];
+
+const suma = notas.reduce(
+  (acumulador, nota) => acumulador + nota,
+  0
 );
 
-console.log(total);</code></pre>
-          </div>
+const promedio = suma / notas.length;
 
-          <div class="codigo">
-            <pre><code>const edades = [12, 17, 21, 15];
+console.log("Suma:", suma);
+console.log("Promedio:", promedio);</code></pre>
+  </div>
 
-const hayAdultos =
-    edades.some(edad => edad >= 18);
+  <div class="card">
+    <h2>6️⃣ some() — ¿Al menos uno cumple?</h2>
+    <p>
+      Devuelve <code>true</code> si por lo menos un elemento cumple la condición.
+    </p>
+  </div>
 
-const todosSonPositivos =
-    edades.every(edad => edad > 0);
+  <div class="codigo">
+    <pre><code>const notas = [4, 6, 7, 9];
 
-const ordenadas =
-    [...edades].sort((a, b) => a - b);
+const hayAprobados = notas.some(nota => nota >= 6);
 
-console.log(hayAdultos);
-console.log(todosSonPositivos);
-console.log(ordenadas);</code></pre>
-          </div>
+console.log(hayAprobados);</code></pre>
+  </div>
 
-          <div class="nota">
-            <strong>Cuidado con sort()</strong>
-            <p>
-              <code>sort()</code> modifica el array original y ordena como
-              texto si no recibe una función de comparación. Por eso se crea
-              una copia con <code>[...edades]</code>.
-            </p>
-          </div>
-        </section>
+  <div class="card">
+    <h2>7️⃣ every() — ¿Todos cumplen?</h2>
+    <p>
+      Devuelve <code>true</code> solamente si todos los elementos cumplen
+      la condición.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const notas = [7, 8, 9, 10];
+
+const todosAprobados = notas.every(nota => nota >= 6);
+
+console.log(todosAprobados);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>8️⃣ sort() — Ordenar arrays</h2>
+    <p>
+      Para ordenar números correctamente debemos proporcionar una función
+      de comparación.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const numeros = [30, 5, 100, 20, 8];
+
+const ascendente = [...numeros].sort((a, b) => a - b);
+const descendente = [...numeros].sort((a, b) => b - a);
+
+console.log("Original:", numeros);
+console.log("Ascendente:", ascendente);
+console.log("Descendente:", descendente);</code></pre>
+  </div>
+
+  <div class="nota">
+    <strong>⚠️ Cuidado con sort()</strong>
+    <p>
+      <code>sort()</code> modifica el array sobre el que se ejecuta.
+      Por eso usamos <code>[...numeros]</code> para crear una copia antes
+      de ordenar.
+    </p>
+    <p>
+      Además, sin una función de comparación, JavaScript puede ordenar
+      números como texto.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>9️⃣ includes() — Comprobar si existe un valor</h2>
+    <p>
+      <code>includes()</code> devuelve <code>true</code> o <code>false</code>
+      según el array contenga el valor indicado.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const materias = [
+  "Matemática",
+  "Lengua",
+  "Historia",
+  "Programación"
+];
+
+console.log(materias.includes("Programación"));
+console.log(materias.includes("Física"));</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>🔟 slice() — Copiar una parte del array</h2>
+    <p>
+      <code>slice()</code> devuelve una parte del array sin modificar el original.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const numeros = [10, 20, 30, 40, 50];
+
+const parte = numeros.slice(1, 4);
+
+console.log(parte);
+console.log(numeros);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣1️⃣ Arrays de objetos</h2>
+    <p>
+      Esta es una de las estructuras más importantes para desarrollar
+      aplicaciones reales. Podemos almacenar muchos objetos dentro de un array.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const alumnos = [
+  {
+    nombre: "Ana",
+    edad: 16,
+    nota: 9
+  },
+  {
+    nombre: "Juan",
+    edad: 17,
+    nota: 6
+  },
+  {
+    nombre: "Lucía",
+    edad: 16,
+    nota: 10
+  },
+  {
+    nombre: "Pedro",
+    edad: 17,
+    nota: 4
+  }
+];
+
+console.log(alumnos[0].nombre);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣2️⃣ filter() con objetos</h2>
+    <p>
+      Podemos seleccionar objetos completos utilizando una propiedad.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const aprobados = alumnos.filter(
+  alumno => alumno.nota >= 6
+);
+
+console.log(aprobados);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣3️⃣ map() con objetos</h2>
+    <p>
+      Podemos obtener una lista nueva a partir de una propiedad de cada objeto.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const nombres = alumnos.map(
+  alumno => alumno.nombre
+);
+
+console.log(nombres);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣4️⃣ find() con objetos</h2>
+    <p>
+      Podemos buscar un objeto utilizando una propiedad.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const alumno = alumnos.find(
+  alumno => alumno.nombre === "Lucía"
+);
+
+console.log(alumno);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣5️⃣ reduce() con objetos</h2>
+    <p>
+      Podemos calcular el promedio de las notas de todos los alumnos.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const sumaNotas = alumnos.reduce(
+  (total, alumno) => total + alumno.nota,
+  0
+);
+
+const promedio = sumaNotas / alumnos.length;
+
+console.log("Promedio:", promedio.toFixed(2));</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣6️⃣ Encadenar métodos</h2>
+    <p>
+      Una de las técnicas más útiles es combinar varios métodos para resolver
+      un problema en una sola expresión.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const alumnosDestacados = alumnos
+  .filter(alumno => alumno.nota >= 8)
+  .map(alumno => alumno.nombre);
+
+console.log(alumnosDestacados);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣7️⃣ Encadenamiento avanzado: filtrar, transformar y ordenar</h2>
+    <p>
+      Podemos obtener los alumnos aprobados, transformar sus datos y ordenar
+      las notas de mayor a menor.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const resultado = alumnos
+  .filter(alumno => alumno.nota >= 6)
+  .map(alumno => ({
+    nombre: alumno.nombre,
+    nota: alumno.nota
+  }))
+  .sort((a, b) => b.nota - a.nota);
+
+console.log(resultado);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣8️⃣ Spread operator (...) para copiar y combinar</h2>
+    <p>
+      El operador <code>...</code> permite crear copias y combinar arrays
+      fácilmente.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const primerGrupo = ["Ana", "Juan"];
+const segundoGrupo = ["Lucía", "Pedro"];
+
+const todos = [
+  ...primerGrupo,
+  ...segundoGrupo
+];
+
+console.log(todos);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣9️⃣ Agregar elementos sin modificar el original</h2>
+    <p>
+      Podemos crear un nuevo array agregando elementos mediante spread.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const alumnosIniciales = ["Ana", "Juan"];
+
+const alumnosActualizados = [
+  ...alumnosIniciales,
+  "Lucía"
+];
+
+console.log(alumnosIniciales);
+console.log(alumnosActualizados);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>2️⃣0️⃣ Eliminar elementos sin modificar el original</h2>
+    <p>
+      Podemos combinar <code>filter()</code> con una condición para crear
+      una nueva lista sin determinado elemento.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const nombres = ["Ana", "Juan", "Lucía", "Pedro"];
+
+const sinJuan = nombres.filter(
+  nombre => nombre !== "Juan"
+);
+
+console.log(sinJuan);
+console.log(nombres);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>2️⃣1️⃣ Crear estadísticas con reduce()</h2>
+    <p>
+      <code>reduce()</code> también puede utilizarse para construir objetos
+      con estadísticas.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const notas = [4, 7, 8, 10, 5, 9];
+
+const estadisticas = notas.reduce(
+  (resultado, nota) => {
+    resultado.total++;
+
+    if (nota >= 6) {
+      resultado.aprobados++;
+    } else {
+      resultado.desaprobados++;
+    }
+
+    return resultado;
+  },
+  {
+    total: 0,
+    aprobados: 0,
+    desaprobados: 0
+  }
+);
+
+console.log(estadisticas);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>2️⃣2️⃣ Agrupar información</h2>
+    <p>
+      Podemos utilizar <code>reduce()</code> para organizar elementos
+      según una categoría.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const alumnos = [
+  { nombre: "Ana", curso: "5A" },
+  { nombre: "Juan", curso: "5B" },
+  { nombre: "Lucía", curso: "5A" },
+  { nombre: "Pedro", curso: "5B" }
+];
+
+const grupos = alumnos.reduce(
+  (resultado, alumno) => {
+    if (!resultado[alumno.curso]) {
+      resultado[alumno.curso] = [];
+    }
+
+    resultado[alumno.curso].push(alumno);
+
+    return resultado;
+  },
+  {}
+);
+
+console.log(grupos);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>2️⃣3️⃣ Diferencia entre map(), filter() y reduce()</h2>
+    <ul>
+      <li><strong>map()</strong> → transforma cada elemento.</li>
+      <li><strong>filter()</strong> → selecciona elementos.</li>
+      <li><strong>find()</strong> → encuentra el primer elemento.</li>
+      <li><strong>findIndex()</strong> → encuentra la posición.</li>
+      <li><strong>reduce()</strong> → obtiene un resultado acumulado.</li>
+      <li><strong>some()</strong> → comprueba si alguno cumple.</li>
+      <li><strong>every()</strong> → comprueba si todos cumplen.</li>
+      <li><strong>sort()</strong> → ordena el array.</li>
+      <li><strong>includes()</strong> → comprueba si existe un valor.</li>
+      <li><strong>slice()</strong> → obtiene una copia de una parte.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🔍 ¿Qué método debo elegir?</h2>
+    <p>Antes de programar, preguntate qué resultado necesitás:</p>
+    <ul>
+      <li>¿Quiero cambiar cada elemento? → <code>map()</code></li>
+      <li>¿Quiero quedarme con algunos? → <code>filter()</code></li>
+      <li>¿Quiero encontrar uno? → <code>find()</code></li>
+      <li>¿Quiero saber dónde está? → <code>findIndex()</code></li>
+      <li>¿Quiero sumar o acumular? → <code>reduce()</code></li>
+      <li>¿Quiero saber si alguno cumple? → <code>some()</code></li>
+      <li>¿Quiero comprobar que todos cumplen? → <code>every()</code></li>
+      <li>¿Quiero ordenar? → <code>sort()</code></li>
+      <li>¿Quiero comprobar si existe? → <code>includes()</code></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🧩 Ejemplo completo: sistema de estudiantes</h2>
+    <p>
+      En este ejemplo combinamos varios métodos para obtener información
+      útil de un grupo de estudiantes.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const estudiantes = [
+  { nombre: "Ana", nota: 9, curso: "5A" },
+  { nombre: "Juan", nota: 5, curso: "5A" },
+  { nombre: "Lucía", nota: 10, curso: "5B" },
+  { nombre: "Pedro", nota: 7, curso: "5B" }
+];
+
+const aprobados = estudiantes
+  .filter(estudiante => estudiante.nota >= 6);
+
+const nombresAprobados = aprobados
+  .map(estudiante => estudiante.nombre);
+
+const suma = estudiantes.reduce(
+  (total, estudiante) => total + estudiante.nota,
+  0
+);
+
+const promedio = suma / estudiantes.length;
+
+const mejorEstudiante = estudiantes
+  .reduce((mejor, estudiante) =>
+    estudiante.nota > mejor.nota
+      ? estudiante
+      : mejor
+  );
+
+const ordenados = [...estudiantes]
+  .sort((a, b) => b.nota - a.nota);
+
+console.log("Aprobados:", aprobados);
+console.log("Nombres:", nombresAprobados);
+console.log("Promedio:", promedio.toFixed(2));
+console.log("Mejor estudiante:", mejorEstudiante);
+console.log("Ordenados:", ordenados);</code></pre>
+  </div>
+
+  <div class="nota">
+    <strong>⚠️ Error frecuente</strong>
+    <p>
+      No confundas el array original con el array que devuelve un método.
+      Métodos como <code>map()</code>, <code>filter()</code> y <code>slice()</code>
+      devuelven nuevos arrays. En cambio, <code>sort()</code> modifica el array
+      sobre el que trabaja.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 1</span>
+    <h2>Transformar números</h2>
+    <p>
+      Creá un array con 6 números y utilizá <code>map()</code> para obtener
+      un nuevo array con sus cuadrados.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 2</span>
+    <h2>Filtrar aprobados</h2>
+    <p>
+      Creá un array con 8 notas y utilizá <code>filter()</code> para obtener
+      solamente las notas mayores o iguales a 6.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 3</span>
+    <h2>Buscar estudiante</h2>
+    <p>
+      Creá un array de objetos con nombre y edad. Utilizá <code>find()</code>
+      para encontrar un estudiante determinado.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 4</span>
+    <h2>Calcular promedio</h2>
+    <p>
+      Creá un array de notas y utilizá <code>reduce()</code> para calcular
+      la suma y después el promedio.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 5</span>
+    <h2>Verificar condiciones</h2>
+    <p>
+      Creá un array de edades. Utilizá <code>some()</code> para saber si hay
+      algún mayor de edad y <code>every()</code> para comprobar si todas las
+      edades son positivas.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 6</span>
+    <h2>Ordenar estudiantes</h2>
+    <p>
+      Creá un array de estudiantes con nombre y nota. Utilizá
+      <code>sort()</code> para ordenarlos de mayor a menor nota sin modificar
+      el array original.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 7</span>
+    <h2>Encadenar métodos</h2>
+    <p>
+      A partir de un array de estudiantes, obtené los nombres de quienes
+      tengan una nota mayor o igual a 8 utilizando <code>filter()</code>
+      y <code>map()</code>.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 8</span>
+    <h2>Estadísticas</h2>
+    <p>
+      Utilizá <code>reduce()</code> para determinar cuántos estudiantes
+      aprobaron y cuántos desaprobaron.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🏆 DESAFÍO FINAL</span>
+    <h2>Sistema avanzado de alumnos</h2>
+    <p>
+      Creá un array con al menos 8 estudiantes. Cada estudiante debe tener:
+      <strong>nombre, edad, curso y nota</strong>.
+    </p>
+    <p>El programa debe calcular:</p>
+    <ul>
+      <li>Lista de alumnos aprobados.</li>
+      <li>Lista de nombres de los alumnos destacados con nota ≥ 8.</li>
+      <li>Promedio general.</li>
+      <li>Mejor estudiante.</li>
+      <li>Peor estudiante.</li>
+      <li>Cantidad de aprobados.</li>
+      <li>Cantidad de desaprobados.</li>
+      <li>Lista ordenada de mayor a menor nota.</li>
+      <li>Comprobar si existe algún estudiante con nota 10.</li>
+    </ul>
+    <p>
+      <strong>Condición:</strong> resolver utilizando al menos
+      <code>filter()</code>, <code>map()</code>, <code>find()</code>,
+      <code>reduce()</code>, <code>some()</code> y <code>sort()</code>.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>📌 Resumen final</h2>
+    <ul>
+      <li><code>map()</code> transforma.</li>
+      <li><code>filter()</code> selecciona.</li>
+      <li><code>find()</code> busca un elemento.</li>
+      <li><code>findIndex()</code> busca una posición.</li>
+      <li><code>reduce()</code> acumula y resume.</li>
+      <li><code>some()</code> pregunta si alguno cumple.</li>
+      <li><code>every()</code> pregunta si todos cumplen.</li>
+      <li><code>sort()</code> ordena.</li>
+      <li><code>includes()</code> comprueba existencia.</li>
+      <li><code>slice()</code> copia una parte.</li>
+      <li><code>...spread</code> permite copiar y combinar arrays.</li>
+    </ul>
+    <p>
+      Estos métodos son fundamentales para trabajar con datos en aplicaciones
+      web, sistemas escolares, paneles administrativos y proyectos con Firebase.
+    </p>
+  </div>
+</section>
 
         <!-- =================================================
                  11 STRINGS
             ================================================== -->
 
         <section id="strings" class="clase">
-          <h2 class="titulo-clase">Strings y métodos de texto</h2>
+  <h2 class="titulo-clase">Strings y métodos de texto</h2>
 
-          <p>Los strings representan texto.</p>
+  <p class="descripcion">
+    Los <strong>strings</strong> representan textos. JavaScript ofrece numerosos
+    métodos para consultar, transformar, buscar, separar y construir cadenas.
+    Estos métodos son fundamentales para formularios, nombres de usuarios,
+    mensajes, validaciones y aplicaciones web.
+  </p>
 
-          <div class="codigo">
-            <pre><code>const texto =
-    "JavaScript es divertido";
+  <div class="card">
+    <h2>🎯 Objetivos</h2>
+    <ul>
+      <li>Comprender qué es un string y cómo se trabaja con texto.</li>
+      <li>Obtener la longitud de una cadena.</li>
+      <li>Convertir texto a mayúsculas y minúsculas.</li>
+      <li>Buscar texto y comprobar si existe.</li>
+      <li>Extraer partes de una cadena.</li>
+      <li>Eliminar espacios innecesarios.</li>
+      <li>Reemplazar y dividir texto.</li>
+      <li>Combinar métodos para resolver problemas reales.</li>
+    </ul>
+  </div>
 
-console.log(texto.length);
+  <div class="card">
+    <h2>1️⃣ ¿Qué es un String?</h2>
+    <p>
+      Un string es una cadena de caracteres. Puede escribirse utilizando
+      comillas dobles, comillas simples o backticks.
+    </p>
+  </div>
 
-console.log(texto.toUpperCase());
+  <div class="codigo">
+    <pre><code>const nombre = "Ana";
+const curso = '5° A';
+const mensaje = `Bienvenida ${nombre}`;
 
-console.log(texto.toLowerCase());
+console.log(nombre);
+console.log(curso);
+console.log(mensaje);</code></pre>
+  </div>
 
-console.log(
-    texto.includes("JavaScript")
-);
+  <div class="card">
+    <h2>2️⃣ length — Saber cuántos caracteres tiene</h2>
+    <p>
+      La propiedad <code>length</code> devuelve la cantidad de caracteres
+      de un string.
+    </p>
+  </div>
 
-console.log(
-    texto.startsWith("Java")
-);
+  <div class="codigo">
+    <pre><code>const texto = "JavaScript";
 
-console.log(
-    texto.endsWith("divertido")
-);</code></pre>
-          </div>
+console.log(texto.length);</code></pre>
+  </div>
 
-          <div class="codigo">
-            <pre><code>const nombre =
-    "   Juan Pérez   ";
+  <div class="nota">
+    <strong>💡 Importante</strong>
+    <p>
+      <code>length</code> es una <strong>propiedad</strong>, no un método.
+      Por eso se escribe <code>texto.length</code> y no
+      <code>texto.length()</code>.
+    </p>
+  </div>
 
-console.log(nombre.trim());
+  <div class="card">
+    <h2>3️⃣ toUpperCase() — Convertir a mayúsculas</h2>
+    <p>
+      Convierte todos los caracteres posibles del texto a mayúsculas.
+    </p>
+  </div>
 
-const palabras =
-    "HTML CSS JavaScript".split(" ");
+  <div class="codigo">
+    <pre><code>const nombre = "Juan Pérez";
 
-console.log(palabras);
+console.log(nombre.toUpperCase());</code></pre>
+  </div>
 
-const mensaje =
-    "Hola alumno";
+  <div class="card">
+    <h2>4️⃣ toLowerCase() — Convertir a minúsculas</h2>
+    <p>
+      Convierte el texto a minúsculas. Es muy útil para realizar
+      comparaciones sin importar cómo escribió el usuario.
+    </p>
+  </div>
 
-console.log(
-    mensaje.replace(
-        "alumno",
-        "programador"
-    )
-);</code></pre>
-          </div>
+  <div class="codigo">
+    <pre><code>const respuesta = "SI";
 
-          <div class="card">
-            <h3>Plantillas literales</h3>
-            <p>
-              Las comillas invertidas permiten insertar expresiones con
-              <code>${...}</code> y crear mensajes más legibles.
-            </p>
-          </div>
+if (respuesta.toLowerCase() === "si") {
+  console.log("Respuesta afirmativa");
+}</code></pre>
+  </div>
 
-          <div class="codigo">
-            <pre><code>const estudiante = "Carla";
-const puntos = 85;
+  <div class="card">
+    <h2>5️⃣ trim() — Eliminar espacios de los extremos</h2>
+    <p>
+      <code>trim()</code> elimina espacios al principio y al final del string.
+      Es especialmente útil para datos ingresados en formularios.
+    </p>
+  </div>
 
-const resumen =
-    `${estudiante} obtuvo ${puntos} puntos.`;
+  <div class="codigo">
+    <pre><code>const nombre = "   Martín   ";
 
-console.log(resumen);</code></pre>
-          </div>
-        </section>
+const limpio = nombre.trim();
+
+console.log(limpio);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>6️⃣ includes() — Comprobar si existe un texto</h2>
+    <p>
+      Devuelve <code>true</code> si encuentra el texto buscado y
+      <code>false</code> si no lo encuentra.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const mensaje = "Aprendiendo JavaScript";
+
+console.log(mensaje.includes("JavaScript"));
+console.log(mensaje.includes("Python"));</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>7️⃣ startsWith() — Comprobar cómo comienza</h2>
+    <p>
+      Comprueba si un string comienza con un determinado texto.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const codigo = "JS-2026";
+
+console.log(codigo.startsWith("JS"));
+console.log(codigo.startsWith("PY"));</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>8️⃣ endsWith() — Comprobar cómo termina</h2>
+    <p>
+      Comprueba si el string termina con un determinado texto.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const archivo = "actividad.html";
+
+console.log(archivo.endsWith(".html"));
+console.log(archivo.endsWith(".pdf"));</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>9️⃣ indexOf() — Buscar la posición</h2>
+    <p>
+      Devuelve la posición donde aparece por primera vez un texto.
+      Si no lo encuentra, devuelve <code>-1</code>.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const texto = "JavaScript es un lenguaje";
+
+console.log(texto.indexOf("JavaScript"));
+console.log(texto.indexOf("lenguaje"));
+console.log(texto.indexOf("Python"));</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>🔟 lastIndexOf() — Buscar desde el final</h2>
+    <p>
+      Devuelve la posición de la última aparición de un texto.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const texto = "JavaScript es genial y JavaScript es útil";
+
+console.log(texto.lastIndexOf("JavaScript"));</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣1️⃣ charAt() — Obtener un carácter</h2>
+    <p>
+      Permite obtener el carácter que se encuentra en una posición determinada.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const palabra = "Hola";
+
+console.log(palabra.charAt(0));
+console.log(palabra.charAt(1));
+console.log(palabra.charAt(3));</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣2️⃣ Acceder mediante índices</h2>
+    <p>
+      También podemos acceder directamente a un carácter utilizando
+      corchetes.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const palabra = "Código";
+
+console.log(palabra[0]);
+console.log(palabra[2]);
+console.log(palabra[5]);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣3️⃣ slice() — Extraer una parte del texto</h2>
+    <p>
+      <code>slice()</code> permite obtener una sección de un string sin
+      modificar el original.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const texto = "JavaScript";
+
+const parte1 = texto.slice(0, 4);
+const parte2 = texto.slice(4);
+
+console.log(parte1);
+console.log(parte2);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣4️⃣ substring() — Extraer texto</h2>
+    <p>
+      <code>substring()</code> también permite extraer una parte de una cadena.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const texto = "Programación";
+
+const parte = texto.substring(0, 7);
+
+console.log(parte);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣5️⃣ replace() — Reemplazar texto</h2>
+    <p>
+      Permite reemplazar una coincidencia por otro texto.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const mensaje = "Hola Juan";
+
+const nuevoMensaje =
+  mensaje.replace("Juan", "Ana");
+
+console.log(nuevoMensaje);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣6️⃣ replaceAll() — Reemplazar todas las coincidencias</h2>
+    <p>
+      <code>replaceAll()</code> reemplaza todas las apariciones del texto indicado.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const texto = "rojo rojo rojo";
+
+const nuevoTexto =
+  texto.replaceAll("rojo", "azul");
+
+console.log(nuevoTexto);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣7️⃣ split() — Convertir un string en array</h2>
+    <p>
+      <code>split()</code> divide un string utilizando un separador y
+      devuelve un array.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const nombres = "Ana,Juan,Lucía,Pedro";
+
+const lista = nombres.split(",");
+
+console.log(lista);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣8️⃣ join() — Convertir un array en string</h2>
+    <p>
+      <code>join()</code> realiza el proceso inverso: une los elementos
+      de un array en un string.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const materias = [
+  "Matemática",
+  "Lengua",
+  "Historia"
+];
+
+const texto = materias.join(" - ");
+
+console.log(texto);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>1️⃣9️⃣ repeat() — Repetir texto</h2>
+    <p>
+      Permite repetir una cadena una determinada cantidad de veces.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const separador = "-".repeat(20);
+
+console.log(separador);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>2️⃣0️⃣ padStart() — Completar desde el comienzo</h2>
+    <p>
+      Agrega caracteres al principio hasta alcanzar una longitud determinada.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const numero = "7";
+
+const codigo = numero.padStart(4, "0");
+
+console.log(codigo);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>2️⃣1️⃣ padEnd() — Completar al final</h2>
+    <p>
+      Agrega caracteres al final hasta alcanzar la longitud indicada.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const nombre = "Ana";
+
+console.log(nombre.padEnd(10, "."));</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>2️⃣2️⃣ Comparar strings</h2>
+    <p>
+      Podemos comparar cadenas utilizando operadores como
+      <code>===</code>, pero es importante normalizar el texto cuando
+      proviene de un usuario.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const respuestaUsuario = "  SI  ";
+
+if (respuestaUsuario.trim().toLowerCase() === "si") {
+  console.log("Respuesta correcta");
+}</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>2️⃣3️⃣ Encadenamiento de métodos</h2>
+    <p>
+      Los métodos de strings pueden combinarse. Esto es muy útil cuando
+      necesitamos limpiar y transformar datos.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const nombreUsuario = "   jUaN pErEz   ";
+
+const nombreLimpio =
+  nombreUsuario
+    .trim()
+    .toLowerCase();
+
+console.log(nombreLimpio);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>2️⃣4️⃣ String y formularios</h2>
+    <p>
+      Una situación real: un usuario escribe su nombre en un formulario.
+      Antes de guardarlo podemos eliminar espacios y comprobar que tenga contenido.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const nombre = "   Martín   ";
+
+const nombreProcesado = nombre.trim();
+
+if (nombreProcesado.length > 0) {
+  console.log("Nombre válido:", nombreProcesado);
+} else {
+  console.log("Debe ingresar un nombre");
+}</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>2️⃣5️⃣ Analizar palabras</h2>
+    <p>
+      Podemos combinar <code>trim()</code>, <code>split()</code> y
+      <code>length</code> para contar palabras.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const frase = "JavaScript es muy interesante";
+
+const palabras = frase.trim().split(" ");
+
+console.log("Cantidad:", palabras.length);
+console.log(palabras);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>2️⃣6️⃣ Métodos que no modifican el string original</h2>
+    <p>
+      Los strings son inmutables. Esto significa que los métodos generan
+      nuevos strings en lugar de cambiar directamente el original.
+    </p>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const texto = "hola";
+
+const mayusculas = texto.toUpperCase();
+
+console.log(texto);
+console.log(mayusculas);</code></pre>
+  </div>
+
+  <div class="nota">
+    <strong>⚠️ Error frecuente</strong>
+    <p>
+      Esto no cambia la variable original:
+    </p>
+    <code>texto.toUpperCase();</code>
+    <p>
+      Si querés guardar el resultado, tenés que asignarlo:
+    </p>
+    <code>texto = texto.toUpperCase();</code>
+    <p>
+      Si la variable fue declarada con <code>const</code>, podés guardar
+      el resultado en otra variable.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>🧩 Ejemplo completo: procesar un nombre</h2>
+  </div>
+
+  <div class="codigo">
+    <pre><code>const entrada = "   ana PEREZ   ";
+
+const nombre = entrada
+  .trim()
+  .toLowerCase();
+
+const palabras = nombre.split(" ");
+
+const nombreFormateado = palabras
+  .map(palabra =>
+    palabra.charAt(0).toUpperCase() +
+    palabra.slice(1)
+  )
+  .join(" ");
+
+console.log(nombreFormateado);</code></pre>
+  </div>
+
+  <div class="card">
+    <h2>🔍 Tabla rápida de métodos</h2>
+    <ul>
+      <li><code>length</code> → cantidad de caracteres.</li>
+      <li><code>toUpperCase()</code> → mayúsculas.</li>
+      <li><code>toLowerCase()</code> → minúsculas.</li>
+      <li><code>trim()</code> → elimina espacios de los extremos.</li>
+      <li><code>includes()</code> → comprueba si contiene texto.</li>
+      <li><code>startsWith()</code> → comprueba cómo comienza.</li>
+      <li><code>endsWith()</code> → comprueba cómo termina.</li>
+      <li><code>indexOf()</code> → encuentra una posición.</li>
+      <li><code>lastIndexOf()</code> → encuentra la última posición.</li>
+      <li><code>charAt()</code> → obtiene un carácter.</li>
+      <li><code>slice()</code> → extrae una parte.</li>
+      <li><code>substring()</code> → extrae una parte.</li>
+      <li><code>replace()</code> → reemplaza una coincidencia.</li>
+      <li><code>replaceAll()</code> → reemplaza todas.</li>
+      <li><code>split()</code> → convierte string en array.</li>
+      <li><code>repeat()</code> → repite texto.</li>
+      <li><code>padStart()</code> → completa al comienzo.</li>
+      <li><code>padEnd()</code> → completa al final.</li>
+    </ul>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 1</span>
+    <h2>Contar caracteres</h2>
+    <p>
+      Creá una variable con una frase y mostrala junto con la cantidad
+      de caracteres utilizando <code>length</code>.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 2</span>
+    <h2>Normalizar nombre</h2>
+    <p>
+      Pedí o simulá un nombre escrito con espacios y mayúsculas/minúsculas.
+      Utilizá <code>trim()</code> y <code>toLowerCase()</code>.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 3</span>
+    <h2>Buscar una palabra</h2>
+    <p>
+      Creá una frase y utilizá <code>includes()</code> para determinar si
+      contiene la palabra <strong>JavaScript</strong>.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 4</span>
+    <h2>Extraer información</h2>
+    <p>
+      Creá un texto con un nombre completo y utilizá <code>slice()</code>
+      para obtener una parte del mismo.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 5</span>
+    <h2>Separar palabras</h2>
+    <p>
+      Creá una frase y utilizá <code>split(" ")</code> para convertirla
+      en un array de palabras.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 6</span>
+    <h2>Reemplazar texto</h2>
+    <p>
+      Creá un mensaje y utilizá <code>replace()</code> y
+      <code>replaceAll()</code> para cambiar una palabra.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🚀 EJERCICIO 7</span>
+    <h2>Validar código</h2>
+    <p>
+      Creá un código como <code>JS-2026</code> y comprobá con
+      <code>startsWith()</code> y <code>endsWith()</code> que tenga
+      el formato esperado.
+    </p>
+  </div>
+
+  <div class="ejercicio">
+    <span>🏆 DESAFÍO FINAL</span>
+    <h2>Procesador de nombres</h2>
+    <p>
+      Creá un programa que reciba un nombre completo escrito de cualquier manera.
+      El programa debe:
+    </p>
+    <ul>
+      <li>Eliminar espacios innecesarios.</li>
+      <li>Convertir todo a minúsculas.</li>
+      <li>Separar el nombre y apellido.</li>
+      <li>Convertir la primera letra de cada palabra en mayúscula.</li>
+      <li>Volver a unir las palabras.</li>
+      <li>Mostrar la cantidad de caracteres.</li>
+      <li>Mostrar la cantidad de palabras.</li>
+      <li>Comprobar si contiene determinada palabra.</li>
+    </ul>
+    <p>
+      <strong>Condición:</strong> utilizar al menos
+      <code>trim()</code>, <code>toLowerCase()</code>, <code>split()</code>,
+      <code>map()</code>, <code>charAt()</code>, <code>slice()</code>,
+      <code>join()</code> y <code>includes()</code>.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>📌 Recordatorio</h2>
+    <p>
+      Los métodos de strings permiten transformar y analizar textos de manera
+      sencilla. En aplicaciones reales se utilizan constantemente para
+      formularios, búsquedas, validaciones, usuarios, contraseñas, archivos,
+      mensajes y datos provenientes de Firebase.
+    </p>
+  </div>
+</section>
 
         <!-- =================================================
                  12 SCOPE
