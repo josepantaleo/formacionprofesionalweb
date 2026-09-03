@@ -616,6 +616,18 @@
         cursor: not-allowed;
       }
 
+      .editor-enhancement-shell{position:relative;background:var(--bg-editor)}
+      .editor-enhancement-toolbar{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;padding:.35rem .55rem;background:#111827;border-top:1px solid rgba(148,163,184,.16);border-bottom:1px solid rgba(148,163,184,.2);font-size:.7rem}
+      .editor-enhancement-toolbar input{min-width:130px;flex:1;padding:.32rem .45rem;border:1px solid rgba(148,163,184,.3);border-radius:4px;background:#0f172a;color:#e2e8f0;font:inherit}
+      .editor-enhancement-toolbar button,.editor-enhancement-toolbar select{padding:.3rem .42rem;border:1px solid rgba(148,163,184,.28);border-radius:4px;background:#1e293b;color:#cbd5e1;font:inherit;cursor:pointer}
+      .editor-enhancement-body{position:relative;min-height:180px;overflow:hidden}
+      .editor-line-numbers{position:absolute;inset:0 auto 0 0;width:2.8rem;padding:.95rem .45rem .95rem 0;background:#111827;color:#64748b;text-align:right;font:400 .9rem/1.5 "Fira Code",monospace;white-space:pre;overflow:hidden;user-select:none}
+      .editor-syntax-layer{position:absolute;inset:0;z-index:0;margin:0;padding:.95rem 1rem .95rem 3.35rem;color:#dbeafe;font:400 .9rem/1.5 "Fira Code",monospace;white-space:pre-wrap;overflow:hidden;pointer-events:none;tab-size:4}
+      .editor-syntax-layer .kw{color:#c084fc}.editor-syntax-layer .str{color:#86efac}.editor-syntax-layer .num{color:#fbbf24}.editor-syntax-layer .com{color:#64748b}.editor-syntax-layer .fn{color:#67e8f9}
+      textarea.code-editor.editor-enhanced{position:relative;z-index:1;height:180px;padding-left:3.35rem;color:transparent;-webkit-text-fill-color:transparent;background:transparent;caret-color:#f8fafc;white-space:pre;overflow:auto}
+      textarea.code-editor.editor-enhanced.wrap-lines{white-space:pre-wrap;overflow-wrap:anywhere}
+      .editor-search-status{color:#94a3b8;white-space:nowrap}
+
       .console-output {
         background: #000;
         color: #10b981;
@@ -3826,7 +3838,23 @@
         );
       };
 
-      window.enviarChatColaborativoFirebase = async function({ uid, sectionId, texto, rol = "estudiante" } = {}) {
+      window.escucharPresenciaColaborativaFirebase = function(uid, sectionId, alActualizar) {
+        const docente = Boolean(window.firebaseTeacherUser);
+        const contexto = docente
+          ? contextoDocenteFirebase()
+          : { user: window.firebaseCurrentUser, database: db };
+        if (!contexto.user || !contexto.database || !uid || !sectionId || typeof alActualizar !== "function") return null;
+        return onSnapshot(
+          collection(contexto.database, "estudiantes", uid, "colaboracionCodigo", sectionId, "presencia"),
+          snapshot => alActualizar(snapshot.docs.map(item => ({ id: item.id, ...item.data() }))),
+          error => {
+            console.error("No se pudo cargar la presencia colaborativa:", error);
+            alActualizar([], error);
+          }
+        );
+      };
+
+      window.enviarChatColaborativoFirebase = async function({ uid, sectionId, texto, rol = "estudiante", autorNombre = "" } = {}) {
         const contenido = String(texto || "").trim().slice(0, 1200);
         const esDocente = rol === "docente";
         const contexto = esDocente
@@ -3846,7 +3874,7 @@
             texto: contenido,
             rol: esDocente ? "docente" : "estudiante",
             autorUid: user.uid,
-            autorNombre: user.displayName || user.email || (esDocente ? "Docente" : "Estudiante"),
+            autorNombre: String(autorNombre || user.displayName || user.email || (esDocente ? "Docente" : "Estudiante")).slice(0, 254),
             creadoEn: serverTimestamp()
           });
           return true;
@@ -5618,7 +5646,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260903-9">
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260903-13">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -11409,8 +11437,138 @@
           return texto;
       }
 
+      function escaparEditorHtml(valor) {
+          return String(valor || "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" }[c]));
+      }
+
+      function resaltarJavaScriptEditor(codigo) {
+          let salida = escaparEditorHtml(codigo);
+          salida = salida.replace(/(\/\/[^\n]*|\/\*[\s\S]*?\*\/)/g, '<span class="com">$1</span>');
+          salida = salida.replace(/(["'`])(?:\\.|(?!\1)[^\\\n])*\1/g, '<span class="str">$&</span>');
+          salida = salida.replace(/\b(const|let|var|function|return|if|else|for|while|do|switch|case|break|new|class|true|false|null|undefined|async|await|try|catch|throw|typeof|in|of)\b/g, '<span class="kw">$1</span>');
+          salida = salida.replace(/\b\d+(?:\.\d+)?\b/g, '<span class="num">$&</span>');
+          salida = salida.replace(/\b([A-Za-z_$][\w$]*)\s*(?=\()/g, '<span class="fn">$1</span>');
+          return salida || " ";
+      }
+
+      function mejorarEditorCodigo(textarea) {
+          if (!textarea || textarea.dataset.editorMejorado === "true") return;
+          textarea.dataset.editorMejorado = "true";
+          const contenedor = textarea.closest(".editor-container");
+          if (!contenedor) return;
+          const shell = document.createElement("div");
+          shell.className = "editor-enhancement-shell";
+          const barra = document.createElement("div");
+          barra.className = "editor-enhancement-toolbar";
+          barra.innerHTML = `<input type="search" placeholder="Buscar en el código" aria-label="Buscar en el código"><button type="button" data-editor-find>Buscar</button><button type="button" data-editor-replace>Reemplazar</button><button type="button" data-editor-complete title="Completar palabra (Ctrl+Espacio)">Completar</button><span class="editor-search-status" aria-live="polite"></span><label>Fuente <select data-editor-font><option value="0.8">Pequeña</option><option value="0.9" selected>Normal</option><option value="1">Grande</option><option value="1.1">Muy grande</option></select></label><button type="button" data-editor-wrap aria-pressed="false">Ajustar líneas</button>`;
+          const cuerpo = document.createElement("div");
+          cuerpo.className = "editor-enhancement-body";
+          const gutter = document.createElement("div");
+          gutter.className = "editor-line-numbers";
+          const capa = document.createElement("pre");
+          capa.className = "editor-syntax-layer";
+          cuerpo.append(gutter, capa);
+          textarea.parentNode.insertBefore(shell, textarea);
+          shell.append(barra, cuerpo);
+          cuerpo.appendChild(textarea);
+          const actualizar = () => {
+              const lineas = Math.max(1, textarea.value.split("\n").length);
+              gutter.textContent = Array.from({length: lineas}, (_, i) => i + 1).join("\n");
+              capa.innerHTML = resaltarJavaScriptEditor(textarea.value);
+              capa.scrollTop = textarea.scrollTop;
+              capa.scrollLeft = textarea.scrollLeft;
+          };
+          const buscar = () => {
+              const termino = barra.querySelector("input").value;
+              if (!termino) return;
+              const coincidencias = textarea.value.split(termino).length - 1;
+              barra.querySelector(".editor-search-status").textContent = `${coincidencias} coincidencia(s)`;
+              const posicion = textarea.value.indexOf(termino);
+              if (posicion >= 0) { textarea.focus(); textarea.setSelectionRange(posicion, posicion + termino.length); }
+          };
+          const completar = () => {
+              const posicion = textarea.selectionStart;
+              const prefijo = textarea.value.slice(0, posicion).match(/[A-Za-z_$][\w$]*$/)?.[0] || "";
+              if (prefijo.length < 2) return;
+              const palabras = ["console.log","console.error","document","document.querySelector","document.getElementById","addEventListener","setTimeout","setInterval","Math.random","Math.floor","Array","String","Number","const","let","function","return","if","else","for","while","true","false"];
+              const opciones = palabras.filter(palabra => palabra.toLowerCase().startsWith(prefijo.toLowerCase()) && palabra !== prefijo);
+              if (!opciones.length) return;
+              const elegida = opciones[0];
+              textarea.setRangeText(elegida.slice(prefijo.length), posicion - prefijo.length, posicion, "end");
+              barra.querySelector(".editor-search-status").textContent = `Completado: ${elegida}`;
+              textarea.dispatchEvent(new Event("input", { bubbles: true }));
+          };
+          barra.querySelector("[data-editor-complete]").onclick = completar;
+          textarea.__completarCodigo = completar;
+          barra.querySelector("[data-editor-find]").onclick = buscar;
+          barra.querySelector("[data-editor-replace]").onclick = () => {
+              const termino = barra.querySelector("input").value;
+              if (!termino) return;
+              const reemplazo = prompt("Reemplazar todas las coincidencias por:", "");
+              if (reemplazo === null) return;
+              textarea.value = textarea.value.split(termino).join(reemplazo);
+              textarea.dispatchEvent(new Event("input", { bubbles: true }));
+              actualizar();
+          };
+          barra.querySelector("[data-editor-font]").onchange = e => {
+              const tamaño = `${e.target.value}rem`;
+              textarea.style.fontSize = tamaño; capa.style.fontSize = tamaño; gutter.style.fontSize = tamaño;
+          };
+          barra.querySelector("[data-editor-wrap]").onclick = e => {
+              const activo = textarea.classList.toggle("wrap-lines");
+              e.currentTarget.setAttribute("aria-pressed", String(activo));
+              capa.style.whiteSpace = activo ? "pre-wrap" : "pre";
+          };
+          textarea.addEventListener("input", actualizar);
+          textarea.addEventListener("scroll", actualizar);
+          textarea.addEventListener("keydown", e => {
+              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault();
+                  const id = textarea.id.replace("editor-", "");
+                  window.ejecutarCodigo?.(id);
+                  return;
+              }
+              if (["\"", "'", "`", "(", "[", "{"].includes(e.key)) {
+                  const pares = {"\"":"\"", "'":"'", "`":"`", "(" : ")", "[" : "]", "{" : "}"};
+                  const siguiente = textarea.value[textarea.selectionStart];
+                  if (e.key !== "{" && siguiente === pares[e.key]) return;
+                  e.preventDefault();
+                  const inicio = textarea.selectionStart, fin = textarea.selectionEnd;
+                  textarea.value = `${textarea.value.slice(0, inicio)}${e.key}${pares[e.key]}${textarea.value.slice(fin)}`;
+                  textarea.selectionStart = textarea.selectionEnd = inicio + 1;
+                  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+              } else if (e.key === "Tab") {
+                  e.preventDefault();
+                  const inicio = textarea.selectionStart, fin = textarea.selectionEnd;
+                  textarea.value = `${textarea.value.slice(0, inicio)}    ${textarea.value.slice(fin)}`;
+                  textarea.selectionStart = textarea.selectionEnd = inicio + 4;
+                  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+              } else if (e.key === "Enter") {
+                  const linea = textarea.value.slice(0, textarea.selectionStart).split("\n").pop();
+                  const sangria = (linea.match(/^\s*/) || [""])[0];
+                  if (/[{[(]\s*$/.test(linea)) {
+                      e.preventDefault();
+                      const cierre = linea.trim().endsWith("{") ? "}" : linea.trim().endsWith("[") ? "]" : ")";
+                      const insercion = `\n${sangria}    \n${sangria}${cierre}`;
+                      const posicion = textarea.selectionStart;
+                      textarea.value = `${textarea.value.slice(0, posicion)}${insercion}${textarea.value.slice(textarea.selectionEnd)}`;
+                      textarea.selectionStart = textarea.selectionEnd = posicion + sangria.length + 5;
+                      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+                  }
+              } else if ([")", "]", "}"].includes(e.key) && textarea.value[textarea.selectionStart] === e.key) {
+                  e.preventDefault(); textarea.selectionStart = textarea.selectionEnd = textarea.selectionStart + 1;
+              } else if (e.key === "s" && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault(); window.guardarAhoraFirebase?.();
+              } else if (e.code === "Space" && e.ctrlKey) {
+                  e.preventDefault(); textarea.__completarCodigo?.();
+              }
+          });
+          actualizar();
+      }
+
       function configurarEditores() {
           document.querySelectorAll('.code-editor').forEach(textarea => {
+              mejorarEditorCodigo(textarea);
               const sectionIdInicial = textarea.id.replace('editor-', '');
               actualizarMetricasEditor(sectionIdInicial);
               textarea.addEventListener('click', (e) => {
@@ -16197,7 +16355,9 @@
             return;
           }
           const docente = window.firebaseTeacherUser || window.firebaseCurrentUser || {};
-          window.abrirJitsiConSala(
+          let resultadoInvitacionJitsi = null;
+          let invitacionEnCursoJitsi = null;
+          const salaAbierta = window.abrirJitsiConSala(
             datosSala.enlace,
             docente.displayName || 'Docente',
             docente.email || '',
@@ -16208,6 +16368,9 @@
               requerirModerador: true,
               soloAudio: opcionesLlamada.soloAudio === true,
               alConfirmarModerador: async () => {
+                if (resultadoInvitacionJitsi) return resultadoInvitacionJitsi;
+                if (invitacionEnCursoJitsi) return invitacionEnCursoJitsi;
+                invitacionEnCursoJitsi = (async () => {
                 const duracionMinutos = obtenerDuracionJitsi();
                 const expiraEn = new Date(Date.now() + duracionMinutos * 60000).toISOString();
                 const idLlamada = `${Date.now()}-${estudiante.uid}`;
@@ -16258,6 +16421,7 @@
                 });
                 renderPanelProfesor?.();
                 return {
+                  idLlamada,
                   expiraEn,
                   alVencer: async () => {
                     const participantes = participantesHistorialJitsi([estudiante], idLlamada);
@@ -16302,9 +16466,44 @@
                     return true;
                   }
                 };
+                })();
+                try {
+                  resultadoInvitacionJitsi = await invitacionEnCursoJitsi;
+                  return resultadoInvitacionJitsi;
+                } finally {
+                  invitacionEnCursoJitsi = null;
+                }
               }
             }
           );
+          if (salaAbierta && jitsiOpcionesPendientes?.alConfirmarModerador) {
+            try {
+              const resultado = await jitsiOpcionesPendientes.alConfirmarModerador();
+              if (resultado === false) throw new Error('Firebase rechazó la invitación.');
+              if (resultado?.expiraEn) iniciarCuentaRegresivaJitsi(resultado.expiraEn, resultado.alVencer, resultado.alExtender);
+              const estado = document.getElementById('jitsiEstado');
+              const estadoExterno = document.getElementById('jitsiExternalEstado');
+              const botonConfirmar = document.getElementById('confirmarAnfitrionJitsi');
+              if (estado) estado.textContent = opcionesLlamada.soloAudio === true
+                ? 'Invitación de llamada de audio enviada al estudiante.'
+                : 'Invitación de llamada enviada al estudiante.';
+              if (estadoExterno) estadoExterno.textContent = 'El estudiante ya recibió la invitación y puede ingresar a la sala.';
+              if (botonConfirmar) botonConfirmar.hidden = true;
+              if (opcionesLlamada.soloAudio === true) {
+                window.dispatchEvent(new CustomEvent('jitsi-invitacion-audio-enviada', {
+                  detail: {
+                    estudianteUid: estudiante.uid,
+                    llamadaId: resultado?.idLlamada || '',
+                    estudianteNombre: nombre
+                  }
+                }));
+              }
+            } catch (error) {
+              console.error('No se pudo enviar la invitación Jitsi de inmediato:', error);
+              const estado = document.getElementById('jitsiEstado');
+              if (estado) estado.textContent = 'No se pudo enviar la invitación. Revisá Firebase e intentá nuevamente.';
+            }
+          }
         };
         window.cerrarSalaJitsiProfesor = async function(indice) {
           const estudiante = window.estudiantesProfesor?.[indice] || estudiantesProfesor?.[indice];
@@ -16967,7 +17166,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260903-8"></script>
+    <script src="mejoras-seguimiento.js?v=20260903-13"></script>
   </body>
 </html>
 

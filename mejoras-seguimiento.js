@@ -451,6 +451,7 @@ function abrirProgramacionDocente(indice){
 }
 window.abrirProgramacionDocente=abrirProgramacionDocente;
 let detenerChatColaborativoDocente=null,detenerChatColaborativoEstudiante=null,detenerHistorialAportesDocente=null,detenerHistorialAportesEstudiante=null;
+let detenerPresenciaChatEstudiante=null;
 function fechaChatColaborativo(valor){
  const fecha=valor?.toDate?valor.toDate():valor?.seconds?new Date(valor.seconds*1000):new Date(valor||0);
  return Number.isFinite(fecha.getTime())&&fecha.getTime()>0?fecha.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}):"Ahora";
@@ -461,11 +462,27 @@ function renderChatColaborativo(contenedor,mensajes=[],rolActual="estudiante",er
  const propiosUid=rolActual==="docente"?window.firebaseTeacherUser?.uid:window.firebaseCurrentUser?.uid;
  contenedor.innerHTML=mensajes.length?mensajes.map(m=>{
   const propio=m.autorUid===propiosUid;
-  const clase=`collab-chat-message ${propio?"mine":""} ${m.rol==="docente"?"teacher":""}`;
+  const sistema=m.autorNombre==="Sistema de llamada";
+  const textoMensaje=String(m.texto||"");
+  const estadoLlamada=/conectad|se uni[oó]|acept[oó]/i.test(textoMensaje)?"call-connected":/rechaz/i.test(textoMensaje)?"call-rejected":/finaliz|sali[oó]/i.test(textoMensaje)?"call-finished":"";
+  const clase=`collab-chat-message ${propio?"mine":""} ${m.rol==="docente"?"teacher":""} ${sistema?"system":""} ${sistema?estadoLlamada:""}`;
   const autor=propio?"Vos":(m.autorNombre|| (m.rol==="docente"?"Docente":"Estudiante"));
   return `<article class="${clase}"><p>${escaparProgramacion(m.texto)}</p><small>${escaparProgramacion(autor)} · ${fechaChatColaborativo(m.creadoEn)}</small></article>`;
  }).join(""):'<p class="collab-chat-empty">Todavía no hay mensajes. Consultá o explicá el siguiente paso.</p>';
  contenedor.scrollTop=contenedor.scrollHeight;
+}
+function renderPresenciaChatColaborativo(contenedor,participantes=[],error=null){
+ if(!contenedor)return;
+ if(error){contenedor.innerHTML='<span class="collab-presence-meta">Presencia no disponible</span>';return;}
+ const ahora=Date.now(), visibles=(participantes||[]).filter(item=>{
+  const activo=item.activoEn?.toMillis?.()||item.activoEn?.seconds*1000||Date.parse(item.activoEn||"")||0;
+  return !activo||ahora-activo<70000;
+ });
+ if(!visibles.length){contenedor.innerHTML='<span class="collab-presence-meta">Esperando al otro participante…</span>';return;}
+ contenedor.innerHTML=visibles.map(item=>{
+  const nombre=item.nombre|| (item.rol==="docente"?"Docente":"Estudiante");
+  return `<span class="collab-presence-strip"><i class="online-dot"></i><span class="collab-presence-name">${escaparProgramacion(nombre)}</span><span class="collab-presence-meta">${item.escribiendo===true?"está escribiendo":"conectado"}</span></span>`;
+ }).join("");
 }
 function activarChatColaborativoDocente(uid,sectionId){
  const modal=document.getElementById("editorColaborativoDocenteModal"),lista=modal?.querySelector("#chatColaborativoDocenteLista"),estado=modal?.querySelector("#chatColaborativoDocenteEstado");if(!modal||!lista)return;
@@ -527,9 +544,9 @@ window.abrirHistorialAportesColaborativoEstudiante=function(sectionId){
 function asegurarChatColaborativoEstudiante(){
  if(document.getElementById("chatColaborativoEstudianteModal"))return;
  const modal=document.createElement("div");modal.id="chatColaborativoEstudianteModal";modal.className="modal-overlay";modal.setAttribute("role","dialog");modal.setAttribute("aria-modal","true");
- modal.innerHTML=`<div class="modal-box teacher-program-box"><div class="teacher-program-header"><div><h3><i class="fa-solid fa-comments"></i> Chat con el docente</h3><p id="chatColaborativoEstudianteAlumno">Conversación de la colaboración en vivo.</p></div><button class="btn btn-secondary" id="cerrarChatColaborativoEstudiante" type="button" aria-label="Cerrar chat"><i class="fa-solid fa-xmark"></i></button></div><section class="collab-chat"><div class="collab-chat-header"><strong><i class="fa-solid fa-people-arrows"></i> Cooperación con código</strong><span id="chatColaborativoEstudianteEstado" class="collab-chat-status">Conectando...</span></div><div id="chatColaborativoEstudianteLista" class="collab-chat-messages" aria-live="polite"></div><div class="collab-chat-compose"><textarea id="chatColaborativoEstudianteTexto" maxlength="1200" rows="3" placeholder="Escribí tu consulta para el docente..."></textarea><button class="btn btn-primary" id="enviarChatColaborativoEstudiante" type="button"><i class="fa-solid fa-paper-plane"></i> Enviar</button></div></section></div>`;
+ modal.innerHTML=`<div class="modal-box teacher-program-box"><div class="teacher-program-header"><div><h3><i class="fa-solid fa-comments"></i> Chat con el docente</h3><p id="chatColaborativoEstudianteAlumno">Conversación de la colaboración en vivo.</p></div><button class="btn btn-secondary" id="cerrarChatColaborativoEstudiante" type="button" aria-label="Cerrar chat"><i class="fa-solid fa-xmark"></i></button></div><section class="collab-chat"><div class="collab-chat-header"><strong><i class="fa-solid fa-people-arrows"></i> Cooperación con código</strong><span id="chatColaborativoEstudianteEstado" class="collab-chat-status">Conectando...</span></div><div id="chatColaborativoEstudiantePresencia"></div><div id="chatColaborativoEstudianteLista" class="collab-chat-messages" aria-live="polite"></div><div class="collab-chat-compose"><textarea id="chatColaborativoEstudianteTexto" maxlength="1200" rows="3" placeholder="Escribí tu consulta para el docente..."></textarea><button class="btn btn-primary" id="enviarChatColaborativoEstudiante" type="button"><i class="fa-solid fa-paper-plane"></i> Enviar</button></div></section></div>`;
  document.body.appendChild(modal);
- const cerrar=()=>{modal.classList.remove("active");if(detenerChatColaborativoEstudiante){detenerChatColaborativoEstudiante();detenerChatColaborativoEstudiante=null;}};
+ const cerrar=()=>{modal.classList.remove("active");if(detenerChatColaborativoEstudiante){detenerChatColaborativoEstudiante();detenerChatColaborativoEstudiante=null;}if(detenerPresenciaChatEstudiante){detenerPresenciaChatEstudiante();detenerPresenciaChatEstudiante=null;}};
  modal.querySelector("#cerrarChatColaborativoEstudiante").onclick=cerrar;modal.onclick=e=>{if(e.target===modal)cerrar()};
  const enviar=async()=>{const campo=modal.querySelector("#chatColaborativoEstudianteTexto"),boton=modal.querySelector("#enviarChatColaborativoEstudiante"),estado=modal.querySelector("#chatColaborativoEstudianteEstado"),texto=campo.value.trim();if(!texto)return;boton.disabled=true;const ok=await window.enviarChatColaborativoFirebase?.({uid:modal.dataset.uid,sectionId:modal.dataset.sectionId,texto,rol:"estudiante"});boton.disabled=false;if(ok){campo.value="";estado.textContent="Mensaje enviado";}else estado.textContent="No se pudo enviar";};
  modal.querySelector("#enviarChatColaborativoEstudiante").onclick=enviar;modal.querySelector("#chatColaborativoEstudianteTexto").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();enviar();}});
@@ -538,7 +555,7 @@ window.abrirChatColaborativoEstudiante=function(sectionId){
  const user=window.firebaseCurrentUser;if(!user){alert("Iniciá sesión como estudiante para usar el chat.");return;}
  asegurarChatColaborativoEstudiante();const modal=document.getElementById("chatColaborativoEstudianteModal"),sec=(typeof seccionesData!=="undefined"?seccionesData:[]).find(x=>x.id===sectionId),lista=modal.querySelector("#chatColaborativoEstudianteLista"),estado=modal.querySelector("#chatColaborativoEstudianteEstado");
  modal.dataset.uid=user.uid;modal.dataset.sectionId=sectionId;modal.querySelector("#chatColaborativoEstudianteAlumno").textContent=`${sec?.title||"Desafío"} · mensajes de la sesión de cooperación`;lista.innerHTML='<p class="collab-chat-empty">Conectando el chat…</p>';estado.textContent="Chat en vivo";modal.classList.add("active");
- if(detenerChatColaborativoEstudiante)detenerChatColaborativoEstudiante();detenerChatColaborativoEstudiante=window.escucharChatColaborativoFirebase?.(user.uid,sectionId,(mensajes,error)=>renderChatColaborativo(lista,mensajes,"estudiante",error))||null;
+ if(detenerChatColaborativoEstudiante)detenerChatColaborativoEstudiante();if(detenerPresenciaChatEstudiante)detenerPresenciaChatEstudiante();detenerChatColaborativoEstudiante=window.escucharChatColaborativoFirebase?.(user.uid,sectionId,(mensajes,error)=>renderChatColaborativo(lista,mensajes,"estudiante",error))||null;detenerPresenciaChatEstudiante=window.escucharPresenciaColaborativaFirebase?.(user.uid,sectionId,(participantes,error)=>renderPresenciaChatColaborativo(modal.querySelector("#chatColaborativoEstudiantePresencia"),participantes,error))||null;
 };
 function asegurarEditorColaborativoDocente(){
  if(document.getElementById("editorColaborativoDocenteModal"))return;
@@ -560,6 +577,38 @@ async function abrirEditorColaborativoProfesor(indice,sectionId){
  try{modal.__quitarPresenciaColaborativa?.();modal.__quitarModoCooperacion?.();delete modal.__quitarPresenciaColaborativa;delete modal.__quitarModoCooperacion;if(modal.__crdtSession)await modal.__crdtSession.destroy();modal.__crdtSession=await window.iniciarEditorCRDTDocente?.({uid:d.uid,sectionId,codigoInicial:codigo,textarea:editor,estado});modal.__quitarPresenciaColaborativa=modal.__crdtSession.onPresence?.(participantes=>{modal.__participantesColaborativos=participantes;renderPresenciaEditorColaborativo(modal,participantes);})||null;modal.__quitarModoCooperacion=modal.__crdtSession.onModoCooperacion?.(({pausada})=>actualizarPausaEditorColaborativo(modal,pausada))||null;editor.disabled=false;editor.focus();document.getElementById("editorColaborativoGuardado").textContent="Sincronización automática activa"}catch(error){console.error(error);const codigoError=String(error?.code||""),detalle=codigoError.includes("permission-denied")?"Firestore rechazó el acceso. Publicá reglas.txt en ipem146js con la cuenta administradora.":codigoError.includes("auth")?"La cuenta docente no está autorizada.":String(error?.message||"Revisá la conexión y las reglas de Firestore.");estado.textContent="No se pudo iniciar la colaboración";const salida=document.getElementById("editorColaborativoGuardado");salida.textContent=detalle;salida.className="danger"}
 }
 window.abrirEditorColaborativoProfesor=abrirEditorColaborativoProfesor;
+const estadosAudioColaborativoReportados=new Map();
+window.addEventListener("jitsi-invitacion-audio-enviada",evento=>{
+ const detalle=evento.detail||{},modal=document.getElementById("editorColaborativoDocenteModal");
+ if(!modal||modal.dataset.uid!==detalle.estudianteUid||!detalle.llamadaId)return;
+ modal.dataset.llamadaAudioColaborativaId=detalle.llamadaId;
+ estadosAudioColaborativoReportados.set(detalle.llamadaId,"invitado");
+ window.enviarChatColaborativoFirebase?.({
+  uid:detalle.estudianteUid,
+  sectionId:modal.dataset.sectionId,
+  texto:`Invitación de llamada de audio enviada a ${detalle.estudianteNombre||"el estudiante"}.`,
+  rol:"docente",
+  autorNombre:"Sistema de llamada"
+ });
+});
+window.addEventListener("profesor-data",()=>{
+ const modal=document.getElementById("editorColaborativoDocenteModal"),llamadaId=modal?.dataset.llamadaAudioColaborativaId;
+ if(!modal?.classList.contains("active")||!llamadaId)return;
+ const estudiante=estudiantesProfesor?.find(item=>item.uid===modal.dataset.uid),participacion=estudiante?.jitsiParticipacion||{};
+ if(String(participacion.llamadaId||"")!==String(llamadaId))return;
+ const estado=String(participacion.estado||""),anterior=estadosAudioColaborativoReportados.get(llamadaId);
+ if(!estado||estado===anterior)return;
+ estadosAudioColaborativoReportados.set(llamadaId,estado);
+ const mensajes={unido:"Llamada de audio conectada: el estudiante aceptó y se unió a la sala.",rechazado:"El estudiante rechazó la llamada de audio.",salio:"El estudiante salió de la llamada de audio.",finalizada:"La llamada de audio finalizó."};
+ if(!mensajes[estado])return;
+ window.enviarChatColaborativoFirebase?.({
+  uid:modal.dataset.uid,
+  sectionId:modal.dataset.sectionId,
+  texto:mensajes[estado],
+  rol:"docente",
+  autorNombre:"Sistema de llamada"
+ });
+});
 document.addEventListener("click",event=>{
  const boton=event.target.closest?.(".btn-trabajar-vivo,[data-collab-student-index]");
  if(!boton)return;
