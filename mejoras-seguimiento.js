@@ -421,6 +421,35 @@ function mejorarTabla(){
  decorarTarjetasMovilesDocente();
  actualizarCentroMovilDocente();
 }
+
+let detenerComentariosProgramacionDocente=null;
+function escaparProgramacion(valor){return String(valor||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
+function asegurarProgramacionDocenteModal(){
+ if(document.getElementById("programacionDocenteModal"))return;
+ const modal=document.createElement("div");modal.id="programacionDocenteModal";modal.className="modal-overlay";modal.setAttribute("role","dialog");modal.setAttribute("aria-modal","true");
+ modal.innerHTML=`<div class="modal-box teacher-program-box"><div class="teacher-program-header"><div><h3><i class="fa-solid fa-clipboard-list"></i> Programación del estudiante</h3><p id="programacionDocenteAlumno"></p></div><button class="btn btn-secondary" id="cerrarProgramacionDocente" type="button"><i class="fa-solid fa-xmark"></i></button></div><div class="teacher-program-grid"><label>Título<input id="programacionDocenteTitulo" maxlength="160"></label><label>Fecha de entrega<input id="programacionDocenteFecha" type="date"></label><label>Estado<select id="programacionDocenteEstado"><option value="pendiente">Pendiente</option><option value="en_curso">En curso</option><option value="revisar">Revisar</option><option value="completada">Completada</option></select></label><label class="wide">Instrucciones<textarea id="programacionDocenteInstrucciones" maxlength="4000" rows="6"></textarea></label></div><div class="teacher-program-actions"><span id="programacionDocenteEstadoGuardado" role="status"></span><button class="btn btn-primary" id="guardarProgramacionDocente" type="button"><i class="fa-solid fa-floppy-disk"></i> Guardar y publicar</button></div><section class="teacher-comments"><h4><i class="fa-solid fa-comments"></i> Comentarios</h4><div id="comentariosProgramacionLista" class="teacher-comments-list"></div><div class="teacher-comment-compose"><textarea id="nuevoComentarioProgramacion" maxlength="1200" rows="3" placeholder="Escribí una devolución para este estudiante..."></textarea><button class="btn btn-secondary" id="agregarComentarioProgramacion" type="button"><i class="fa-solid fa-paper-plane"></i> Comentar</button></div></section><section class="teacher-program-history"><h4><i class="fa-solid fa-clock-rotate-left"></i> Historial de cambios</h4><div id="historialProgramacionLista" class="teacher-comments-list"><small class="teacher-comments-empty">Cargando historial...</small></div></section></div>`;
+ document.body.appendChild(modal);
+ const cerrar=()=>{modal.classList.remove("active");if(detenerComentariosProgramacionDocente){detenerComentariosProgramacionDocente();detenerComentariosProgramacionDocente=null;}};
+ modal.querySelector("#cerrarProgramacionDocente").onclick=cerrar;modal.onclick=e=>{if(e.target===modal)cerrar()};
+ modal.querySelector("#guardarProgramacionDocente").onclick=async()=>{const uid=modal.dataset.uid,estado=modal.querySelector("#programacionDocenteEstadoGuardado");estado.textContent="Guardando...";const ok=await window.guardarProgramacionDocenteFirebase?.(uid,{titulo:modal.querySelector("#programacionDocenteTitulo").value,instrucciones:modal.querySelector("#programacionDocenteInstrucciones").value,fechaEntrega:modal.querySelector("#programacionDocenteFecha").value,estado:modal.querySelector("#programacionDocenteEstado").value});estado.textContent=ok?"Publicado en vivo":"No se pudo guardar";estado.className=ok?"success":"danger";if(ok)cargarHistorialProgramacionDocente(uid);};
+ modal.querySelector("#agregarComentarioProgramacion").onclick=async()=>{const campo=modal.querySelector("#nuevoComentarioProgramacion"),texto=campo.value.trim();if(!texto)return;const ok=await window.agregarComentarioDocenteFirebase?.(modal.dataset.uid,{texto});if(ok)campo.value="";};
+}
+function renderComentariosProgramacionDocente(items=[]){
+ const lista=document.getElementById("comentariosProgramacionLista");if(!lista)return;
+ lista.innerHTML=items.length?items.map(x=>`<article class="teacher-comment-item"><p>${escaparProgramacion(x.texto)}</p><small>${escaparProgramacion(x.autor||"Docente")} · ${x.creadoEn?.toDate?x.creadoEn.toDate().toLocaleString("es-AR"):"Ahora"}</small></article>`).join(""):'<p class="teacher-comments-empty">Todavía no hay comentarios.</p>';
+}
+async function cargarHistorialProgramacionDocente(uid){
+ const lista=document.getElementById("historialProgramacionLista");if(!lista)return;const items=await window.obtenerHistorialProgramacionDocenteFirebase?.(uid)||[];
+ lista.innerHTML=items.length?items.map(x=>{const p=x.versionAnterior||{};const fecha=x.guardadoEn?.toDate?x.guardadoEn.toDate().toLocaleString("es-AR"):"Fecha no disponible";return`<article class="teacher-comment-item"><strong>${escaparProgramacion(p.titulo||"Sin título")}</strong><p>${escaparProgramacion(p.instrucciones||"Sin instrucciones")}</p><small>Versión anterior · ${escaparProgramacion(x.guardadoPor||"Docente")} · ${fecha}</small></article>`}).join(""):'<small class="teacher-comments-empty">Todavía no hay cambios anteriores.</small>';
+}
+function abrirProgramacionDocente(indice){
+ const d=estudiantesProfesor?.[indice];if(!d?.uid)return;asegurarProgramacionDocenteModal();const modal=document.getElementById("programacionDocenteModal"),p=d.programacionDocente||{};
+ modal.dataset.uid=d.uid;document.getElementById("programacionDocenteAlumno").textContent=`${d.estudiante?.nombre||d.nombreGoogle||d.email||"Estudiante"} · ${d.email||""}`;
+ document.getElementById("programacionDocenteTitulo").value=p.titulo||"";document.getElementById("programacionDocenteInstrucciones").value=p.instrucciones||"";document.getElementById("programacionDocenteFecha").value=p.fechaEntrega||"";document.getElementById("programacionDocenteEstado").value=p.estado||"pendiente";document.getElementById("programacionDocenteEstadoGuardado").textContent="";
+ if(detenerComentariosProgramacionDocente)detenerComentariosProgramacionDocente();detenerComentariosProgramacionDocente=window.escucharComentariosDocenteFirebase?.(d.uid,renderComentariosProgramacionDocente);modal.classList.add("active");
+ cargarHistorialProgramacionDocente(d.uid);
+}
+window.abrirProgramacionDocente=abrirProgramacionDocente;
 function filtrarTabla(){
  const ef=document.getElementById("filtroSeguimientoProfesor")?.value||"",df=txt(document.getElementById("filtroDominioSeguimientoProfesor")?.value).toLowerCase();
  [...document.querySelectorAll("#tablaProfesorBody>tr:not(.teacher-actions-row)")].forEach(fila=>{
