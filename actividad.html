@@ -3389,13 +3389,34 @@
         const metaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId);
         const actualizacionesRef = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "actualizaciones");
         const presenciaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "presencia", clienteId);
+        const aportesRef = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "historialAportes");
         const vistos = new Set();
         const estadoListeners = new Set();
+        const modoCooperacionListeners = new Set();
+        const presenciaListeners = new Set();
         let cola = [];
         let temporizador = null;
+        let aportesPendientes = [];
+        let temporizadorAportes = null;
+        let modoCooperacionActivo = false;
+        let edicionCooperativaPausada = false;
+        let escribiendo = false;
+        let participantesActuales = [];
         let destruida = false;
 
         const notificar = (estado, detalle = "") => estadoListeners.forEach(fn => fn({ estado, detalle }));
+        const notificarModoCooperacion = ({ activo = false, pausada = false } = {}) => {
+          modoCooperacionActivo = activo === true;
+          edicionCooperativaPausada = pausada === true;
+          modoCooperacionListeners.forEach(fn => fn({
+            activo: modoCooperacionActivo,
+            pausada: edicionCooperativaPausada
+          }));
+        };
+        const notificarPresencia = participantes => {
+          participantesActuales = participantes;
+          presenciaListeners.forEach(fn => fn(participantesActuales));
+        };
         const semilla = await runTransaction(database, async transaction => {
           const snapshot = await transaction.get(metaRef);
           if (snapshot.exists() && snapshot.data().semilla) return snapshot.data().semilla;
@@ -3452,6 +3473,44 @@
           }
         };
 
+        const publicarAportes = async () => {
+          temporizadorAportes = null;
+          if (destruida || !aportesPendientes.length) return;
+          const pendientes = aportesPendientes;
+          aportesPendientes = [];
+          const agregado = pendientes.reduce((total, aporte) => total + aporte.agregado, 0);
+          const eliminado = pendientes.reduce((total, aporte) => total + aporte.eliminado, 0);
+          const muestra = pendientes.map(aporte => aporte.texto).filter(Boolean).join("").slice(0, 500);
+          const id = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 8)}`;
+          try {
+            await setDoc(doc(aportesRef, id), {
+              id,
+              uid,
+              sectionId,
+              rol,
+              autorUid: user.uid,
+              autorNombre: user.displayName || user.email || rol,
+              textoAgregado: muestra,
+              caracteresAgregados: agregado,
+              caracteresEliminados: eliminado,
+              creadoEn: serverTimestamp()
+            });
+          } catch (error) {
+            console.error("No se pudo registrar el aporte colaborativo:", error);
+            aportesPendientes = pendientes.concat(aportesPendientes);
+          }
+        };
+
+        const registrarAporte = ({ insertar = "", eliminar = 0 } = {}) => {
+          const texto = String(insertar || "");
+          const agregado = texto.length;
+          const eliminado = Math.max(0, Number(eliminar) || 0);
+          if (!agregado && !eliminado) return;
+          aportesPendientes.push({ texto, agregado, eliminado });
+          clearTimeout(temporizadorAportes);
+          temporizadorAportes = setTimeout(publicarAportes, 650);
+        };
+
         documento.on("update", (update, origen) => {
           if (origen === ORIGEN_FIRESTORE_CRDT || destruida) return;
           cola.push(update);
@@ -3471,7 +3530,27 @@
           notificar("error", "Conexión colaborativa interrumpida");
         });
 
-        const actualizarPresencia = (cursor = {}) => setDoc(presenciaRef, {
+        const detenerModoCooperacion = onSnapshot(metaRef, snapshot => {
+          const datos = snapshot.exists() ? snapshot.data() : {};
+          notificarModoCooperacion({
+            activo: datos?.modoCooperacionActiva === true,
+            pausada: datos?.edicionCooperativaPausada === true
+          });
+        }, error => {
+          console.error("No se pudo consultar el modo de cooperación:", error);
+        });
+
+        const detenerPresencia = onSnapshot(
+          collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "presencia"),
+          snapshot => {
+            notificarPresencia(snapshot.docs.map(item => ({ id: item.id, ...item.data() })));
+          },
+          error => console.error("No se pudo actualizar la presencia colaborativa:", error)
+        );
+
+        const actualizarPresencia = (cursor = {}) => {
+          if (typeof cursor.escribiendo === "boolean") escribiendo = cursor.escribiendo;
+          return setDoc(presenciaRef, {
           clienteId,
           uid,
           sectionId,
@@ -3480,10 +3559,20 @@
           autorUid: user.uid,
           cursorInicio: Math.max(0, Number(cursor.inicio) || 0),
           cursorFin: Math.max(0, Number(cursor.fin) || 0),
+          escribiendo,
           activoEn: serverTimestamp()
-        }, { merge: true }).catch(() => {});
+          }, { merge: true }).catch(() => {});
+        };
 
         await actualizarPresencia();
+        if (rol === "docente") {
+          await setDoc(metaRef, {
+            modoCooperacionActiva: true,
+            edicionCooperativaPausada: false,
+            actualizadoEn: serverTimestamp(),
+            actualizadoPor: user.email || user.uid
+          }, { merge: true });
+        }
         const latido = setInterval(() => actualizarPresencia(), 20000);
         const sesion = {
           clave,
@@ -3493,14 +3582,57 @@
           rol,
           autorUid: user.uid,
           onStatus(fn) { estadoListeners.add(fn); return () => estadoListeners.delete(fn); },
+          onModoCooperacion(fn) {
+            modoCooperacionListeners.add(fn);
+            fn({ activo: modoCooperacionActivo, pausada: edicionCooperativaPausada });
+            return () => modoCooperacionListeners.delete(fn);
+          },
+          onPresence(fn) {
+            presenciaListeners.add(fn);
+            fn(participantesActuales);
+            return () => presenciaListeners.delete(fn);
+          },
+          async establecerPausaCooperacion(pausada) {
+            if (rol !== "docente") return false;
+            try {
+              await setDoc(metaRef, {
+                modoCooperacionActiva: true,
+                edicionCooperativaPausada: pausada === true,
+                actualizadoEn: serverTimestamp(),
+                actualizadoPor: user.email || user.uid
+              }, { merge: true });
+              return true;
+            } catch (error) {
+              console.error("No se pudo actualizar la pausa cooperativa:", error);
+              return false;
+            }
+          },
           actualizarPresencia,
-          async flush() { clearTimeout(temporizador); await publicarCola(); },
+          registrarAporte,
+          async flush() {
+            clearTimeout(temporizador);
+            clearTimeout(temporizadorAportes);
+            await publicarCola();
+            await publicarAportes();
+          },
           async destroy() {
             if (destruida) return;
             await this.flush();
             destruida = true;
             clearInterval(latido);
             detenerActualizaciones();
+            detenerModoCooperacion();
+            detenerPresencia();
+            if (rol === "docente") {
+              try {
+                await setDoc(metaRef, {
+                  modoCooperacionActiva: false,
+                  edicionCooperativaPausada: false,
+                  actualizadoEn: serverTimestamp(),
+                  actualizadoPor: user.email || user.uid
+                }, { merge: true });
+              } catch (_) {}
+            }
             documento.destroy();
             sesionesCodigoCRDT.delete(clave);
             try { await deleteDoc(presenciaRef); } catch (_) {}
@@ -3514,7 +3646,49 @@
       function vincularTextareaCodigoCRDT(textarea, sesion, sectionId, estadoElemento = null) {
         if (!textarea || !sesion) return () => {};
         if (textarea.__desvincularCRDT) textarea.__desvincularCRDT();
+        if (textarea.__quitarModoCooperacionCRDT) textarea.__quitarModoCooperacionCRDT();
         const origenLocal = { tipo: "textarea", clienteId: sesion.clienteId };
+        const bloqueadoAntesCooperacion = textarea.disabled === true;
+        let quitarModoCooperacion = () => {};
+        let temporizadorEscritura = null;
+        if (sesion.rol === "estudiante") {
+          quitarModoCooperacion = sesion.onModoCooperacion?.(({ activo, pausada }) => {
+            if (activo && !pausada) {
+              textarea.disabled = false;
+              textarea.dataset.edicionLibreCooperacion = "true";
+              delete textarea.dataset.edicionCooperativaPausada;
+              if (estadoElemento) {
+                estadoElemento.className = "student-editor-state crdt-synced";
+                estadoElemento.innerHTML = '<i class="fa-solid fa-people-arrows"></i> Edición libre con docente';
+              }
+              return;
+            }
+            if (activo && pausada) {
+              textarea.disabled = true;
+              textarea.dataset.edicionLibreCooperacion = "true";
+              textarea.dataset.edicionCooperativaPausada = "true";
+              if (estadoElemento) {
+                estadoElemento.className = "student-editor-state crdt-syncing";
+                estadoElemento.innerHTML = '<i class="fa-solid fa-pause"></i> Edición cooperativa pausada';
+              }
+              return;
+            }
+            if (textarea.dataset.edicionLibreCooperacion === "true") {
+              textarea.disabled = bloqueadoAntesCooperacion;
+              delete textarea.dataset.edicionLibreCooperacion;
+              delete textarea.dataset.edicionCooperativaPausada;
+            }
+          }) || (() => {});
+          textarea.__quitarModoCooperacionCRDT = () => {
+            quitarModoCooperacion();
+            if (textarea.dataset.edicionLibreCooperacion === "true") {
+              textarea.disabled = bloqueadoAntesCooperacion;
+              delete textarea.dataset.edicionLibreCooperacion;
+              delete textarea.dataset.edicionCooperativaPausada;
+            }
+            delete textarea.__quitarModoCooperacionCRDT;
+          };
+        }
         const aplicarRemoto = (_, transaccion) => {
           if (transaccion.origin === origenLocal) return;
           const siguiente = sesion.texto.toString();
@@ -3544,8 +3718,17 @@
               autorUid: sesion.autorUid
             });
           }, origenLocal);
+          sesion.registrarAporte?.({ insertar: cambio.insertar, eliminar: cambio.eliminar });
           textarea.__renderizarAportesCRDT?.();
-          sesion.actualizarPresencia({ inicio: textarea.selectionStart, fin: textarea.selectionEnd });
+          sesion.actualizarPresencia({ inicio: textarea.selectionStart, fin: textarea.selectionEnd, escribiendo: true });
+          clearTimeout(temporizadorEscritura);
+          temporizadorEscritura = setTimeout(() => {
+            sesion.actualizarPresencia({
+              inicio: textarea.selectionStart,
+              fin: textarea.selectionEnd,
+              escribiendo: false
+            });
+          }, 1100);
         };
         const actualizarCursor = () => sesion.actualizarPresencia({
           inicio: textarea.selectionStart,
@@ -3573,6 +3756,9 @@
           textarea.removeEventListener("click", actualizarCursor);
           sesion.texto.unobserve(aplicarRemoto);
           quitarEstado();
+          clearTimeout(temporizadorEscritura);
+          sesion.actualizarPresencia({ inicio: textarea.selectionStart, fin: textarea.selectionEnd, escribiendo: false });
+          textarea.__quitarModoCooperacionCRDT?.();
           quitarResaltadoAutores();
           delete textarea.__desvincularCRDT;
         };
@@ -3591,7 +3777,7 @@
         if (!user || !cuentaEstudianteActiva) return;
         await Promise.all(seccionesData.map(async sec => {
           const textarea = document.getElementById(`editor-${sec.id}`);
-          if (!textarea || textarea.disabled) return;
+          if (!textarea) return;
           const estado = document.getElementById(`editor-state-${sec.id}`);
           try {
             const sesion = await iniciarSesionCodigoCRDT({
@@ -5432,7 +5618,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260903-7">
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260903-9">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -8684,6 +8870,9 @@
                                           </button>
                                           <button class="student-focus-toggle student-collab-chat-trigger" type="button" onclick="abrirChatColaborativoEstudiante('${sec.id}')" title="Chatear con el docente durante la colaboración">
                                               <i class="fa-solid fa-comments"></i><span>Chat docente</span>
+                                          </button>
+                                          <button class="student-focus-toggle" type="button" onclick="abrirHistorialAportesColaborativoEstudiante('${sec.id}')" title="Ver aportes de la colaboración">
+                                              <i class="fa-solid fa-clock-rotate-left"></i><span>Aportes</span>
                                           </button>
                                       </div>
                                   </div>
@@ -15947,7 +16136,9 @@
           detenerCuentaRegresivaJitsi();
           cerrarJitsi();
           const nombreVisible = String(nombre || 'Participante').trim() || 'Participante';
-          enlaceJitsiActual = enlaceSeguro;
+          enlaceJitsiActual = opciones.soloAudio === true
+            ? `${enlaceSeguro}#config.startWithVideoMuted=true`
+            : enlaceSeguro;
           const modoDocenteJitsi = opciones.requerirModerador === true && opciones.rol !== 'estudiante';
           jitsiOpcionesPendientes = { ...opciones, requerirModerador: modoDocenteJitsi, estadoConfirmado: estadoTexto };
           modal.dataset.hostConfirmation = modoDocenteJitsi ? 'true' : 'false';
@@ -15957,16 +16148,22 @@
           if (copiarEstado) copiarEstado.textContent = '';
           if (estadoExterno) estadoExterno.textContent = '';
           if (mensajeExterno) mensajeExterno.textContent = modoDocenteJitsi
-            ? 'Abrí la sala, iniciá sesión en Jitsi y confirmá que sos anfitrión antes de invitar a los estudiantes.'
-            : 'Abrí la sala Jitsi en una pestaña nueva para participar de la videollamada.';
+            ? (opciones.soloAudio === true
+              ? 'Abrí la sala de audio, iniciá sesión en Jitsi y confirmá que sos anfitrión antes de invitar al estudiante.'
+              : 'Abrí la sala, iniciá sesión en Jitsi y confirmá que sos anfitrión antes de invitar a los estudiantes.')
+            : (opciones.soloAudio === true
+              ? 'Abrí la sala para participar de la llamada de audio.'
+              : 'Abrí la sala Jitsi en una pestaña nueva para participar de la videollamada.');
           if (botonConfirmar) {
             botonConfirmar.hidden = !modoDocenteJitsi;
             botonConfirmar.disabled = false;
             botonConfirmar.innerHTML = '<i class="fa-solid fa-user-shield"></i> Confirmar docente anfitrión';
           }
           if (estado) estado.textContent = modoDocenteJitsi
-            ? 'Paso 1: abrí Jitsi. Paso 2: ingresá como anfitrión. Paso 3: confirmalo en esta ventana.'
-            : (estadoTexto || 'Encuentro en vivo por Jitsi Meet');
+            ? (opciones.soloAudio === true
+              ? 'Paso 1: abrí la llamada de audio. Paso 2: ingresá como anfitrión. Paso 3: confirmalo en esta ventana.'
+              : 'Paso 1: abrí Jitsi. Paso 2: ingresá como anfitrión. Paso 3: confirmalo en esta ventana.')
+            : (estadoTexto || (opciones.soloAudio === true ? 'Llamada de audio en vivo por Jitsi Meet' : 'Encuentro en vivo por Jitsi Meet'));
           modal.style.display = 'flex';
           modal.classList.add('active');
           modal.querySelector('.jitsi-box')?.focus({ preventScroll: true });
@@ -15987,7 +16184,7 @@
           );
         };
 
-        window.abrirJitsiDocente = async function(indice) {
+        window.abrirJitsiDocente = async function(indice, opcionesLlamada = {}) {
           const estudiante = window.estudiantesProfesor?.[indice] || estudiantesProfesor?.[indice];
           if (!estudiante?.uid) {
             alert('No se pudo identificar al estudiante seleccionado.');
@@ -16004,9 +16201,12 @@
             datosSala.enlace,
             docente.displayName || 'Docente',
             docente.email || '',
-            `Docente anfitrión · Llamada con ${nombre}`,
+            opcionesLlamada.soloAudio === true
+              ? `Docente anfitrión · Llamada de audio con ${nombre}`
+              : `Docente anfitrión · Llamada con ${nombre}`,
             {
               requerirModerador: true,
+              soloAudio: opcionesLlamada.soloAudio === true,
               alConfirmarModerador: async () => {
                 const duracionMinutos = obtenerDuracionJitsi();
                 const expiraEn = new Date(Date.now() + duracionMinutos * 60000).toISOString();
@@ -16767,7 +16967,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260903-5"></script>
+    <script src="mejoras-seguimiento.js?v=20260903-8"></script>
   </body>
 </html>
 
