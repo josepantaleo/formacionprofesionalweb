@@ -11,3 +11,11 @@ Carpeta preparada para publicarse con GitHub Pages.
 5. Agregar el dominio de GitHub Pages a los dominios autorizados de Firebase Authentication.
 
 `index.html` es la pagina de entrada. `actividad.html` se conserva como copia con el nombre original.
+
+## Mejoras del 4 de septiembre de 2026
+
+- Editor cooperativo CodeMirror con cursor visible.
+- Aportes del estudiante en verde y del docente en amarillo.
+- Estado visible `En curso` durante la cooperacion.
+- Chat cooperativo con boton para vaciar la conversacion.
+- Popup emergente cuando el estudiante recibe un mensaje nuevo del docente.
