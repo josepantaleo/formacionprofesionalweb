@@ -453,12 +453,15 @@ function abrirProgramacionDocente(indice){
 window.abrirProgramacionDocente=abrirProgramacionDocente;
 let detenerChatColaborativoDocente=null,detenerChatColaborativoEstudiante=null,detenerHistorialAportesDocente=null,detenerHistorialAportesEstudiante=null;
 let detenerPresenciaChatEstudiante=null;
+let detenerAlertasChatEstudiante=[];
+const ultimoMensajeDocentePorSeccion=new Map();
 function uidSesionColaborativa(rolActual){
  return rolActual==="docente"
   ? (window.firebaseTeacherUser?.uid||window.firebaseCurrentUser?.uid||"")
   : (window.firebaseCurrentUser?.uid||"");
 }
 function notificarMensajeColaborativo(mensajes,rolActual){
+ if(rolActual==="estudiante")return;
  const ultimo=(mensajes||[]).at(-1);
  if(!ultimo||ultimo.autorUid===uidSesionColaborativa(rolActual))return;
  const clave=`${rolActual}:${ultimo.id}`;
@@ -469,6 +472,82 @@ function notificarMensajeColaborativo(mensajes,rolActual){
   if(Notification.permission==="granted")mostrar();
   else if(Notification.permission==="default")Notification.requestPermission().then(p=>{if(p==="granted")mostrar()}).catch(()=>{});
  }
+}
+function asegurarPopupMensajeCooperativoEstudiante(){
+ if(document.getElementById("popupMensajeCooperativoEstudiante"))return;
+ const popup=document.createElement("aside");
+ popup.id="popupMensajeCooperativoEstudiante";
+ popup.className="student-collab-message-popup";
+ popup.hidden=true;
+ popup.setAttribute("role","alertdialog");
+ popup.setAttribute("aria-modal","false");
+ popup.setAttribute("aria-labelledby","popupMensajeCooperativoTitulo");
+ popup.innerHTML=`<div class="student-collab-message-popup-icon"><i class="fa-solid fa-chalkboard-user"></i></div><div class="student-collab-message-popup-content"><div class="student-collab-message-popup-heading"><div><small>Cooperación en vivo</small><h3 id="popupMensajeCooperativoTitulo">Nuevo mensaje del docente</h3></div><button id="cerrarPopupMensajeCooperativo" type="button" aria-label="Cerrar mensaje" title="Cerrar"><i class="fa-solid fa-xmark"></i></button></div><p id="popupMensajeCooperativoTexto"></p><span id="popupMensajeCooperativoMeta"></span><div class="student-collab-message-popup-actions"><button class="btn btn-primary" id="abrirChatDesdePopup" type="button"><i class="fa-solid fa-comments"></i> Abrir conversación</button><button class="btn btn-secondary" id="entendidoPopupMensajeCooperativo" type="button">Entendido</button></div></div>`;
+ document.body.appendChild(popup);
+ const cerrar=()=>{popup.classList.remove("active");window.setTimeout(()=>{popup.hidden=true},180)};
+ popup.querySelector("#cerrarPopupMensajeCooperativo").onclick=cerrar;
+ popup.querySelector("#entendidoPopupMensajeCooperativo").onclick=cerrar;
+ popup.querySelector("#abrirChatDesdePopup").onclick=()=>{
+  const sectionId=popup.dataset.sectionId;
+  cerrar();
+  if(sectionId)window.abrirChatColaborativoEstudiante?.(sectionId);
+ };
+}
+function mostrarPopupMensajeCooperativoEstudiante(mensaje,sectionId){
+ if(!mensaje||!sectionId)return;
+ asegurarPopupMensajeCooperativoEstudiante();
+ const popup=document.getElementById("popupMensajeCooperativoEstudiante");
+ const seccion=(typeof seccionesData!=="undefined"?seccionesData:[]).find(item=>item.id===sectionId);
+ popup.dataset.sectionId=sectionId;
+ popup.querySelector("#popupMensajeCooperativoTexto").textContent=String(mensaje.texto||"El docente envió una nueva indicación.");
+ popup.querySelector("#popupMensajeCooperativoMeta").textContent=`${mensaje.autorNombre||"Docente"} · ${seccion?.title||sectionId} · ${fechaChatColaborativo(mensaje.creadoEn)}`;
+ popup.hidden=false;
+ requestAnimationFrame(()=>popup.classList.add("active"));
+ try{
+  const AudioContexto=window.AudioContext||window.webkitAudioContext;
+  if(AudioContexto){
+   const contexto=window.__audioMensajeCooperativo||new AudioContexto();
+   window.__audioMensajeCooperativo=contexto;
+   contexto.resume?.();
+   const oscilador=contexto.createOscillator(),ganancia=contexto.createGain();
+   oscilador.frequency.value=740;
+   ganancia.gain.setValueAtTime(.0001,contexto.currentTime);
+   ganancia.gain.exponentialRampToValueAtTime(.12,contexto.currentTime+.02);
+   ganancia.gain.exponentialRampToValueAtTime(.0001,contexto.currentTime+.22);
+   oscilador.connect(ganancia);ganancia.connect(contexto.destination);
+   oscilador.start();oscilador.stop(contexto.currentTime+.24);
+  }
+ }catch(error){}
+}
+function detenerAlertasChatCooperativoEstudiante(){
+ detenerAlertasChatEstudiante.forEach(detener=>{try{detener?.()}catch(error){}});
+ detenerAlertasChatEstudiante=[];
+ ultimoMensajeDocentePorSeccion.clear();
+ const popup=document.getElementById("popupMensajeCooperativoEstudiante");
+ if(popup){popup.classList.remove("active");popup.hidden=true}
+}
+function iniciarAlertasChatCooperativoEstudiante(){
+ detenerAlertasChatCooperativoEstudiante();
+ const user=window.firebaseCurrentUser;
+ if(!user||esSesionDocenteActual()||typeof window.escucharChatColaborativoFirebase!=="function")return;
+ asegurarPopupMensajeCooperativoEstudiante();
+ const secciones=[...new Set((typeof seccionesData!=="undefined"?seccionesData:[]).map(item=>item?.id).filter(Boolean))];
+ secciones.forEach(sectionId=>{
+  const detener=window.escucharChatColaborativoFirebase(user.uid,sectionId,(mensajes,error)=>{
+   if(error)return;
+   const recibidos=(Array.isArray(mensajes)?mensajes:[]).filter(item=>item?.rol==="docente"&&item.autorUid!==user.uid&&item.autorNombre!=="Sistema de llamada");
+   const ultimo=recibidos.at(-1)||null;
+   if(!ultimoMensajeDocentePorSeccion.has(sectionId)){
+    ultimoMensajeDocentePorSeccion.set(sectionId,ultimo?.id||"");
+    return;
+   }
+   const anterior=ultimoMensajeDocentePorSeccion.get(sectionId);
+   if(!ultimo||!ultimo.id||ultimo.id===anterior)return;
+   ultimoMensajeDocentePorSeccion.set(sectionId,ultimo.id);
+   mostrarPopupMensajeCooperativoEstudiante(ultimo,sectionId);
+  });
+  if(typeof detener==="function")detenerAlertasChatEstudiante.push(detener);
+ });
 }
 function fechaChatColaborativo(valor){
  const fecha=valor?.toDate?valor.toDate():valor?.seconds?new Date(valor.seconds*1000):new Date(valor||0);
@@ -580,6 +659,34 @@ function asegurarEditorColaborativoDocente(){
  const modal=document.createElement("div");modal.id="editorColaborativoDocenteModal";modal.className="modal-overlay";modal.setAttribute("role","dialog");modal.setAttribute("aria-modal","true");
  modal.innerHTML=`<div class="modal-box teacher-collab-box"><div class="teacher-program-header"><div><h3><i class="fa-solid fa-code-branch"></i> Editor colaborativo en vivo</h3><p id="editorColaborativoAlumno"></p><small id="editorColaborativoEstado">Conectando...</small></div><button class="btn btn-secondary" id="cerrarEditorColaborativo" type="button"><i class="fa-solid fa-xmark"></i></button></div><div class="teacher-collab-presence" id="editorColaborativoPresencia"><i class="fa-solid fa-people-arrows"></i><span>Esperando al estudiante…</span></div><div class="collab-author-legend" aria-label="Referencias de autoría del código"><strong><i class="fa-solid fa-palette"></i> Aportes:</strong><span class="collab-author-key student">Estudiante</span><span class="collab-author-key teacher">Docente</span><span class="collab-author-key base">Código inicial</span></div><textarea id="editorColaborativoCodigo" class="teacher-collab-editor" spellcheck="false"></textarea><div class="teacher-program-actions"><span id="editorColaborativoGuardado" role="status">Sincronización automática</span><div style="display:flex;gap:.45rem;flex-wrap:wrap"><button class="btn btn-success" id="iniciarAudioCooperativo" type="button" title="Iniciar una llamada de audio con el estudiante"><i class="fa-solid fa-headset"></i> Llamada de audio</button><button class="btn btn-warning" id="pausarEdicionCooperativa" type="button" aria-pressed="false"><i class="fa-solid fa-pause"></i> Pausar edición</button><button class="btn btn-primary" id="guardarEditorColaborativo" type="button"><i class="fa-solid fa-arrows-rotate"></i> Sincronizar ahora</button></div></div><section class="collab-history"><div class="collab-history-header"><strong><i class="fa-solid fa-clock-rotate-left"></i> Historial de aportes</strong><small id="historialAportesDocenteEstado">Conectando...</small></div><div id="historialAportesDocenteLista" class="collab-history-list" aria-live="polite"></div></section><section class="collab-chat"><div class="collab-chat-header"><strong><i class="fa-solid fa-comments"></i> Chat con el estudiante</strong><span id="chatColaborativoDocenteEstado" class="collab-chat-status">Conectando...</span></div><div class="collab-chat-tools"><button class="btn btn-success" id="iniciarAudioDesdeChat" type="button"><i class="fa-solid fa-headset"></i> Iniciar audio</button><button class="btn btn-secondary" id="compartirSeleccionChat" type="button"><i class="fa-solid fa-share-from-square"></i> Compartir selección</button></div><div class="collab-quick-replies"><button type="button" data-quick-reply="Revisá esta parte y contame qué observás.">Revisá esta parte</button><button type="button" data-quick-reply="Probá ejecutar el código y compartime el error.">Probá y compartime el error</button><button type="button" data-quick-reply="Muy bien, continuá con el siguiente paso.">Continuá</button></div><div id="chatColaborativoDocenteLista" class="collab-chat-messages" aria-live="polite"></div><div class="collab-chat-compose"><textarea id="chatColaborativoDocenteTexto" maxlength="1200" rows="3" placeholder="Escribí una indicación o respuesta..."></textarea><button class="btn btn-primary" id="enviarChatColaborativoDocente" type="button"><i class="fa-solid fa-paper-plane"></i> Enviar</button></div></section></div>`;
  document.body.appendChild(modal);
+ const caja=modal.querySelector(".teacher-collab-box"),cabecera=modal.querySelector(".teacher-program-header"),cerrarBoton=modal.querySelector("#cerrarEditorColaborativo");
+ const botonPantalla=document.createElement("button");
+ botonPantalla.id="pantallaCompletaEditorCooperativo";
+ botonPantalla.type="button";
+ botonPantalla.className="btn btn-secondary teacher-collab-fullscreen";
+ botonPantalla.title="Pantalla completa";
+ botonPantalla.setAttribute("aria-label","Abrir cooperación en pantalla completa");
+ botonPantalla.innerHTML='<i class="fa-solid fa-expand"></i><span>Pantalla completa</span>';
+ cabecera.insertBefore(botonPantalla,cerrarBoton);
+ const actualizarPantallaCompleta=()=>{
+  const activa=document.fullscreenElement===caja||modal.classList.contains("is-pseudo-fullscreen");
+  const icono=botonPantalla.querySelector("i"),texto=botonPantalla.querySelector("span");
+  if(icono)icono.className=`fa-solid ${activa?"fa-compress":"fa-expand"}`;
+  if(texto)texto.textContent=activa?"Salir de pantalla completa":"Pantalla completa";
+  botonPantalla.title=activa?"Salir de pantalla completa":"Pantalla completa";
+  botonPantalla.setAttribute("aria-pressed",String(activa));
+ };
+ botonPantalla.onclick=async()=>{
+  try{
+   if(document.fullscreenElement===caja)await document.exitFullscreen();
+   else if(modal.classList.contains("is-pseudo-fullscreen"))modal.classList.remove("is-pseudo-fullscreen");
+   else if(caja.requestFullscreen)await caja.requestFullscreen();
+   else modal.classList.add("is-pseudo-fullscreen");
+  }catch(error){modal.classList.toggle("is-pseudo-fullscreen")}
+  actualizarPantallaCompleta();
+ };
+ document.addEventListener("fullscreenchange",actualizarPantallaCompleta);
+ cerrarBoton.addEventListener("click",()=>{if(document.fullscreenElement===caja)document.exitFullscreen().catch(()=>{});modal.classList.remove("is-pseudo-fullscreen")},{capture:true});
  window.inicializarEditorCodeMirror?.(modal.querySelector("#editorColaborativoCodigo"));
  const cerrar=async()=>{modal.classList.remove("active");const editor=modal.querySelector("#editorColaborativoCodigo");editor?.__desvincularCRDT?.();modal.__quitarPresenciaColaborativa?.();modal.__quitarModoCooperacion?.();delete modal.__quitarPresenciaColaborativa;delete modal.__quitarModoCooperacion;if(detenerChatColaborativoDocente){detenerChatColaborativoDocente();detenerChatColaborativoDocente=null;}if(detenerHistorialAportesDocente){detenerHistorialAportesDocente();detenerHistorialAportesDocente=null;}if(modal.__crdtSession){await modal.__crdtSession.destroy();modal.__crdtSession=null;}delete modal.dataset.llamadaAudioColaborativaId;};modal.querySelector("#cerrarEditorColaborativo").onclick=cerrar;modal.onclick=e=>{if(e.target===modal)cerrar()};
  modal.querySelector("#iniciarAudioCooperativo").onclick=async()=>{const indice=Number(modal.dataset.studentIndex);if(!Number.isInteger(indice)){alert("No se pudo identificar al estudiante para la llamada.");return;}await window.abrirJitsiDocente?.(indice,{soloAudio:true});};
@@ -921,9 +1028,10 @@ abrirHistorialPestanas=async function(indice){
 };
 window.addEventListener("estado-inicio-clase",e=>setTimeout(()=>{cargarFormulario(e.detail?.configuracionSeguimiento||window.configuracionSeguimientoActual||{});if(document.getElementById("panelProfesorModal")?.classList.contains("active"))renderPanelProfesor()},0));
 window.addEventListener("profesor-data",()=>setTimeout(()=>{mejorarTabla();if(document.getElementById("mensajeriaDocenteModal")?.classList.contains("active"))renderHistorialMensajesDocente()},0));
-window.addEventListener("firebase-auth-changed",()=>setTimeout(cargarResumenSeguimientoEstudiante,900));
+window.addEventListener("firebase-auth-changed",()=>setTimeout(()=>{cargarResumenSeguimientoEstudiante();iniciarAlertasChatCooperativoEstudiante()},900));
+window.addEventListener("estado-cuenta-estudiante",()=>setTimeout(iniciarAlertasChatCooperativoEstudiante,700));
 document.addEventListener("keydown",evento=>{
  const actual=evento.target.closest?.(".teacher-workspace-tab");if(!actual||!["ArrowLeft","ArrowRight","Home","End"].includes(evento.key))return;const botones=[...document.querySelectorAll(".teacher-workspace-tab")],indice=botones.indexOf(actual);let siguiente=indice;if(evento.key==="ArrowRight")siguiente=(indice+1)%botones.length;if(evento.key==="ArrowLeft")siguiente=(indice-1+botones.length)%botones.length;if(evento.key==="Home")siguiente=0;if(evento.key==="End")siguiente=botones.length-1;evento.preventDefault();botones[siguiente]?.focus();activarPestanaDocente(botones[siguiente]?.dataset.teacherTab);
 });
-asegurarTemaAplicacion();asegurarPaneles();asegurarResumenSeguimientoEstudiante();setTimeout(cargarResumenSeguimientoEstudiante,1800);setInterval(mejorarTabla,10000);setInterval(()=>{if(!document.hidden)cargarResumenSeguimientoEstudiante()},60000);
+asegurarTemaAplicacion();asegurarPaneles();asegurarResumenSeguimientoEstudiante();setTimeout(cargarResumenSeguimientoEstudiante,1800);setTimeout(iniciarAlertasChatCooperativoEstudiante,2200);setInterval(mejorarTabla,10000);setInterval(()=>{if(!document.hidden)cargarResumenSeguimientoEstudiante()},60000);
 })();

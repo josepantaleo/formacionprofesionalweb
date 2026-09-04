@@ -23,6 +23,8 @@
 .teacher-program-history{margin-top:1rem;padding-top:.8rem;border-top:1px solid rgba(148,163,184,.18)}.teacher-program-history h4{margin:0 0 .55rem;color:#bae6fd;font-size:.8rem}.teacher-program-history .teacher-comments-list{max-height:260px}
 .teacher-collab-box{width:min(900px,calc(100vw - 1.25rem));max-height:calc(100dvh - 2rem);overflow:auto;padding:1rem!important}.teacher-collab-editor{display:block;width:100%;min-height:420px;padding:.75rem;border:1px solid rgba(56,189,248,.4);border-radius:7px;background:#0b1120;color:#e2e8f0;font:500 .82rem/1.5 "Fira Code",monospace;resize:vertical;tab-size:2}.teacher-collab-box small{color:var(--text-muted);font-size:.65rem}
 #editorColaborativoDocenteModal{z-index:14000!important}
+.teacher-collab-fullscreen{flex:0 0 auto;justify-content:center}
+.teacher-collab-fullscreen span{white-space:nowrap}
 .teacher-collab-presence{display:flex;align-items:center;gap:.45rem;margin-bottom:.55rem;padding:.5rem .6rem;border:1px solid rgba(34,197,94,.28);border-radius:6px;background:rgba(34,197,94,.07);color:#bbf7d0;font-size:.7rem}.student-editor-state.crdt-synced{color:#86efac}.student-editor-state.crdt-syncing{color:#7dd3fc}.student-editor-state.crdt-error{color:#fca5a5}
 .teacher-collab-presence.is-typing{border-color:rgba(251,191,36,.48);background:rgba(245,158,11,.1);color:#fde68a}.teacher-collab-presence.is-paused{border-color:rgba(248,113,113,.48);background:rgba(127,29,29,.14);color:#fecaca}.teacher-collab-presence i{flex:0 0 auto}.teacher-collab-presence .typing-dots{display:inline-flex;gap:3px;margin-left:2px}.teacher-collab-presence .typing-dots b{width:4px;height:4px;border-radius:50%;background:currentColor;animation:collabTyping 1.05s infinite ease-in-out}.teacher-collab-presence .typing-dots b:nth-child(2){animation-delay:.14s}.teacher-collab-presence .typing-dots b:nth-child(3){animation-delay:.28s}
 @media(max-width:600px){.teacher-program-grid{grid-template-columns:1fr}.teacher-program-grid .wide{grid-column:auto}.teacher-comment-compose{grid-template-columns:1fr}.teacher-comment-compose .btn{width:100%;justify-content:center}}
@@ -46,6 +48,113 @@ textarea.collab-source-editor{position:relative!important;z-index:1!important;co
 .collab-presence-strip{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin:.5rem 0;padding:.45rem .55rem;border:1px solid rgba(56,189,248,.25);border-radius:6px;background:rgba(14,116,144,.1);color:#bae6fd;font-size:.66rem}.collab-presence-strip .online-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 3px rgba(74,222,128,.14)}.collab-presence-strip .paused-dot{background:#f87171;box-shadow:0 0 0 3px rgba(248,113,113,.14)}.collab-presence-name{font-weight:800}.collab-presence-meta{color:var(--text-muted)}
 .collab-chat-tools{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}.collab-quick-replies{display:flex;gap:.35rem;flex-wrap:wrap;margin:.35rem 0}.collab-quick-replies button{padding:.3rem .45rem;border:1px solid rgba(56,189,248,.28);border-radius:999px;background:rgba(14,116,144,.12);color:#bae6fd;font-size:.64rem;cursor:pointer}.collab-quick-replies button:hover{background:rgba(14,116,144,.25)}.collab-call-state{display:inline-flex;align-items:center;gap:.3rem;font-size:.64rem}.collab-call-state.connected{color:#86efac}.collab-call-state.rejected{color:#fca5a5}.collab-call-state.finished{color:#fbbf24}
 @media(max-width:600px){.collab-chat-compose{grid-template-columns:1fr}.collab-chat-compose .btn{min-height:40px}.collab-chat-message{max-width:96%}}
+
+.student-collab-message-popup{
+  position:fixed;
+  inset:auto 1rem 1rem auto;
+  z-index:30000;
+  display:flex;
+  flex-direction:row;
+  align-items:flex-start;
+  gap:.75rem;
+  width:min(430px,calc(100vw - 2rem));
+  height:auto;
+  max-height:calc(100dvh - 2rem);
+  overflow:auto;
+  padding:1rem;
+  border:1px solid rgba(168,85,247,.72);
+  border-radius:8px;
+  background:#111827;
+  color:#e2e8f0;
+  box-shadow:0 22px 55px rgba(0,0,0,.55);
+  opacity:0;
+  transform:translateY(18px);
+  transition:opacity .18s ease,transform .18s ease;
+}
+.student-collab-message-popup[hidden]{display:none!important}
+.student-collab-message-popup.active{opacity:1;transform:none}
+.student-collab-message-popup-icon{
+  display:grid;
+  place-items:center;
+  flex:0 0 42px;
+  width:42px;
+  height:42px;
+  border-radius:7px;
+  background:#7e22ce;
+  color:#fff;
+  font-size:1.05rem;
+}
+.student-collab-message-popup-content{min-width:0;flex:1}
+.student-collab-message-popup-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:.65rem}
+.student-collab-message-popup-heading small{display:block;color:#c4b5fd;font-size:.65rem;font-weight:800;text-transform:uppercase}
+.student-collab-message-popup-heading h3{margin:.15rem 0 0;color:#f5f3ff;font-size:.98rem}
+.student-collab-message-popup-heading>button{
+  display:grid;
+  place-items:center;
+  flex:0 0 32px;
+  width:32px;
+  height:32px;
+  border:1px solid rgba(148,163,184,.32);
+  border-radius:6px;
+  background:#1e293b;
+  color:#e2e8f0;
+  cursor:pointer;
+}
+.student-collab-message-popup-content>p{margin:.7rem 0 .45rem;color:#f8fafc;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.student-collab-message-popup-content>span{display:block;color:#94a3b8;font-size:.67rem;overflow-wrap:anywhere}
+.student-collab-message-popup-actions{display:flex;justify-content:flex-end;gap:.45rem;margin-top:.8rem}
+
+#editorColaborativoDocenteModal.is-pseudo-fullscreen{padding:0!important}
+#editorColaborativoDocenteModal.is-pseudo-fullscreen .teacher-collab-box,
+#editorColaborativoDocenteModal .teacher-collab-box:fullscreen{
+  position:fixed;
+  inset:0;
+  width:100vw!important;
+  height:100dvh!important;
+  max-width:none!important;
+  max-height:none!important;
+  margin:0;
+  padding:.8rem!important;
+  border:0;
+  border-radius:0;
+  background:#0f172a;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:minmax(0,1.55fr) minmax(330px,.7fr);
+  grid-template-rows:auto auto auto minmax(260px,1fr) auto minmax(105px,.32fr);
+  grid-template-areas:
+    "header header"
+    "presence chat"
+    "legend chat"
+    "editor chat"
+    "actions chat"
+    "history chat";
+  gap:.6rem .8rem;
+}
+#editorColaborativoDocenteModal.is-pseudo-fullscreen .teacher-program-header,
+#editorColaborativoDocenteModal .teacher-collab-box:fullscreen .teacher-program-header{grid-area:header;margin:0;padding:0 0 .65rem;border-bottom:1px solid rgba(148,163,184,.22)}
+#editorColaborativoDocenteModal.is-pseudo-fullscreen .teacher-collab-presence,
+#editorColaborativoDocenteModal .teacher-collab-box:fullscreen .teacher-collab-presence{grid-area:presence;margin:0}
+#editorColaborativoDocenteModal.is-pseudo-fullscreen .collab-author-legend,
+#editorColaborativoDocenteModal .teacher-collab-box:fullscreen .collab-author-legend{grid-area:legend;margin:0}
+#editorColaborativoDocenteModal.is-pseudo-fullscreen .codemirror-host,
+#editorColaborativoDocenteModal .teacher-collab-box:fullscreen .codemirror-host,
+#editorColaborativoDocenteModal.is-pseudo-fullscreen .teacher-collab-editor,
+#editorColaborativoDocenteModal .teacher-collab-box:fullscreen .teacher-collab-editor{grid-area:editor;min-height:0;height:100%;resize:none}
+#editorColaborativoDocenteModal.is-pseudo-fullscreen .codemirror-host .cm-editor,
+#editorColaborativoDocenteModal.is-pseudo-fullscreen .codemirror-host .cm-scroller,
+#editorColaborativoDocenteModal .teacher-collab-box:fullscreen .codemirror-host .cm-editor,
+#editorColaborativoDocenteModal .teacher-collab-box:fullscreen .codemirror-host .cm-scroller{min-height:0;height:100%}
+#editorColaborativoDocenteModal.is-pseudo-fullscreen .teacher-program-actions,
+#editorColaborativoDocenteModal .teacher-collab-box:fullscreen .teacher-program-actions{grid-area:actions;margin:0;padding:.55rem 0 0}
+#editorColaborativoDocenteModal.is-pseudo-fullscreen>.teacher-collab-box>.collab-history,
+#editorColaborativoDocenteModal .teacher-collab-box:fullscreen>.collab-history{grid-area:history;margin:0;min-height:0;overflow:hidden}
+#editorColaborativoDocenteModal.is-pseudo-fullscreen .collab-history-list,
+#editorColaborativoDocenteModal .teacher-collab-box:fullscreen .collab-history-list{max-height:100%;height:100%}
+#editorColaborativoDocenteModal.is-pseudo-fullscreen>.teacher-collab-box>.collab-chat,
+#editorColaborativoDocenteModal .teacher-collab-box:fullscreen>.collab-chat{grid-area:chat;margin:0;min-height:0;grid-template-rows:auto auto auto minmax(0,1fr) auto}
+#editorColaborativoDocenteModal.is-pseudo-fullscreen .collab-chat-messages,
+#editorColaborativoDocenteModal .teacher-collab-box:fullscreen .collab-chat-messages{min-height:0;max-height:none;height:100%}
 
 /* Editor colaborativo: contenido visible, bloqueo real y controles adaptables. */
 #editorColaborativoDocenteModal .teacher-collab-box{
@@ -94,6 +203,9 @@ textarea.collab-source-editor{position:relative!important;z-index:1!important;co
     padding:.65rem;
     border-bottom:1px solid rgba(148,163,184,.22);
     background:#0f172a;
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto auto;
+    align-items:start;
   }
   #editorColaborativoDocenteModal .teacher-program-header>div{
     min-width:0;
@@ -124,6 +236,37 @@ textarea.collab-source-editor{position:relative!important;z-index:1!important;co
   #editorColaborativoDocenteModal .collab-history-header{
     align-items:flex-start;
     flex-direction:column;
+  }
+  .teacher-collab-fullscreen span{
+    display:none;
+  }
+  .student-collab-message-popup{
+    inset:auto .5rem .5rem;
+    width:auto;
+  }
+  .student-collab-message-popup-actions{
+    display:grid;
+    grid-template-columns:1fr;
+  }
+}
+@media(max-width:900px){
+  #editorColaborativoDocenteModal.is-pseudo-fullscreen .teacher-collab-box,
+  #editorColaborativoDocenteModal .teacher-collab-box:fullscreen{
+    overflow:auto;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto auto auto minmax(300px,55vh) auto auto minmax(260px,1fr);
+    grid-template-areas:
+      "header"
+      "presence"
+      "legend"
+      "editor"
+      "actions"
+      "history"
+      "chat";
+  }
+  #editorColaborativoDocenteModal.is-pseudo-fullscreen .collab-chat-messages,
+  #editorColaborativoDocenteModal .teacher-collab-box:fullscreen .collab-chat-messages{
+    min-height:220px;
   }
 }
 .tracking-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:.7rem;flex-wrap:wrap;margin-bottom:.75rem}
