@@ -628,14 +628,26 @@
       textarea.code-editor.editor-enhanced.wrap-lines{white-space:pre-wrap;overflow-wrap:anywhere}
       .editor-search-status{color:#94a3b8;white-space:nowrap}
       .editor-cursor-position{color:#7dd3fc;white-space:nowrap;font-variant-numeric:tabular-nums}
-      .codemirror-host{position:relative;min-height:180px;background:var(--bg-editor);border-top:1px solid rgba(148,163,184,.18)}
-      .codemirror-host .cm-editor{min-height:180px;height:100%;font:400 .9rem/1.5 "Fira Code",monospace}
-      .codemirror-host .cm-scroller{overflow:auto;min-height:180px}
+      .codemirror-host{--cm-font-size:.9rem;position:relative;display:flex;flex-direction:column;min-height:180px;background:var(--bg-editor);border-top:1px solid rgba(148,163,184,.18)}
+      .codemirror-host .cm-editor{min-height:180px;height:100%;flex:1 1 auto;font:400 var(--cm-font-size)/1.5 "Fira Code",monospace}
+      .codemirror-host .cm-scroller{overflow:auto;min-height:180px;font-size:inherit}
       .codemirror-host .cm-content{padding:1rem 1rem 1.5rem}
       .codemirror-host .cm-gutters{background:#111827;color:#64748b;border-right:1px solid rgba(148,163,184,.18)}
       .codemirror-host .cm-activeLineGutter,.codemirror-host .cm-activeLine{background:rgba(56,189,248,.08)}
       .codemirror-host.cm-disabled{opacity:.72;filter:saturate(.7);pointer-events:none}
       .codemirror-source-hidden{display:none!important}
+      .cm-workbench-toolbar{display:grid;grid-template-columns:minmax(170px,1fr) repeat(3,36px) auto auto;align-items:center;gap:.38rem;padding:.45rem .55rem;border-bottom:1px solid rgba(148,163,184,.22);background:#111827;font:600 .7rem/1.2 "Inter",sans-serif}
+      .cm-workbench-search{position:relative;min-width:0}
+      .cm-workbench-search i{position:absolute;left:.58rem;top:50%;color:#64748b;transform:translateY(-50%);pointer-events:none}
+      .cm-workbench-search input{width:100%;min-width:0;height:34px;padding:.38rem .55rem .38rem 1.8rem;border:1px solid rgba(148,163,184,.32);border-radius:5px;background:#0f172a;color:#e2e8f0;font:inherit}
+      .cm-workbench-toolbar button,.cm-workbench-toolbar select{height:34px;border:1px solid rgba(148,163,184,.3);border-radius:5px;background:#1e293b;color:#cbd5e1;cursor:pointer}
+      .cm-workbench-toolbar button{display:grid;place-items:center;width:36px;padding:0}
+      .cm-workbench-toolbar button:hover,.cm-workbench-toolbar button[aria-pressed="true"]{border-color:#38bdf8;background:#075985;color:#fff}
+      .cm-workbench-toolbar select{max-width:118px;padding:0 .45rem}
+      .cm-workbench-position{color:#7dd3fc;white-space:nowrap;font-variant-numeric:tabular-nums}
+      .cm-workbench-status{grid-column:1/-1;min-height:0;color:#94a3b8;font-size:.64rem}
+      .cm-workbench-status:empty{display:none}
+      @media(max-width:720px){.cm-workbench-toolbar{grid-template-columns:minmax(0,1fr) repeat(3,36px)}.cm-workbench-toolbar select,.cm-workbench-position{grid-column:auto}.cm-workbench-toolbar select{max-width:none}.cm-workbench-position{grid-column:1/-1}.cm-workbench-status{grid-column:1/-1}}
       .cm-remote-cursors{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
       .cm-remote-cursor{position:absolute;width:2px;height:1.45em;border-radius:2px;background:#fbbf24;box-shadow:0 0 0 1px rgba(251,191,36,.2);animation:cmCursorBlink 1.1s infinite}
       .cm-remote-cursor.student{background:#4ade80;box-shadow:0 0 0 1px rgba(74,222,128,.2)}
@@ -2392,12 +2404,8 @@
       import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
       import { getAI, getTemplateGenerativeModel, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
       import * as Y from "https://cdn.jsdelivr.net/npm/yjs@13.6.31/+esm";
-      import { EditorState } from "https://cdn.jsdelivr.net/npm/@codemirror/state@6.5.2/+esm";
-      import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from "https://cdn.jsdelivr.net/npm/@codemirror/view@6.36.5/+esm";
-      import { defaultKeymap, indentWithTab } from "https://cdn.jsdelivr.net/npm/@codemirror/commands@6.8.1/+esm";
-      import { javascript } from "https://cdn.jsdelivr.net/npm/@codemirror/lang-javascript@6.2.3/+esm";
-      import { closeBrackets, closeBracketsKeymap, autocompletion, completionKeymap } from "https://cdn.jsdelivr.net/npm/@codemirror/autocomplete@6.18.6/+esm";
-      window.CodeMirror6 = {
+      import {
+        Compartment,
         EditorState,
         EditorView,
         keymap,
@@ -2410,7 +2418,25 @@
         closeBrackets,
         closeBracketsKeymap,
         autocompletion,
-        completionKeymap
+        completionKeymap,
+        startCompletion
+      } from "./codemirror-bundle.js?v=20260904-2";
+      window.CodeMirror6 = {
+        Compartment,
+        EditorState,
+        EditorView,
+        keymap,
+        lineNumbers,
+        highlightActiveLine,
+        drawSelection,
+        defaultKeymap,
+        indentWithTab,
+        javascript,
+        closeBrackets,
+        closeBracketsKeymap,
+        autocompletion,
+        completionKeymap,
+        startCompletion
       };
 
       // ============================================================
@@ -3962,6 +3988,31 @@
         } catch (error) {
           console.error("No se pudo enviar el mensaje colaborativo:", error);
           return false;
+        }
+      };
+
+      window.vaciarChatColaborativoFirebase = async function(uid, sectionId) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseTeacherAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !sectionId) return { ok: false, eliminados: 0 };
+        if (!(await verificarUsuarioDocente(user))) return { ok: false, eliminados: 0 };
+        try {
+          const referencia = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes");
+          const snapshot = await getDocs(referencia);
+          if (snapshot.empty) return { ok: true, eliminados: 0 };
+          let eliminados = 0;
+          for (let inicio = 0; inicio < snapshot.docs.length; inicio += 450) {
+            const lote = writeBatch(database);
+            const documentos = snapshot.docs.slice(inicio, inicio + 450);
+            documentos.forEach(documento => lote.delete(documento.ref));
+            await lote.commit();
+            eliminados += documentos.length;
+          }
+          return { ok: true, eliminados };
+        } catch (error) {
+          console.error("No se pudo vaciar el chat colaborativo:", error);
+          return { ok: false, eliminados: 0, error: error?.message || "No se pudo eliminar la conversación." };
         }
       };
 
@@ -5727,7 +5778,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-<link rel="stylesheet" href="mejoras-seguimiento.css?v=20260904-22">
+<link rel="stylesheet" href="mejoras-seguimiento.css?v=20260904-23">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -11700,6 +11751,7 @@
               return null;
           }
           const {
+              Compartment,
               EditorState,
               EditorView,
               keymap,
@@ -11712,16 +11764,31 @@
               closeBrackets,
               closeBracketsKeymap,
               autocompletion,
-              completionKeymap
+              completionKeymap,
+              startCompletion
           } = CM;
           const host = document.createElement("div");
           host.className = "codemirror-host";
           textarea.parentNode.insertBefore(host, textarea);
           textarea.classList.add("codemirror-source-hidden");
+          const barra = document.createElement("div");
+          barra.className = "cm-workbench-toolbar";
+          barra.setAttribute("role", "toolbar");
+          barra.setAttribute("aria-label", "Herramientas del editor de código");
+          barra.innerHTML = `<label class="cm-workbench-search"><span class="sr-only">Buscar en el código</span><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input type="search" placeholder="Buscar en el código" autocomplete="off"></label><button type="button" data-cm-find title="Buscar siguiente" aria-label="Buscar siguiente"><i class="fa-solid fa-arrow-down"></i></button><button type="button" data-cm-replace title="Reemplazar selección" aria-label="Reemplazar selección"><i class="fa-solid fa-arrow-right-arrow-left"></i></button><button type="button" data-cm-complete title="Mostrar sugerencias (Ctrl+Espacio)" aria-label="Mostrar sugerencias"><i class="fa-solid fa-wand-magic-sparkles"></i></button><select data-cm-font aria-label="Tamaño de fuente"><option value=".8rem">Pequeña</option><option value=".9rem" selected>Normal</option><option value="1rem">Grande</option><option value="1.1rem">Muy grande</option></select><button type="button" data-cm-wrap title="Ajustar líneas largas" aria-label="Ajustar líneas largas" aria-pressed="false"><i class="fa-solid fa-align-left"></i></button><span class="cm-workbench-position" aria-live="polite">Línea 1, columna 1</span><span class="cm-workbench-status" aria-live="polite"></span>`;
+          host.appendChild(barra);
           const cursors = document.createElement("div");
           cursors.className = "cm-remote-cursors";
           host.appendChild(cursors);
           let sincronizando = false;
+          const ajusteLineas = new Compartment();
+          const posicionCursor = barra.querySelector(".cm-workbench-position");
+          const estadoHerramientas = barra.querySelector(".cm-workbench-status");
+          const actualizarPosicionCursor = estado => {
+              const cabeza = estado.selection.main.head;
+              const linea = estado.doc.lineAt(cabeza);
+              posicionCursor.textContent = `Línea ${linea.number}, columna ${cabeza - linea.from + 1}`;
+          };
           const actualizarTextarea = update => {
               if (!update.docChanged || sincronizando) return;
               const valor = update.state.doc.toString();
@@ -11748,6 +11815,7 @@
                           autocompletion(),
                           highlightActiveLine(),
                           drawSelection(),
+                          ajusteLineas.of([]),
                           atajos,
                           EditorView.updateListener.of(update => {
                               actualizarTextarea(update);
@@ -11756,6 +11824,7 @@
                                   textarea.setSelectionRange(seleccion.from, seleccion.to);
                                   textarea.dispatchEvent(new Event("cm-selection-change"));
                               }
+                              if (update.selectionSet || update.docChanged) actualizarPosicionCursor(update.state);
                           })
                       ]
                   }),
@@ -11811,8 +11880,48 @@
                   cursors.appendChild(marcador);
               });
           };
+          const campoBusqueda = barra.querySelector("input[type=search]");
+          const buscarSiguiente = () => {
+              const termino = campoBusqueda.value;
+              if (!termino) { estadoHerramientas.textContent = "Escribí un texto para buscar."; campoBusqueda.focus(); return false; }
+              const documento = view.state.doc.toString();
+              let posicion = documento.indexOf(termino, view.state.selection.main.to);
+              if (posicion < 0) posicion = documento.indexOf(termino);
+              if (posicion < 0) { estadoHerramientas.textContent = `No se encontró “${termino}”.`; return false; }
+              const coincidencias = documento.split(termino).length - 1;
+              view.dispatch({ selection: { anchor: posicion, head: posicion + termino.length }, scrollIntoView: true });
+              view.focus();
+              estadoHerramientas.textContent = `${coincidencias} coincidencia${coincidencias === 1 ? "" : "s"}.`;
+              return true;
+          };
+          barra.querySelector("[data-cm-find]").onclick = buscarSiguiente;
+          campoBusqueda.addEventListener("keydown", evento => {
+              if (evento.key === "Enter") { evento.preventDefault(); buscarSiguiente(); }
+              if (evento.key === "Escape") { campoBusqueda.value = ""; estadoHerramientas.textContent = ""; view.focus(); }
+          });
+          barra.querySelector("[data-cm-replace]").onclick = () => {
+              const termino = campoBusqueda.value;
+              if (!termino) { estadoHerramientas.textContent = "Buscá primero el texto que querés reemplazar."; campoBusqueda.focus(); return; }
+              const seleccion = view.state.selection.main;
+              if (view.state.sliceDoc(seleccion.from, seleccion.to) !== termino && !buscarSiguiente()) return;
+              const reemplazo = prompt(`Reemplazar “${termino}” por:`, "");
+              if (reemplazo === null) return;
+              const rango = view.state.selection.main;
+              view.dispatch({ changes: { from: rango.from, to: rango.to, insert: reemplazo }, selection: { anchor: rango.from + reemplazo.length } });
+              view.focus();
+              estadoHerramientas.textContent = "Coincidencia reemplazada.";
+          };
+          barra.querySelector("[data-cm-complete]").onclick = () => { view.focus(); startCompletion(view); };
+          barra.querySelector("[data-cm-font]").onchange = evento => host.style.setProperty("--cm-font-size", evento.target.value);
+          barra.querySelector("[data-cm-wrap]").onclick = evento => {
+              const activo = evento.currentTarget.getAttribute("aria-pressed") !== "true";
+              evento.currentTarget.setAttribute("aria-pressed", String(activo));
+              view.dispatch({ effects: ajusteLineas.reconfigure(activo ? EditorView.lineWrapping : []) });
+              view.focus();
+          };
           textarea.addEventListener("crdt-remote-change", () => textarea.__syncCodeMirror?.(textarea.value));
           textarea.__setCodeMirrorDisabled(textarea.disabled);
+          actualizarPosicionCursor(view.state);
           return view;
       }
       window.inicializarEditorCodeMirror = inicializarEditorCodeMirror;
@@ -17545,7 +17654,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260904-22"></script>
+    <script src="mejoras-seguimiento.js?v=20260904-23"></script>
   </body>
 </html>
 

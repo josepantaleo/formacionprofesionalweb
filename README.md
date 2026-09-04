@@ -1,42 +1,13 @@
-# Formacion profesional web
+# Actividad interactiva IPEM 146
 
-Version preparada para GitHub Pages con colaboracion docente-estudiante mediante Yjs y Firestore.
+Carpeta preparada para publicarse con GitHub Pages.
 
-## Publicacion en GitHub
+## Publicacion
 
-Subir todo el contenido de esta carpeta a la raiz del repositorio. No subir `node_modules`.
+1. Subir todos los archivos de esta carpeta a la raiz del repositorio.
+2. En GitHub, abrir `Settings > Pages`.
+3. Seleccionar la rama principal y la carpeta raiz.
+4. Publicar las reglas de `reglas.txt` por separado en Firebase Firestore.
+5. Agregar el dominio de GitHub Pages a los dominios autorizados de Firebase Authentication.
 
-En GitHub:
-
-1. Abrir `Settings`.
-2. Entrar en `Pages`.
-3. Seleccionar `Deploy from a branch`.
-4. Elegir la rama principal y la carpeta `/ (root)`.
-
-La actividad principal se encuentra en `actividad.html`.
-
-## Firebase
-
-Antes de usar la colaboracion en produccion, publicar las reglas:
-
-```powershell
-firebase login
-firebase deploy --only firestore:rules --project ipem146js
-```
-
-Agregar el dominio `TU-USUARIO.github.io` en Firebase Authentication, dentro de `Authorized domains`.
-
-## Verificaciones locales
-
-```powershell
-npm install
-npm run test:crdt
-npm run test:rules
-```
-
-Resultados esperados:
-
-```text
-OK: Yjs fusiono ediciones concurrentes sin sobrescritura.
-OK: reglas CRDT y comentarios verificadas.
-```
+`index.html` es la pagina de entrada. `actividad.html` se conserva como copia con el nombre original.

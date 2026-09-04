@@ -1,6 +1,6 @@
-rules_version = '2';
+﻿rules_version = '2';
 
-// Actualizado el 3 de septiembre de 2026.
+// Actualizado el 4 de septiembre de 2026.
 // Incluye auditoría segura, mensajería, colaboración CRDT, presencia y aportes.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -10,6 +10,14 @@ service cloud.firestore {
 
     function ownsDocument(uid) {
       return signedIn() && request.auth.uid == uid;
+    }
+
+    function isActiveStudent(uid) {
+      return ownsDocument(uid) &&
+        exists(/databases/$(database)/documents/estudiantes/$(uid)) &&
+        get(
+          /databases/$(database)/documents/estudiantes/$(uid)
+        ).data.get('estadoCuenta', 'pendiente') == 'activo';
     }
 
     function verifiedEmail() {
@@ -834,46 +842,84 @@ service cloud.firestore {
 
     // Documento CRDT independiente para cada estudiante y desafío.
     match /estudiantes/{uid}/colaboracionCodigo/{sectionId} {
+      function validCollaborationDocument() {
+        return request.resource.data.keys().hasAll([
+            'uid',
+            'sectionId',
+            'semilla',
+            'creadoEn',
+            'creadoPor',
+            'actualizadoEn'
+          ]) &&
+          request.resource.data.keys().hasOnly([
+            'uid',
+            'sectionId',
+            'semilla',
+            'creadoEn',
+            'creadoPor',
+            'actualizadoEn',
+            'actualizadoPor',
+            'modoCooperacionActiva',
+            'edicionCooperativaPausada'
+          ]) &&
+          request.resource.data.uid == uid &&
+          request.resource.data.sectionId == sectionId &&
+          request.resource.data.semilla is string &&
+          request.resource.data.semilla.size() > 0 &&
+          request.resource.data.semilla.size() <= 250000 &&
+          request.resource.data.creadoEn is timestamp &&
+          request.resource.data.creadoPor is string &&
+          request.resource.data.creadoPor.size() <= 254 &&
+          request.resource.data.actualizadoEn == request.time &&
+          request.resource.data.get('actualizadoPor', '') is string &&
+          request.resource.data.get('actualizadoPor', '').size() <= 254 &&
+          request.resource.data.get('modoCooperacionActiva', false) is bool &&
+          request.resource.data.get('edicionCooperativaPausada', false) is bool;
+      }
+
       allow get, list: if ownsDocument(uid) || isTeacher();
-      allow create, update: if (ownsDocument(uid) || isTeacher()) &&
-        request.resource.data.keys().hasAll([
-          'uid',
-          'sectionId',
-          'semilla',
-          'creadoEn',
-          'creadoPor',
-          'actualizadoEn'
-        ]) &&
-        request.resource.data.keys().hasOnly([
-          'uid',
-          'sectionId',
-          'semilla',
-          'creadoEn',
-          'creadoPor',
-          'actualizadoEn',
-          'actualizadoPor',
-          'modoCooperacionActiva',
-          'edicionCooperativaPausada'
-        ]) &&
-        request.resource.data.uid == uid &&
-        request.resource.data.sectionId == sectionId &&
-        request.resource.data.semilla is string &&
-        request.resource.data.semilla.size() > 0 &&
-        request.resource.data.semilla.size() <= 250000 &&
-        request.resource.data.creadoEn is timestamp &&
-        request.resource.data.creadoPor is string &&
-        request.resource.data.creadoPor.size() <= 254 &&
-        request.resource.data.actualizadoEn == request.time &&
-        request.resource.data.get('actualizadoPor', '') is string &&
-        request.resource.data.get('actualizadoPor', '').size() <= 254 &&
-        request.resource.data.get('modoCooperacionActiva', false) is bool &&
-        request.resource.data.get('edicionCooperativaPausada', false) is bool;
+      allow create: if (isActiveStudent(uid) || isTeacher()) &&
+        validCollaborationDocument() &&
+        (
+          isTeacher() ||
+          (
+            request.resource.data.get('modoCooperacionActiva', false) == false &&
+            request.resource.data.get('edicionCooperativaPausada', false) == false
+          )
+        );
+      allow update: if (isActiveStudent(uid) || isTeacher()) &&
+        validCollaborationDocument() &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.sectionId == resource.data.sectionId &&
+        request.resource.data.semilla == resource.data.semilla &&
+        request.resource.data.creadoEn == resource.data.creadoEn &&
+        request.resource.data.creadoPor == resource.data.creadoPor &&
+        (
+          (
+            isTeacher() &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'actualizadoEn',
+              'actualizadoPor',
+              'modoCooperacionActiva',
+              'edicionCooperativaPausada'
+            ])
+          ) ||
+          (
+            isActiveStudent(uid) &&
+            request.resource.data.get('actualizadoPor', '') ==
+              authenticatedEmail() &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'actualizadoEn',
+              'actualizadoPor'
+            ])
+          )
+        );
       allow delete: if isTeacher();
 
       // Las actualizaciones Yjs son inmutables y se pueden aplicar en cualquier orden.
       match /actualizaciones/{actualizacionId} {
         allow get, list: if ownsDocument(uid) || isTeacher();
-        allow create: if (ownsDocument(uid) || isTeacher()) &&
+        allow create: if (isActiveStudent(uid) || isTeacher()) &&
           request.resource.data.keys().hasAll([
             'id',
             'uid',
@@ -907,63 +953,86 @@ service cloud.firestore {
           request.resource.data.rol in ['estudiante', 'docente'] &&
           (
             request.resource.data.rol == 'estudiante'
-              ? ownsDocument(uid)
+              ? isActiveStudent(uid)
               : isTeacher()
           ) &&
           request.resource.data.autorUid == request.auth.uid &&
           request.resource.data.autorEmail ==
             request.auth.token.get('email', '') &&
-          request.resource.data.creadoEn == request.time;
+          request.resource.data.creadoEn == request.time &&
+          (
+            request.resource.data.rol == 'docente' ||
+            (
+              exists(
+                /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
+              ) &&
+              (
+                get(
+                  /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
+                ).data.get('modoCooperacionActiva', false) == false ||
+                get(
+                  /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
+                ).data.get('edicionCooperativaPausada', false) == false
+              )
+            )
+          );
         allow update: if false;
         allow delete: if isTeacher();
       }
 
       // Presencia y posición de selección de los participantes conectados.
       match /presencia/{clienteId} {
+        function validCollaborationPresence() {
+          return request.resource.data.keys().hasAll([
+              'clienteId',
+              'uid',
+              'sectionId',
+              'rol',
+              'nombre',
+              'autorUid',
+              'cursorInicio',
+              'cursorFin',
+              'escribiendo',
+              'activoEn'
+            ]) &&
+            request.resource.data.keys().hasOnly([
+              'clienteId',
+              'uid',
+              'sectionId',
+              'rol',
+              'nombre',
+              'autorUid',
+              'cursorInicio',
+              'cursorFin',
+              'escribiendo',
+              'activoEn'
+            ]) &&
+            request.resource.data.clienteId == clienteId &&
+            request.resource.data.uid == uid &&
+            request.resource.data.sectionId == sectionId &&
+            request.resource.data.rol in ['estudiante', 'docente'] &&
+            (
+              request.resource.data.rol == 'estudiante'
+                ? isActiveStudent(uid)
+                : isTeacher()
+            ) &&
+            request.resource.data.nombre is string &&
+            request.resource.data.nombre.size() <= 254 &&
+            request.resource.data.autorUid == request.auth.uid &&
+            request.resource.data.cursorInicio is int &&
+            request.resource.data.cursorInicio >= 0 &&
+            request.resource.data.cursorFin is int &&
+            request.resource.data.cursorFin >= 0 &&
+            request.resource.data.escribiendo is bool &&
+            request.resource.data.activoEn == request.time;
+        }
+
         allow get, list: if ownsDocument(uid) || isTeacher();
-        allow create, update: if (ownsDocument(uid) || isTeacher()) &&
-          request.resource.data.keys().hasAll([
-            'clienteId',
-            'uid',
-            'sectionId',
-            'rol',
-            'nombre',
-            'autorUid',
-            'cursorInicio',
-            'cursorFin',
-            'escribiendo',
-            'activoEn'
-          ]) &&
-          request.resource.data.keys().hasOnly([
-            'clienteId',
-            'uid',
-            'sectionId',
-            'rol',
-            'nombre',
-            'autorUid',
-            'cursorInicio',
-            'cursorFin',
-            'escribiendo',
-            'activoEn'
-          ]) &&
-          request.resource.data.clienteId == clienteId &&
-          request.resource.data.uid == uid &&
-          request.resource.data.sectionId == sectionId &&
-          request.resource.data.rol in ['estudiante', 'docente'] &&
-          (
-            request.resource.data.rol == 'estudiante'
-              ? ownsDocument(uid)
-              : isTeacher()
-          ) &&
-          request.resource.data.nombre is string &&
-          request.resource.data.nombre.size() <= 254 &&
-          request.resource.data.autorUid == request.auth.uid &&
-          request.resource.data.cursorInicio is int &&
-          request.resource.data.cursorInicio >= 0 &&
-          request.resource.data.cursorFin is int &&
-          request.resource.data.cursorFin >= 0 &&
-          request.resource.data.escribiendo is bool &&
-          request.resource.data.activoEn == request.time;
+        allow create: if (isActiveStudent(uid) || isTeacher()) &&
+          validCollaborationPresence();
+        allow update: if (isActiveStudent(uid) || isTeacher()) &&
+          resource.data.autorUid == request.auth.uid &&
+          validCollaborationPresence();
         allow delete: if request.auth.uid == resource.data.autorUid ||
           isTeacher();
       }
@@ -971,7 +1040,7 @@ service cloud.firestore {
       // Conversación asociada a cada desafío colaborativo.
       match /mensajes/{mensajeId} {
         allow get, list: if ownsDocument(uid) || isTeacher();
-        allow create: if (ownsDocument(uid) || isTeacher()) &&
+        allow create: if (isActiveStudent(uid) || isTeacher()) &&
           request.resource.data.keys().hasAll([
             'id',
             'uid',
@@ -1001,7 +1070,7 @@ service cloud.firestore {
           request.resource.data.rol in ['estudiante', 'docente'] &&
           (
             request.resource.data.rol == 'estudiante'
-              ? ownsDocument(uid)
+              ? isActiveStudent(uid)
               : isTeacher()
           ) &&
           request.resource.data.autorUid == request.auth.uid &&
@@ -1016,7 +1085,7 @@ service cloud.firestore {
       // Registro resumido de las contribuciones realizadas en el editor.
       match /historialAportes/{aporteId} {
         allow get, list: if ownsDocument(uid) || isTeacher();
-        allow create: if (ownsDocument(uid) || isTeacher()) &&
+        allow create: if (isActiveStudent(uid) || isTeacher()) &&
           request.resource.data.keys().hasAll([
             'id',
             'uid',
@@ -1047,7 +1116,7 @@ service cloud.firestore {
           request.resource.data.rol in ['estudiante', 'docente'] &&
           (
             request.resource.data.rol == 'estudiante'
-              ? ownsDocument(uid)
+              ? isActiveStudent(uid)
               : isTeacher()
           ) &&
           request.resource.data.autorUid == request.auth.uid &&
@@ -1060,7 +1129,23 @@ service cloud.firestore {
           request.resource.data.caracteresAgregados >= 0 &&
           request.resource.data.caracteresEliminados is int &&
           request.resource.data.caracteresEliminados >= 0 &&
-          request.resource.data.creadoEn == request.time;
+          request.resource.data.creadoEn == request.time &&
+          (
+            request.resource.data.rol == 'docente' ||
+            (
+              exists(
+                /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
+              ) &&
+              (
+                get(
+                  /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
+                ).data.get('modoCooperacionActiva', false) == false ||
+                get(
+                  /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
+                ).data.get('edicionCooperativaPausada', false) == false
+              )
+            )
+          );
         allow update: if false;
         allow delete: if isTeacher();
       }
