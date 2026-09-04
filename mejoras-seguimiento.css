@@ -269,6 +269,69 @@ textarea.collab-source-editor{position:relative!important;z-index:1!important;co
     min-height:220px;
   }
 }
+
+/* Estado y autoria visibles dentro del editor cooperativo CodeMirror. */
+.teacher-collab-heading-status{
+  display:flex;
+  align-items:center;
+  gap:.55rem;
+  flex-wrap:wrap;
+  margin-top:.25rem;
+}
+.teacher-collab-course-status{
+  display:inline-flex;
+  align-items:center;
+  gap:.3rem;
+  padding:.22rem .42rem;
+  border:1px solid rgba(148,163,184,.34);
+  border-radius:5px;
+  background:rgba(51,65,85,.5);
+  color:#cbd5e1;
+  font-size:.64rem;
+  font-weight:800;
+}
+.teacher-collab-course-status.is-active{
+  border-color:rgba(74,222,128,.6);
+  background:rgba(22,101,52,.3);
+  color:#bbf7d0;
+}
+.teacher-collab-course-status.is-paused{
+  border-color:rgba(251,191,36,.58);
+  background:rgba(120,53,15,.3);
+  color:#fde68a;
+}
+.teacher-collab-course-status.is-error{
+  border-color:rgba(248,113,113,.62);
+  background:rgba(127,29,29,.3);
+  color:#fecaca;
+}
+.teacher-collab-course-status.is-closed{
+  border-color:rgba(148,163,184,.4);
+  color:#cbd5e1;
+}
+.codemirror-host .cm-cursor,
+.codemirror-host .cm-dropCursor{
+  border-left:3px solid #f8fafc!important;
+  filter:drop-shadow(0 0 2px rgba(56,189,248,.95));
+}
+.codemirror-host .cm-focused .cm-cursor{
+  animation:cmLocalCursorBlink 1.05s steps(1) infinite;
+}
+.codemirror-host .cm-author-student{
+  background:rgba(34,197,94,.23);
+  box-shadow:inset 0 -2px 0 rgba(74,222,128,.9);
+  border-radius:2px;
+}
+.codemirror-host .cm-author-teacher{
+  background:rgba(245,158,11,.25);
+  box-shadow:inset 0 -2px 0 rgba(251,191,36,.95);
+  border-radius:2px;
+}
+.codemirror-host .cm-author-base{color:inherit}
+@keyframes cmLocalCursorBlink{
+  0%,48%{opacity:1}
+  49%,100%{opacity:.18}
+}
 .tracking-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:.7rem;flex-wrap:wrap;margin-bottom:.75rem}
 .tracking-panel-heading h4{margin:0;color:#bae6fd}
 .tracking-config-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.65rem}

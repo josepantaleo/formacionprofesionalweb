@@ -2406,6 +2406,7 @@
       import * as Y from "https://cdn.jsdelivr.net/npm/yjs@13.6.31/+esm";
       import {
         Compartment,
+        Decoration,
         EditorState,
         EditorView,
         keymap,
@@ -2420,9 +2421,10 @@
         autocompletion,
         completionKeymap,
         startCompletion
-      } from "./codemirror-bundle.js?v=20260904-2";
+      } from "./codemirror-bundle.js?v=20260904-3";
       window.CodeMirror6 = {
         Compartment,
+        Decoration,
         EditorState,
         EditorView,
         keymap,
@@ -3399,6 +3401,18 @@
       function instalarResaltadoAutoresCRDT(textarea, sesion) {
         if (!textarea || !sesion) return () => {};
         if (textarea.__quitarResaltadoAutoresCRDT) textarea.__quitarResaltadoAutoresCRDT();
+        if (textarea.__codeMirrorView && typeof textarea.__renderAuthorDecorations === "function") {
+          const renderizar = () => textarea.__renderAuthorDecorations(sesion.texto.toDelta());
+          textarea.__renderizarAportesCRDT = renderizar;
+          renderizar();
+          const quitar = () => {
+            textarea.__renderAuthorDecorations([]);
+            delete textarea.__renderizarAportesCRDT;
+            delete textarea.__quitarResaltadoAutoresCRDT;
+          };
+          textarea.__quitarResaltadoAutoresCRDT = quitar;
+          return quitar;
+        }
         const anteriorPadre = textarea.parentNode;
         const escenario = document.createElement("div");
         escenario.className = "collab-code-stage";
@@ -3992,11 +4006,17 @@
       };
 
       window.vaciarChatColaborativoFirebase = async function(uid, sectionId) {
-        const contexto = contextoDocenteFirebase();
-        const user = contexto.user || await window.firebaseTeacherAuthReady;
-        const database = contexto.database;
-        if (!user || !database || !uid || !sectionId) return { ok: false, eliminados: 0 };
-        if (!(await verificarUsuarioDocente(user))) return { ok: false, eliminados: 0 };
+        if (!uid || !sectionId) {
+          return { ok: false, eliminados: 0, error: "No se identificó la conversación que se quiere eliminar." };
+        }
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) {
+          return { ok: false, eliminados: 0, error: "No hay una sesión docente autorizada activa." };
+        }
+        const { user, database } = contextoDocenteFirebase();
+        if (!user || !database) {
+          return { ok: false, eliminados: 0, error: "Firebase todavía no está disponible para la cuenta docente." };
+        }
         try {
           const referencia = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes");
           const snapshot = await getDocs(referencia);
@@ -4012,7 +4032,13 @@
           return { ok: true, eliminados };
         } catch (error) {
           console.error("No se pudo vaciar el chat colaborativo:", error);
-          return { ok: false, eliminados: 0, error: error?.message || "No se pudo eliminar la conversación." };
+          const codigo = String(error?.code || "");
+          const detalle = error?.message || "No se pudo eliminar la conversación.";
+          return {
+            ok: false,
+            eliminados: 0,
+            error: codigo ? `${codigo}: ${detalle}` : detalle
+          };
         }
       };
 
@@ -5778,7 +5804,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-<link rel="stylesheet" href="mejoras-seguimiento.css?v=20260904-23">
+<link rel="stylesheet" href="mejoras-seguimiento.css?v=20260904-24">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -11752,6 +11778,7 @@
           }
           const {
               Compartment,
+              Decoration,
               EditorState,
               EditorView,
               keymap,
@@ -11782,6 +11809,7 @@
           host.appendChild(cursors);
           let sincronizando = false;
           const ajusteLineas = new Compartment();
+          const autoriasCodigo = new Compartment();
           const posicionCursor = barra.querySelector(".cm-workbench-position");
           const estadoHerramientas = barra.querySelector(".cm-workbench-status");
           const actualizarPosicionCursor = estado => {
@@ -11816,6 +11844,7 @@
                           highlightActiveLine(),
                           drawSelection(),
                           ajusteLineas.of([]),
+                          autoriasCodigo.of([]),
                           atajos,
                           EditorView.updateListener.of(update => {
                               actualizarTextarea(update);
@@ -11842,8 +11871,35 @@
           textarea.__syncCodeMirror = valor => {
               if (view.state.doc.toString() === String(valor || "")) return;
               sincronizando = true;
+              view.dispatch({ effects: autoriasCodigo.reconfigure([]) });
               view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: String(valor || "") } });
               sincronizando = false;
+          };
+          textarea.__renderAuthorDecorations = fragmentos => {
+              let posicion = 0;
+              const limite = view.state.doc.length;
+              const rangos = [];
+              (Array.isArray(fragmentos) ? fragmentos : []).forEach(fragmento => {
+                  const texto = typeof fragmento?.insert === "string"
+                      ? fragmento.insert
+                      : String(fragmento?.insert || "");
+                  const inicio = Math.min(limite, posicion);
+                  posicion += texto.length;
+                  const fin = Math.min(limite, posicion);
+                  if (fin <= inicio) return;
+                  const rol = fragmento?.attributes?.autorRol;
+                  const clase = rol === "docente"
+                      ? "cm-author-teacher"
+                      : rol === "estudiante"
+                          ? "cm-author-student"
+                          : "cm-author-base";
+                  rangos.push(Decoration.mark({ class: clase }).range(inicio, fin));
+              });
+              view.dispatch({
+                  effects: autoriasCodigo.reconfigure(
+                      EditorView.decorations.of(Decoration.set(rangos, true))
+                  )
+              });
           };
           textarea.__getCodeMirrorSelection = () => ({
               inicio: view.state.selection.main.from,
@@ -11880,6 +11936,14 @@
                   cursors.appendChild(marcador);
               });
           };
+          const renderCursoresRemotos = textarea.__renderRemoteCursors;
+          textarea.__renderRemoteCursors = participantes => {
+              textarea.__remoteCursorParticipants = Array.isArray(participantes) ? participantes : [];
+              renderCursoresRemotos(textarea.__remoteCursorParticipants);
+          };
+          view.scrollDOM.addEventListener("scroll", () => {
+              textarea.__renderRemoteCursors(textarea.__remoteCursorParticipants || []);
+          }, { passive: true });
           const campoBusqueda = barra.querySelector("input[type=search]");
           const buscarSiguiente = () => {
               const termino = campoBusqueda.value;
@@ -11919,7 +11983,11 @@
               view.dispatch({ effects: ajusteLineas.reconfigure(activo ? EditorView.lineWrapping : []) });
               view.focus();
           };
-          textarea.addEventListener("crdt-remote-change", () => textarea.__syncCodeMirror?.(textarea.value));
+          textarea.addEventListener("crdt-remote-change", () => {
+              textarea.__syncCodeMirror?.(textarea.value);
+              textarea.__renderizarAportesCRDT?.();
+              textarea.__renderRemoteCursors?.(textarea.__remoteCursorParticipants || []);
+          });
           textarea.__setCodeMirrorDisabled(textarea.disabled);
           actualizarPosicionCursor(view.state);
           return view;
@@ -17654,7 +17722,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260904-23"></script>
+    <script src="mejoras-seguimiento.js?v=20260904-24"></script>
   </body>
 </html>
 

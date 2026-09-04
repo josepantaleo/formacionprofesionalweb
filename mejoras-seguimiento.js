@@ -532,6 +532,11 @@ function iniciarAlertasChatCooperativoEstudiante(){
  if(!user||esSesionDocenteActual()||typeof window.escucharChatColaborativoFirebase!=="function")return;
  asegurarPopupMensajeCooperativoEstudiante();
  const secciones=[...new Set((typeof seccionesData!=="undefined"?seccionesData:[]).map(item=>item?.id).filter(Boolean))];
+ if(!secciones.length){
+  clearTimeout(window.__reintentoPopupCooperativo);
+  window.__reintentoPopupCooperativo=setTimeout(iniciarAlertasChatCooperativoEstudiante,1600);
+  return;
+ }
  secciones.forEach(sectionId=>{
   const detener=window.escucharChatColaborativoFirebase(user.uid,sectionId,(mensajes,error)=>{
    if(error)return;
@@ -606,6 +611,7 @@ function renderPresenciaEditorColaborativo(modal,participantes=[]){
  const aviso=modal?.querySelector("#editorColaborativoPresencia");if(!aviso)return;
  const pausada=modal.dataset.edicionCooperativaPausada==="true",uidDocente=uidSesionColaborativa("docente"),activos=(participantes||[]).filter(item=>item?.autorUid);
  const escribiendo=activos.filter(item=>item.escribiendo===true&&item.autorUid!==uidDocente);
+ actualizarEstadoCursoCooperativo(modal,pausada?"paused":modal.__crdtSession?"active":"waiting");
  aviso.className=`teacher-collab-presence${pausada?" is-paused":escribiendo.length?" is-typing":""}`;
  if(pausada){aviso.innerHTML='<i class="fa-solid fa-pause"></i><span>Edición cooperativa pausada por el docente.</span>';return;}
  if(escribiendo.length){
@@ -615,6 +621,18 @@ function renderPresenciaEditorColaborativo(modal,participantes=[]){
  }
  const nombres=[...new Set(activos.map(item=>item.nombre||item.rol||"Participante"))];
  aviso.innerHTML=`<i class="fa-solid fa-people-arrows"></i><span>${nombres.length?`Conectados: ${escaparProgramacion(nombres.join(", "))}`:"Esperando al estudiante…"}</span>`;
+}
+function actualizarEstadoCursoCooperativo(modal,estado="waiting"){
+ const indicador=modal?.querySelector("#estadoCursoCooperativo");if(!indicador)return;
+ const datos={
+  active:["En curso","fa-circle-play"],
+  paused:["Pausada","fa-circle-pause"],
+  waiting:["Preparando","fa-clock"],
+  error:["Sin conexión","fa-triangle-exclamation"],
+  closed:["Finalizada","fa-circle-stop"]
+ }[estado]||["Preparando","fa-clock"];
+ indicador.className=`teacher-collab-course-status is-${estado}`;
+ indicador.innerHTML=`<i class="fa-solid ${datos[1]}"></i><span>${datos[0]}</span>`;
 }
 function actualizarPausaEditorColaborativo(modal,pausada){
  if(!modal)return;
@@ -659,6 +677,14 @@ function asegurarEditorColaborativoDocente(){
  const modal=document.createElement("div");modal.id="editorColaborativoDocenteModal";modal.className="modal-overlay";modal.setAttribute("role","dialog");modal.setAttribute("aria-modal","true");
  modal.innerHTML=`<div class="modal-box teacher-collab-box"><div class="teacher-program-header"><div><h3><i class="fa-solid fa-code-branch"></i> Editor colaborativo en vivo</h3><p id="editorColaborativoAlumno"></p><small id="editorColaborativoEstado">Conectando...</small></div><button class="btn btn-secondary" id="cerrarEditorColaborativo" type="button"><i class="fa-solid fa-xmark"></i></button></div><div class="teacher-collab-presence" id="editorColaborativoPresencia"><i class="fa-solid fa-people-arrows"></i><span>Esperando al estudiante…</span></div><div class="collab-author-legend" aria-label="Referencias de autoría del código"><strong><i class="fa-solid fa-palette"></i> Aportes:</strong><span class="collab-author-key student">Estudiante</span><span class="collab-author-key teacher">Docente</span><span class="collab-author-key base">Código inicial</span></div><textarea id="editorColaborativoCodigo" class="teacher-collab-editor" spellcheck="false"></textarea><div class="teacher-program-actions"><span id="editorColaborativoGuardado" role="status">Sincronización automática</span><div style="display:flex;gap:.45rem;flex-wrap:wrap"><button class="btn btn-success" id="iniciarAudioCooperativo" type="button" title="Iniciar una llamada de audio con el estudiante"><i class="fa-solid fa-headset"></i> Llamada de audio</button><button class="btn btn-warning" id="pausarEdicionCooperativa" type="button" aria-pressed="false"><i class="fa-solid fa-pause"></i> Pausar edición</button><button class="btn btn-primary" id="guardarEditorColaborativo" type="button"><i class="fa-solid fa-arrows-rotate"></i> Sincronizar ahora</button></div></div><section class="collab-history"><div class="collab-history-header"><strong><i class="fa-solid fa-clock-rotate-left"></i> Historial de aportes</strong><small id="historialAportesDocenteEstado">Conectando...</small></div><div id="historialAportesDocenteLista" class="collab-history-list" aria-live="polite"></div></section><section class="collab-chat"><div class="collab-chat-header"><strong><i class="fa-solid fa-comments"></i> Chat con el estudiante</strong><span id="chatColaborativoDocenteEstado" class="collab-chat-status">Conectando...</span></div><div class="collab-chat-tools"><button class="btn btn-success" id="iniciarAudioDesdeChat" type="button"><i class="fa-solid fa-headset"></i> Iniciar audio</button><button class="btn btn-secondary" id="compartirSeleccionChat" type="button"><i class="fa-solid fa-share-from-square"></i> Compartir selección</button><button class="btn btn-danger" id="vaciarChatColaborativoDocente" type="button" title="Eliminar todos los mensajes de esta conversación"><i class="fa-solid fa-trash-can"></i> Vaciar chat</button></div><div class="collab-quick-replies"><button type="button" data-quick-reply="Revisá esta parte y contame qué observás.">Revisá esta parte</button><button type="button" data-quick-reply="Probá ejecutar el código y compartime el error.">Probá y compartime el error</button><button type="button" data-quick-reply="Muy bien, continuá con el siguiente paso.">Continuá</button></div><div id="chatColaborativoDocenteLista" class="collab-chat-messages" aria-live="polite"></div><div class="collab-chat-compose"><textarea id="chatColaborativoDocenteTexto" maxlength="1200" rows="3" placeholder="Escribí una indicación o respuesta..."></textarea><button class="btn btn-primary" id="enviarChatColaborativoDocente" type="button"><i class="fa-solid fa-paper-plane"></i> Enviar</button></div></section></div>`;
  document.body.appendChild(modal);
+ const cabeceraEstado=modal.querySelector("#editorColaborativoEstado");
+ if(cabeceraEstado){
+  const grupo=document.createElement("div");
+  grupo.className="teacher-collab-heading-status";
+  cabeceraEstado.parentNode.insertBefore(grupo,cabeceraEstado);
+  grupo.appendChild(cabeceraEstado);
+  grupo.insertAdjacentHTML("beforeend",'<span id="estadoCursoCooperativo" class="teacher-collab-course-status is-waiting"><i class="fa-solid fa-clock"></i><span>Preparando</span></span>');
+ }
  const caja=modal.querySelector(".teacher-collab-box"),cabecera=modal.querySelector(".teacher-program-header"),cerrarBoton=modal.querySelector("#cerrarEditorColaborativo");
  const botonPantalla=document.createElement("button");
  botonPantalla.id="pantallaCompletaEditorCooperativo";
@@ -718,6 +744,7 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
  const modal=document.getElementById("editorColaborativoDocenteModal"),sec=(typeof seccionesData!=="undefined"?seccionesData:[]).find(x=>x.id===sectionId),codigo=d.codigos?.[sectionId]||d.historialResultados?.[sectionId]?.codigo||"";
  const editor=document.getElementById("editorColaborativoCodigo"),estado=document.getElementById("editorColaborativoEstado"),salida=document.getElementById("editorColaborativoGuardado");
  modal.dataset.uid=d.uid;modal.dataset.sectionId=sectionId;modal.dataset.studentIndex=String(indice);
+ actualizarEstadoCursoCooperativo(modal,"waiting");
  document.getElementById("editorColaborativoAlumno").textContent=`${d.estudiante?.nombre||d.nombreGoogle||d.email||"Estudiante"} · ${sec?.title||sectionId}`;
  editor.value=codigo;editor.__syncCodeMirror?.(codigo);editor.disabled=true;editor.__setCodeMirrorDisabled?.(true);
  estado.textContent="Verificando la cuenta docente...";salida.textContent="Preparando colaboración";salida.className="";
@@ -734,6 +761,7 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
   estado.textContent="Conectando al documento colaborativo...";
   modal.__crdtSession=await window.iniciarEditorCRDTDocente?.({uid:d.uid,sectionId,codigoInicial:codigo,textarea:editor,estado});
   if(!modal.__crdtSession)throw new Error("crdt-session-not-created");
+  actualizarEstadoCursoCooperativo(modal,"active");
   editor.__syncCodeMirror?.(editor.value);
   modal.__quitarPresenciaColaborativa=modal.__crdtSession.onPresence?.(participantes=>{modal.__participantesColaborativos=participantes;editor.__renderRemoteCursors?.(participantes);renderPresenciaEditorColaborativo(modal,participantes);})||null;
   modal.__quitarModoCooperacion=modal.__crdtSession.onModoCooperacion?.(({pausada})=>actualizarPausaEditorColaborativo(modal,pausada))||null;
@@ -742,6 +770,7 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
   editor.disabled=false;editor.__setCodeMirrorDisabled?.(false);modal.querySelector(".cm-content")?.focus();
   estado.textContent="Colaboración activa";salida.textContent="Sincronización automática activa";salida.className="success";
  }catch(error){
+  actualizarEstadoCursoCooperativo(modal,"error");
   console.error(error);
   if(detenerChatColaborativoDocente){detenerChatColaborativoDocente();detenerChatColaborativoDocente=null;}
   if(detenerHistorialAportesDocente){detenerHistorialAportesDocente();detenerHistorialAportesDocente=null;}
