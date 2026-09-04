@@ -18,4 +18,7 @@ Carpeta preparada para publicarse con GitHub Pages.
 - Aportes del estudiante en verde y del docente en amarillo.
 - Estado visible `En curso` durante la cooperacion.
 - Chat cooperativo con boton para vaciar la conversacion.
-- Popup emergente cuando el estudiante recibe un mensaje nuevo del docente.
+- Popup emergente con contador de pendientes, visible hasta que el estudiante confirme cada mensaje.
+- Aviso de cuota Firebase compacto y descartable, sin bloquear la pantalla.
+- Confirmaciones docentes visibles sobre el editor cooperativo, incluso en pantalla completa.
+- Colaboracion optimizada: una sola sesion activa por estudiante, presencia agrupada y consultas recientes limitadas.

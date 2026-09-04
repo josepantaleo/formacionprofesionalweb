@@ -2185,7 +2185,7 @@
       }
       .teacher-tab-badge.tabs-warning{background:rgba(161,98,7,.28);border-color:rgba(251,191,36,.38);color:#fde68a}
       .teacher-tab-badge.tabs-danger{background:rgba(153,27,27,.34);border-color:rgba(248,113,113,.46);color:#fca5a5}
-      #confirmacionDocenteModal{z-index:12000}
+      #confirmacionDocenteModal{z-index:50000!important}
       .teacher-confirm-box{
         width:min(520px,calc(100vw - 1rem));
         max-width:520px;
@@ -2400,7 +2400,7 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, collectionGroup, onSnapshot, getDocs, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, collectionGroup, query, orderBy, limit, onSnapshot, getDocs, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
       import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
       import { getAI, getTemplateGenerativeModel, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
       import * as Y from "https://cdn.jsdelivr.net/npm/yjs@13.6.31/+esm";
@@ -3328,6 +3328,10 @@
 
       function mensajeErrorCRDT(error) {
         const codigo = String(error?.code || "");
+        const mensaje = String(error?.message || "");
+        if (codigo.includes("resource-exhausted") || codigo.includes("quota-exceeded") || /quota exceeded/i.test(mensaje)) {
+          return "Firebase alcanzó la cuota disponible de lecturas o escrituras. La colaboración y el chat se reanudarán cuando la cuota se restablezca o se amplíe el plan del proyecto.";
+        }
         if (codigo.includes("permission-denied")) {
           return "Firestore rechazó la colaboración. Publicá reglas.txt en el proyecto ipem146js con una cuenta administradora.";
         }
@@ -3337,7 +3341,7 @@
         if (codigo.includes("unavailable") || codigo.includes("network")) {
           return "No se pudo conectar con Firestore. Revisá Internet e intentá nuevamente.";
         }
-        return String(error?.message || "No se pudo iniciar la colaboración CRDT.");
+        return mensaje || "No se pudo iniciar la colaboración CRDT.";
       }
 
       function mostrarErrorCRDTEstudiante(error) {
@@ -3345,10 +3349,12 @@
         if (!aviso) {
           aviso = document.createElement("div");
           aviso.id = "avisoErrorCRDT";
-          aviso.style.cssText = "position:fixed;left:1rem;right:1rem;bottom:1rem;z-index:13000;max-width:760px;margin:auto;padding:.8rem 1rem;border:1px solid #ef4444;border-radius:8px;background:#450a0a;color:#fecaca;box-shadow:0 15px 40px rgba(0,0,0,.45);font-size:.78rem;line-height:1.45";
+          aviso.className = "crdt-status-toast";
+          aviso.setAttribute("role", "status");
           document.body.appendChild(aviso);
         }
-        aviso.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation"></i> Colaboración en vivo no disponible</strong><br>${mensajeErrorCRDT(error)}`;
+        aviso.innerHTML = `<span class="crdt-status-toast-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span><span class="crdt-status-toast-copy"><strong>Colaboración temporalmente pausada</strong><small>${mensajeErrorCRDT(error)}</small></span><button type="button" aria-label="Ocultar aviso" title="Ocultar"><i class="fa-solid fa-xmark"></i></button>`;
+        aviso.querySelector("button").onclick = () => aviso.remove();
       }
 
       function bytesABase64(bytes) {
@@ -3495,8 +3501,19 @@
         let reintentosSincronizacion = 0;
         let reintentosAportes = 0;
         let destruida = false;
+        let ultimaActualizacionMeta = 0;
+        let ultimaPresenciaEnviada = null;
+        let presenciaPendiente = null;
+        let temporizadorPresencia = null;
 
         const notificar = (estado, detalle = "") => estadoListeners.forEach(fn => fn({ estado, detalle }));
+        const esErrorCuota = error => {
+          const codigo = String(error?.code || "");
+          const mensaje = String(error?.message || "");
+          return codigo.includes("resource-exhausted")
+            || codigo.includes("quota-exceeded")
+            || /quota exceeded/i.test(mensaje);
+        };
         const notificarModoCooperacion = ({ activo = false, pausada = false } = {}) => {
           modoCooperacionActivo = activo === true;
           edicionCooperativaPausada = pausada === true;
@@ -3563,17 +3580,22 @@
               autorEmail: user.email || "",
               creadoEn: serverTimestamp()
             });
-            await setDoc(metaRef, {
-              actualizadoEn: serverTimestamp(),
-              actualizadoPor: user.email || user.uid
-            }, { merge: true });
+            if (Date.now() - ultimaActualizacionMeta > 30000) {
+              ultimaActualizacionMeta = Date.now();
+              setDoc(metaRef, {
+                actualizadoEn: serverTimestamp(),
+                actualizadoPor: user.email || user.uid
+              }, { merge: true }).catch(() => {});
+            }
             reintentosSincronizacion = 0;
             notificar("synced", "Cambios sincronizados");
           } catch (error) {
             console.error("No se pudo publicar la actualización CRDT:", error);
             cola.unshift(lote);
             reintentosSincronizacion = Math.min(reintentosSincronizacion + 1, 6);
-            const demora = Math.min(10000, 500 * (2 ** (reintentosSincronizacion - 1)));
+            const demora = esErrorCuota(error)
+              ? Math.min(300000, 60000 * reintentosSincronizacion)
+              : Math.min(30000, 750 * (2 ** (reintentosSincronizacion - 1)));
             clearTimeout(temporizador);
             temporizador = setTimeout(publicarCola, demora);
             notificar("error", "Sin conexión. Se reintentará automáticamente");
@@ -3607,7 +3629,9 @@
             console.error("No se pudo registrar el aporte colaborativo:", error);
             aportesPendientes = pendientes.concat(aportesPendientes);
             reintentosAportes = Math.min(reintentosAportes + 1, 6);
-            const demora = Math.min(10000, 750 * (2 ** (reintentosAportes - 1)));
+            const demora = esErrorCuota(error)
+              ? Math.min(300000, 60000 * reintentosAportes)
+              : Math.min(45000, 1000 * (2 ** (reintentosAportes - 1)));
             clearTimeout(temporizadorAportes);
             temporizadorAportes = setTimeout(publicarAportes, demora);
           }
@@ -3620,14 +3644,14 @@
           if (!agregado && !eliminado) return;
           aportesPendientes.push({ texto, agregado, eliminado });
           clearTimeout(temporizadorAportes);
-          temporizadorAportes = setTimeout(publicarAportes, 650);
+          temporizadorAportes = setTimeout(publicarAportes, 5000);
         };
 
         documento.on("update", (update, origen) => {
           if (origen === ORIGEN_FIRESTORE_CRDT || destruida) return;
           cola.push(update);
           clearTimeout(temporizador);
-          temporizador = setTimeout(publicarCola, 90);
+          temporizador = setTimeout(publicarCola, 650);
         });
 
         const detenerActualizaciones = onSnapshot(actualizacionesRef, snapshot => {
@@ -3661,23 +3685,46 @@
           error => console.error("No se pudo actualizar la presencia colaborativa:", error)
         );
 
-        const actualizarPresencia = (cursor = {}) => {
+        const publicarPresencia = async () => {
+          temporizadorPresencia = null;
+          if (destruida || !presenciaPendiente) return;
+          const siguiente = presenciaPendiente;
+          presenciaPendiente = null;
+          const firma = `${siguiente.cursorInicio}:${siguiente.cursorFin}:${siguiente.escribiendo}`;
+          if (firma === ultimaPresenciaEnviada?.firma && Date.now() - ultimaPresenciaEnviada.enviadoEn < 45000) return;
+          try {
+            await setDoc(presenciaRef, {
+              clienteId,
+              uid,
+              sectionId,
+              rol,
+              nombre: user.displayName || user.email || rol,
+              autorUid: user.uid,
+              ...siguiente,
+              activoEn: serverTimestamp()
+            }, { merge: true });
+            ultimaPresenciaEnviada = {
+              firma,
+              enviadoEn: Date.now(),
+              cursorInicio: siguiente.cursorInicio,
+              cursorFin: siguiente.cursorFin
+            };
+          } catch (_) {}
+        };
+        const actualizarPresencia = (cursor = {}, inmediata = false) => {
           if (typeof cursor.escribiendo === "boolean") escribiendo = cursor.escribiendo;
-          return setDoc(presenciaRef, {
-          clienteId,
-          uid,
-          sectionId,
-          rol,
-          nombre: user.displayName || user.email || rol,
-          autorUid: user.uid,
-          cursorInicio: Math.max(0, Number(cursor.inicio) || 0),
-          cursorFin: Math.max(0, Number(cursor.fin) || 0),
-          escribiendo,
-          activoEn: serverTimestamp()
-          }, { merge: true }).catch(() => {});
+          presenciaPendiente = {
+            cursorInicio: Math.max(0, Number(cursor.inicio ?? ultimaPresenciaEnviada?.cursorInicio) || 0),
+            cursorFin: Math.max(0, Number(cursor.fin ?? ultimaPresenciaEnviada?.cursorFin) || 0),
+            escribiendo
+          };
+          clearTimeout(temporizadorPresencia);
+          if (inmediata) return publicarPresencia();
+          temporizadorPresencia = setTimeout(publicarPresencia, 900);
+          return Promise.resolve();
         };
 
-        await actualizarPresencia();
+        await actualizarPresencia({}, true);
         if (rol === "docente") {
           await setDoc(metaRef, {
             modoCooperacionActiva: true,
@@ -3686,7 +3733,10 @@
             actualizadoPor: user.email || user.uid
           }, { merge: true });
         }
-        const latido = setInterval(() => actualizarPresencia(), 20000);
+        const latido = setInterval(() => {
+          ultimaPresenciaEnviada = null;
+          actualizarPresencia({}, true);
+        }, 50000);
         const sesion = {
           clave,
           documento,
@@ -3735,6 +3785,7 @@
             destruida = true;
             clearTimeout(temporizador);
             clearTimeout(temporizadorAportes);
+            clearTimeout(temporizadorPresencia);
             clearInterval(latido);
             detenerActualizaciones();
             detenerModoCooperacion();
@@ -3840,15 +3891,19 @@
           }, origenLocal);
           sesion.registrarAporte?.({ insertar: cambio.insertar, eliminar: cambio.eliminar });
           textarea.__renderizarAportesCRDT?.();
-          sesion.actualizarPresencia({ inicio: textarea.selectionStart, fin: textarea.selectionEnd, escribiendo: true });
+          const seleccionActual = textarea.__getCodeMirrorSelection?.() || {
+            inicio: textarea.selectionStart,
+            fin: textarea.selectionEnd
+          };
+          sesion.actualizarPresencia({ inicio: seleccionActual.inicio, fin: seleccionActual.fin, escribiendo: true });
           clearTimeout(temporizadorEscritura);
           temporizadorEscritura = setTimeout(() => {
             sesion.actualizarPresencia({
-              inicio: textarea.selectionStart,
-              fin: textarea.selectionEnd,
+              inicio: seleccionActual.inicio,
+              fin: seleccionActual.fin,
               escribiendo: false
             });
-          }, 1100);
+          }, 2500);
         };
         const actualizarCursor = () => {
           const seleccion = textarea.__getCodeMirrorSelection?.() || {
@@ -3905,7 +3960,7 @@
         return sesion;
       };
 
-      window.iniciarColaboracionCRDTEstudiante = async function() {
+      window.iniciarColaboracionCRDTEstudianteLegacy = async function() {
         const user = window.firebaseCurrentUser;
         if (!user || !cuentaEstudianteActiva) return;
         await Promise.all(seccionesData.map(async sec => {
@@ -3933,16 +3988,87 @@
         }));
       };
 
+      let sesionCRDTEstudianteActiva = null;
+      let seccionCRDTEstudianteActiva = "";
+      let inicioCRDTEstudiantePendiente = null;
+      let versionInicioCRDTEstudiante = 0;
+
+      window.iniciarColaboracionCRDTSeccionEstudiante = async function(sectionId) {
+        const user = window.firebaseCurrentUser;
+        if (!user || !cuentaEstudianteActiva || !sectionId) return null;
+        if (seccionCRDTEstudianteActiva === sectionId && sesionCRDTEstudianteActiva) {
+          return sesionCRDTEstudianteActiva;
+        }
+        if (inicioCRDTEstudiantePendiente?.sectionId === sectionId) {
+          return inicioCRDTEstudiantePendiente.promesa;
+        }
+        const versionInicio = ++versionInicioCRDTEstudiante;
+        const promesa = (async () => {
+          const anterior = sesionCRDTEstudianteActiva;
+          const seccionAnterior = seccionCRDTEstudianteActiva;
+          sesionCRDTEstudianteActiva = null;
+          seccionCRDTEstudianteActiva = "";
+          if (anterior) {
+            document.getElementById(`editor-${seccionAnterior}`)?.__desvincularCRDT?.();
+            await anterior.destroy();
+          }
+          const textarea = document.getElementById(`editor-${sectionId}`);
+          if (!textarea) return null;
+          const estado = document.getElementById(`editor-state-${sectionId}`);
+          try {
+            const sesion = await iniciarSesionCodigoCRDT({
+              uid: user.uid,
+              sectionId,
+              codigoInicial: textarea.value,
+              rol: "estudiante"
+            });
+            if (versionInicio !== versionInicioCRDTEstudiante) {
+              await sesion.destroy();
+              return null;
+            }
+            vincularTextareaCodigoCRDT(textarea, sesion, sectionId, estado);
+            sesionCRDTEstudianteActiva = sesion;
+            seccionCRDTEstudianteActiva = sectionId;
+            return sesion;
+          } catch (error) {
+            console.error(`No se pudo iniciar CRDT en ${sectionId}:`, error);
+            window.ultimoErrorCRDT = {
+              code: error?.code || "",
+              message: error?.message || "",
+              sectionId
+            };
+            mostrarErrorCRDTEstudiante(error);
+            if (estado) estado.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Colaboración no disponible';
+            return null;
+          } finally {
+            if (inicioCRDTEstudiantePendiente?.promesa === promesa) inicioCRDTEstudiantePendiente = null;
+          }
+        })();
+        inicioCRDTEstudiantePendiente = { sectionId, promesa };
+        return promesa;
+      };
+
+      window.iniciarColaboracionCRDTEstudiante = async function() {
+        const activa = document.querySelector(".section-card.active")?.id || seccionesData[0]?.id;
+        return window.iniciarColaboracionCRDTSeccionEstudiante?.(activa);
+      };
+
       // Chat asociado al mismo documento colaborativo: cada desafío conserva
       // una conversación independiente entre el estudiante y el docente.
-      window.escucharChatColaborativoFirebase = function(uid, sectionId, alActualizar) {
+      window.escucharChatColaborativoFirebase = function(uid, sectionId, alActualizar, opciones = {}) {
         const docente = Boolean(window.firebaseTeacherUser);
         const contexto = docente
           ? contextoDocenteFirebase()
           : { user: window.firebaseCurrentUser, database: db };
         if (!contexto.user || !contexto.database || !uid || !sectionId || typeof alActualizar !== "function") return null;
-        return onSnapshot(
+        const cantidad = Math.max(1, Math.min(100, Number(opciones.limite) || 60));
+        const referencia = query(
           collection(contexto.database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes"),
+          orderBy("creadoEn", "desc"),
+          limit(cantidad)
+        );
+        return onSnapshot(
+          referencia,
           snapshot => {
             const mensajes = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
             mensajes.sort((a, b) => {
@@ -4049,7 +4175,11 @@
           : { user: window.firebaseCurrentUser, database: db };
         if (!contexto.user || !contexto.database || !uid || !sectionId || typeof alActualizar !== "function") return null;
         return onSnapshot(
-          collection(contexto.database, "estudiantes", uid, "colaboracionCodigo", sectionId, "historialAportes"),
+          query(
+            collection(contexto.database, "estudiantes", uid, "colaboracionCodigo", sectionId, "historialAportes"),
+            orderBy("creadoEn", "desc"),
+            limit(80)
+          ),
           snapshot => {
             const aportes = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
             aportes.sort((a, b) => {
@@ -5804,7 +5934,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-<link rel="stylesheet" href="mejoras-seguimiento.css?v=20260904-24">
+<link rel="stylesheet" href="mejoras-seguimiento.css?v=20260904-28">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -9948,6 +10078,8 @@
               const data = seccionesData.find(s => s.id === sectionId);
               if (data) document.getElementById('currentTitle').innerText = data.title;
           }
+          void window.iniciarColaboracionCRDTSeccionEstudiante?.(sectionId);
+          window.dispatchEvent(new CustomEvent("seccion-estudiante-cambiada", { detail: { sectionId } }));
           actualizarContextoExtensionSeguimiento();
           programarGuardadoFirebase();
       }
@@ -14591,6 +14723,10 @@
           const modal = document.getElementById('confirmacionDocenteModal');
           modal?.classList.remove('active');
           if (modal) modal.style.zIndex = '';
+          if (modal?.__confirmationOriginalParent && modal.parentNode !== modal.__confirmationOriginalParent) {
+              modal.__confirmationOriginalParent.appendChild(modal);
+          }
+          if (modal) delete modal.__confirmationOriginalParent;
           if (resultado?.confirmado) {
               const jitsiModal = document.getElementById('jitsiModal');
               if (jitsiModal?.dataset.hostConfirmation === 'true') {
@@ -14661,6 +14797,11 @@
 
           return new Promise(resolve => {
               confirmacionDocentePendiente = resolve;
+              const pantallaCompleta = document.fullscreenElement;
+              if (pantallaCompleta && !pantallaCompleta.contains(modal)) {
+                  modal.__confirmationOriginalParent = modal.parentNode;
+                  pantallaCompleta.appendChild(modal);
+              }
               const cancelarAccion = () => cerrarConfirmacionDocente({ confirmado: false, valor: '' });
               cancelar.onclick = cancelarAccion;
               modal.onclick = evento => {
@@ -14688,7 +14829,7 @@
                   }
                   cerrarConfirmacionDocente({ confirmado: true, valor });
               };
-              modal.style.zIndex = '12000';
+              modal.style.zIndex = '50000';
               modal.classList.add('active');
               setTimeout(() => {
                   if (usaCampo) entrada.focus();
@@ -17722,7 +17863,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260904-24"></script>
+    <script src="mejoras-seguimiento.js?v=20260904-28"></script>
   </body>
 </html>
 

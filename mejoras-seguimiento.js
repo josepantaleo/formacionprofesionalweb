@@ -455,6 +455,8 @@ let detenerChatColaborativoDocente=null,detenerChatColaborativoEstudiante=null,d
 let detenerPresenciaChatEstudiante=null;
 let detenerAlertasChatEstudiante=[];
 const ultimoMensajeDocentePorSeccion=new Map();
+let mensajesPopupCooperativoPendientes=[];
+const mensajesPopupCooperativoRegistrados=new Set();
 function uidSesionColaborativa(rolActual){
  return rolActual==="docente"
   ? (window.firebaseTeacherUser?.uid||window.firebaseCurrentUser?.uid||"")
@@ -484,16 +486,20 @@ function asegurarPopupMensajeCooperativoEstudiante(){
  popup.setAttribute("aria-labelledby","popupMensajeCooperativoTitulo");
  popup.innerHTML=`<div class="student-collab-message-popup-icon"><i class="fa-solid fa-chalkboard-user"></i></div><div class="student-collab-message-popup-content"><div class="student-collab-message-popup-heading"><div><small>Cooperación en vivo</small><h3 id="popupMensajeCooperativoTitulo">Nuevo mensaje del docente</h3></div><button id="cerrarPopupMensajeCooperativo" type="button" aria-label="Cerrar mensaje" title="Cerrar"><i class="fa-solid fa-xmark"></i></button></div><p id="popupMensajeCooperativoTexto"></p><span id="popupMensajeCooperativoMeta"></span><div class="student-collab-message-popup-actions"><button class="btn btn-primary" id="abrirChatDesdePopup" type="button"><i class="fa-solid fa-comments"></i> Abrir conversación</button><button class="btn btn-secondary" id="entendidoPopupMensajeCooperativo" type="button">Entendido</button></div></div>`;
  document.body.appendChild(popup);
- const cerrar=()=>{popup.classList.remove("active");window.setTimeout(()=>{popup.hidden=true},180)};
- popup.querySelector("#cerrarPopupMensajeCooperativo").onclick=cerrar;
- popup.querySelector("#entendidoPopupMensajeCooperativo").onclick=cerrar;
+ const cerrarBoton=popup.querySelector("#cerrarPopupMensajeCooperativo");
+ const contador=document.createElement("span");
+ contador.id="popupMensajeCooperativoContador";
+ contador.className="student-collab-message-popup-counter";
+ contador.setAttribute("aria-live","polite");
+ cerrarBoton.replaceWith(contador);
+ popup.querySelector("#entendidoPopupMensajeCooperativo").innerHTML='<i class="fa-solid fa-check"></i> Entendido';
+ popup.querySelector("#entendidoPopupMensajeCooperativo").onclick=confirmarPopupMensajeCooperativoEstudiante;
  popup.querySelector("#abrirChatDesdePopup").onclick=()=>{
   const sectionId=popup.dataset.sectionId;
-  cerrar();
   if(sectionId)window.abrirChatColaborativoEstudiante?.(sectionId);
  };
 }
-function mostrarPopupMensajeCooperativoEstudiante(mensaje,sectionId){
+function mostrarPopupMensajeCooperativoEstudianteLegacy(mensaje,sectionId){
  if(!mensaje||!sectionId)return;
  asegurarPopupMensajeCooperativoEstudiante();
  const popup=document.getElementById("popupMensajeCooperativoEstudiante");
@@ -519,24 +525,91 @@ function mostrarPopupMensajeCooperativoEstudiante(mensaje,sectionId){
   }
  }catch(error){}
 }
-function detenerAlertasChatCooperativoEstudiante(){
+function renderPopupMensajeCooperativoPendiente(){
+ asegurarPopupMensajeCooperativoEstudiante();
+ const popup=document.getElementById("popupMensajeCooperativoEstudiante");
+ const actual=mensajesPopupCooperativoPendientes[0];
+ if(!actual){
+  popup.classList.remove("active");
+  window.setTimeout(()=>{if(!mensajesPopupCooperativoPendientes.length)popup.hidden=true},180);
+  return;
+ }
+ const seccion=(typeof seccionesData!=="undefined"?seccionesData:[]).find(item=>item.id===actual.sectionId);
+ const total=mensajesPopupCooperativoPendientes.length;
+ popup.dataset.sectionId=actual.sectionId;
+ popup.querySelector("#popupMensajeCooperativoTitulo").textContent=total>1?"Mensajes nuevos del docente":"Nuevo mensaje del docente";
+ popup.querySelector("#popupMensajeCooperativoTexto").textContent=String(actual.mensaje.texto||"El docente envio una nueva indicacion.");
+ popup.querySelector("#popupMensajeCooperativoMeta").textContent=`${actual.mensaje.autorNombre||"Docente"} - ${seccion?.title||actual.sectionId} - ${fechaChatColaborativo(actual.mensaje.creadoEn)}`;
+ popup.querySelector("#popupMensajeCooperativoContador").textContent=total===1?"1 pendiente":`1 de ${total}`;
+ popup.hidden=false;
+ requestAnimationFrame(()=>popup.classList.add("active"));
+}
+function confirmarPopupMensajeCooperativoEstudiante(){
+ if(!mensajesPopupCooperativoPendientes.length)return;
+ mensajesPopupCooperativoPendientes.shift();
+ renderPopupMensajeCooperativoPendiente();
+}
+function reproducirSonidoPopupCooperativo(){
+ try{
+  const AudioContexto=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContexto)return;
+  const contexto=window.__audioMensajeCooperativo||new AudioContexto();
+  window.__audioMensajeCooperativo=contexto;
+  contexto.resume?.();
+  const oscilador=contexto.createOscillator(),ganancia=contexto.createGain();
+  oscilador.frequency.value=740;
+  ganancia.gain.setValueAtTime(.0001,contexto.currentTime);
+  ganancia.gain.exponentialRampToValueAtTime(.12,contexto.currentTime+.02);
+  ganancia.gain.exponentialRampToValueAtTime(.0001,contexto.currentTime+.22);
+  oscilador.connect(ganancia);
+  ganancia.connect(contexto.destination);
+  oscilador.start();
+  oscilador.stop(contexto.currentTime+.24);
+ }catch(error){}
+}
+function mostrarPopupMensajeCooperativoEstudiante(mensaje,sectionId){
+ if(!mensaje||!sectionId)return;
+ const clave=`${sectionId}:${mensaje.id||mensaje.creadoEn?.seconds||mensaje.texto||Date.now()}`;
+ if(mensajesPopupCooperativoRegistrados.has(clave))return;
+ mensajesPopupCooperativoRegistrados.add(clave);
+ mensajesPopupCooperativoPendientes.push({clave,mensaje,sectionId});
+ renderPopupMensajeCooperativoPendiente();
+ reproducirSonidoPopupCooperativo();
+}
+function detenerAlertasChatCooperativoEstudiante(limpiarPendientes=true){
  detenerAlertasChatEstudiante.forEach(detener=>{try{detener?.()}catch(error){}});
  detenerAlertasChatEstudiante=[];
  ultimoMensajeDocentePorSeccion.clear();
+ window.__firmaAlertasChatCooperativo="";
+ if(!limpiarPendientes)return;
+ mensajesPopupCooperativoPendientes=[];
+ mensajesPopupCooperativoRegistrados.clear();
  const popup=document.getElementById("popupMensajeCooperativoEstudiante");
  if(popup){popup.classList.remove("active");popup.hidden=true}
 }
 function iniciarAlertasChatCooperativoEstudiante(){
- detenerAlertasChatCooperativoEstudiante();
  const user=window.firebaseCurrentUser;
- if(!user||esSesionDocenteActual()||typeof window.escucharChatColaborativoFirebase!=="function")return;
- asegurarPopupMensajeCooperativoEstudiante();
- const secciones=[...new Set((typeof seccionesData!=="undefined"?seccionesData:[]).map(item=>item?.id).filter(Boolean))];
+ if(!user||esSesionDocenteActual()||typeof window.escucharChatColaborativoFirebase!=="function"){
+  detenerAlertasChatCooperativoEstudiante(true);
+  window.__uidPopupCooperativo="";
+  return;
+ }
+ const seccionActiva=document.querySelector(".section-card.active")?.id;
+ const secciones=seccionActiva
+  ? [seccionActiva]
+  : [(typeof seccionesData!=="undefined"?seccionesData:[])[0]?.id].filter(Boolean);
  if(!secciones.length){
   clearTimeout(window.__reintentoPopupCooperativo);
   window.__reintentoPopupCooperativo=setTimeout(iniciarAlertasChatCooperativoEstudiante,1600);
   return;
  }
+ const firma=`${user.uid}:${secciones.join(",")}`;
+ if(window.__firmaAlertasChatCooperativo===firma&&detenerAlertasChatEstudiante.length===secciones.length)return;
+ const mismaSesion=Boolean(window.__uidPopupCooperativo===user.uid);
+ detenerAlertasChatCooperativoEstudiante(!mismaSesion);
+ window.__uidPopupCooperativo=user.uid;
+ window.__firmaAlertasChatCooperativo=firma;
+ asegurarPopupMensajeCooperativoEstudiante();
  secciones.forEach(sectionId=>{
   const detener=window.escucharChatColaborativoFirebase(user.uid,sectionId,(mensajes,error)=>{
    if(error)return;
@@ -550,7 +623,7 @@ function iniciarAlertasChatCooperativoEstudiante(){
    if(!ultimo||!ultimo.id||ultimo.id===anterior)return;
    ultimoMensajeDocentePorSeccion.set(sectionId,ultimo.id);
    mostrarPopupMensajeCooperativoEstudiante(ultimo,sectionId);
-  });
+  },{limite:1});
   if(typeof detener==="function")detenerAlertasChatEstudiante.push(detener);
  });
 }
@@ -1069,6 +1142,7 @@ window.addEventListener("estado-inicio-clase",e=>setTimeout(()=>{cargarFormulari
 window.addEventListener("profesor-data",()=>setTimeout(()=>{mejorarTabla();if(document.getElementById("mensajeriaDocenteModal")?.classList.contains("active"))renderHistorialMensajesDocente()},0));
 window.addEventListener("firebase-auth-changed",()=>setTimeout(()=>{cargarResumenSeguimientoEstudiante();iniciarAlertasChatCooperativoEstudiante()},900));
 window.addEventListener("estado-cuenta-estudiante",()=>setTimeout(iniciarAlertasChatCooperativoEstudiante,700));
+window.addEventListener("seccion-estudiante-cambiada",()=>setTimeout(iniciarAlertasChatCooperativoEstudiante,100));
 document.addEventListener("keydown",evento=>{
  const actual=evento.target.closest?.(".teacher-workspace-tab");if(!actual||!["ArrowLeft","ArrowRight","Home","End"].includes(evento.key))return;const botones=[...document.querySelectorAll(".teacher-workspace-tab")],indice=botones.indexOf(actual);let siguiente=indice;if(evento.key==="ArrowRight")siguiente=(indice+1)%botones.length;if(evento.key==="ArrowLeft")siguiente=(indice-1+botones.length)%botones.length;if(evento.key==="Home")siguiente=0;if(evento.key==="End")siguiente=botones.length-1;evento.preventDefault();botones[siguiente]?.focus();activarPestanaDocente(botones[siguiente]?.dataset.teacherTab);
 });
