@@ -3859,6 +3859,278 @@
         return desvincular;
       }
 
+      // ================================================================
+      // MODO COOPERACIÓN DOCENTE–ESTUDIANTE 2.0
+      // ================================================================
+      const sesionesCooperacionDocente20 = new Map();
+
+      function nombreEstudianteCooperacion20(uid) {
+        const d = (Array.isArray(estudiantesProfesor) ? estudiantesProfesor : []).find(x => x?.uid === uid);
+        return d?.estudiante?.nombre || d?.nombreGoogle || d?.email || uid || 'Estudiante';
+      }
+
+      function asegurarModalCooperacionDocente20() {
+        let modal = document.getElementById('cooperacionDocente20Modal');
+        if (modal) return modal;
+        modal = document.createElement('div');
+        modal.id = 'cooperacionDocente20Modal';
+        modal.className = 'cooperacion20-modal';
+        modal.innerHTML = `
+          <div class="cooperacion20-dialog" role="dialog" aria-modal="true" aria-labelledby="cooperacion20Titulo">
+            <header class="cooperacion20-header">
+              <div>
+                <div class="cooperacion20-kicker"><i class="fa-solid fa-people-arrows"></i> MODO COOPERACIÓN 2.0</div>
+                <h2 id="cooperacion20Titulo">Trabajo en vivo</h2>
+                <div id="cooperacion20Subtitulo" class="cooperacion20-subtitle"></div>
+              </div>
+              <button type="button" class="cooperacion20-close" id="cooperacion20Cerrar" title="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <div class="cooperacion20-statusbar">
+              <span id="cooperacion20Conexion" class="cooperacion20-pill is-syncing"><i class="fa-solid fa-arrows-rotate fa-spin"></i> Conectando…</span>
+              <span id="cooperacion20Presencia" class="cooperacion20-pill"><i class="fa-solid fa-user-group"></i> 1 participante</span>
+              <span id="cooperacion20EstadoEdicion" class="cooperacion20-pill"><i class="fa-solid fa-pen"></i> Edición activa</span>
+              <span id="cooperacion20Aportes" class="cooperacion20-pill"><i class="fa-solid fa-clock-rotate-left"></i> 0 aportes</span>
+            </div>
+            <div class="cooperacion20-body">
+              <section class="cooperacion20-editor-panel">
+                <div class="cooperacion20-editor-toolbar">
+                  <strong><i class="fa-solid fa-code"></i> Código compartido</strong>
+                  <div class="cooperacion20-actions">
+                    <button type="button" class="btn btn-warning" id="cooperacion20Pausa"><i class="fa-solid fa-pause"></i> Pausar estudiante</button>
+                    <button type="button" class="btn btn-secondary" id="cooperacion20Guardar"><i class="fa-solid fa-cloud-arrow-up"></i> Guardar</button>
+                  </div>
+                </div>
+                <div id="cooperacion20EditorHost" class="cooperacion20-editor-host"></div>
+                <div class="cooperacion20-legend"><span class="student"><i class="fa-solid fa-circle"></i> Estudiante</span><span class="teacher"><i class="fa-solid fa-circle"></i> Docente</span><span><i class="fa-solid fa-circle"></i> Código inicial</span></div>
+              </section>
+              <aside class="cooperacion20-side">
+                <div class="cooperacion20-card">
+                  <h3><i class="fa-solid fa-user-group"></i> Participantes</h3>
+                  <div id="cooperacion20Participantes" class="cooperacion20-participants"></div>
+                </div>
+                <div class="cooperacion20-card cooperacion20-chat-card">
+                  <h3><i class="fa-solid fa-comments"></i> Chat docente–estudiante</h3>
+                  <div id="cooperacion20Chat" class="cooperacion20-chat"></div>
+                  <form id="cooperacion20ChatForm" class="cooperacion20-chat-form">
+                    <input id="cooperacion20ChatInput" maxlength="1200" autocomplete="off" placeholder="Escribí un mensaje…" aria-label="Mensaje al estudiante">
+                    <button class="btn btn-primary" type="submit"><i class="fa-solid fa-paper-plane"></i></button>
+                  </form>
+                </div>
+                <div class="cooperacion20-card">
+                  <h3><i class="fa-solid fa-clock-rotate-left"></i> Historial de aportes</h3>
+                  <div id="cooperacion20Historial" class="cooperacion20-history"></div>
+                </div>
+              </aside>
+            </div>
+            <footer class="cooperacion20-footer">
+              <span><i class="fa-solid fa-shield-halved"></i> La actividad colaborativa queda registrada.</span>
+              <button type="button" class="btn btn-secondary" id="cooperacion20CerrarFooter">Cerrar sesión colaborativa</button>
+            </footer>
+          </div>`;
+        document.body.appendChild(modal);
+        const cerrar = () => cerrarCooperacionDocente20();
+        document.getElementById('cooperacion20Cerrar')?.addEventListener('click', cerrar);
+        document.getElementById('cooperacion20CerrarFooter')?.addEventListener('click', cerrar);
+        modal.addEventListener('click', e => { if (e.target === modal) cerrar(); });
+        document.getElementById('cooperacion20Pausa')?.addEventListener('click', alternarPausaCooperacionDocente20);
+        document.getElementById('cooperacion20Guardar')?.addEventListener('click', guardarCooperacionDocente20);
+        document.getElementById('cooperacion20ChatForm')?.addEventListener('submit', enviarChatCooperacionDocente20);
+        return modal;
+      }
+
+      function pintarParticipantesCooperacion20(participantes = []) {
+        const cont = document.getElementById('cooperacion20Participantes');
+        const estado = document.getElementById('cooperacion20Presencia');
+        if (!cont) return;
+        const lista = Array.isArray(participantes) ? participantes : [];
+        if (estado) estado.innerHTML = `<i class="fa-solid fa-user-group"></i> ${lista.length || 1} participante${lista.length === 1 ? '' : 's'}`;
+        cont.innerHTML = lista.length ? lista.map(p => {
+          const docente = p.rol === 'docente';
+          const escribiendo = p.escribiendo === true;
+          return `<div class="cooperacion20-person ${docente ? 'teacher' : 'student'}">
+            <span class="cooperacion20-avatar"><i class="fa-solid ${docente ? 'fa-chalkboard-user' : 'fa-user-graduate'}"></i></span>
+            <div><strong>${escapeHtml(p.nombre || (docente ? 'Docente' : 'Estudiante'))}</strong><small>${docente ? 'Docente' : 'Estudiante'}${escribiendo ? ' · escribiendo…' : ''}</small></div>
+            <span class="cooperacion20-online"></span>
+          </div>`;
+        }).join('') : '<div class="cooperacion20-empty">Esperando al estudiante…</div>';
+      }
+
+      function pintarChatCooperacionDocente20(mensajes = []) {
+        const cont = document.getElementById('cooperacion20Chat');
+        if (!cont) return;
+        cont.innerHTML = mensajes.length ? mensajes.map(m => {
+          const docente = m.rol === 'docente';
+          return `<div class="cooperacion20-message ${docente ? 'teacher' : 'student'}">
+            <div class="cooperacion20-message-meta">${docente ? 'Docente' : 'Estudiante'} · ${m.creadoEn?.toDate ? m.creadoEn.toDate().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : ''}</div>
+            <div>${escapeHtml(m.texto || '')}</div>
+          </div>`;
+        }).join('') : '<div class="cooperacion20-empty">Todavía no hay mensajes.</div>';
+        cont.scrollTop = cont.scrollHeight;
+      }
+
+      function pintarHistorialCooperacionDocente20(aportes = []) {
+        const cont = document.getElementById('cooperacion20Historial');
+        const badge = document.getElementById('cooperacion20Aportes');
+        if (!cont) return;
+        if (badge) badge.innerHTML = `<i class="fa-solid fa-clock-rotate-left"></i> ${aportes.length} aportes`;
+        cont.innerHTML = aportes.length ? aportes.slice(0, 40).map(a => {
+          const docente = a.rol === 'docente';
+          const fecha = a.creadoEn?.toDate ? a.creadoEn.toDate().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '';
+          return `<div class="cooperacion20-history-item ${docente ? 'teacher' : 'student'}">
+            <strong>${escapeHtml(a.autorNombre || (docente ? 'Docente' : 'Estudiante'))}</strong>
+            <small>${fecha}</small>
+            <span>${a.caracteresAgregados ? '+' + a.caracteresAgregados + ' caracteres' : ''}${a.caracteresEliminados ? (a.caracteresAgregados ? ' · ' : '') + '-' + a.caracteresEliminados + ' caracteres' : ''}</span>
+          </div>`;
+        }).join('') : '<div class="cooperacion20-empty">Los cambios aparecerán aquí.</div>';
+      }
+
+      async function abrirCooperacionDocente20({ uid, sectionId, codigoInicial = '', titulo = '' } = {}) {
+        if (!uid || !sectionId) return false;
+        if (!(await window.autorizarDocenteFirebase?.())) {
+          alert('Solo una cuenta docente autorizada puede iniciar la cooperación.');
+          return false;
+        }
+        const clave = `${uid}:${sectionId}`;
+        const modal = asegurarModalCooperacionDocente20();
+        const host = document.getElementById('cooperacion20EditorHost');
+        if (!host) return false;
+        const anterior = sesionesCooperacionDocente20.get(clave);
+        if (anterior) {
+          modal.classList.add('active');
+          return true;
+        }
+        host.innerHTML = `<textarea id="cooperacion20Textarea" class="code-editor cooperacion20-source" spellcheck="false" autocapitalize="off" autocomplete="off">${escaparCodigoColaborativo(codigoInicial)}</textarea>`;
+        document.getElementById('cooperacion20Titulo').textContent = 'Trabajo en vivo';
+        document.getElementById('cooperacion20Subtitulo').textContent = `${nombreEstudianteCooperacion20(uid)} · ${titulo || sectionId}`;
+        document.getElementById('cooperacion20Conexion').className = 'cooperacion20-pill is-syncing';
+        document.getElementById('cooperacion20Conexion').innerHTML = '<i class="fa-solid fa-arrows-rotate fa-spin"></i> Conectando…';
+        document.getElementById('cooperacion20EstadoEdicion').innerHTML = '<i class="fa-solid fa-pen"></i> Edición activa';
+        document.getElementById('cooperacion20Pausa').innerHTML = '<i class="fa-solid fa-pause"></i> Pausar estudiante';
+        document.getElementById('cooperacion20Chat').innerHTML = '<div class="cooperacion20-empty">Cargando chat…</div>';
+        document.getElementById('cooperacion20Historial').innerHTML = '<div class="cooperacion20-empty">Cargando historial…</div>';
+        modal.classList.add('active');
+        const textarea = document.getElementById('cooperacion20Textarea');
+        mejorarEditorCodigo(textarea);
+        try {
+          const sesion = await window.iniciarEditorCRDTDocente({ uid, sectionId, codigoInicial, textarea, estado: document.getElementById('cooperacion20Conexion') });
+          const item = { clave, uid, sectionId, sesion, chatUnsub: null, presenciaUnsub: null, aportesUnsub: null, auditoriaRef: null };
+          sesionesCooperacionDocente20.set(clave, item);
+          item.chatUnsub = window.escucharChatColaborativoFirebase?.(uid, sectionId, pintarChatCooperacionDocente20);
+          item.presenciaUnsub = window.escucharPresenciaColaborativaFirebase?.(uid, sectionId, pintarParticipantesCooperacion20);
+          item.aportesUnsub = window.escucharHistorialAportesColaborativoFirebase?.(uid, sectionId, pintarHistorialCooperacionDocente20);
+          sesion.onStatus?.(info => {
+            const el = document.getElementById('cooperacion20Conexion');
+            if (!el) return;
+            const ok = info.estado === 'synced';
+            el.className = `cooperacion20-pill ${ok ? 'is-synced' : info.estado === 'error' ? 'is-error' : 'is-syncing'}`;
+            el.innerHTML = `<i class="fa-solid ${ok ? 'fa-circle-check' : info.estado === 'error' ? 'fa-triangle-exclamation' : 'fa-arrows-rotate fa-spin'}"></i> ${escapeHtml(info.detalle || (ok ? 'Sincronizado' : 'Sincronizando…'))}`;
+          });
+          sesion.onModoCooperacion?.(({ pausada }) => {
+            const b = document.getElementById('cooperacion20Pausa');
+            const e = document.getElementById('cooperacion20EstadoEdicion');
+            if (!b || !e) return;
+            b.innerHTML = pausada ? '<i class="fa-solid fa-play"></i> Reanudar estudiante' : '<i class="fa-solid fa-pause"></i> Pausar estudiante';
+            e.innerHTML = pausada ? '<i class="fa-solid fa-pause"></i> Edición del estudiante pausada' : '<i class="fa-solid fa-pen"></i> Edición activa';
+          });
+          if (typeof window.registrarAuditoriaCooperacionDocente20 === 'function') {
+            item.auditoriaRef = await window.registrarAuditoriaCooperacionDocente20(uid, sectionId, 'inicio');
+          }
+          return true;
+        } catch (error) {
+          modal.classList.remove('active');
+          host.innerHTML = '';
+          mostrarErrorCRDTEstudiante(error);
+          alert(mensajeErrorCRDT(error));
+          return false;
+        }
+      }
+
+      async function alternarPausaCooperacionDocente20() {
+        const item = [...sesionesCooperacionDocente20.values()][0];
+        if (!item?.sesion) return;
+        const pausadaActual = document.getElementById('cooperacion20Pausa')?.textContent?.toLowerCase().includes('reanudar');
+        const nueva = !pausadaActual;
+        const ok = await item.sesion.establecerPausaCooperacion(nueva);
+        if (ok && typeof window.registrarAuditoriaCooperacionDocente20 === 'function') {
+          await window.registrarAuditoriaCooperacionDocente20(item.uid, item.sectionId, nueva ? 'pausa' : 'reanudar');
+        }
+      }
+
+      async function guardarCooperacionDocente20() {
+        const item = [...sesionesCooperacionDocente20.values()][0];
+        if (!item?.sesion) return;
+        await item.sesion.flush?.();
+        const texto = item.sesion.texto?.toString?.() || '';
+        const resultado = await window.guardarCodigoColaborativoDocenteFirebase?.(item.uid, item.sectionId, texto);
+        if (resultado === false) alert('No se pudo guardar el código colaborativo.');
+        else {
+          const b = document.getElementById('cooperacion20Guardar');
+          if (b) { const old = b.innerHTML; b.innerHTML = '<i class="fa-solid fa-check"></i> Guardado'; setTimeout(() => b.innerHTML = old, 1400); }
+        }
+      }
+
+      async function enviarChatCooperacionDocente20(event) {
+        event.preventDefault();
+        const item = [...sesionesCooperacionDocente20.values()][0];
+        const input = document.getElementById('cooperacion20ChatInput');
+        const texto = input?.value?.trim();
+        if (!item || !texto) return;
+        const user = contextoDocenteFirebase().user;
+        const ok = await window.enviarChatColaborativoFirebase?.({ uid: item.uid, sectionId: item.sectionId, texto, rol: 'docente', autorNombre: user?.displayName || user?.email || 'Docente' });
+        if (ok && input) input.value = '';
+      }
+
+      async function cerrarCooperacionDocente20() {
+        const items = [...sesionesCooperacionDocente20.values()];
+        for (const item of items) {
+          try { await guardarCooperacionDocente20(); } catch (_) {}
+          try { await window.registrarAuditoriaCooperacionDocente20?.(item.uid, item.sectionId, 'fin'); } catch (_) {}
+          try { item.chatUnsub?.(); item.presenciaUnsub?.(); item.aportesUnsub?.(); } catch (_) {}
+          try { await item.sesion.destroy?.(); } catch (_) {}
+          sesionesCooperacionDocente20.delete(item.clave);
+        }
+        document.getElementById('cooperacion20Modal')?.classList.remove('active');
+        document.getElementById('cooperacion20EditorHost')?.replaceChildren();
+      }
+
+      window.registrarAuditoriaCooperacionDocente20 = async function(uid, sectionId, accion) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user;
+        const database = contexto.database;
+        if (!user || !database || !uid || !sectionId || !(await verificarUsuarioDocente(user))) return null;
+        try {
+          const id = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2,8)}`;
+          await setDoc(doc(database, 'estudiantes', uid, 'colaboracionCodigo', sectionId, 'historialSesiones', id), {
+            id, uid, sectionId, accion,
+            docenteUid: user.uid,
+            docenteNombre: user.displayName || user.email || 'Docente',
+            docenteEmail: user.email || '',
+            creadoEn: serverTimestamp()
+          });
+          return id;
+        } catch (error) {
+          console.error('No se pudo registrar auditoría de cooperación:', error);
+          return null;
+        }
+      };
+
+      if (!window.__cooperacionDocente20Delegada) {
+        window.__cooperacionDocente20Delegada = true;
+        document.addEventListener('click', event => {
+          const boton = event.target.closest?.('.btn-trabajar-vivo');
+          if (!boton) return;
+          event.preventDefault();
+          event.stopPropagation();
+          const indice = Number(boton.dataset.collabStudentIndex);
+          const uid = boton.dataset.collabStudentUid;
+          const sectionId = boton.dataset.collabSection;
+          const d = Number.isInteger(indice) ? estudiantesProfesor[indice] : null;
+          const sec = Array.isArray(seccionesData) ? seccionesData.find(x => x.id === sectionId) : null;
+          const codigo = d?.codigos?.[sectionId] || d?.respuestas?.[sectionId]?.codigo || d?.codigo?.[sectionId] || '';
+          abrirCooperacionDocente20({ uid, sectionId, codigoInicial: codigo, titulo: sec?.title || sectionId });
+        }, true);
+      }
+
       window.iniciarEditorCRDTDocente = async function({ uid, sectionId, codigoInicial, textarea, estado }) {
         const sesion = await iniciarSesionCodigoCRDT({ uid, sectionId, codigoInicial, rol: "docente" });
         vincularTextareaCodigoCRDT(textarea, sesion, sectionId, estado);
