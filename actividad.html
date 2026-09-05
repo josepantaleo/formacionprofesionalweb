@@ -3837,6 +3837,28 @@
         }
       };
 
+      window.cargarEstudianteProfesorFirebase = async function(uid) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado || !uid) return null;
+        const { database } = contextoDocenteFirebase();
+        if (!database) return null;
+        try {
+          const [estudianteSnap, controlSnap] = await Promise.all([
+            getDoc(doc(database, "estudiantes", uid)),
+            getDoc(doc(database, "controlEstudiantes", uid))
+          ]);
+          if (!estudianteSnap.exists()) return null;
+          return {
+            ...estudianteSnap.data(),
+            uid: estudianteSnap.data().uid || estudianteSnap.id,
+            __controlEstudiante: controlSnap.exists() ? controlSnap.data() : null
+          };
+        } catch (error) {
+          console.error("No se pudo actualizar el detalle del estudiante:", error);
+          return null;
+        }
+      };
+
       window.guardarCodigoColaborativoDocenteFirebase = async function(uid, sectionId, codigo = "") {
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
@@ -4849,6 +4871,184 @@
             if (estado) estado.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Colaboración no disponible';
           }
         }));
+      };
+
+      function contextoChatColaborativoFirebase(rolSolicitado = "") {
+        if (rolSolicitado === "docente" && window.firebaseTeacherUser && teacherDb) {
+          return { user: window.firebaseTeacherUser, database: teacherDb, rol: "docente" };
+        }
+        if (rolSolicitado === "estudiante") {
+          return { user: window.firebaseCurrentUser, database: db, rol: "estudiante" };
+        }
+        if (window.firebaseTeacherUser && teacherDb) {
+          return { user: window.firebaseTeacherUser, database: teacherDb, rol: "docente" };
+        }
+        return { user: window.firebaseCurrentUser, database: db, rol: "estudiante" };
+      }
+
+      window.escucharChatColaborativoFirebase = function(uid, sectionId, alActualizar, opciones = {}) {
+        const { user, database, rol } = contextoChatColaborativoFirebase(opciones.rol);
+        if (!user || !database || !uid || !sectionId || typeof alActualizar !== "function") {
+          const error = new Error("No hay una sesion Firebase valida para el chat cooperativo.");
+          error.code = "chat/session-unavailable";
+          window.ultimoErrorChatColaborativo = { code: error.code, message: error.message, uid, sectionId, rol };
+          if (typeof alActualizar === "function") alActualizar([], error);
+          return null;
+        }
+        const referencia = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes");
+        return onSnapshot(
+          query(referencia, orderBy("creadoEn", "desc"), limit(60)),
+          snapshot => {
+            const mensajes = snapshot.docs.map(item => {
+              const datos = item.data();
+              return {
+                id: item.id,
+                ...datos,
+                creadoMs: datos.creadoEn?.toMillis?.()
+                  || Number(datos.creadoEn?.seconds || 0) * 1000
+                  || Number(datos.creadoMs || 0)
+              };
+            }).sort((a, b) => a.creadoMs - b.creadoMs);
+            alActualizar(mensajes, null);
+
+            const campoEntrega = rol === "docente" ? "entregadoDocenteEn" : "entregadoEstudianteEn";
+            const campoLectura = rol === "docente" ? "leidoDocenteEn" : "leidoEstudianteEn";
+            mensajes
+              .filter(mensaje => mensaje.autorUid !== user.uid && (!mensaje[campoEntrega] || !mensaje[campoLectura]))
+              .slice(-60)
+              .forEach(mensaje => {
+                const cambios = {};
+                if (!mensaje[campoEntrega]) cambios[campoEntrega] = serverTimestamp();
+                if (!mensaje[campoLectura]) cambios[campoLectura] = serverTimestamp();
+                setDoc(doc(referencia, mensaje.id), cambios, { merge: true }).catch(error => {
+                  if (error?.code !== "permission-denied") {
+                    console.warn("No se pudo confirmar el mensaje cooperativo:", error);
+                  }
+                });
+              });
+          },
+          error => {
+            window.ultimoErrorChatColaborativo = {
+              code: error?.code || "chat/listen-failed",
+              message: error?.message || "No se pudo escuchar la conversacion.",
+              uid,
+              sectionId,
+              rol
+            };
+            alActualizar([], error);
+          }
+        );
+      };
+
+      window.enviarChatColaborativoFirebase = async function({
+        uid,
+        sectionId,
+        texto,
+        rol = "estudiante",
+        autorNombre = "",
+        cita = null
+      } = {}) {
+        const contexto = rol === "docente"
+          ? { ...contextoDocenteFirebase(), rol: "docente" }
+          : { user: window.firebaseCurrentUser, database: db, rol: "estudiante" };
+        const { user, database } = contexto;
+        const contenido = String(texto || "").trim().slice(0, 1200);
+        window.ultimoErrorChatColaborativo = null;
+        if (!user || !database || !uid || !sectionId || !contenido) {
+          window.ultimoErrorChatColaborativo = {
+            code: "chat/invalid-context",
+            message: "Falta la sesion, el estudiante, el desafio o el texto del mensaje.",
+            uid,
+            sectionId,
+            rol
+          };
+          return false;
+        }
+        if (rol === "estudiante" && user.uid !== uid) {
+          window.ultimoErrorChatColaborativo = {
+            code: "chat/student-uid-mismatch",
+            message: "La cuenta del estudiante no coincide con la conversacion abierta.",
+            uid,
+            sectionId,
+            rol
+          };
+          return false;
+        }
+        if (rol === "docente" && !(await verificarUsuarioDocente(user))) {
+          window.ultimoErrorChatColaborativo = {
+            code: "chat/teacher-not-authorized",
+            message: "La cuenta docente no esta autorizada o su correo no esta verificado.",
+            uid,
+            sectionId,
+            rol
+          };
+          return false;
+        }
+        const id = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`;
+        const citaLimpia = cita && Number(cita.lineaInicio) > 0 ? {
+          lineaInicio: Math.max(1, Math.trunc(Number(cita.lineaInicio) || 1)),
+          lineaFin: Math.max(1, Math.trunc(Number(cita.lineaFin) || Number(cita.lineaInicio) || 1)),
+          texto: String(cita.texto || "").trim().slice(0, 1200)
+        } : null;
+        try {
+          await setDoc(doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes", id), {
+            id,
+            uid,
+            sectionId,
+            texto: contenido,
+            cita: citaLimpia,
+            rol: rol === "docente" ? "docente" : "estudiante",
+            autorUid: user.uid,
+            autorNombre: String(autorNombre || user.displayName || user.email || (rol === "docente" ? "Docente" : "Estudiante")).slice(0, 254),
+            creadoMs: Date.now(),
+            creadoEn: serverTimestamp()
+          });
+          return true;
+        } catch (error) {
+          console.error("No se pudo enviar el chat cooperativo:", error);
+          window.ultimoErrorChatColaborativo = {
+            code: error?.code || "",
+            message: error?.message || "Error desconocido",
+            uid,
+            sectionId,
+            rol
+          };
+          return false;
+        }
+      };
+
+      window.escucharPresenciaColaborativaFirebase = function(uid, sectionId, alActualizar) {
+        const { user, database } = contextoChatColaborativoFirebase();
+        if (!user || !database || !uid || !sectionId || typeof alActualizar !== "function") return null;
+        return onSnapshot(
+          collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "presencia"),
+          snapshot => alActualizar(snapshot.docs.map(item => ({ id: item.id, ...item.data() })), null),
+          error => alActualizar([], error)
+        );
+      };
+
+      window.vaciarChatColaborativoFirebase = async function(uid, sectionId) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado || !uid || !sectionId) return { ok: false, error: "Docente no autorizado." };
+        const { database } = contextoDocenteFirebase();
+        if (!database) return { ok: false, error: "Firebase no está disponible." };
+        try {
+          const referencia = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes");
+          const snapshot = await getDocs(referencia);
+          let eliminados = 0;
+          for (let inicio = 0; inicio < snapshot.docs.length; inicio += 400) {
+            const lote = writeBatch(database);
+            snapshot.docs.slice(inicio, inicio + 400).forEach(item => {
+              lote.delete(item.ref);
+              eliminados += 1;
+            });
+            await lote.commit();
+          }
+          return { ok: true, eliminados };
+        } catch (error) {
+          console.error("No se pudo vaciar el chat cooperativo:", error);
+          return { ok: false, error: error?.message || "Firebase rechazó la eliminación." };
+        }
       };
 
       window.guardarProgramacionDocenteFirebase = async function(uid, programacion = {}) {
@@ -7162,6 +7362,9 @@
             </button>
             <button class="btn btn-success" type="button" onclick="exportarDetalleEstudianteProfesorPDF()">
               <i class="fa-solid fa-file-pdf"></i> Exportar detalle
+            </button>
+            <button class="btn btn-primary" id="btnActualizarDetalleEstudianteProfesor" type="button" onclick="actualizarDetalleEstudianteProfesor()" title="Consultar nuevamente este estudiante en Firebase">
+              <i class="fa-solid fa-rotate"></i> Actualizar datos
             </button>
             <button class="btn btn-secondary" onclick="cerrarDetalleEstudianteProfesor()">Cerrar</button>
           </div>
@@ -13402,6 +13605,45 @@
           document.getElementById('detalleEstudianteProfesorModal').classList.remove('active');
       }
       let detalleEstudianteProfesorIndiceActual = null;
+
+      async function actualizarDetalleEstudianteProfesor() {
+          const indice = detalleEstudianteProfesorIndiceActual;
+          const actual = Number.isInteger(indice) ? estudiantesProfesor[indice] : null;
+          const boton = document.getElementById('btnActualizarDetalleEstudianteProfesor');
+          if (!actual?.uid) {
+              alert('No se pudo identificar al estudiante que esta abierto.');
+              return;
+          }
+          const etiquetaOriginal = boton?.innerHTML || '<i class="fa-solid fa-rotate"></i> Actualizar datos';
+          if (boton) {
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Actualizando...';
+          }
+          try {
+              const actualizado = await window.cargarEstudianteProfesorFirebase?.(actual.uid);
+              if (!actualizado) throw new Error('student-refresh-failed');
+              estudiantesProfesor[indice] = actualizado;
+              renderPanelProfesor();
+              abrirDetalleEstudianteProfesor(indice);
+              const subtitulo = document.getElementById('detalleEstudianteProfesorSubtitulo');
+              if (subtitulo) {
+                  subtitulo.textContent = `Datos actualizados ${new Date().toLocaleTimeString('es-AR', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit'
+                  })}.`;
+              }
+          } catch (error) {
+              console.error('No se pudieron actualizar los datos del estudiante:', error);
+              alert('No se pudieron actualizar los datos de este estudiante. Verifica la autorizacion docente, la conexion y las reglas de Firebase.');
+          } finally {
+              const botonActual = document.getElementById('btnActualizarDetalleEstudianteProfesor');
+              if (botonActual) {
+                  botonActual.disabled = false;
+                  botonActual.innerHTML = etiquetaOriginal;
+              }
+          }
+      }
 
       function obtenerIndicesDetalleEstudiantesVisibles() {
           return [...document.querySelectorAll('#tablaProfesorBody .btn-abrir-acciones-estudiante')]
