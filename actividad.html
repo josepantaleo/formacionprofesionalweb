@@ -3665,6 +3665,28 @@
         }
       };
 
+      // Señal liviana e independiente del progreso y del código completo.
+      // Permite que el panel docente detecte al estudiante aunque no haya un guardado pendiente.
+      window.actualizarControlEstudianteFirebase = async function(estado = {}) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db) return false;
+        try {
+          await setDoc(doc(db, "controlEstudiantes", user.uid), {
+            uid: user.uid,
+            email: user.email || "",
+            nombre: user.displayName || "",
+            seccionActiva: String(estado.seccionActiva || "").slice(0, 100),
+            escribiendo: estado.escribiendo === true,
+            versionCodigo: VERSION_CODIGO_SUBIDO,
+            activoEn: serverTimestamp()
+          });
+          return true;
+        } catch (error) {
+          console.warn("No se pudo actualizar la señal de conexión del estudiante:", error);
+          return false;
+        }
+      };
+
       window.guardarCodigoColaborativoDocenteFirebase = async function(uid, sectionId, codigo = "") {
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
@@ -3973,6 +3995,7 @@
           autorUid: user.uid,
           cursorInicio: inicio,
           cursorFin: fin,
+          escribiendo: forzar !== true,
           activoEn: serverTimestamp()
           }, { merge: true }).catch(() => {});
         };
@@ -6344,9 +6367,44 @@
         const { database } = contextoDocenteFirebase();
         if (!database) return;
         if (window.__profesorUnsubscribe) window.__profesorUnsubscribe();
-        window.__profesorUnsubscribe = onSnapshot(collection(database, 'estudiantes'), snap => {
-          window.dispatchEvent(new CustomEvent('profesor-data', { detail: snap.docs.map(x => x.data()) }));
-        }, err => window.dispatchEvent(new CustomEvent('profesor-data-error', { detail: err.message })));
+        if (window.__profesorRefreshInterval) {
+          clearInterval(window.__profesorRefreshInterval);
+          window.__profesorRefreshInterval = null;
+        }
+        let consultaEnCurso = false;
+        const cargarPanel = async () => {
+          if (consultaEnCurso) return;
+          consultaEnCurso = true;
+          try {
+            const [estudiantesSnap, controlesSnap] = await Promise.all([
+              getDocs(collection(database, "estudiantes")),
+              getDocs(collection(database, "controlEstudiantes"))
+            ]);
+            const controles = new Map(
+              controlesSnap.docs.map(item => [item.id, item.data()])
+            );
+            const estudiantes = estudiantesSnap.docs.map(item => ({
+              ...item.data(),
+              uid: item.data().uid || item.id,
+              __controlEstudiante: controles.get(item.id) || null
+            }));
+            window.dispatchEvent(new CustomEvent("profesor-data", { detail: estudiantes }));
+          } catch (error) {
+            window.dispatchEvent(new CustomEvent("profesor-data-error", { detail: error.message }));
+          } finally {
+            consultaEnCurso = false;
+          }
+        };
+        cargarPanel();
+        window.__profesorRefreshInterval = setInterval(() => {
+          if (document.getElementById("panelProfesorModal")?.classList.contains("active")) {
+            cargarPanel();
+          }
+        }, 30000);
+        window.__profesorUnsubscribe = () => {
+          if (window.__profesorRefreshInterval) clearInterval(window.__profesorRefreshInterval);
+          window.__profesorRefreshInterval = null;
+        };
       };
       
       // ============================================================
@@ -8234,8 +8292,43 @@
       let firebaseLastSavedFingerprint = "";
       let firebaseSaveGeneration = 0;
       let firebaseInitialized = false;
+      let ultimaActividadConexionEstudiante = 0;
+      let ultimoEnvioConexionEstudiante = 0;
+      let intervaloConexionEstudiante = null;
       let claseHabilitada = false;
       let cuentaEstudianteActiva = false;
+
+      function enviarLatidoConexionEstudiante(forzar = false) {
+          if (!window.firebaseCurrentUser || typeof window.actualizarControlEstudianteFirebase !== 'function') return;
+          if (document.visibilityState === 'hidden' && !forzar) return;
+          const ahora = Date.now();
+          if (!forzar && ahora - ultimoEnvioConexionEstudiante < 5000) return;
+          ultimoEnvioConexionEstudiante = ahora;
+          window.actualizarControlEstudianteFirebase({
+              seccionActiva: seccionActivaActual || '',
+              escribiendo: ahora - ultimaActividadConexionEstudiante < 15000
+          });
+      }
+
+      function registrarActividadConexionEstudiante(sectionId = '') {
+          ultimaActividadConexionEstudiante = Date.now();
+          if (sectionId) seccionActivaActual = sectionId;
+          enviarLatidoConexionEstudiante();
+      }
+
+      function iniciarLatidoConexionEstudiante() {
+          if (intervaloConexionEstudiante) clearInterval(intervaloConexionEstudiante);
+          if (!window.firebaseCurrentUser) return;
+          enviarLatidoConexionEstudiante(true);
+          intervaloConexionEstudiante = setInterval(() => enviarLatidoConexionEstudiante(), 25000);
+      }
+
+      window.addEventListener('firebase-auth-changed', iniciarLatidoConexionEstudiante);
+      window.addEventListener('online', () => enviarLatidoConexionEstudiante(true));
+      window.addEventListener('focus', () => enviarLatidoConexionEstudiante(true));
+      document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') enviarLatidoConexionEstudiante(true);
+      });
       let estadoCuentaEstudiante = 'pendiente';
       let registroFirebaseExistente = false;
       let estadoExtensionSeguimiento = {
@@ -12231,6 +12324,7 @@
                       setLocalStorage(`draft_${e.target.id}`, e.target.value);
                       actualizarMetricasEditor(secId);
                       actualizarEstadoEditorEstudiante(secId, "dirty");
+                      registrarActividadConexionEstudiante(secId);
                   }
               });
               textarea.addEventListener('keydown', function(e) {
@@ -12653,11 +12747,15 @@
       let estadosConexionProfesorInicializados = false;
       let avisoDesconexionProfesorTimeout = null;
 
-      function estudianteEnLineaProfesor(estudiante) {
-          const valor = estudiante?.actualizadoEn;
-          const actualizado = valor?.toDate
+      function obtenerMarcaConexionProfesor(estudiante) {
+          const valor = estudiante?.__controlEstudiante?.activoEn || estudiante?.actualizadoEn;
+          return valor?.toDate
               ? valor.toDate().getTime()
               : (valor?.seconds ? Number(valor.seconds) * 1000 : new Date(valor || 0).getTime());
+      }
+
+      function estudianteEnLineaProfesor(estudiante) {
+          const actualizado = obtenerMarcaConexionProfesor(estudiante);
           return Number.isFinite(actualizado) && actualizado > 0 &&
               Date.now() - actualizado < LIMITE_CONEXION_PROFESOR_MS;
       }
@@ -15020,9 +15118,9 @@
               const nota = notaTexto === '—' ? NaN : Number(notaTexto);
               const descuento = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
               const alerta = obtenerAlertaConsultasIA(d);
-              const actualizado = d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().getTime() : 0;
+              const actualizado = obtenerMarcaConexionProfesor(d);
               const conectado = actualizado > 0 && Date.now() - actualizado < LIMITE_CONEXION_PROFESOR_MS;
-              const trabajando = conectado && progreso < 100;
+              const trabajando = conectado && (d.__controlEstudiante?.escribiendo === true || progreso < 100);
               const finalizado = progreso >= 100;
               const cuentaInactiva = d.estadoCuenta === 'inactivo';
               const cuentaPendiente = d.estadoCuenta === 'pendiente';
@@ -15190,9 +15288,12 @@
                   : (cantidadSalidas > 0 ? `${cantidadSalidas} cambio(s) de pestaña` : 'Sin cambios de pestaña');
               const salidasHtml = `<span class="teacher-tab-badge ${salidasClase}" title="${salidasTitulo}"><i class="fa-solid ${salidasIcono}"></i> ${cantidadSalidas}</span>`;
               const conectadoFila = d.__panelMeta?.conectado === true;
+              const escribiendoFila = conectadoFila && d.__controlEstudiante?.escribiendo === true;
               const claseAcciones = conectadoFila ? 'btn-success teacher-actions-online' : 'btn-secondary';
-              const tituloAcciones = conectadoFila ? 'Estudiante en línea. Abrir acciones' : 'Estudiante sin actividad reciente. Abrir acciones';
-              const estadoConexionAcciones = conectadoFila ? '<span class="teacher-actions-online-label"><i class="fa-solid fa-circle"></i> En línea</span>' : '';
+              const tituloAcciones = escribiendoFila ? 'Estudiante programando ahora. Abrir acciones' : (conectadoFila ? 'Estudiante en línea. Abrir acciones' : 'Estudiante sin actividad reciente. Abrir acciones');
+              const estadoConexionAcciones = conectadoFila
+                  ? `<span class="teacher-actions-online-label"><i class="fa-solid fa-circle"></i> ${escribiendoFila ? 'Programando' : 'En línea'}</span>`
+                  : '';
           return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn ${claseAcciones} btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="${tituloAcciones}"><i class="fa-solid fa-sliders"></i><span>Acciones</span>${estadoConexionAcciones}</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}<div class="code-version-badge" style="margin-top:.4rem;font-size:.68rem;padding:.25rem .45rem"><i class="fa-solid fa-code-branch"></i> Código v${escapeHtml(versionCodigo)}</div>${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td></tr>`;
               }).join('') || '<tr><td colspan="12" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
