@@ -1844,6 +1844,107 @@
       .teacher-tab-review-compact .teacher-question:last-child {
         margin-bottom: 0;
       }
+      .collaboration-presence {
+        display: inline-flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: .35rem;
+        margin-left: .45rem;
+        vertical-align: middle;
+      }
+      .collaboration-presence-summary {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .28rem .48rem;
+        border: 1px solid rgba(56,189,248,.35);
+        border-radius: 6px;
+        background: rgba(56,189,248,.09);
+        color: #bae6fd;
+        font-size: .7rem;
+        font-weight: 700;
+      }
+      .collaboration-presence-summary.is-alone {
+        border-color: rgba(148,163,184,.3);
+        background: rgba(148,163,184,.08);
+        color: var(--text-muted);
+      }
+      .collaboration-presence-person {
+        display: inline-flex;
+        align-items: center;
+        gap: .28rem;
+        max-width: 180px;
+        padding: .26rem .42rem;
+        border-radius: 5px;
+        background: rgba(15,23,42,.72);
+        border: 1px solid rgba(148,163,184,.24);
+        color: #e2e8f0;
+        font-size: .68rem;
+      }
+      .collaboration-presence-person i {
+        color: #4ade80;
+        font-size: .52rem;
+      }
+      .collaboration-presence-person.is-idle i {
+        color: #fbbf24;
+      }
+      .collaboration-presence-person span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .collaboration-change-author {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        min-height: 1.65rem;
+        padding: .26rem .45rem;
+        border: 1px solid transparent;
+        border-radius: 5px;
+        font-size: .68rem;
+        font-weight: 700;
+        opacity: 0;
+        transform: translateY(2px);
+        transition: opacity .18s ease, transform .18s ease;
+      }
+      .collaboration-change-author.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .collaboration-change-author.is-teacher {
+        border-color: rgba(34,197,94,.48);
+        background: rgba(34,197,94,.14);
+        color: #86efac;
+      }
+      .collaboration-change-author.is-student {
+        border-color: rgba(59,130,246,.5);
+        background: rgba(59,130,246,.14);
+        color: #93c5fd;
+      }
+      textarea.crdt-change-teacher {
+        border-color: #22c55e !important;
+        box-shadow: inset 0 0 0 2px rgba(34,197,94,.55), 0 0 0 2px rgba(34,197,94,.18);
+        background-color: rgba(20,83,45,.35) !important;
+      }
+      textarea.crdt-change-student {
+        border-color: #3b82f6 !important;
+        box-shadow: inset 0 0 0 2px rgba(59,130,246,.55), 0 0 0 2px rgba(59,130,246,.18);
+        background-color: rgba(30,58,138,.3) !important;
+      }
+      textarea.crdt-change-teacher,
+      textarea.crdt-change-student {
+        transition: background-color .2s ease, box-shadow .2s ease, border-color .2s ease;
+      }
+      @media (max-width: 700px) {
+        .collaboration-presence {
+          display: flex;
+          margin: .4rem 0 0;
+          width: 100%;
+        }
+        .collaboration-presence-person {
+          max-width: 145px;
+        }
+      }
       .teacher-lock-badge {
         display: inline-flex;
         align-items: center;
@@ -3328,11 +3429,17 @@
         const presenciaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "presencia", clienteId);
         const vistos = new Set();
         const estadoListeners = new Set();
+        const presenciaListeners = new Set();
+        let participantesActuales = [];
         let cola = [];
         let temporizador = null;
         let destruida = false;
 
         const notificar = (estado, detalle = "") => estadoListeners.forEach(fn => fn({ estado, detalle }));
+        const notificarPresencia = participantes => {
+          participantesActuales = participantes;
+          presenciaListeners.forEach(fn => fn(participantes));
+        };
         const semilla = await runTransaction(database, async transaction => {
           const snapshot = await transaction.get(metaRef);
           if (snapshot.exists() && snapshot.data().semilla) return snapshot.data().semilla;
@@ -3390,7 +3497,7 @@
         };
 
         documento.on("update", (update, origen) => {
-          if (origen === ORIGEN_FIRESTORE_CRDT || destruida) return;
+          if (origen === ORIGEN_FIRESTORE_CRDT || origen?.tipo === "firestore-crdt" || destruida) return;
           cola.push(update);
           clearTimeout(temporizador);
           temporizador = setTimeout(publicarCola, 90);
@@ -3400,28 +3507,71 @@
           snapshot.docChanges().forEach(cambio => {
             if (cambio.type === "removed" || vistos.has(cambio.doc.id)) return;
             vistos.add(cambio.doc.id);
-            const update = cambio.doc.data().update;
-            if (update) Y.applyUpdate(documento, base64ABytes(update), ORIGEN_FIRESTORE_CRDT);
+            const datosCambio = cambio.doc.data();
+            const update = datosCambio.update;
+            if (update) Y.applyUpdate(documento, base64ABytes(update), {
+              tipo: "firestore-crdt",
+              rol: datosCambio.rol === "docente" ? "docente" : "estudiante",
+              autorUid: datosCambio.autorUid || "",
+              autorEmail: datosCambio.autorEmail || ""
+            });
           });
         }, error => {
           console.error("Error escuchando actualizaciones CRDT:", error);
           notificar("error", "Conexión colaborativa interrumpida");
         });
 
-        const actualizarPresencia = (cursor = {}) => setDoc(presenciaRef, {
+        const detenerPresencia = onSnapshot(
+          collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "presencia"),
+          snapshot => {
+            const ahora = Date.now();
+            const participantes = snapshot.docs.map(item => {
+              const datos = item.data();
+              const activoMs = datos.activoEn?.toMillis?.()
+                || Number(datos.activoEn?.seconds || 0) * 1000
+                || Date.parse(datos.activoEn || "")
+                || 0;
+              return {
+                id: item.id,
+                clienteId: datos.clienteId || item.id,
+                nombre: datos.nombre || datos.rol || "Participante",
+                rol: datos.rol === "docente" ? "docente" : "estudiante",
+                propio: datos.clienteId === clienteId,
+                inactivo: !activoMs || ahora - activoMs > 45000,
+                activoMs
+              };
+            }).filter(item => !item.activoMs || ahora - item.activoMs < 120000)
+              .sort((a, b) => Number(b.propio) - Number(a.propio) || b.activoMs - a.activoMs);
+            notificarPresencia(participantes);
+          },
+          error => {
+            console.error("Error escuchando presencia colaborativa:", error);
+            notificarPresencia([]);
+          }
+        );
+
+        let ultimaPresenciaPublicada = "";
+        const actualizarPresencia = (cursor = {}, forzar = false) => {
+          const inicio = Math.max(0, Number(cursor.inicio) || 0);
+          const fin = Math.max(0, Number(cursor.fin) || 0);
+          const clavePresencia = `${inicio}:${fin}`;
+          if (!forzar && clavePresencia === ultimaPresenciaPublicada) return Promise.resolve();
+          ultimaPresenciaPublicada = clavePresencia;
+          return setDoc(presenciaRef, {
           clienteId,
           uid,
           sectionId,
           rol,
           nombre: user.displayName || user.email || rol,
           autorUid: user.uid,
-          cursorInicio: Math.max(0, Number(cursor.inicio) || 0),
-          cursorFin: Math.max(0, Number(cursor.fin) || 0),
+          cursorInicio: inicio,
+          cursorFin: fin,
           activoEn: serverTimestamp()
-        }, { merge: true }).catch(() => {});
+          }, { merge: true }).catch(() => {});
+        };
 
         await actualizarPresencia();
-        const latido = setInterval(() => actualizarPresencia(), 20000);
+        const latido = setInterval(() => actualizarPresencia({}, true), 20000);
         const sesion = {
           clave,
           documento,
@@ -3429,6 +3579,11 @@
           clienteId,
           rol,
           onStatus(fn) { estadoListeners.add(fn); return () => estadoListeners.delete(fn); },
+          onPresence(fn) {
+            presenciaListeners.add(fn);
+            fn(participantesActuales);
+            return () => presenciaListeners.delete(fn);
+          },
           actualizarPresencia,
           async flush() { clearTimeout(temporizador); await publicarCola(); },
           async destroy() {
@@ -3437,6 +3592,7 @@
             destruida = true;
             clearInterval(latido);
             detenerActualizaciones();
+            detenerPresencia();
             documento.destroy();
             sesionesCodigoCRDT.delete(clave);
             try { await deleteDoc(presenciaRef); } catch (_) {}
@@ -3451,6 +3607,31 @@
         if (!textarea || !sesion) return () => {};
         if (textarea.__desvincularCRDT) textarea.__desvincularCRDT();
         const origenLocal = { tipo: "textarea", clienteId: sesion.clienteId };
+        const autorCambioElemento = document.createElement("span");
+        autorCambioElemento.className = "collaboration-change-author";
+        autorCambioElemento.setAttribute("aria-live", "polite");
+        if (estadoElemento) {
+          estadoElemento.insertAdjacentElement("afterend", autorCambioElemento);
+        } else {
+          textarea.parentElement?.insertBefore(autorCambioElemento, textarea);
+        }
+        let temporizadorAutorCambio = null;
+        const marcarCambio = (rol, nombre = "") => {
+          const esDocente = rol === "docente";
+          clearTimeout(temporizadorAutorCambio);
+          textarea.classList.remove("crdt-change-teacher", "crdt-change-student");
+          autorCambioElemento.className = `collaboration-change-author ${esDocente ? "is-teacher" : "is-student"} is-visible`;
+          const iconoCambio = document.createElement("i");
+          iconoCambio.className = `fa-solid ${esDocente ? "fa-chalkboard-user" : "fa-user-graduate"}`;
+          const textoCambio = document.createElement("span");
+          textoCambio.textContent = `Cambio de ${esDocente ? "docente" : "alumno"}${nombre ? ` · ${String(nombre).split("@")[0]}` : ""}`;
+          autorCambioElemento.replaceChildren(iconoCambio, textoCambio);
+          textarea.classList.add(esDocente ? "crdt-change-teacher" : "crdt-change-student");
+          temporizadorAutorCambio = setTimeout(() => {
+            textarea.classList.remove("crdt-change-teacher", "crdt-change-student");
+            autorCambioElemento.classList.remove("is-visible");
+          }, 1800);
+        };
         const aplicarRemoto = (_, transaccion) => {
           if (transaccion.origin === origenLocal) return;
           const siguiente = sesion.texto.toString();
@@ -3466,6 +3647,10 @@
             programarGuardadoFirebase();
           }
           textarea.dispatchEvent(new CustomEvent("crdt-remote-change", { bubbles: true }));
+          marcarCambio(
+            transaccion.origin?.rol || (sesion.rol === "docente" ? "estudiante" : "docente"),
+            transaccion.origin?.autorEmail || ""
+          );
         };
         const aplicarLocal = () => {
           const anterior = sesion.texto.toString();
@@ -3476,12 +3661,17 @@
             if (cambio.eliminar) sesion.texto.delete(cambio.inicio, cambio.eliminar);
             if (cambio.insertar) sesion.texto.insert(cambio.inicio, cambio.insertar);
           }, origenLocal);
+          marcarCambio(sesion.rol);
           sesion.actualizarPresencia({ inicio: textarea.selectionStart, fin: textarea.selectionEnd });
         };
-        const actualizarCursor = () => sesion.actualizarPresencia({
-          inicio: textarea.selectionStart,
-          fin: textarea.selectionEnd
-        });
+        let temporizadorPresencia = null;
+        const actualizarCursor = () => {
+          clearTimeout(temporizadorPresencia);
+          temporizadorPresencia = setTimeout(() => sesion.actualizarPresencia({
+            inicio: textarea.selectionStart,
+            fin: textarea.selectionEnd
+          }), 250);
+        };
         textarea.value = sesion.texto.toString();
         if (sesion.rol === "estudiante") {
           setLocalStorage(`draft_editor-${sectionId}`, textarea.value);
@@ -3497,12 +3687,62 @@
           estadoElemento.className = `student-editor-state crdt-${info.estado}`;
           estadoElemento.innerHTML = `<i class="fa-solid ${info.estado === "synced" ? "fa-people-arrows" : info.estado === "error" ? "fa-triangle-exclamation" : "fa-arrows-rotate fa-spin"}"></i> ${info.detalle}`;
         });
+        const presenciaElemento = document.createElement("span");
+        presenciaElemento.className = "collaboration-presence";
+        presenciaElemento.setAttribute("aria-live", "polite");
+        presenciaElemento.setAttribute("aria-label", "Participantes del modo cooperación");
+        if (estadoElemento) {
+          estadoElemento.insertAdjacentElement("afterend", presenciaElemento);
+        } else {
+          textarea.parentElement?.insertBefore(presenciaElemento, textarea);
+        }
+        const quitarPresencia = sesion.onPresence(participantes => {
+          const activos = participantes.filter(item => !item.inactivo);
+          const otrosActivos = activos.filter(item => !item.propio);
+          presenciaElemento.replaceChildren();
+
+          const resumen = document.createElement("span");
+          resumen.className = `collaboration-presence-summary${otrosActivos.length ? "" : " is-alone"}`;
+          resumen.title = otrosActivos.length
+            ? `${otrosActivos.length} participante${otrosActivos.length === 1 ? "" : "s"} conectado${otrosActivos.length === 1 ? "" : "s"} contigo`
+            : "Esperando a otro participante";
+          resumen.innerHTML = `<i class="fa-solid ${otrosActivos.length ? "fa-user-group" : "fa-user-clock"}"></i><span>${otrosActivos.length ? `${otrosActivos.length + 1} conectados` : "Solo vos"}</span>`;
+          presenciaElemento.appendChild(resumen);
+
+          participantes.slice(0, 4).forEach(item => {
+            const persona = document.createElement("span");
+            persona.className = `collaboration-presence-person${item.inactivo ? " is-idle" : ""}`;
+            const nombre = item.propio ? "Vos" : String(item.nombre || "Participante");
+            const rol = item.rol === "docente" ? "Docente" : "Estudiante";
+            persona.title = `${nombre} · ${rol} · ${item.inactivo ? "señal demorada" : "en línea"}`;
+            const punto = document.createElement("i");
+            punto.className = "fa-solid fa-circle";
+            const etiqueta = document.createElement("span");
+            etiqueta.textContent = `${nombre} · ${rol}`;
+            persona.append(punto, etiqueta);
+            presenciaElemento.appendChild(persona);
+          });
+
+          if (participantes.length > 4) {
+            const restantes = document.createElement("span");
+            restantes.className = "collaboration-presence-person";
+            restantes.textContent = `+${participantes.length - 4}`;
+            restantes.title = `${participantes.length - 4} participantes adicionales`;
+            presenciaElemento.appendChild(restantes);
+          }
+        });
         const desvincular = () => {
+          clearTimeout(temporizadorPresencia);
+          clearTimeout(temporizadorAutorCambio);
+          textarea.classList.remove("crdt-change-teacher", "crdt-change-student");
           textarea.removeEventListener("input", aplicarLocal);
           textarea.removeEventListener("keyup", actualizarCursor);
           textarea.removeEventListener("click", actualizarCursor);
           sesion.texto.unobserve(aplicarRemoto);
           quitarEstado();
+          quitarPresencia();
+          presenciaElemento.remove();
+          autorCambioElemento.remove();
           delete textarea.__desvincularCRDT;
         };
         textarea.__desvincularCRDT = desvincular;
