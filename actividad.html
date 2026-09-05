@@ -1935,6 +1935,104 @@
       textarea.crdt-change-student {
         transition: background-color .2s ease, box-shadow .2s ease, border-color .2s ease;
       }
+      .collaboration-history {
+        margin-top: .55rem;
+        border: 1px solid rgba(148,163,184,.25);
+        border-radius: 7px;
+        background: rgba(15,23,42,.62);
+        overflow: hidden;
+      }
+      .collaboration-history-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .6rem;
+        padding: .48rem .6rem;
+        border-bottom: 1px solid rgba(148,163,184,.2);
+      }
+      .collaboration-history-title,
+      .collaboration-history-legend {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: .45rem;
+        font-size: .7rem;
+      }
+      .collaboration-history-title {
+        color: #e2e8f0;
+        font-weight: 700;
+      }
+      .collaboration-history-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        color: var(--text-muted);
+      }
+      .collaboration-history-legend i {
+        font-size: .5rem;
+      }
+      .collaboration-history-legend .teacher-color {
+        color: #22c55e;
+      }
+      .collaboration-history-legend .student-color {
+        color: #3b82f6;
+      }
+      .collaboration-history-list {
+        display: grid;
+        gap: .35rem;
+        max-height: 210px;
+        overflow-y: auto;
+        padding: .5rem;
+      }
+      .collaboration-history-empty {
+        padding: .35rem;
+        color: var(--text-muted);
+        font-size: .7rem;
+      }
+      .collaboration-history-entry {
+        display: grid;
+        grid-template-columns: 4px minmax(0,1fr);
+        gap: .48rem;
+        padding: .42rem .5rem .42rem .35rem;
+        border: 1px solid rgba(148,163,184,.18);
+        border-radius: 5px;
+        background: rgba(2,6,23,.42);
+      }
+      .collaboration-history-entry::before {
+        content: "";
+        border-radius: 3px;
+        background: #3b82f6;
+      }
+      .collaboration-history-entry.is-teacher::before {
+        background: #22c55e;
+      }
+      .collaboration-history-entry.is-reverted {
+        opacity: .58;
+      }
+      .collaboration-history-entry-head {
+        display: flex;
+        justify-content: space-between;
+        gap: .5rem;
+        color: #cbd5e1;
+        font-size: .67rem;
+      }
+      .collaboration-history-entry-head strong {
+        color: #93c5fd;
+      }
+      .collaboration-history-entry.is-teacher .collaboration-history-entry-head strong {
+        color: #86efac;
+      }
+      .collaboration-history-entry-code {
+        margin-top: .28rem;
+        color: #cbd5e1;
+        font: .68rem/1.35 "Fira Code", monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .collaboration-history-revert {
+        padding: .32rem .48rem !important;
+        font-size: .68rem !important;
+      }
       @media (max-width: 700px) {
         .collaboration-presence {
           display: flex;
@@ -3427,10 +3525,15 @@
         const metaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId);
         const actualizacionesRef = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "actualizaciones");
         const presenciaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "presencia", clienteId);
+        const historialAportesRef = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "historialAportes");
+        const historialAportesQuery = query(historialAportesRef, orderBy("creadoEn", "desc"), limit(150));
         const vistos = new Set();
         const estadoListeners = new Set();
         const presenciaListeners = new Set();
+        const historialListeners = new Set();
         let participantesActuales = [];
+        let historialCambios = [];
+        let cambiosVisualesPendientes = [];
         let cola = [];
         let temporizador = null;
         let destruida = false;
@@ -3439,6 +3542,35 @@
         const notificarPresencia = participantes => {
           participantesActuales = participantes;
           presenciaListeners.forEach(fn => fn(participantes));
+        };
+        const notificarHistorial = () => historialListeners.forEach(fn => fn(historialCambios.slice()));
+        const agregarCambiosHistorial = cambios => {
+          (Array.isArray(cambios) ? cambios : []).forEach(cambio => {
+            if (!cambio?.id || historialCambios.some(item => item.id === cambio.id)) return;
+            historialCambios.push(cambio);
+          });
+          historialCambios.sort((a, b) => Number(a.creadoMs || 0) - Number(b.creadoMs || 0));
+          if (historialCambios.length > 150) historialCambios = historialCambios.slice(-150);
+          notificarHistorial();
+        };
+        const registrarCambioVisual = cambio => {
+          const registro = {
+            id: `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`,
+            rol,
+            autorUid: user.uid,
+            autorEmail: user.email || "",
+            inicio: Math.max(0, Number(cambio.inicio) || 0),
+            eliminado: String(cambio.eliminado || "").slice(0, 4000),
+            insertado: String(cambio.insertado || "").slice(0, 4000),
+            lineaInicio: Math.max(1, Number(cambio.lineaInicio) || 1),
+            lineaFin: Math.max(1, Number(cambio.lineaFin) || 1),
+            tipo: cambio.tipo === "reversion" ? "reversion" : "edicion",
+            revierteId: String(cambio.revierteId || ""),
+            creadoMs: Date.now()
+          };
+          cambiosVisualesPendientes.push(registro);
+          agregarCambiosHistorial([registro]);
+          return registro;
         };
         const semilla = await runTransaction(database, async transaction => {
           const snapshot = await transaction.get(metaRef);
@@ -3458,10 +3590,17 @@
         });
         Y.applyUpdate(documento, base64ABytes(semilla), ORIGEN_FIRESTORE_CRDT);
 
-        const iniciales = await getDocs(actualizacionesRef);
+        const [iniciales, historialInicial] = await Promise.all([
+          getDocs(actualizacionesRef),
+          getDocs(historialAportesQuery).catch(() => null)
+        ]);
+        if (historialInicial) {
+          agregarCambiosHistorial(historialInicial.docs.map(item => ({ id: item.id, ...item.data() })));
+        }
         iniciales.docs.forEach(item => {
           vistos.add(item.id);
-          const update = item.data().update;
+          const datosIniciales = item.data();
+          const update = datosIniciales.update;
           if (update) Y.applyUpdate(documento, base64ABytes(update), ORIGEN_FIRESTORE_CRDT);
         });
 
@@ -3470,6 +3609,8 @@
           if (destruida || !cola.length) return;
           const lote = Y.mergeUpdates(cola);
           cola = [];
+          const cambios = cambiosVisualesPendientes;
+          cambiosVisualesPendientes = [];
           const id = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`;
           notificar("syncing", "Sincronizando cambios");
           try {
@@ -3489,9 +3630,16 @@
               actualizadoPor: user.email || user.uid
             }, { merge: true });
             notificar("synced", "Cambios sincronizados");
+            Promise.all(cambios.map(cambio => setDoc(doc(historialAportesRef, cambio.id), {
+              ...cambio,
+              uid,
+              sectionId,
+              creadoEn: serverTimestamp()
+            }))).catch(error => console.error("No se pudo guardar el historial visual del cambio:", error));
           } catch (error) {
             console.error("No se pudo publicar la actualización CRDT:", error);
             cola.unshift(lote);
+            cambiosVisualesPendientes.unshift(...cambios);
             notificar("error", "No se pudo sincronizar");
           }
         };
@@ -3549,6 +3697,16 @@
             notificarPresencia([]);
           }
         );
+        const detenerHistorialAportes = onSnapshot(
+          historialAportesQuery,
+          snapshot => {
+            const nuevos = snapshot.docChanges()
+              .filter(cambio => cambio.type !== "removed")
+              .map(cambio => ({ id: cambio.doc.id, ...cambio.doc.data() }));
+            agregarCambiosHistorial(nuevos);
+          },
+          error => console.error("Error escuchando el historial colaborativo:", error)
+        );
 
         let ultimaPresenciaPublicada = "";
         const actualizarPresencia = (cursor = {}, forzar = false) => {
@@ -3584,6 +3742,12 @@
             fn(participantesActuales);
             return () => presenciaListeners.delete(fn);
           },
+          onHistory(fn) {
+            historialListeners.add(fn);
+            fn(historialCambios.slice());
+            return () => historialListeners.delete(fn);
+          },
+          registrarCambioVisual,
           actualizarPresencia,
           async flush() { clearTimeout(temporizador); await publicarCola(); },
           async destroy() {
@@ -3593,6 +3757,7 @@
             clearInterval(latido);
             detenerActualizaciones();
             detenerPresencia();
+            detenerHistorialAportes();
             documento.destroy();
             sesionesCodigoCRDT.delete(clave);
             try { await deleteDoc(presenciaRef); } catch (_) {}
@@ -3652,18 +3817,34 @@
             transaccion.origin?.autorEmail || ""
           );
         };
-        const aplicarLocal = () => {
+        const sincronizarTextoLocal = (metadatos = {}) => {
           const anterior = sesion.texto.toString();
           const siguiente = textarea.value;
           if (anterior === siguiente) return;
           const cambio = diferenciaTextoCRDT(anterior, siguiente);
+          const eliminado = anterior.slice(cambio.inicio, cambio.inicio + cambio.eliminar);
+          const lineaInicio = anterior.slice(0, cambio.inicio).split("\n").length;
+          const lineaFin = lineaInicio + Math.max(
+            eliminado.split("\n").length,
+            String(cambio.insertar || "").split("\n").length
+          ) - 1;
           sesion.documento.transact(() => {
             if (cambio.eliminar) sesion.texto.delete(cambio.inicio, cambio.eliminar);
             if (cambio.insertar) sesion.texto.insert(cambio.inicio, cambio.insertar);
           }, origenLocal);
+          sesion.registrarCambioVisual({
+            inicio: cambio.inicio,
+            eliminado,
+            insertado: cambio.insertar,
+            lineaInicio,
+            lineaFin,
+            tipo: metadatos.tipo,
+            revierteId: metadatos.revierteId
+          });
           marcarCambio(sesion.rol);
           sesion.actualizarPresencia({ inicio: textarea.selectionStart, fin: textarea.selectionEnd });
         };
+        const aplicarLocal = () => sincronizarTextoLocal();
         let temporizadorPresencia = null;
         const actualizarCursor = () => {
           clearTimeout(temporizadorPresencia);
@@ -3731,6 +3912,106 @@
             presenciaElemento.appendChild(restantes);
           }
         });
+        const historialElemento = document.createElement("section");
+        historialElemento.className = "collaboration-history";
+        historialElemento.innerHTML = `
+          <div class="collaboration-history-header">
+            <div>
+              <div class="collaboration-history-title"><i class="fa-solid fa-code-commit"></i> Historial de cambios colaborativos</div>
+              <div class="collaboration-history-legend">
+                <span><i class="fa-solid fa-circle teacher-color"></i> Docente</span>
+                <span><i class="fa-solid fa-circle student-color"></i> Alumno</span>
+              </div>
+            </div>
+          </div>
+          <div class="collaboration-history-list"></div>`;
+        const cabeceraHistorial = historialElemento.querySelector(".collaboration-history-header");
+        const listaHistorial = historialElemento.querySelector(".collaboration-history-list");
+        let botonRevertir = null;
+        if (sesion.rol === "docente") {
+          botonRevertir = document.createElement("button");
+          botonRevertir.type = "button";
+          botonRevertir.className = "btn btn-secondary collaboration-history-revert";
+          botonRevertir.innerHTML = '<i class="fa-solid fa-rotate-left"></i><span>Revertir último cambio del alumno</span>';
+          cabeceraHistorial.appendChild(botonRevertir);
+        }
+        textarea.insertAdjacentElement("afterend", historialElemento);
+        let ultimoHistorialCambios = [];
+        const cambiosRevertidos = cambios => new Set(
+          cambios.filter(item => item.tipo === "reversion" && item.revierteId).map(item => item.revierteId)
+        );
+        const ultimoCambioAlumnoRevertible = cambios => {
+          const revertidos = cambiosRevertidos(cambios);
+          return [...cambios].reverse().find(item => item.rol === "estudiante" && !revertidos.has(item.id));
+        };
+        const renderizarHistorial = cambios => {
+          ultimoHistorialCambios = cambios;
+          const revertidos = cambiosRevertidos(cambios);
+          listaHistorial.replaceChildren();
+          const visibles = cambios.slice(-30).reverse();
+          if (!visibles.length) {
+            const vacio = document.createElement("div");
+            vacio.className = "collaboration-history-empty";
+            vacio.textContent = "Todavía no hay cambios registrados en esta sesión.";
+            listaHistorial.appendChild(vacio);
+          }
+          visibles.forEach(cambio => {
+            const entrada = document.createElement("article");
+            entrada.className = `collaboration-history-entry${cambio.rol === "docente" ? " is-teacher" : ""}${revertidos.has(cambio.id) ? " is-reverted" : ""}`;
+            const contenido = document.createElement("div");
+            const cabecera = document.createElement("div");
+            cabecera.className = "collaboration-history-entry-head";
+            const autor = document.createElement("strong");
+            autor.textContent = cambio.tipo === "reversion"
+              ? "Docente · reversión"
+              : (cambio.rol === "docente" ? "Docente" : "Alumno");
+            const lineas = document.createElement("span");
+            lineas.textContent = cambio.lineaInicio === cambio.lineaFin
+              ? `Línea ${cambio.lineaInicio}`
+              : `Líneas ${cambio.lineaInicio}-${cambio.lineaFin}`;
+            cabecera.append(autor, lineas);
+            const codigo = document.createElement("div");
+            codigo.className = "collaboration-history-entry-code";
+            const insertado = String(cambio.insertado || "");
+            const eliminado = String(cambio.eliminado || "");
+            codigo.textContent = insertado
+              ? `+ ${insertado.slice(0, 240)}${insertado.length > 240 ? "…" : ""}`
+              : `- ${eliminado.slice(0, 240)}${eliminado.length > 240 ? "…" : ""}`;
+            contenido.append(cabecera, codigo);
+            entrada.appendChild(contenido);
+            listaHistorial.appendChild(entrada);
+          });
+          if (botonRevertir) {
+            const ultimo = ultimoCambioAlumnoRevertible(cambios);
+            botonRevertir.disabled = !ultimo;
+            botonRevertir.title = ultimo
+              ? `Revertir cambio del alumno en línea ${ultimo.lineaInicio}`
+              : "No hay cambios del alumno disponibles para revertir";
+          }
+        };
+        const quitarHistorial = sesion.onHistory(renderizarHistorial);
+        if (botonRevertir) {
+          botonRevertir.addEventListener("click", () => {
+            const cambio = ultimoCambioAlumnoRevertible(ultimoHistorialCambios);
+            if (!cambio) return;
+            const actual = textarea.value;
+            const inicio = Math.max(0, Number(cambio.inicio) || 0);
+            const insertado = String(cambio.insertado || "");
+            const eliminado = String(cambio.eliminado || "");
+            if (inicio > actual.length || (insertado && actual.slice(inicio, inicio + insertado.length) !== insertado)) {
+              alert("No se puede revertir automáticamente porque el código cambió después en esa misma posición. Revisá el historial antes de modificarlo manualmente.");
+              return;
+            }
+            const etiquetaLinea = cambio.lineaInicio === cambio.lineaFin
+              ? `la línea ${cambio.lineaInicio}`
+              : `las líneas ${cambio.lineaInicio}-${cambio.lineaFin}`;
+            if (!confirm(`¿Revertir el último cambio del alumno en ${etiquetaLinea}? La reversión quedará registrada como un cambio del docente.`)) return;
+            textarea.value = actual.slice(0, inicio) + eliminado + actual.slice(inicio + insertado.length);
+            textarea.setSelectionRange(inicio, inicio + eliminado.length);
+            sincronizarTextoLocal({ tipo: "reversion", revierteId: cambio.id });
+            textarea.focus();
+          });
+        }
         const desvincular = () => {
           clearTimeout(temporizadorPresencia);
           clearTimeout(temporizadorAutorCambio);
@@ -3743,6 +4024,8 @@
           quitarPresencia();
           presenciaElemento.remove();
           autorCambioElemento.remove();
+          quitarHistorial();
+          historialElemento.remove();
           delete textarea.__desvincularCRDT;
         };
         textarea.__desvincularCRDT = desvincular;
