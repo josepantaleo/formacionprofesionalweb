@@ -5017,13 +5017,27 @@
         }
       };
 
-      window.escucharPresenciaColaborativaFirebase = function(uid, sectionId, alActualizar) {
-        const { user, database } = contextoChatColaborativoFirebase();
-        if (!user || !database || !uid || !sectionId || typeof alActualizar !== "function") return null;
+      window.escucharPresenciaColaborativaFirebase = function(uid, sectionId, alActualizar, opciones = {}) {
+        const { user, database, rol } = contextoChatColaborativoFirebase(opciones.rol);
+        if (!user || !database || !uid || !sectionId || typeof alActualizar !== "function") {
+          const error = new Error("No hay una sesion Firebase valida para consultar presencia.");
+          error.code = "presence/session-unavailable";
+          if (typeof alActualizar === "function") alActualizar([], error);
+          return null;
+        }
         return onSnapshot(
           collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "presencia"),
           snapshot => alActualizar(snapshot.docs.map(item => ({ id: item.id, ...item.data() })), null),
-          error => alActualizar([], error)
+          error => {
+            window.ultimoErrorChatColaborativo = {
+              code: error?.code || "presence/listen-failed",
+              message: error?.message || "No se pudo consultar la presencia.",
+              uid,
+              sectionId,
+              rol
+            };
+            alActualizar([], error);
+          }
         );
       };
 
@@ -14869,7 +14883,7 @@
                       <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap">
                           <h4 style="margin:0">Código entregado</h4>
                           <button class="btn btn-primary" type="button" onclick="abrirEditorColaborativoProfesor(${indice}, '${sec.id}')">
-                              <i class="fa-solid fa-code-branch"></i> Trabajar en vivo
+                              <i class="fa-solid fa-code-branch"></i> Abrir cooperación y mensajes
                           </button>
                       </div>
                       <pre class="teacher-code">${escapeHtml(codigo)}</pre>

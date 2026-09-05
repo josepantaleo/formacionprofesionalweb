@@ -642,7 +642,15 @@ function renderChatColaborativo(contenedor,mensajes=[],rolActual="estudiante",er
   const estadoLlamada=/conectad|se uni[oó]|acept[oó]/i.test(textoMensaje)?"call-connected":/rechaz/i.test(textoMensaje)?"call-rejected":/finaliz|sali[oó]/i.test(textoMensaje)?"call-finished":"";
   const clase=`collab-chat-message ${propio?"mine":""} ${m.rol==="docente"?"teacher":""} ${sistema?"system":""} ${sistema?estadoLlamada:""}`;
   const autor=propio?"Vos":(m.autorNombre|| (m.rol==="docente"?"Docente":"Estudiante"));
-  return `<article class="${clase}"><p>${escaparProgramacion(m.texto)}</p><small>${escaparProgramacion(autor)} · ${fechaChatColaborativo(m.creadoEn)}</small></article>`;
+  const campoLeido=rolActual==="docente"?"leidoEstudianteEn":"leidoDocenteEn";
+  const campoEntregado=rolActual==="docente"?"entregadoEstudianteEn":"entregadoDocenteEn";
+  const estado=propio
+    ? (m[campoLeido]?"Leído":m[campoEntregado]?"Entregado":"Enviado")
+    : (m[campoLeido]?"Leído":"Recibido");
+  const cita=m.cita?.texto
+    ? `<blockquote class="collab-chat-quote"><strong>${m.cita.lineaInicio===m.cita.lineaFin?"Línea":"Líneas"} ${Number(m.cita.lineaInicio)||1}${m.cita.lineaInicio!==m.cita.lineaFin?`-${Number(m.cita.lineaFin)||Number(m.cita.lineaInicio)||1}`:""}</strong><code>${escaparProgramacion(m.cita.texto)}</code></blockquote>`
+    : "";
+  return `<article class="${clase}">${cita}<p>${escaparProgramacion(m.texto)}</p><small>${escaparProgramacion(autor)} · ${fechaChatColaborativo(m.creadoEn)} · <span class="collab-chat-message-state">${estado}</span></small></article>`;
  }).join(""):'<p class="collab-chat-empty">Todavía no hay mensajes. Consultá o explicá el siguiente paso.</p>';
  contenedor.scrollTop=contenedor.scrollHeight;
 }
