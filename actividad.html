@@ -616,45 +616,6 @@
         cursor: not-allowed;
       }
 
-      .editor-enhancement-shell{position:relative;background:var(--bg-editor)}
-      .editor-enhancement-toolbar{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;padding:.35rem .55rem;background:#111827;border-top:1px solid rgba(148,163,184,.16);border-bottom:1px solid rgba(148,163,184,.2);font-size:.7rem}
-      .editor-enhancement-toolbar input{min-width:130px;flex:1;padding:.32rem .45rem;border:1px solid rgba(148,163,184,.3);border-radius:4px;background:#0f172a;color:#e2e8f0;font:inherit}
-      .editor-enhancement-toolbar button,.editor-enhancement-toolbar select{padding:.3rem .42rem;border:1px solid rgba(148,163,184,.28);border-radius:4px;background:#1e293b;color:#cbd5e1;font:inherit;cursor:pointer}
-      .editor-enhancement-body{position:relative;min-height:180px;overflow:hidden}
-      .editor-line-numbers{position:absolute;inset:0 auto 0 0;width:2.8rem;padding:.95rem .45rem .95rem 0;background:#111827;color:#64748b;text-align:right;font:400 .9rem/1.5 "Fira Code",monospace;white-space:pre;overflow:hidden;user-select:none}
-      .editor-syntax-layer{position:absolute;inset:0;z-index:0;margin:0;padding:.95rem 1rem .95rem 3.35rem;color:#dbeafe;font:400 .9rem/1.5 "Fira Code",monospace;font-variant-ligatures:none;letter-spacing:0;white-space:pre;overflow:hidden;pointer-events:none;tab-size:4}
-      .editor-syntax-layer .kw{color:#c084fc}.editor-syntax-layer .str{color:#86efac}.editor-syntax-layer .num{color:#fbbf24}.editor-syntax-layer .com{color:#64748b}.editor-syntax-layer .fn{color:#67e8f9}
-      textarea.code-editor.editor-enhanced{position:relative;z-index:1;height:180px;padding:.95rem 1rem .95rem 3.35rem;color:transparent;-webkit-text-fill-color:transparent;background:transparent;caret-color:#f8fafc;white-space:pre;overflow:auto;font-variant-ligatures:none;letter-spacing:0;tab-size:4}
-      textarea.code-editor.editor-enhanced.wrap-lines{white-space:pre-wrap;overflow-wrap:anywhere}
-      .editor-search-status{color:#94a3b8;white-space:nowrap}
-      .editor-cursor-position{color:#7dd3fc;white-space:nowrap;font-variant-numeric:tabular-nums}
-      .codemirror-host{--cm-font-size:.9rem;position:relative;display:flex;flex-direction:column;min-height:180px;background:var(--bg-editor);border-top:1px solid rgba(148,163,184,.18)}
-      .codemirror-host .cm-editor{min-height:180px;height:100%;flex:1 1 auto;font:400 var(--cm-font-size)/1.5 "Fira Code",monospace}
-      .codemirror-host .cm-scroller{overflow:auto;min-height:180px;font-size:inherit}
-      .codemirror-host .cm-content{padding:1rem 1rem 1.5rem}
-      .codemirror-host .cm-gutters{background:#111827;color:#64748b;border-right:1px solid rgba(148,163,184,.18)}
-      .codemirror-host .cm-activeLineGutter,.codemirror-host .cm-activeLine{background:rgba(56,189,248,.08)}
-      .codemirror-host.cm-disabled{opacity:.72;filter:saturate(.7);pointer-events:none}
-      .codemirror-source-hidden{display:none!important}
-      .cm-workbench-toolbar{display:grid;grid-template-columns:minmax(170px,1fr) repeat(3,36px) auto auto;align-items:center;gap:.38rem;padding:.45rem .55rem;border-bottom:1px solid rgba(148,163,184,.22);background:#111827;font:600 .7rem/1.2 "Inter",sans-serif}
-      .cm-workbench-search{position:relative;min-width:0}
-      .cm-workbench-search i{position:absolute;left:.58rem;top:50%;color:#64748b;transform:translateY(-50%);pointer-events:none}
-      .cm-workbench-search input{width:100%;min-width:0;height:34px;padding:.38rem .55rem .38rem 1.8rem;border:1px solid rgba(148,163,184,.32);border-radius:5px;background:#0f172a;color:#e2e8f0;font:inherit}
-      .cm-workbench-toolbar button,.cm-workbench-toolbar select{height:34px;border:1px solid rgba(148,163,184,.3);border-radius:5px;background:#1e293b;color:#cbd5e1;cursor:pointer}
-      .cm-workbench-toolbar button{display:grid;place-items:center;width:36px;padding:0}
-      .cm-workbench-toolbar button:hover,.cm-workbench-toolbar button[aria-pressed="true"]{border-color:#38bdf8;background:#075985;color:#fff}
-      .cm-workbench-toolbar select{max-width:118px;padding:0 .45rem}
-      .cm-workbench-position{color:#7dd3fc;white-space:nowrap;font-variant-numeric:tabular-nums}
-      .cm-workbench-status{grid-column:1/-1;min-height:0;color:#94a3b8;font-size:.64rem}
-      .cm-workbench-status:empty{display:none}
-      @media(max-width:720px){.cm-workbench-toolbar{grid-template-columns:minmax(0,1fr) repeat(3,36px)}.cm-workbench-toolbar select,.cm-workbench-position{grid-column:auto}.cm-workbench-toolbar select{max-width:none}.cm-workbench-position{grid-column:1/-1}.cm-workbench-status{grid-column:1/-1}}
-      .cm-remote-cursors{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
-      .cm-remote-cursor{position:absolute;width:2px;height:1.45em;border-radius:2px;background:#fbbf24;box-shadow:0 0 0 1px rgba(251,191,36,.2);animation:cmCursorBlink 1.1s infinite}
-      .cm-remote-cursor.student{background:#4ade80;box-shadow:0 0 0 1px rgba(74,222,128,.2)}
-      .cm-remote-cursor.teacher{background:#fbbf24;box-shadow:0 0 0 1px rgba(251,191,36,.2)}
-      .cm-remote-cursor-label{position:absolute;left:4px;top:-1.1em;padding:.1rem .25rem;border-radius:3px;background:rgba(15,23,42,.92);color:#fde68a;font:600 .58rem/1.2 Inter,sans-serif;white-space:nowrap}
-      @keyframes cmCursorBlink{0%,45%{opacity:1}46%,100%{opacity:.55}}
-
       .console-output {
         background: #000;
         color: #10b981;
@@ -668,9 +629,6 @@
         font-size: 0.85rem;
         white-space: pre-wrap;
       }
-      .console-tabs{display:flex;gap:.25rem;padding:.35rem;background:#111827;border:1px solid var(--border);border-bottom:0}.console-tabs button{padding:.3rem .55rem;border:1px solid transparent;border-radius:4px;background:transparent;color:#94a3b8;font-size:.68rem;cursor:pointer}.console-tabs button.active{background:#1e293b;color:#e0f2fe;border-color:#38bdf8}
-      .editor-error-line{background:rgba(239,68,68,.25)!important;box-shadow:inset 3px 0 #ef4444}
-      .editor-enhancement-body textarea:focus{outline:2px solid rgba(56,189,248,.55);outline-offset:-2px}
 
       /* Estilos de la Caja de IA Comparativa */
       .ai-feedback-box {
@@ -2185,7 +2143,7 @@
       }
       .teacher-tab-badge.tabs-warning{background:rgba(161,98,7,.28);border-color:rgba(251,191,36,.38);color:#fde68a}
       .teacher-tab-badge.tabs-danger{background:rgba(153,27,27,.34);border-color:rgba(248,113,113,.46);color:#fca5a5}
-      #confirmacionDocenteModal{z-index:50000!important}
+      #confirmacionDocenteModal{z-index:12000}
       .teacher-confirm-box{
         width:min(520px,calc(100vw - 1rem));
         max-width:520px;
@@ -2400,46 +2358,10 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, collectionGroup, query, orderBy, limit, onSnapshot, getDocs, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, collectionGroup, onSnapshot, getDocs, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
       import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
       import { getAI, getTemplateGenerativeModel, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
       import * as Y from "https://cdn.jsdelivr.net/npm/yjs@13.6.31/+esm";
-      import {
-        Compartment,
-        Decoration,
-        EditorState,
-        EditorView,
-        keymap,
-        lineNumbers,
-        highlightActiveLine,
-        drawSelection,
-        defaultKeymap,
-        indentWithTab,
-        javascript,
-        closeBrackets,
-        closeBracketsKeymap,
-        autocompletion,
-        completionKeymap,
-        startCompletion
-      } from "./codemirror-bundle.js?v=20260904-3";
-      window.CodeMirror6 = {
-        Compartment,
-        Decoration,
-        EditorState,
-        EditorView,
-        keymap,
-        lineNumbers,
-        highlightActiveLine,
-        drawSelection,
-        defaultKeymap,
-        indentWithTab,
-        javascript,
-        closeBrackets,
-        closeBracketsKeymap,
-        autocompletion,
-        completionKeymap,
-        startCompletion
-      };
 
       // ============================================================
       // PEGA AQUÍ LA CONFIGURACIÓN DE TU PROYECTO FIREBASE
@@ -3326,37 +3248,6 @@
       const ORIGEN_FIRESTORE_CRDT = Symbol("firestore-crdt");
       const sesionesCodigoCRDT = new Map();
 
-      function mensajeErrorCRDT(error) {
-        const codigo = String(error?.code || "");
-        const mensaje = String(error?.message || "");
-        if (codigo.includes("resource-exhausted") || codigo.includes("quota-exceeded") || /quota exceeded/i.test(mensaje)) {
-          return "Firebase alcanzó la cuota disponible de lecturas o escrituras. La colaboración y el chat se reanudarán cuando la cuota se restablezca o se amplíe el plan del proyecto.";
-        }
-        if (codigo.includes("permission-denied")) {
-          return "Firestore rechazó la colaboración. Publicá reglas.txt en el proyecto ipem146js con una cuenta administradora.";
-        }
-        if (codigo.includes("unauthenticated") || codigo.includes("auth")) {
-          return "La sesión no está autorizada para colaborar. Volvé a iniciar sesión.";
-        }
-        if (codigo.includes("unavailable") || codigo.includes("network")) {
-          return "No se pudo conectar con Firestore. Revisá Internet e intentá nuevamente.";
-        }
-        return mensaje || "No se pudo iniciar la colaboración CRDT.";
-      }
-
-      function mostrarErrorCRDTEstudiante(error) {
-        let aviso = document.getElementById("avisoErrorCRDT");
-        if (!aviso) {
-          aviso = document.createElement("div");
-          aviso.id = "avisoErrorCRDT";
-          aviso.className = "crdt-status-toast";
-          aviso.setAttribute("role", "status");
-          document.body.appendChild(aviso);
-        }
-        aviso.innerHTML = `<span class="crdt-status-toast-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span><span class="crdt-status-toast-copy"><strong>Colaboración temporalmente pausada</strong><small>${mensajeErrorCRDT(error)}</small></span><button type="button" aria-label="Ocultar aviso" title="Ocultar"><i class="fa-solid fa-xmark"></i></button>`;
-        aviso.querySelector("button").onclick = () => aviso.remove();
-      }
-
       function bytesABase64(bytes) {
         let binario = "";
         const bloque = 0x8000;
@@ -3394,78 +3285,6 @@
         };
       }
 
-      function escaparCodigoColaborativo(valor) {
-        return String(valor || "").replace(/[&<>"']/g, caracter => ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          "\"": "&quot;",
-          "'": "&#39;"
-        }[caracter]));
-      }
-
-      function instalarResaltadoAutoresCRDT(textarea, sesion) {
-        if (!textarea || !sesion) return () => {};
-        if (textarea.__quitarResaltadoAutoresCRDT) textarea.__quitarResaltadoAutoresCRDT();
-        if (textarea.__codeMirrorView && typeof textarea.__renderAuthorDecorations === "function") {
-          const renderizar = () => textarea.__renderAuthorDecorations(sesion.texto.toDelta());
-          textarea.__renderizarAportesCRDT = renderizar;
-          renderizar();
-          const quitar = () => {
-            textarea.__renderAuthorDecorations([]);
-            delete textarea.__renderizarAportesCRDT;
-            delete textarea.__quitarResaltadoAutoresCRDT;
-          };
-          textarea.__quitarResaltadoAutoresCRDT = quitar;
-          return quitar;
-        }
-        const anteriorPadre = textarea.parentNode;
-        const escenario = document.createElement("div");
-        escenario.className = "collab-code-stage";
-        anteriorPadre.insertBefore(escenario, textarea);
-        escenario.appendChild(textarea);
-        const capa = document.createElement("div");
-        capa.className = "collab-code-overlay";
-        capa.setAttribute("aria-hidden", "true");
-        const contenido = document.createElement("pre");
-        contenido.className = "collab-code-overlay-content";
-        capa.appendChild(contenido);
-        escenario.insertBefore(capa, textarea);
-        textarea.classList.add("collab-source-editor");
-
-        const renderizar = () => {
-          const fragmentos = sesion.texto.toDelta();
-          contenido.innerHTML = fragmentos.map(fragmento => {
-            const rol = fragmento.attributes?.autorRol === "docente"
-              ? "teacher"
-              : fragmento.attributes?.autorRol === "estudiante"
-                ? "student"
-                : "base";
-            return `<span class="${rol}">${escaparCodigoColaborativo(fragmento.insert)}</span>`;
-          }).join("") || " ";
-          contenido.style.transform = `translate(${-textarea.scrollLeft}px, ${-textarea.scrollTop}px)`;
-        };
-        const sincronizarScroll = () => {
-          contenido.style.transform = `translate(${-textarea.scrollLeft}px, ${-textarea.scrollTop}px)`;
-        };
-        textarea.addEventListener("scroll", sincronizarScroll);
-        textarea.__renderizarAportesCRDT = renderizar;
-        renderizar();
-
-        const quitar = () => {
-          textarea.removeEventListener("scroll", sincronizarScroll);
-          textarea.classList.remove("collab-source-editor");
-          delete textarea.__renderizarAportesCRDT;
-          delete textarea.__quitarResaltadoAutoresCRDT;
-          if (escenario.parentNode) {
-            escenario.parentNode.insertBefore(textarea, escenario);
-            escenario.remove();
-          }
-        };
-        textarea.__quitarResaltadoAutoresCRDT = quitar;
-        return quitar;
-      }
-
       async function iniciarSesionCodigoCRDT({ uid, sectionId, codigoInicial = "", rol = "estudiante" }) {
         if (!uid || !sectionId) throw new Error("crdt-invalid-target");
         if (rol === "docente" && !(await window.autorizarDocenteFirebase?.())) {
@@ -3485,62 +3304,18 @@
         const metaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId);
         const actualizacionesRef = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "actualizaciones");
         const presenciaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "presencia", clienteId);
-        const aportesRef = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "historialAportes");
         const vistos = new Set();
         const estadoListeners = new Set();
-        const modoCooperacionListeners = new Set();
-        const presenciaListeners = new Set();
         let cola = [];
         let temporizador = null;
-        let aportesPendientes = [];
-        let temporizadorAportes = null;
-        let modoCooperacionActivo = false;
-        let edicionCooperativaPausada = false;
-        let escribiendo = false;
-        let participantesActuales = [];
-        let reintentosSincronizacion = 0;
-        let reintentosAportes = 0;
         let destruida = false;
-        let ultimaActualizacionMeta = 0;
-        let ultimaPresenciaEnviada = null;
-        let presenciaPendiente = null;
-        let temporizadorPresencia = null;
 
         const notificar = (estado, detalle = "") => estadoListeners.forEach(fn => fn({ estado, detalle }));
-        const esErrorCuota = error => {
-          const codigo = String(error?.code || "");
-          const mensaje = String(error?.message || "");
-          return codigo.includes("resource-exhausted")
-            || codigo.includes("quota-exceeded")
-            || /quota exceeded/i.test(mensaje);
-        };
-        const notificarModoCooperacion = ({ activo = false, pausada = false } = {}) => {
-          modoCooperacionActivo = activo === true;
-          edicionCooperativaPausada = pausada === true;
-          modoCooperacionListeners.forEach(fn => fn({
-            activo: modoCooperacionActivo,
-            pausada: edicionCooperativaPausada
-          }));
-        };
-        const notificarPresencia = participantes => {
-          participantesActuales = participantes;
-          presenciaListeners.forEach(fn => fn(participantesActuales));
-        };
-        const filtrarPresenciaVigente = participantes => {
-          const ahora = Date.now();
-          return participantes.filter(item => {
-            const activoEn = item.activoEn?.toMillis?.()
-              || Number(item.activoEn?.seconds || 0) * 1000
-              || Date.parse(item.activoEn || "")
-              || 0;
-            return item.autorUid === user.uid || !activoEn || ahora - activoEn < 70000;
-          });
-        };
         const semilla = await runTransaction(database, async transaction => {
           const snapshot = await transaction.get(metaRef);
           if (snapshot.exists() && snapshot.data().semilla) return snapshot.data().semilla;
           const temporal = new Y.Doc();
-          temporal.getText("codigo").insert(0, String(codigoInicial || ""), { autorRol: "base" });
+          temporal.getText("codigo").insert(0, String(codigoInicial || ""));
           const semillaNueva = bytesABase64(Y.encodeStateAsUpdate(temporal));
           transaction.set(metaRef, {
             uid,
@@ -3580,78 +3355,23 @@
               autorEmail: user.email || "",
               creadoEn: serverTimestamp()
             });
-            if (Date.now() - ultimaActualizacionMeta > 30000) {
-              ultimaActualizacionMeta = Date.now();
-              setDoc(metaRef, {
-                actualizadoEn: serverTimestamp(),
-                actualizadoPor: user.email || user.uid
-              }, { merge: true }).catch(() => {});
-            }
-            reintentosSincronizacion = 0;
+            await setDoc(metaRef, {
+              actualizadoEn: serverTimestamp(),
+              actualizadoPor: user.email || user.uid
+            }, { merge: true });
             notificar("synced", "Cambios sincronizados");
           } catch (error) {
             console.error("No se pudo publicar la actualización CRDT:", error);
             cola.unshift(lote);
-            reintentosSincronizacion = Math.min(reintentosSincronizacion + 1, 6);
-            const demora = esErrorCuota(error)
-              ? Math.min(300000, 60000 * reintentosSincronizacion)
-              : Math.min(30000, 750 * (2 ** (reintentosSincronizacion - 1)));
-            clearTimeout(temporizador);
-            temporizador = setTimeout(publicarCola, demora);
-            notificar("error", "Sin conexión. Se reintentará automáticamente");
+            notificar("error", "No se pudo sincronizar");
           }
-        };
-
-        const publicarAportes = async () => {
-          temporizadorAportes = null;
-          if (destruida || !aportesPendientes.length) return;
-          const pendientes = aportesPendientes;
-          aportesPendientes = [];
-          const agregado = pendientes.reduce((total, aporte) => total + aporte.agregado, 0);
-          const eliminado = pendientes.reduce((total, aporte) => total + aporte.eliminado, 0);
-          const muestra = pendientes.map(aporte => aporte.texto).filter(Boolean).join("").slice(0, 500);
-          const id = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 8)}`;
-          try {
-            await setDoc(doc(aportesRef, id), {
-              id,
-              uid,
-              sectionId,
-              rol,
-              autorUid: user.uid,
-              autorNombre: user.displayName || user.email || rol,
-              textoAgregado: muestra,
-              caracteresAgregados: agregado,
-              caracteresEliminados: eliminado,
-              creadoEn: serverTimestamp()
-            });
-            reintentosAportes = 0;
-          } catch (error) {
-            console.error("No se pudo registrar el aporte colaborativo:", error);
-            aportesPendientes = pendientes.concat(aportesPendientes);
-            reintentosAportes = Math.min(reintentosAportes + 1, 6);
-            const demora = esErrorCuota(error)
-              ? Math.min(300000, 60000 * reintentosAportes)
-              : Math.min(45000, 1000 * (2 ** (reintentosAportes - 1)));
-            clearTimeout(temporizadorAportes);
-            temporizadorAportes = setTimeout(publicarAportes, demora);
-          }
-        };
-
-        const registrarAporte = ({ insertar = "", eliminar = 0 } = {}) => {
-          const texto = String(insertar || "");
-          const agregado = texto.length;
-          const eliminado = Math.max(0, Number(eliminar) || 0);
-          if (!agregado && !eliminado) return;
-          aportesPendientes.push({ texto, agregado, eliminado });
-          clearTimeout(temporizadorAportes);
-          temporizadorAportes = setTimeout(publicarAportes, 5000);
         };
 
         documento.on("update", (update, origen) => {
           if (origen === ORIGEN_FIRESTORE_CRDT || destruida) return;
           cola.push(update);
           clearTimeout(temporizador);
-          temporizador = setTimeout(publicarCola, 650);
+          temporizador = setTimeout(publicarCola, 90);
         });
 
         const detenerActualizaciones = onSnapshot(actualizacionesRef, snapshot => {
@@ -3666,140 +3386,35 @@
           notificar("error", "Conexión colaborativa interrumpida");
         });
 
-        const detenerModoCooperacion = onSnapshot(metaRef, snapshot => {
-          const datos = snapshot.exists() ? snapshot.data() : {};
-          notificarModoCooperacion({
-            activo: datos?.modoCooperacionActiva === true,
-            pausada: datos?.edicionCooperativaPausada === true
-          });
-        }, error => {
-          console.error("No se pudo consultar el modo de cooperación:", error);
-        });
+        const actualizarPresencia = (cursor = {}) => setDoc(presenciaRef, {
+          clienteId,
+          uid,
+          sectionId,
+          rol,
+          nombre: user.displayName || user.email || rol,
+          autorUid: user.uid,
+          cursorInicio: Math.max(0, Number(cursor.inicio) || 0),
+          cursorFin: Math.max(0, Number(cursor.fin) || 0),
+          activoEn: serverTimestamp()
+        }, { merge: true }).catch(() => {});
 
-        const detenerPresencia = onSnapshot(
-          collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "presencia"),
-          snapshot => {
-            const participantes = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
-            notificarPresencia(filtrarPresenciaVigente(participantes));
-          },
-          error => console.error("No se pudo actualizar la presencia colaborativa:", error)
-        );
-
-        const publicarPresencia = async () => {
-          temporizadorPresencia = null;
-          if (destruida || !presenciaPendiente) return;
-          const siguiente = presenciaPendiente;
-          presenciaPendiente = null;
-          const firma = `${siguiente.cursorInicio}:${siguiente.cursorFin}:${siguiente.escribiendo}`;
-          if (firma === ultimaPresenciaEnviada?.firma && Date.now() - ultimaPresenciaEnviada.enviadoEn < 45000) return;
-          try {
-            await setDoc(presenciaRef, {
-              clienteId,
-              uid,
-              sectionId,
-              rol,
-              nombre: user.displayName || user.email || rol,
-              autorUid: user.uid,
-              ...siguiente,
-              activoEn: serverTimestamp()
-            }, { merge: true });
-            ultimaPresenciaEnviada = {
-              firma,
-              enviadoEn: Date.now(),
-              cursorInicio: siguiente.cursorInicio,
-              cursorFin: siguiente.cursorFin
-            };
-          } catch (_) {}
-        };
-        const actualizarPresencia = (cursor = {}, inmediata = false) => {
-          if (typeof cursor.escribiendo === "boolean") escribiendo = cursor.escribiendo;
-          presenciaPendiente = {
-            cursorInicio: Math.max(0, Number(cursor.inicio ?? ultimaPresenciaEnviada?.cursorInicio) || 0),
-            cursorFin: Math.max(0, Number(cursor.fin ?? ultimaPresenciaEnviada?.cursorFin) || 0),
-            escribiendo
-          };
-          clearTimeout(temporizadorPresencia);
-          if (inmediata) return publicarPresencia();
-          temporizadorPresencia = setTimeout(publicarPresencia, 900);
-          return Promise.resolve();
-        };
-
-        await actualizarPresencia({}, true);
-        if (rol === "docente") {
-          await setDoc(metaRef, {
-            modoCooperacionActiva: true,
-            edicionCooperativaPausada: false,
-            actualizadoEn: serverTimestamp(),
-            actualizadoPor: user.email || user.uid
-          }, { merge: true });
-        }
-        const latido = setInterval(() => {
-          ultimaPresenciaEnviada = null;
-          actualizarPresencia({}, true);
-        }, 50000);
+        await actualizarPresencia();
+        const latido = setInterval(() => actualizarPresencia(), 20000);
         const sesion = {
           clave,
           documento,
           texto,
           clienteId,
           rol,
-          autorUid: user.uid,
           onStatus(fn) { estadoListeners.add(fn); return () => estadoListeners.delete(fn); },
-          onModoCooperacion(fn) {
-            modoCooperacionListeners.add(fn);
-            fn({ activo: modoCooperacionActivo, pausada: edicionCooperativaPausada });
-            return () => modoCooperacionListeners.delete(fn);
-          },
-          onPresence(fn) {
-            presenciaListeners.add(fn);
-            fn(participantesActuales);
-            return () => presenciaListeners.delete(fn);
-          },
-          async establecerPausaCooperacion(pausada) {
-            if (rol !== "docente") return false;
-            try {
-              await setDoc(metaRef, {
-                modoCooperacionActiva: true,
-                edicionCooperativaPausada: pausada === true,
-                actualizadoEn: serverTimestamp(),
-                actualizadoPor: user.email || user.uid
-              }, { merge: true });
-              return true;
-            } catch (error) {
-              console.error("No se pudo actualizar la pausa cooperativa:", error);
-              return false;
-            }
-          },
           actualizarPresencia,
-          registrarAporte,
-          async flush() {
-            clearTimeout(temporizador);
-            clearTimeout(temporizadorAportes);
-            await publicarCola();
-            await publicarAportes();
-            return cola.length === 0 && aportesPendientes.length === 0;
-          },
+          async flush() { clearTimeout(temporizador); await publicarCola(); },
           async destroy() {
             if (destruida) return;
             await this.flush();
             destruida = true;
-            clearTimeout(temporizador);
-            clearTimeout(temporizadorAportes);
-            clearTimeout(temporizadorPresencia);
             clearInterval(latido);
             detenerActualizaciones();
-            detenerModoCooperacion();
-            detenerPresencia();
-            if (rol === "docente") {
-              try {
-                await setDoc(metaRef, {
-                  modoCooperacionActiva: false,
-                  edicionCooperativaPausada: false,
-                  actualizadoEn: serverTimestamp(),
-                  actualizadoPor: user.email || user.uid
-                }, { merge: true });
-              } catch (_) {}
-            }
             documento.destroy();
             sesionesCodigoCRDT.delete(clave);
             try { await deleteDoc(presenciaRef); } catch (_) {}
@@ -3813,53 +3428,7 @@
       function vincularTextareaCodigoCRDT(textarea, sesion, sectionId, estadoElemento = null) {
         if (!textarea || !sesion) return () => {};
         if (textarea.__desvincularCRDT) textarea.__desvincularCRDT();
-        if (textarea.__quitarModoCooperacionCRDT) textarea.__quitarModoCooperacionCRDT();
         const origenLocal = { tipo: "textarea", clienteId: sesion.clienteId };
-        const bloqueadoAntesCooperacion = textarea.disabled === true;
-        let quitarModoCooperacion = () => {};
-        let temporizadorEscritura = null;
-        if (sesion.rol === "estudiante") {
-          quitarModoCooperacion = sesion.onModoCooperacion?.(({ activo, pausada }) => {
-            if (activo && !pausada) {
-              textarea.disabled = false;
-              textarea.__setCodeMirrorDisabled?.(false);
-              textarea.dataset.edicionLibreCooperacion = "true";
-              delete textarea.dataset.edicionCooperativaPausada;
-              if (estadoElemento) {
-                estadoElemento.className = "student-editor-state crdt-synced";
-                estadoElemento.innerHTML = '<i class="fa-solid fa-people-arrows"></i> Edición libre con docente';
-              }
-              return;
-            }
-            if (activo && pausada) {
-              textarea.disabled = true;
-              textarea.__setCodeMirrorDisabled?.(true);
-              textarea.dataset.edicionLibreCooperacion = "true";
-              textarea.dataset.edicionCooperativaPausada = "true";
-              if (estadoElemento) {
-                estadoElemento.className = "student-editor-state crdt-syncing";
-                estadoElemento.innerHTML = '<i class="fa-solid fa-pause"></i> Edición cooperativa pausada';
-              }
-              return;
-            }
-            if (textarea.dataset.edicionLibreCooperacion === "true") {
-              textarea.disabled = bloqueadoAntesCooperacion;
-              textarea.__setCodeMirrorDisabled?.(bloqueadoAntesCooperacion);
-              delete textarea.dataset.edicionLibreCooperacion;
-              delete textarea.dataset.edicionCooperativaPausada;
-            }
-          }) || (() => {});
-          textarea.__quitarModoCooperacionCRDT = () => {
-            quitarModoCooperacion();
-            if (textarea.dataset.edicionLibreCooperacion === "true") {
-              textarea.disabled = bloqueadoAntesCooperacion;
-              textarea.__setCodeMirrorDisabled?.(bloqueadoAntesCooperacion);
-              delete textarea.dataset.edicionLibreCooperacion;
-              delete textarea.dataset.edicionCooperativaPausada;
-            }
-            delete textarea.__quitarModoCooperacionCRDT;
-          };
-        }
         const aplicarRemoto = (_, transaccion) => {
           if (transaccion.origin === origenLocal) return;
           const siguiente = sesion.texto.toString();
@@ -3869,7 +3438,6 @@
           textarea.value = siguiente;
           const posicion = Math.min(siguiente.length, inicio);
           textarea.setSelectionRange(posicion, Math.min(siguiente.length, fin));
-          textarea.__renderizarAportesCRDT?.();
           if (sesion.rol === "estudiante") {
             setLocalStorage(`draft_editor-${sectionId}`, siguiente);
             actualizarMetricasEditor(sectionId);
@@ -3884,70 +3452,35 @@
           const cambio = diferenciaTextoCRDT(anterior, siguiente);
           sesion.documento.transact(() => {
             if (cambio.eliminar) sesion.texto.delete(cambio.inicio, cambio.eliminar);
-            if (cambio.insertar) sesion.texto.insert(cambio.inicio, cambio.insertar, {
-              autorRol: sesion.rol,
-              autorUid: sesion.autorUid
-            });
+            if (cambio.insertar) sesion.texto.insert(cambio.inicio, cambio.insertar);
           }, origenLocal);
-          sesion.registrarAporte?.({ insertar: cambio.insertar, eliminar: cambio.eliminar });
-          textarea.__renderizarAportesCRDT?.();
-          const seleccionActual = textarea.__getCodeMirrorSelection?.() || {
-            inicio: textarea.selectionStart,
-            fin: textarea.selectionEnd
-          };
-          sesion.actualizarPresencia({ inicio: seleccionActual.inicio, fin: seleccionActual.fin, escribiendo: true });
-          clearTimeout(temporizadorEscritura);
-          temporizadorEscritura = setTimeout(() => {
-            sesion.actualizarPresencia({
-              inicio: seleccionActual.inicio,
-              fin: seleccionActual.fin,
-              escribiendo: false
-            });
-          }, 2500);
+          sesion.actualizarPresencia({ inicio: textarea.selectionStart, fin: textarea.selectionEnd });
         };
-        const actualizarCursor = () => {
-          const seleccion = textarea.__getCodeMirrorSelection?.() || {
-            inicio: textarea.selectionStart,
-            fin: textarea.selectionEnd
-          };
-          sesion.actualizarPresencia({
-            inicio: seleccion.inicio,
-            fin: seleccion.fin
-          });
-        };
+        const actualizarCursor = () => sesion.actualizarPresencia({
+          inicio: textarea.selectionStart,
+          fin: textarea.selectionEnd
+        });
         textarea.value = sesion.texto.toString();
-        textarea.__syncCodeMirror?.(textarea.value);
         if (sesion.rol === "estudiante") {
           setLocalStorage(`draft_editor-${sectionId}`, textarea.value);
           actualizarMetricasEditor(sectionId);
         }
-        const quitarResaltadoAutores = instalarResaltadoAutoresCRDT(textarea, sesion);
         textarea.dataset.crdtActivo = "true";
         textarea.addEventListener("input", aplicarLocal);
         textarea.addEventListener("keyup", actualizarCursor);
         textarea.addEventListener("click", actualizarCursor);
-        textarea.addEventListener("cm-selection-change", actualizarCursor);
         sesion.texto.observe(aplicarRemoto);
         const quitarEstado = sesion.onStatus(info => {
           if (!estadoElemento) return;
           estadoElemento.className = `student-editor-state crdt-${info.estado}`;
           estadoElemento.innerHTML = `<i class="fa-solid ${info.estado === "synced" ? "fa-people-arrows" : info.estado === "error" ? "fa-triangle-exclamation" : "fa-arrows-rotate fa-spin"}"></i> ${info.detalle}`;
         });
-        const quitarPresenciaRemota = sesion.onPresence?.(participantes => {
-          textarea.__renderRemoteCursors?.(participantes);
-        }) || (() => {});
         const desvincular = () => {
           textarea.removeEventListener("input", aplicarLocal);
           textarea.removeEventListener("keyup", actualizarCursor);
           textarea.removeEventListener("click", actualizarCursor);
-          textarea.removeEventListener("cm-selection-change", actualizarCursor);
           sesion.texto.unobserve(aplicarRemoto);
           quitarEstado();
-          quitarPresenciaRemota();
-          clearTimeout(temporizadorEscritura);
-          sesion.actualizarPresencia({ inicio: textarea.selectionStart, fin: textarea.selectionEnd, escribiendo: false });
-          textarea.__quitarModoCooperacionCRDT?.();
-          quitarResaltadoAutores();
           delete textarea.__desvincularCRDT;
         };
         textarea.__desvincularCRDT = desvincular;
@@ -3960,12 +3493,12 @@
         return sesion;
       };
 
-      window.iniciarColaboracionCRDTEstudianteLegacy = async function() {
+      window.iniciarColaboracionCRDTEstudiante = async function() {
         const user = window.firebaseCurrentUser;
         if (!user || !cuentaEstudianteActiva) return;
         await Promise.all(seccionesData.map(async sec => {
           const textarea = document.getElementById(`editor-${sec.id}`);
-          if (!textarea) return;
+          if (!textarea || textarea.disabled) return;
           const estado = document.getElementById(`editor-state-${sec.id}`);
           try {
             const sesion = await iniciarSesionCodigoCRDT({
@@ -3977,223 +3510,9 @@
             vincularTextareaCodigoCRDT(textarea, sesion, sec.id, estado);
           } catch (error) {
             console.error(`No se pudo iniciar CRDT en ${sec.id}:`, error);
-            window.ultimoErrorCRDT = {
-              code: error?.code || "",
-              message: error?.message || "",
-              sectionId: sec.id
-            };
-            mostrarErrorCRDTEstudiante(error);
             if (estado) estado.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Colaboración no disponible';
           }
         }));
-      };
-
-      let sesionCRDTEstudianteActiva = null;
-      let seccionCRDTEstudianteActiva = "";
-      let inicioCRDTEstudiantePendiente = null;
-      let versionInicioCRDTEstudiante = 0;
-
-      window.iniciarColaboracionCRDTSeccionEstudiante = async function(sectionId) {
-        const user = window.firebaseCurrentUser;
-        if (!user || !cuentaEstudianteActiva || !sectionId) return null;
-        if (seccionCRDTEstudianteActiva === sectionId && sesionCRDTEstudianteActiva) {
-          return sesionCRDTEstudianteActiva;
-        }
-        if (inicioCRDTEstudiantePendiente?.sectionId === sectionId) {
-          return inicioCRDTEstudiantePendiente.promesa;
-        }
-        const versionInicio = ++versionInicioCRDTEstudiante;
-        const promesa = (async () => {
-          const anterior = sesionCRDTEstudianteActiva;
-          const seccionAnterior = seccionCRDTEstudianteActiva;
-          sesionCRDTEstudianteActiva = null;
-          seccionCRDTEstudianteActiva = "";
-          if (anterior) {
-            document.getElementById(`editor-${seccionAnterior}`)?.__desvincularCRDT?.();
-            await anterior.destroy();
-          }
-          const textarea = document.getElementById(`editor-${sectionId}`);
-          if (!textarea) return null;
-          const estado = document.getElementById(`editor-state-${sectionId}`);
-          try {
-            const sesion = await iniciarSesionCodigoCRDT({
-              uid: user.uid,
-              sectionId,
-              codigoInicial: textarea.value,
-              rol: "estudiante"
-            });
-            if (versionInicio !== versionInicioCRDTEstudiante) {
-              await sesion.destroy();
-              return null;
-            }
-            vincularTextareaCodigoCRDT(textarea, sesion, sectionId, estado);
-            sesionCRDTEstudianteActiva = sesion;
-            seccionCRDTEstudianteActiva = sectionId;
-            return sesion;
-          } catch (error) {
-            console.error(`No se pudo iniciar CRDT en ${sectionId}:`, error);
-            window.ultimoErrorCRDT = {
-              code: error?.code || "",
-              message: error?.message || "",
-              sectionId
-            };
-            mostrarErrorCRDTEstudiante(error);
-            if (estado) estado.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Colaboración no disponible';
-            return null;
-          } finally {
-            if (inicioCRDTEstudiantePendiente?.promesa === promesa) inicioCRDTEstudiantePendiente = null;
-          }
-        })();
-        inicioCRDTEstudiantePendiente = { sectionId, promesa };
-        return promesa;
-      };
-
-      window.iniciarColaboracionCRDTEstudiante = async function() {
-        const activa = document.querySelector(".section-card.active")?.id || seccionesData[0]?.id;
-        return window.iniciarColaboracionCRDTSeccionEstudiante?.(activa);
-      };
-
-      // Chat asociado al mismo documento colaborativo: cada desafío conserva
-      // una conversación independiente entre el estudiante y el docente.
-      window.escucharChatColaborativoFirebase = function(uid, sectionId, alActualizar, opciones = {}) {
-        const docente = Boolean(window.firebaseTeacherUser);
-        const contexto = docente
-          ? contextoDocenteFirebase()
-          : { user: window.firebaseCurrentUser, database: db };
-        if (!contexto.user || !contexto.database || !uid || !sectionId || typeof alActualizar !== "function") return null;
-        const cantidad = Math.max(1, Math.min(100, Number(opciones.limite) || 60));
-        const referencia = query(
-          collection(contexto.database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes"),
-          orderBy("creadoEn", "desc"),
-          limit(cantidad)
-        );
-        return onSnapshot(
-          referencia,
-          snapshot => {
-            const mensajes = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
-            mensajes.sort((a, b) => {
-              const fechaA = a.creadoEn?.toMillis?.() || a.creadoEn?.seconds * 1000 || 0;
-              const fechaB = b.creadoEn?.toMillis?.() || b.creadoEn?.seconds * 1000 || 0;
-              return fechaA - fechaB;
-            });
-            alActualizar(mensajes);
-          },
-          error => {
-            console.error("No se pudo cargar el chat colaborativo:", error);
-            alActualizar([], error);
-          }
-        );
-      };
-
-      window.escucharPresenciaColaborativaFirebase = function(uid, sectionId, alActualizar) {
-        const docente = Boolean(window.firebaseTeacherUser);
-        const contexto = docente
-          ? contextoDocenteFirebase()
-          : { user: window.firebaseCurrentUser, database: db };
-        if (!contexto.user || !contexto.database || !uid || !sectionId || typeof alActualizar !== "function") return null;
-        return onSnapshot(
-          collection(contexto.database, "estudiantes", uid, "colaboracionCodigo", sectionId, "presencia"),
-          snapshot => alActualizar(snapshot.docs.map(item => ({ id: item.id, ...item.data() }))),
-          error => {
-            console.error("No se pudo cargar la presencia colaborativa:", error);
-            alActualizar([], error);
-          }
-        );
-      };
-
-      window.enviarChatColaborativoFirebase = async function({ uid, sectionId, texto, rol = "estudiante", autorNombre = "" } = {}) {
-        const contenido = String(texto || "").trim().slice(0, 1200);
-        const esDocente = rol === "docente";
-        const contexto = esDocente
-          ? contextoDocenteFirebase()
-          : { user: window.firebaseCurrentUser, database: db };
-        const user = contexto.user || (esDocente ? await window.firebaseTeacherAuthReady : await window.firebaseAuthReady);
-        const database = contexto.database;
-        if (!user || !database || !uid || !sectionId || !contenido) return false;
-        if (esDocente && !(await verificarUsuarioDocente(user))) return false;
-        if (!esDocente && user.uid !== uid) return false;
-        try {
-          const id = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2, 8)}`;
-          await setDoc(doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes", id), {
-            id,
-            uid,
-            sectionId,
-            texto: contenido,
-            rol: esDocente ? "docente" : "estudiante",
-            autorUid: user.uid,
-            autorNombre: String(autorNombre || user.displayName || user.email || (esDocente ? "Docente" : "Estudiante")).slice(0, 254),
-            creadoEn: serverTimestamp()
-          });
-          return true;
-        } catch (error) {
-          console.error("No se pudo enviar el mensaje colaborativo:", error);
-          return false;
-        }
-      };
-
-      window.vaciarChatColaborativoFirebase = async function(uid, sectionId) {
-        if (!uid || !sectionId) {
-          return { ok: false, eliminados: 0, error: "No se identificó la conversación que se quiere eliminar." };
-        }
-        const autorizado = await window.autorizarDocenteFirebase?.();
-        if (!autorizado) {
-          return { ok: false, eliminados: 0, error: "No hay una sesión docente autorizada activa." };
-        }
-        const { user, database } = contextoDocenteFirebase();
-        if (!user || !database) {
-          return { ok: false, eliminados: 0, error: "Firebase todavía no está disponible para la cuenta docente." };
-        }
-        try {
-          const referencia = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes");
-          const snapshot = await getDocs(referencia);
-          if (snapshot.empty) return { ok: true, eliminados: 0 };
-          let eliminados = 0;
-          for (let inicio = 0; inicio < snapshot.docs.length; inicio += 450) {
-            const lote = writeBatch(database);
-            const documentos = snapshot.docs.slice(inicio, inicio + 450);
-            documentos.forEach(documento => lote.delete(documento.ref));
-            await lote.commit();
-            eliminados += documentos.length;
-          }
-          return { ok: true, eliminados };
-        } catch (error) {
-          console.error("No se pudo vaciar el chat colaborativo:", error);
-          const codigo = String(error?.code || "");
-          const detalle = error?.message || "No se pudo eliminar la conversación.";
-          return {
-            ok: false,
-            eliminados: 0,
-            error: codigo ? `${codigo}: ${detalle}` : detalle
-          };
-        }
-      };
-
-      window.escucharHistorialAportesColaborativoFirebase = function(uid, sectionId, alActualizar) {
-        const docente = Boolean(window.firebaseTeacherUser);
-        const contexto = docente
-          ? contextoDocenteFirebase()
-          : { user: window.firebaseCurrentUser, database: db };
-        if (!contexto.user || !contexto.database || !uid || !sectionId || typeof alActualizar !== "function") return null;
-        return onSnapshot(
-          query(
-            collection(contexto.database, "estudiantes", uid, "colaboracionCodigo", sectionId, "historialAportes"),
-            orderBy("creadoEn", "desc"),
-            limit(80)
-          ),
-          snapshot => {
-            const aportes = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
-            aportes.sort((a, b) => {
-              const fechaA = a.creadoEn?.toMillis?.() || a.creadoEn?.seconds * 1000 || 0;
-              const fechaB = b.creadoEn?.toMillis?.() || b.creadoEn?.seconds * 1000 || 0;
-              return fechaB - fechaA;
-            });
-            alActualizar(aportes);
-          },
-          error => {
-            console.error("No se pudo cargar el historial de aportes:", error);
-            alActualizar([], error);
-          }
-        );
       };
 
       window.guardarProgramacionDocenteFirebase = async function(uid, programacion = {}) {
@@ -5934,7 +5253,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-<link rel="stylesheet" href="mejoras-seguimiento.css?v=20260904-28">
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260901-5">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -7744,6 +7063,9 @@
       let firebaseSaveTimer = null;
       let firebaseSaveInProgress = false;
       let firebaseSavePending = false;
+      let firebaseSaveDirty = false;
+      let firebaseLastSavedFingerprint = "";
+      let firebaseSaveGeneration = 0;
       let firebaseInitialized = false;
       let claseHabilitada = false;
       let cuentaEstudianteActiva = false;
@@ -8352,7 +7674,7 @@
           const datos = e.detail || [];
           detectarNuevasSolicitudes(datos);
           estudiantesProfesor = datos;
-          document.getElementById('estadoPanelProfesor').textContent = `Actualizado en tiempo real: ${new Date().toLocaleTimeString()}`;
+          document.getElementById('estadoPanelProfesor').textContent = `Actualizado: ${new Date().toLocaleTimeString()}`;
           renderPanelProfesor();
       });
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
@@ -8368,7 +7690,7 @@
                   if (document.getElementById('panelProfesorModal')?.classList.contains('active')) {
                       renderPanelProfesor();
                   }
-              }, 15000);
+              }, 30000);
           }
       });
 
@@ -8501,13 +7823,15 @@
 
       function programarGuardadoFirebase() {
           if (!firebaseInitialized || !window.firebaseCurrentUser) return;
+          firebaseSaveDirty = true;
+          firebaseSaveGeneration += 1;
           if (firebaseSaveInProgress) {
               firebaseSavePending = true;
               mostrarEstadoFirebase('saving', 'Cambios pendientes de sincronización...');
               return;
           }
           clearTimeout(firebaseSaveTimer);
-          firebaseSaveTimer = setTimeout(() => guardarAhoraFirebase(), 1200);
+          firebaseSaveTimer = setTimeout(() => guardarAhoraFirebase(), 2500);
       }
 
       function validarDatosEstudiante(mostrarAviso = true) {
@@ -8533,22 +7857,34 @@
 
       async function guardarAhoraFirebase() {
           if (!firebaseInitialized || !window.firebaseCurrentUser) return false;
+          if (!firebaseSaveDirty) return true;
           if (firebaseSaveInProgress) {
               firebaseSavePending = true;
               return false;
           }
           firebaseSaveInProgress = true;
           firebaseSavePending = false;
+          const generacionGuardado = firebaseSaveGeneration;
           mostrarEstadoFirebase('saving', 'Guardando...');
           actualizarTodosEstadosChatIA('saving', 'Guardando en Firebase...');
           try {
-              const ok = await window.guardarProgresoFirebase(construirPaqueteAvanceFirebase());
+              const paquete = construirPaqueteAvanceFirebase();
+              const huella = JSON.stringify(paquete);
+              if (huella === firebaseLastSavedFingerprint) {
+                  firebaseSaveDirty = false;
+                  return true;
+              }
+              const ok = await window.guardarProgresoFirebase(paquete);
               const errorGuardado = window.ultimoErrorGuardadoFirebase;
               const textoError = errorGuardado?.code === 'permission-denied'
                   ? 'Permiso denegado'
                   : 'Error al guardar';
               mostrarEstadoFirebase(ok ? 'online' : 'offline', ok ? 'Guardado exitosamente' : textoError);
               actualizarTodosEstadosChatIA(ok ? 'saved' : 'error', ok ? 'Guardado exitosamente' : 'Error de guardado');
+              if (ok) {
+                  firebaseLastSavedFingerprint = huella;
+                  firebaseSaveDirty = firebaseSaveGeneration !== generacionGuardado;
+              }
               return ok;
           } catch (e) {
               console.error(e);
@@ -9184,12 +8520,6 @@
                                           <button class="student-focus-toggle" type="button" onclick="alternarModoEnfoque('${sec.id}', this)" aria-pressed="false" title="Ocultar temporalmente teoría y ayudas">
                                               <i class="fa-solid fa-expand"></i><span>Enfoque</span>
                                           </button>
-                                          <button class="student-focus-toggle student-collab-chat-trigger" type="button" onclick="abrirChatColaborativoEstudiante('${sec.id}')" title="Chatear con el docente durante la colaboración">
-                                              <i class="fa-solid fa-comments"></i><span>Chat docente</span>
-                                          </button>
-                                          <button class="student-focus-toggle" type="button" onclick="abrirHistorialAportesColaborativoEstudiante('${sec.id}')" title="Ver aportes de la colaboración">
-                                              <i class="fa-solid fa-clock-rotate-left"></i><span>Aportes</span>
-                                          </button>
                                       </div>
                                   </div>
                                   <div class="student-ai-editor-actions" aria-label="Ayuda de programación con IA">
@@ -9211,12 +8541,6 @@
                                       <div class="editor-header">
                                           <span><i class="fa-solid fa-file-code"></i> Editor JavaScript</span>
                                           <span>ES6</span>
-                                      </div>
-                                      <div class="collab-author-legend" aria-label="Referencias de autoría del código">
-                                          <strong><i class="fa-solid fa-palette"></i> Cooperación:</strong>
-                                          <span class="collab-author-key student">Estudiante</span>
-                                          <span class="collab-author-key teacher">Docente</span>
-                                          <span class="collab-author-key base">Código inicial</span>
                                       </div>
                                       <label class="sr-only" for="editor-${sec.id}">Código para ${sec.title}</label>
                                       <textarea id="editor-${sec.id}" class="code-editor" aria-label="Código para ${sec.title}" spellcheck="false" autocapitalize="off" autocomplete="off" ${isFinalized ? 'disabled' : ''}>${savedCode}</textarea>
@@ -9240,13 +8564,9 @@
                                   <div class="student-console-panel">
                                       <div class="student-console-header">
                                           <strong><i class="fa-solid fa-terminal"></i> Consola</strong>
-                                          <div style="display:flex;gap:.4rem;align-items:center"><button class="btn btn-secondary" type="button" onclick="limpiarConsola('${sec.id}')" style="padding:.25rem .45rem;font-size:.68rem"><i class="fa-solid fa-eraser"></i> Limpiar</button><button class="btn btn-secondary" type="button" onclick="ejecutarPasoAPaso('${sec.id}')" style="padding:.25rem .45rem;font-size:.68rem"><i class="fa-solid fa-forward-step"></i> Avanzar línea</button><button class="btn btn-secondary" type="button" onclick="ejecutarPruebasDesafio('${sec.id}')" style="padding:.25rem .45rem;font-size:.68rem"><i class="fa-solid fa-vial"></i> Probar solución</button></div>
+                                          <small>Resultado de la última ejecución</small>
                                       </div>
-                                      <div class="console-tabs" role="tablist"><button type="button" class="active" data-console-tab="${sec.id}-salida" onclick="cambiarPestanaConsola('${sec.id}','salida')">Salida</button><button type="button" data-console-tab="${sec.id}-errores" onclick="cambiarPestanaConsola('${sec.id}','errores')">Errores</button><button type="button" data-console-tab="${sec.id}-avisos" onclick="cambiarPestanaConsola('${sec.id}','avisos')">Avisos</button><button type="button" data-console-tab="${sec.id}-variables" onclick="cambiarPestanaConsola('${sec.id}','variables')">Variables</button></div>
-                                      <div class="console-output" id="console-${sec.id}" data-console-panel="salida" role="status" aria-live="polite">${isFinalized ? '// Actividad finalizada y bloqueada.' : '// Ejecutá el código para ver aquí los resultados o errores.'}</div>
-                                      <div class="console-output" id="console-errors-${sec.id}" data-console-panel="errores" role="status" aria-live="polite" hidden></div>
-                                      <div class="console-output" id="console-warnings-${sec.id}" data-console-panel="avisos" role="status" aria-live="polite" hidden></div>
-                                      <div class="console-output" id="console-vars-${sec.id}" data-console-panel="variables" role="status" aria-live="polite" hidden>// Las variables inspeccionables aparecerán después de ejecutar.</div>
+                                      <div class="console-output" id="console-${sec.id}" role="status" aria-live="polite">${isFinalized ? '// Actividad finalizada y bloqueada.' : '// Ejecutá el código para ver aquí los resultados o errores.'}</div>
                                   </div>
                               </section>
 
@@ -9359,8 +8679,8 @@
           // Autoguardado de respaldo: captura también cambios que no pasan por localStorage.
           clearInterval(window.__firebaseAutoSaveInterval);
           window.__firebaseAutoSaveInterval = setInterval(() => {
-              if (document.visibilityState !== 'hidden') guardarAhoraFirebase();
-          }, 10000);
+              if (document.visibilityState !== 'hidden' && firebaseSaveDirty) guardarAhoraFirebase();
+          }, 180000);
           window.addEventListener('beforeunload', () => {
               // El último estado queda además en localStorage; Firebase se actualiza con el debounce normal.
               programarGuardadoFirebase();
@@ -10078,8 +9398,6 @@
               const data = seccionesData.find(s => s.id === sectionId);
               if (data) document.getElementById('currentTitle').innerText = data.title;
           }
-          void window.iniciarColaboracionCRDTSeccionEstudiante?.(sectionId);
-          window.dispatchEvent(new CustomEvent("seccion-estudiante-cambiada", { detail: { sectionId } }));
           actualizarContextoExtensionSeguimiento();
           programarGuardadoFirebase();
       }
@@ -10177,144 +9495,6 @@
           indicador.innerHTML = `<i class="fa-solid ${icono}"></i> ${escaparTextoAnalista(etiqueta)}`;
       }
 
-      function cambiarPestanaConsola(sectionId, panel) {
-          document.querySelectorAll(`#${CSS.escape(sectionId)} [data-console-panel]`).forEach(elemento => {
-              elemento.hidden = elemento.dataset.consolePanel !== panel;
-          });
-          document.querySelectorAll(`#${CSS.escape(sectionId)} [data-console-tab]`).forEach(boton => {
-              boton.classList.toggle("active", boton.dataset.consoleTab === `${sectionId}-${panel}`);
-          });
-      }
-      function limpiarConsola(sectionId) {
-          ["console", "console-errors", "console-warnings", "console-vars"].forEach(prefijo => {
-              const elemento = document.getElementById(`${prefijo}-${sectionId}`);
-              if (elemento) elemento.textContent = prefijo === "console-vars" ? "// Variables inspeccionables aparecerán después de ejecutar." : "";
-          });
-          cambiarPestanaConsola(sectionId, "salida");
-      }
-      function diagnosticoErrorEducativo(error, code) {
-          const texto = String(error || "");
-          const coincidencia = texto.match(/(?:line|línea)\s*(\d+)/i);
-          const linea = coincidencia ? Number(coincidencia[1]) : 0;
-          let ayuda = "Revisá la sintaxis y ejecutá nuevamente.";
-          if (/Unexpected token|Unexpected end|expected/i.test(texto)) ayuda = "Falta cerrar una llave, paréntesis o corchete, o hay un símbolo fuera de lugar.";
-          else if (/is not defined/i.test(texto)) ayuda = "La variable se usa antes de declararla o está escrita con otro nombre.";
-          else if (/not a function/i.test(texto)) ayuda = "El valor elegido no es una función. Revisá el método y el tipo de dato.";
-          return `${linea ? `Línea ${linea}: ` : ""}${ayuda}`;
-      }
-      function resaltarLineaError(sectionId, error) {
-          const editor = document.getElementById(`editor-${sectionId}`);
-          if (!editor) return;
-          editor.classList.remove("editor-error-line");
-          const coincidencia = String(error || "").match(/(?:line|línea)\s*(\d+)/i);
-          if (!coincidencia) return;
-          const linea = Math.max(1, Number(coincidencia[1]));
-          const inicio = editor.value.split(/\r?\n/).slice(0, linea - 1).join("\n").length + (linea > 1 ? 1 : 0);
-          const fin = inicio + (editor.value.split(/\r?\n/)[linea - 1] || "").length;
-          editor.focus();
-          editor.setSelectionRange(inicio, fin);
-          editor.classList.add("editor-error-line");
-      }
-      const depuradoresActivos = new Map();
-      function nombresVariablesDepuracion(code) {
-          return [...new Set([...String(code || "").matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g)].map(match => match[1]))].slice(0, 30);
-      }
-      function instrumentarCodigoDepuracion(code) {
-          const nombres = nombresVariablesDepuracion(code);
-          return String(code || "").split(/\r?\n/).map((linea, indice) => {
-              const valores = nombres.map(nombre => `"${nombre}":typeof ${nombre}==="undefined"?undefined:${nombre}`).join(",");
-              return `await __debug(${indice + 1},{${valores}});${linea}`;
-          }).join("\n");
-      }
-      function iniciarDepuradorReal(sectionId, code) {
-          const editor = document.getElementById(`editor-${sectionId}`);
-          const salida = document.getElementById(`console-${sectionId}`);
-          const variables = document.getElementById(`console-vars-${sectionId}`);
-          if (!editor || !salida) return;
-          const workerSource = `
-            const serializar=v=>{try{return typeof v==="string"?v:JSON.stringify(v)}catch{return String(v)}};
-            self.onmessage=async e=>{
-              if(e.data.tipo!=="iniciar")return;
-              const logs=[],consola={log:(...a)=>logs.push("[LOG]: "+a.map(serializar).join(" ")),info:(...a)=>logs.push("[INFO]: "+a.map(serializar).join(" ")),warn:(...a)=>logs.push("[AVISO]: "+a.map(serializar).join(" ")),error:(...a)=>logs.push("[ERROR]: "+a.map(serializar).join(" "))};
-              let continuar=()=>{};let detenido=false;
-              self.onmessage=ev=>{if(ev.data.tipo==="continuar")continuar();if(ev.data.tipo==="detener"){detenido=true;continuar();}};
-              const __debug=async(linea,vars)=>{if(detenido)throw new Error("Depuración detenida");self.postMessage({tipo:"pausa",linea,vars,logs});await new Promise(r=>continuar=r);};
-              try{const ejecutar=new Function("__debug","console",'"use strict";return (async()=>{'+e.data.codigo+'})();');await ejecutar(__debug,consola);self.postMessage({tipo:"fin",ok:true,logs});}catch(error){self.postMessage({tipo:"fin",ok:false,logs,error:error?.message||String(error)});}
-            };
-          `;
-          const url = URL.createObjectURL(new Blob([workerSource], {type:"text/javascript"}));
-          const worker = new Worker(url);
-          const sesion = { worker, linea: 0, continuar(){worker.postMessage({tipo:"continuar"});}, detener(){worker.postMessage({tipo:"detener"});worker.terminate();URL.revokeObjectURL(url);}, };
-          depuradoresActivos.set(sectionId, sesion);
-          worker.onmessage = evento => {
-              const dato = evento.data || {};
-              if (dato.tipo === "pausa") {
-                  sesion.linea = dato.linea;
-                  const lineas = editor.value.split(/\r?\n/);
-                  const inicio = lineas.slice(0, dato.linea - 1).join("\n").length + (dato.linea > 1 ? 1 : 0);
-                  editor.focus(); editor.setSelectionRange(inicio, inicio + (lineas[dato.linea - 1] || "").length);
-                  salida.textContent = `Depuración pausada en la línea ${dato.linea}.\n${dato.logs.join("\n") || "// Sin salida todavía."}`;
-                  variables.textContent = Object.entries(dato.vars || {}).map(([nombre, valor]) => `${nombre} → ${valor === undefined ? "undefined" : JSON.stringify(valor)}`).join("\n") || "// No hay variables declaradas.";
-                  cambiarPestanaConsola(sectionId, "variables");
-              } else if (dato.tipo === "fin") {
-                  salida.textContent = dato.logs.join("\n") || (dato.ok ? "// Ejecución finalizada." : `// Error: ${dato.error}`);
-                  if (!dato.ok) { resaltarLineaError(sectionId, dato.error); cambiarPestanaConsola(sectionId, "errores"); }
-                  depuradoresActivos.delete(sectionId);
-                  worker.terminate(); URL.revokeObjectURL(url);
-              }
-          };
-          worker.postMessage({tipo:"iniciar", codigo:instrumentarCodigoDepuracion(code)});
-      }
-      function ejecutarPasoAPaso(sectionId) {
-          const editor = document.getElementById(`editor-${sectionId}`);
-          if (!editor) return;
-          const existente = depuradoresActivos.get(sectionId);
-          if (existente) { existente.continuar(); return; }
-          iniciarDepuradorReal(sectionId, editor.value);
-      }
-      function obtenerPruebasDesafio(sec) {
-          const porDesafio = {
-              "sec-1": [["Declara variables", /\b(const|let|var)\b/], ["Usa console.log", /console\.log\s*\(/]],
-              "sec-2": [["Usa const y let", /\bconst\b[\s\S]*\blet\b/], ["Calcula un total", /console\.log\s*\(/]],
-              "sec-3": [["Usa tipos primitivos", /\b(typeof|null|true|false)\b/], ["Muestra resultados", /console\.log\s*\(/]],
-              "sec-4": [["Usa comparación o lógica", /(>=|<=|===|&&|\|\|)/], ["Muestra aprobación", /console\.log\s*\(/]],
-              "sec-5": [["Incluye una condición", /\bif\b/], ["Muestra clasificación", /console\.log\s*\(/]],
-              "sec-6": [["Convierte valores", /(Number|parseFloat|parseInt)/], ["Muestra conversión", /console\.log\s*\(/]],
-              "sec-7": [["Usa una colección", /(Array|\[|\])/], ["Registra el resultado", /console\.log\s*\(/]],
-              "sec-8": [["Usa repetición", /\b(for|while|forEach)\b/], ["Genera una salida", /console\.log\s*\(/]],
-              "sec-9": [["Usa un objeto", /[{]\s*[A-Za-z_$]/], ["Muestra el perfil", /console\.log\s*\(/]],
-              "sec-10": [["Usa inventario", /(stock|inventario|cantidad)/i], ["Muestra el resultado", /console\.log\s*\(/]],
-              "sec-11": [["Genera texto o mails", /(mail|email|mensaje)/i], ["Muestra la salida", /console\.log\s*\(/]],
-              "sec-12": [["Valida contraseña", /(password|contrase|length)/i], ["Incluye una condición", /\bif\b/]],
-              "sec-13": [["Manipula el DOM", /(document|querySelector|getElementById)/], ["Crea una interacción", /(textContent|innerHTML|addEventListener)/]],
-              "sec-14": [["Valida datos", /(valid|if|&&|\|\|)/i], ["Entrega un resultado", /console\.log\s*\(/]],
-              "sec-15": [["Guarda preferencias", /(localStorage|tema|theme)/i], ["Ejecuta una acción", /(setItem|getItem)/]],
-              "sec-16": [["Usa datos climáticos", /(clima|temperatura|fetch|weather)/i], ["Controla errores", /(try|catch|console\.log)/]],
-              "sec-17": [["Valida notas", /(nota|promedio|>=|<=)/i], ["Muestra una conclusión", /console\.log\s*\(/]],
-              "sec-18": [["Usa eventos de teclado", /(keydown|keyup|tecla|event)/i], ["Registra la acción", /console\.log\s*\(/]],
-              "sec-19": [["Organiza el programa", /\b(function|const|let)\b/], ["Produce una salida", /console\.log\s*\(/]]
-          };
-          return porDesafio[sec?.id] || [["El código es válido", /.*/], ["Produce una salida", /console\.log\s*\(/]];
-      }
-      async function ejecutarPruebasDesafio(sectionId) {
-          const sec = seccionesData.find(item => item.id === sectionId);
-          const editor = document.getElementById(`editor-${sectionId}`);
-          const salida = document.getElementById(`console-${sectionId}`);
-          if (!sec || !editor || !salida) return;
-          const resultado = await ejecutarCodigoAislado(editor.value);
-          const pruebas = obtenerPruebasDesafio(sec);
-          const sintaxis = validarSintaxisCodigo(editor.value);
-          const lineas = [
-              `Pruebas automáticas · ${sec.title}`,
-              `${resultado.ok ? "✓" : "✗"} Ejecución sin excepciones`,
-              `${sintaxis.valida ? "✓" : "✗"} Sintaxis JavaScript válida`,
-              ...pruebas.map(([nombre, patron]) => `${patron.test(editor.value) ? "✓" : "✗"} ${nombre}`)
-          ];
-          salida.textContent = lineas.join("\n");
-          cambiarPestanaConsola(sectionId, "salida");
-          actualizarEstadoEditorEstudiante(sectionId, resultado.ok && sintaxis.valida ? "success" : "error", resultado.ok && sintaxis.valida ? "Pruebas completadas" : "Revisá las pruebas fallidas");
-      }
-
       function alternarModoEnfoque(sectionId, boton = null) {
           const seccion = document.getElementById(sectionId);
           if (!seccion) return;
@@ -10405,26 +9585,8 @@
           const logs = Array.isArray(resultado.logs) ? resultado.logs : [];
           if (!resultado.ok) logs.push("[EXCEPCIÓN]: " + resultado.error);
           if (logs.length === 0) logs.push("// Ejecutado sin salida en consola.");
-          const salidaLogs = logs.filter(log => !/^\[(?:ERROR|AVISO|EXCEPCIÓN)\]/i.test(log));
-          const avisosLogs = logs.filter(log => /^\[AVISO\]/i.test(log));
-          const erroresLogs = logs.filter(log => /^\[(?:ERROR|EXCEPCIÓN)\]/i.test(log));
           consoleBox.style.color = resultado.ok ? "#10b981" : "#ef4444";
-          consoleBox.innerText = salidaLogs.join("\n") || "// Sin salida normal.";
-          const erroresBox = document.getElementById(`console-errors-${sectionId}`);
-          const avisosBox = document.getElementById(`console-warnings-${sectionId}`);
-          const variablesBox = document.getElementById(`console-vars-${sectionId}`);
-          if (erroresBox) erroresBox.textContent = erroresLogs.length ? erroresLogs.join("\n") + "\n\n" + diagnosticoErrorEducativo(resultado.error, code) : "// No se detectaron errores.";
-          if (avisosBox) avisosBox.textContent = avisosLogs.length ? avisosLogs.join("\n") : "// No se registraron avisos.";
-          if (variablesBox) {
-              const variables = [...new Set([...code.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)/g)].map(match => match[1]))];
-              variablesBox.textContent = variables.length ? variables.map(nombre => `${nombre}  →  declarada en el código`).join("\n") : "// No se detectaron variables declaradas.";
-          }
-          if (!resultado.ok) {
-              resaltarLineaError(sectionId, resultado.error);
-              cambiarPestanaConsola(sectionId, "errores");
-          } else {
-              cambiarPestanaConsola(sectionId, "salida");
-          }
+          consoleBox.innerText = logs.join("\n");
 
           const esExitoso = Boolean(resultado.ok);
           actualizarEstadoEditorEstudiante(
@@ -11887,376 +11049,8 @@
           return texto;
       }
 
-      function escaparEditorHtml(valor) {
-          return String(valor || "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" }[c]));
-      }
-
-      function resaltarJavaScriptEditor(codigo) {
-          let salida = escaparEditorHtml(codigo);
-          salida = salida.replace(/(\/\/[^\n]*|\/\*[\s\S]*?\*\/)/g, '<span class="com">$1</span>');
-          salida = salida.replace(/(["'`])(?:\\.|(?!\1)[^\\\n])*\1/g, '<span class="str">$&</span>');
-          salida = salida.replace(/\b(const|let|var|function|return|if|else|for|while|do|switch|case|break|new|class|true|false|null|undefined|async|await|try|catch|throw|typeof|in|of)\b/g, '<span class="kw">$1</span>');
-          salida = salida.replace(/\b\d+(?:\.\d+)?\b/g, '<span class="num">$&</span>');
-          salida = salida.replace(/\b([A-Za-z_$][\w$]*)\s*(?=\()/g, '<span class="fn">$1</span>');
-          return salida || " ";
-      }
-
-      function inicializarEditorCodeMirror(textarea) {
-          if (!textarea || textarea.__codeMirrorView) return textarea?.__codeMirrorView || null;
-          const CM = window.CodeMirror6;
-          if (!CM) {
-              window.CodeMirrorDisponible = false;
-              return null;
-          }
-          const {
-              Compartment,
-              Decoration,
-              EditorState,
-              EditorView,
-              keymap,
-              lineNumbers,
-              highlightActiveLine,
-              drawSelection,
-              defaultKeymap,
-              indentWithTab,
-              javascript,
-              closeBrackets,
-              closeBracketsKeymap,
-              autocompletion,
-              completionKeymap,
-              startCompletion
-          } = CM;
-          const host = document.createElement("div");
-          host.className = "codemirror-host";
-          textarea.parentNode.insertBefore(host, textarea);
-          textarea.classList.add("codemirror-source-hidden");
-          const barra = document.createElement("div");
-          barra.className = "cm-workbench-toolbar";
-          barra.setAttribute("role", "toolbar");
-          barra.setAttribute("aria-label", "Herramientas del editor de código");
-          barra.innerHTML = `<label class="cm-workbench-search"><span class="sr-only">Buscar en el código</span><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input type="search" placeholder="Buscar en el código" autocomplete="off"></label><button type="button" data-cm-find title="Buscar siguiente" aria-label="Buscar siguiente"><i class="fa-solid fa-arrow-down"></i></button><button type="button" data-cm-replace title="Reemplazar selección" aria-label="Reemplazar selección"><i class="fa-solid fa-arrow-right-arrow-left"></i></button><button type="button" data-cm-complete title="Mostrar sugerencias (Ctrl+Espacio)" aria-label="Mostrar sugerencias"><i class="fa-solid fa-wand-magic-sparkles"></i></button><select data-cm-font aria-label="Tamaño de fuente"><option value=".8rem">Pequeña</option><option value=".9rem" selected>Normal</option><option value="1rem">Grande</option><option value="1.1rem">Muy grande</option></select><button type="button" data-cm-wrap title="Ajustar líneas largas" aria-label="Ajustar líneas largas" aria-pressed="false"><i class="fa-solid fa-align-left"></i></button><span class="cm-workbench-position" aria-live="polite">Línea 1, columna 1</span><span class="cm-workbench-status" aria-live="polite"></span>`;
-          host.appendChild(barra);
-          const cursors = document.createElement("div");
-          cursors.className = "cm-remote-cursors";
-          host.appendChild(cursors);
-          let sincronizando = false;
-          const ajusteLineas = new Compartment();
-          const autoriasCodigo = new Compartment();
-          const posicionCursor = barra.querySelector(".cm-workbench-position");
-          const estadoHerramientas = barra.querySelector(".cm-workbench-status");
-          const actualizarPosicionCursor = estado => {
-              const cabeza = estado.selection.main.head;
-              const linea = estado.doc.lineAt(cabeza);
-              posicionCursor.textContent = `Línea ${linea.number}, columna ${cabeza - linea.from + 1}`;
-          };
-          const actualizarTextarea = update => {
-              if (!update.docChanged || sincronizando) return;
-              const valor = update.state.doc.toString();
-              textarea.value = valor;
-              textarea.dispatchEvent(new Event("input", { bubbles: true }));
-          };
-          const atajos = keymap.of([
-              ...defaultKeymap,
-              ...closeBracketsKeymap,
-              ...completionKeymap,
-              indentWithTab,
-              { key: "Mod-s", run: () => { window.guardarAhoraFirebase?.(); return true; } },
-              { key: "Mod-Enter", run: () => { window.ejecutarCodigo?.(textarea.id.replace("editor-", "")); return true; } }
-          ]);
-          let view;
-          try {
-              view = new EditorView({
-                  state: EditorState.create({
-                      doc: textarea.value || "",
-                      extensions: [
-                          lineNumbers(),
-                          javascript(),
-                          closeBrackets(),
-                          autocompletion(),
-                          highlightActiveLine(),
-                          drawSelection(),
-                          ajusteLineas.of([]),
-                          autoriasCodigo.of([]),
-                          atajos,
-                          EditorView.updateListener.of(update => {
-                              actualizarTextarea(update);
-                              if (update.selectionSet) {
-                                  const seleccion = update.state.selection.main;
-                                  textarea.setSelectionRange(seleccion.from, seleccion.to);
-                                  textarea.dispatchEvent(new Event("cm-selection-change"));
-                              }
-                              if (update.selectionSet || update.docChanged) actualizarPosicionCursor(update.state);
-                          })
-                      ]
-                  }),
-                  parent: host
-              });
-          } catch (error) {
-              console.warn("CodeMirror no pudo iniciarse; se usará el editor de texto compatible.", error);
-              window.CodeMirrorDisponible = false;
-              host.remove();
-              textarea.classList.remove("codemirror-source-hidden");
-              return null;
-          }
-          textarea.__codeMirrorView = view;
-          textarea.__codeMirrorHost = host;
-          textarea.__syncCodeMirror = valor => {
-              if (view.state.doc.toString() === String(valor || "")) return;
-              sincronizando = true;
-              view.dispatch({ effects: autoriasCodigo.reconfigure([]) });
-              view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: String(valor || "") } });
-              sincronizando = false;
-          };
-          textarea.__renderAuthorDecorations = fragmentos => {
-              let posicion = 0;
-              const limite = view.state.doc.length;
-              const rangos = [];
-              (Array.isArray(fragmentos) ? fragmentos : []).forEach(fragmento => {
-                  const texto = typeof fragmento?.insert === "string"
-                      ? fragmento.insert
-                      : String(fragmento?.insert || "");
-                  const inicio = Math.min(limite, posicion);
-                  posicion += texto.length;
-                  const fin = Math.min(limite, posicion);
-                  if (fin <= inicio) return;
-                  const rol = fragmento?.attributes?.autorRol;
-                  const clase = rol === "docente"
-                      ? "cm-author-teacher"
-                      : rol === "estudiante"
-                          ? "cm-author-student"
-                          : "cm-author-base";
-                  rangos.push(Decoration.mark({ class: clase }).range(inicio, fin));
-              });
-              view.dispatch({
-                  effects: autoriasCodigo.reconfigure(
-                      EditorView.decorations.of(Decoration.set(rangos, true))
-                  )
-              });
-          };
-          textarea.__getCodeMirrorSelection = () => ({
-              inicio: view.state.selection.main.from,
-              fin: view.state.selection.main.to
-          });
-          textarea.__getCodeMirrorSelectedText = () => {
-              const seleccion = view.state.selection.main;
-              return view.state.sliceDoc(seleccion.from, seleccion.to);
-          };
-          textarea.__setCodeMirrorDisabled = deshabilitado => {
-              const bloqueado = Boolean(deshabilitado);
-              host.classList.toggle("cm-disabled", bloqueado);
-              host.setAttribute("aria-disabled", String(bloqueado));
-              view.contentDOM.contentEditable = bloqueado ? "false" : "true";
-              view.contentDOM.tabIndex = bloqueado ? -1 : 0;
-              if (bloqueado && view.hasFocus) view.contentDOM.blur();
-          };
-          textarea.__renderRemoteCursors = participantes => {
-              cursors.innerHTML = "";
-              const propio = window.firebaseTeacherUser?.uid || window.firebaseCurrentUser?.uid;
-              (participantes || []).filter(item => item?.autorUid && item.autorUid !== propio).forEach(item => {
-                  const posicion = Math.max(0, Math.min(view.state.doc.length, Number(item.cursorInicio) || 0));
-                  const coordenadas = view.coordsAtPos(posicion);
-                  if (!coordenadas) return;
-                  const rect = host.getBoundingClientRect();
-                  const marcador = document.createElement("span");
-                  marcador.className = `cm-remote-cursor ${item.rol === "docente" ? "teacher" : "student"}`;
-                  marcador.style.left = `${coordenadas.left - rect.left}px`;
-                  marcador.style.top = `${coordenadas.top - rect.top}px`;
-                  const etiqueta = document.createElement("span");
-                  etiqueta.className = "cm-remote-cursor-label";
-                  etiqueta.textContent = item.nombre || (item.rol === "docente" ? "Docente" : "Estudiante");
-                  marcador.appendChild(etiqueta);
-                  cursors.appendChild(marcador);
-              });
-          };
-          const renderCursoresRemotos = textarea.__renderRemoteCursors;
-          textarea.__renderRemoteCursors = participantes => {
-              textarea.__remoteCursorParticipants = Array.isArray(participantes) ? participantes : [];
-              renderCursoresRemotos(textarea.__remoteCursorParticipants);
-          };
-          view.scrollDOM.addEventListener("scroll", () => {
-              textarea.__renderRemoteCursors(textarea.__remoteCursorParticipants || []);
-          }, { passive: true });
-          const campoBusqueda = barra.querySelector("input[type=search]");
-          const buscarSiguiente = () => {
-              const termino = campoBusqueda.value;
-              if (!termino) { estadoHerramientas.textContent = "Escribí un texto para buscar."; campoBusqueda.focus(); return false; }
-              const documento = view.state.doc.toString();
-              let posicion = documento.indexOf(termino, view.state.selection.main.to);
-              if (posicion < 0) posicion = documento.indexOf(termino);
-              if (posicion < 0) { estadoHerramientas.textContent = `No se encontró “${termino}”.`; return false; }
-              const coincidencias = documento.split(termino).length - 1;
-              view.dispatch({ selection: { anchor: posicion, head: posicion + termino.length }, scrollIntoView: true });
-              view.focus();
-              estadoHerramientas.textContent = `${coincidencias} coincidencia${coincidencias === 1 ? "" : "s"}.`;
-              return true;
-          };
-          barra.querySelector("[data-cm-find]").onclick = buscarSiguiente;
-          campoBusqueda.addEventListener("keydown", evento => {
-              if (evento.key === "Enter") { evento.preventDefault(); buscarSiguiente(); }
-              if (evento.key === "Escape") { campoBusqueda.value = ""; estadoHerramientas.textContent = ""; view.focus(); }
-          });
-          barra.querySelector("[data-cm-replace]").onclick = () => {
-              const termino = campoBusqueda.value;
-              if (!termino) { estadoHerramientas.textContent = "Buscá primero el texto que querés reemplazar."; campoBusqueda.focus(); return; }
-              const seleccion = view.state.selection.main;
-              if (view.state.sliceDoc(seleccion.from, seleccion.to) !== termino && !buscarSiguiente()) return;
-              const reemplazo = prompt(`Reemplazar “${termino}” por:`, "");
-              if (reemplazo === null) return;
-              const rango = view.state.selection.main;
-              view.dispatch({ changes: { from: rango.from, to: rango.to, insert: reemplazo }, selection: { anchor: rango.from + reemplazo.length } });
-              view.focus();
-              estadoHerramientas.textContent = "Coincidencia reemplazada.";
-          };
-          barra.querySelector("[data-cm-complete]").onclick = () => { view.focus(); startCompletion(view); };
-          barra.querySelector("[data-cm-font]").onchange = evento => host.style.setProperty("--cm-font-size", evento.target.value);
-          barra.querySelector("[data-cm-wrap]").onclick = evento => {
-              const activo = evento.currentTarget.getAttribute("aria-pressed") !== "true";
-              evento.currentTarget.setAttribute("aria-pressed", String(activo));
-              view.dispatch({ effects: ajusteLineas.reconfigure(activo ? EditorView.lineWrapping : []) });
-              view.focus();
-          };
-          textarea.addEventListener("crdt-remote-change", () => {
-              textarea.__syncCodeMirror?.(textarea.value);
-              textarea.__renderizarAportesCRDT?.();
-              textarea.__renderRemoteCursors?.(textarea.__remoteCursorParticipants || []);
-          });
-          textarea.__setCodeMirrorDisabled(textarea.disabled);
-          actualizarPosicionCursor(view.state);
-          return view;
-      }
-      window.inicializarEditorCodeMirror = inicializarEditorCodeMirror;
-
-      function mejorarEditorCodigo(textarea) {
-          if (!textarea || textarea.dataset.editorMejorado === "true") return;
-          textarea.dataset.editorMejorado = "true";
-          if (window.CodeMirrorDisponible !== false && window.CodeMirror6) {
-              const editorCM = inicializarEditorCodeMirror(textarea);
-              if (editorCM) return;
-          }
-          const contenedor = textarea.closest(".editor-container");
-          if (!contenedor) return;
-          const shell = document.createElement("div");
-          shell.className = "editor-enhancement-shell";
-          const barra = document.createElement("div");
-          barra.className = "editor-enhancement-toolbar";
-          barra.innerHTML = `<input type="search" placeholder="Buscar en el código" aria-label="Buscar en el código"><button type="button" data-editor-find>Buscar</button><button type="button" data-editor-replace>Reemplazar</button><button type="button" data-editor-complete title="Completar palabra (Ctrl+Espacio)">Completar</button><span class="editor-search-status" aria-live="polite"></span><span class="editor-cursor-position" aria-live="polite">Línea 1, columna 1</span><label>Fuente <select data-editor-font><option value="0.8">Pequeña</option><option value="0.9" selected>Normal</option><option value="1">Grande</option><option value="1.1">Muy grande</option></select></label><button type="button" data-editor-wrap aria-pressed="false">Ajustar líneas</button>`;
-          const cuerpo = document.createElement("div");
-          cuerpo.className = "editor-enhancement-body";
-          const gutter = document.createElement("div");
-          gutter.className = "editor-line-numbers";
-          const capa = document.createElement("pre");
-          capa.className = "editor-syntax-layer";
-          cuerpo.append(gutter, capa);
-          textarea.parentNode.insertBefore(shell, textarea);
-          shell.append(barra, cuerpo);
-          cuerpo.appendChild(textarea);
-          const actualizar = () => {
-              const lineas = Math.max(1, textarea.value.split("\n").length);
-              gutter.textContent = Array.from({length: lineas}, (_, i) => i + 1).join("\n");
-              capa.innerHTML = resaltarJavaScriptEditor(textarea.value);
-              capa.scrollTop = textarea.scrollTop;
-              capa.scrollLeft = textarea.scrollLeft;
-              capa.style.height = `${textarea.scrollHeight}px`;
-              gutter.scrollTop = textarea.scrollTop;
-              const antes = textarea.value.slice(0, textarea.selectionStart);
-              const numeroLinea = antes.split("\n").length;
-              const numeroColumna = antes.length - antes.lastIndexOf("\n");
-              barra.querySelector(".editor-cursor-position").textContent = `Línea ${numeroLinea}, columna ${numeroColumna}`;
-          };
-          const buscar = () => {
-              const termino = barra.querySelector("input").value;
-              if (!termino) return;
-              const coincidencias = textarea.value.split(termino).length - 1;
-              barra.querySelector(".editor-search-status").textContent = `${coincidencias} coincidencia(s)`;
-              const posicion = textarea.value.indexOf(termino);
-              if (posicion >= 0) { textarea.focus(); textarea.setSelectionRange(posicion, posicion + termino.length); }
-          };
-          const completar = () => {
-              const posicion = textarea.selectionStart;
-              const prefijo = textarea.value.slice(0, posicion).match(/[A-Za-z_$][\w$]*$/)?.[0] || "";
-              if (prefijo.length < 2) return;
-              const palabras = ["console.log","console.error","document","document.querySelector","document.getElementById","addEventListener","setTimeout","setInterval","Math.random","Math.floor","Array","String","Number","const","let","function","return","if","else","for","while","true","false"];
-              const opciones = palabras.filter(palabra => palabra.toLowerCase().startsWith(prefijo.toLowerCase()) && palabra !== prefijo);
-              if (!opciones.length) return;
-              const elegida = opciones[0];
-              textarea.setRangeText(elegida.slice(prefijo.length), posicion - prefijo.length, posicion, "end");
-              barra.querySelector(".editor-search-status").textContent = `Completado: ${elegida}`;
-              textarea.dispatchEvent(new Event("input", { bubbles: true }));
-          };
-          barra.querySelector("[data-editor-complete]").onclick = completar;
-          textarea.__completarCodigo = completar;
-          barra.querySelector("[data-editor-find]").onclick = buscar;
-          barra.querySelector("[data-editor-replace]").onclick = () => {
-              const termino = barra.querySelector("input").value;
-              if (!termino) return;
-              const reemplazo = prompt("Reemplazar todas las coincidencias por:", "");
-              if (reemplazo === null) return;
-              textarea.value = textarea.value.split(termino).join(reemplazo);
-              textarea.dispatchEvent(new Event("input", { bubbles: true }));
-              actualizar();
-          };
-          barra.querySelector("[data-editor-font]").onchange = e => {
-              const tamaño = `${e.target.value}rem`;
-              textarea.style.fontSize = tamaño; capa.style.fontSize = tamaño; gutter.style.fontSize = tamaño;
-          };
-          barra.querySelector("[data-editor-wrap]").onclick = e => {
-              const activo = textarea.classList.toggle("wrap-lines");
-              e.currentTarget.setAttribute("aria-pressed", String(activo));
-              capa.style.whiteSpace = activo ? "pre-wrap" : "pre";
-          };
-          textarea.addEventListener("input", actualizar);
-          textarea.addEventListener("scroll", actualizar);
-          textarea.addEventListener("select", actualizar);
-          textarea.addEventListener("keyup", actualizar);
-          textarea.addEventListener("click", actualizar);
-          textarea.addEventListener("keydown", e => {
-              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                  e.preventDefault();
-                  const id = textarea.id.replace("editor-", "");
-                  window.ejecutarCodigo?.(id);
-                  return;
-              }
-              if (["\"", "'", "`", "(", "[", "{"].includes(e.key)) {
-                  const pares = {"\"":"\"", "'":"'", "`":"`", "(" : ")", "[" : "]", "{" : "}"};
-                  const siguiente = textarea.value[textarea.selectionStart];
-                  if (e.key !== "{" && siguiente === pares[e.key]) return;
-                  e.preventDefault();
-                  const inicio = textarea.selectionStart, fin = textarea.selectionEnd;
-                  textarea.value = `${textarea.value.slice(0, inicio)}${e.key}${pares[e.key]}${textarea.value.slice(fin)}`;
-                  textarea.selectionStart = textarea.selectionEnd = inicio + 1;
-                  textarea.dispatchEvent(new Event("input", { bubbles: true }));
-              } else if (e.key === "Tab") {
-                  e.preventDefault();
-                  const inicio = textarea.selectionStart, fin = textarea.selectionEnd;
-                  textarea.value = `${textarea.value.slice(0, inicio)}    ${textarea.value.slice(fin)}`;
-                  textarea.selectionStart = textarea.selectionEnd = inicio + 4;
-                  textarea.dispatchEvent(new Event("input", { bubbles: true }));
-              } else if (e.key === "Enter") {
-                  const linea = textarea.value.slice(0, textarea.selectionStart).split("\n").pop();
-                  const sangria = (linea.match(/^\s*/) || [""])[0];
-                  if (/[{[(]\s*$/.test(linea)) {
-                      e.preventDefault();
-                      const cierre = linea.trim().endsWith("{") ? "}" : linea.trim().endsWith("[") ? "]" : ")";
-                      const insercion = `\n${sangria}    \n${sangria}${cierre}`;
-                      const posicion = textarea.selectionStart;
-                      textarea.value = `${textarea.value.slice(0, posicion)}${insercion}${textarea.value.slice(textarea.selectionEnd)}`;
-                      textarea.selectionStart = textarea.selectionEnd = posicion + sangria.length + 5;
-                      textarea.dispatchEvent(new Event("input", { bubbles: true }));
-                  }
-              } else if ([")", "]", "}"].includes(e.key) && textarea.value[textarea.selectionStart] === e.key) {
-                  e.preventDefault(); textarea.selectionStart = textarea.selectionEnd = textarea.selectionStart + 1;
-              } else if (e.key === "s" && (e.ctrlKey || e.metaKey)) {
-                  e.preventDefault(); window.guardarAhoraFirebase?.();
-              } else if (e.code === "Space" && e.ctrlKey) {
-                  e.preventDefault(); textarea.__completarCodigo?.();
-              }
-          });
-          actualizar();
-      }
-
       function configurarEditores() {
           document.querySelectorAll('.code-editor').forEach(textarea => {
-              mejorarEditorCodigo(textarea);
               const sectionIdInicial = textarea.id.replace('editor-', '');
               actualizarMetricasEditor(sectionIdInicial);
               textarea.addEventListener('click', (e) => {
@@ -14081,16 +12875,12 @@
                               ? (ayudaModulo.verificacion?.correcta === true ? "Correcta" : "Pendiente") + ` (${Number(ayudaModulo.verificacion?.intentos || 0)} intento/s)`
                               : "Sin realizar"} · Lista: ${checklistModuloMarcado}/${checklistModuloTotal}
                       </div>
-                      <div style="display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;margin:.9rem 0 .55rem;padding:.75rem;border:1px solid rgba(34,197,94,.45);border-radius:8px;background:rgba(34,197,94,.08)">
-                          <div>
-                              <h4 style="margin:0;color:#bbf7d0"><i class="fa-solid fa-people-arrows"></i> Colaboración docente-estudiante</h4>
-                              <small style="display:block;margin-top:.2rem;color:#94a3b8">Editá este desafío simultáneamente con el estudiante.</small>
-                          </div>
-                          <button class="btn btn-success btn-trabajar-vivo" type="button" style="min-height:44px;font-weight:800" data-collab-student-index="${indice}" data-collab-student-uid="${escapeHtml(d.uid || '')}" data-collab-section="${escapeHtml(sec.id)}" onclick="return false;">
-                              <i class="fa-solid fa-code-branch"></i> TRABAJAR EN VIVO
+                      <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap">
+                          <h4 style="margin:0">Código entregado</h4>
+                          <button class="btn btn-primary" type="button" onclick="abrirEditorColaborativoProfesor(${indice}, '${sec.id}')">
+                              <i class="fa-solid fa-code-branch"></i> Trabajar en vivo
                           </button>
                       </div>
-                      <h4>Código entregado</h4>
                       <pre class="teacher-code">${escapeHtml(codigo)}</pre>
                       <h4 style="margin-top:.8rem">Salida de ejecución</h4>
                       <pre class="teacher-code" style="color:#7dd3fc">${escapeHtml(salida)}</pre>
@@ -14723,10 +13513,6 @@
           const modal = document.getElementById('confirmacionDocenteModal');
           modal?.classList.remove('active');
           if (modal) modal.style.zIndex = '';
-          if (modal?.__confirmationOriginalParent && modal.parentNode !== modal.__confirmationOriginalParent) {
-              modal.__confirmationOriginalParent.appendChild(modal);
-          }
-          if (modal) delete modal.__confirmationOriginalParent;
           if (resultado?.confirmado) {
               const jitsiModal = document.getElementById('jitsiModal');
               if (jitsiModal?.dataset.hostConfirmation === 'true') {
@@ -14797,11 +13583,6 @@
 
           return new Promise(resolve => {
               confirmacionDocentePendiente = resolve;
-              const pantallaCompleta = document.fullscreenElement;
-              if (pantallaCompleta && !pantallaCompleta.contains(modal)) {
-                  modal.__confirmationOriginalParent = modal.parentNode;
-                  pantallaCompleta.appendChild(modal);
-              }
               const cancelarAccion = () => cerrarConfirmacionDocente({ confirmado: false, valor: '' });
               cancelar.onclick = cancelarAccion;
               modal.onclick = evento => {
@@ -14829,7 +13610,7 @@
                   }
                   cerrarConfirmacionDocente({ confirmado: true, valor });
               };
-              modal.style.zIndex = '50000';
+              modal.style.zIndex = '12000';
               modal.classList.add('active');
               setTimeout(() => {
                   if (usaCampo) entrada.focus();
@@ -16991,9 +15772,7 @@
           detenerCuentaRegresivaJitsi();
           cerrarJitsi();
           const nombreVisible = String(nombre || 'Participante').trim() || 'Participante';
-          enlaceJitsiActual = opciones.soloAudio === true
-            ? `${enlaceSeguro}#config.startWithVideoMuted=true`
-            : enlaceSeguro;
+          enlaceJitsiActual = enlaceSeguro;
           const modoDocenteJitsi = opciones.requerirModerador === true && opciones.rol !== 'estudiante';
           jitsiOpcionesPendientes = { ...opciones, requerirModerador: modoDocenteJitsi, estadoConfirmado: estadoTexto };
           modal.dataset.hostConfirmation = modoDocenteJitsi ? 'true' : 'false';
@@ -17003,22 +15782,16 @@
           if (copiarEstado) copiarEstado.textContent = '';
           if (estadoExterno) estadoExterno.textContent = '';
           if (mensajeExterno) mensajeExterno.textContent = modoDocenteJitsi
-            ? (opciones.soloAudio === true
-              ? 'Abrí la sala de audio, iniciá sesión en Jitsi y confirmá que sos anfitrión antes de invitar al estudiante.'
-              : 'Abrí la sala, iniciá sesión en Jitsi y confirmá que sos anfitrión antes de invitar a los estudiantes.')
-            : (opciones.soloAudio === true
-              ? 'Abrí la sala para participar de la llamada de audio.'
-              : 'Abrí la sala Jitsi en una pestaña nueva para participar de la videollamada.');
+            ? 'Abrí la sala, iniciá sesión en Jitsi y confirmá que sos anfitrión antes de invitar a los estudiantes.'
+            : 'Abrí la sala Jitsi en una pestaña nueva para participar de la videollamada.';
           if (botonConfirmar) {
             botonConfirmar.hidden = !modoDocenteJitsi;
             botonConfirmar.disabled = false;
             botonConfirmar.innerHTML = '<i class="fa-solid fa-user-shield"></i> Confirmar docente anfitrión';
           }
           if (estado) estado.textContent = modoDocenteJitsi
-            ? (opciones.soloAudio === true
-              ? 'Paso 1: abrí la llamada de audio. Paso 2: ingresá como anfitrión. Paso 3: confirmalo en esta ventana.'
-              : 'Paso 1: abrí Jitsi. Paso 2: ingresá como anfitrión. Paso 3: confirmalo en esta ventana.')
-            : (estadoTexto || (opciones.soloAudio === true ? 'Llamada de audio en vivo por Jitsi Meet' : 'Encuentro en vivo por Jitsi Meet'));
+            ? 'Paso 1: abrí Jitsi. Paso 2: ingresá como anfitrión. Paso 3: confirmalo en esta ventana.'
+            : (estadoTexto || 'Encuentro en vivo por Jitsi Meet');
           modal.style.display = 'flex';
           modal.classList.add('active');
           modal.querySelector('.jitsi-box')?.focus({ preventScroll: true });
@@ -17039,7 +15812,7 @@
           );
         };
 
-        window.abrirJitsiDocente = async function(indice, opcionesLlamada = {}) {
+        window.abrirJitsiDocente = async function(indice) {
           const estudiante = window.estudiantesProfesor?.[indice] || estudiantesProfesor?.[indice];
           if (!estudiante?.uid) {
             alert('No se pudo identificar al estudiante seleccionado.');
@@ -17052,22 +15825,14 @@
             return;
           }
           const docente = window.firebaseTeacherUser || window.firebaseCurrentUser || {};
-          let resultadoInvitacionJitsi = null;
-          let invitacionEnCursoJitsi = null;
-          const salaAbierta = window.abrirJitsiConSala(
+          window.abrirJitsiConSala(
             datosSala.enlace,
             docente.displayName || 'Docente',
             docente.email || '',
-            opcionesLlamada.soloAudio === true
-              ? `Docente anfitrión · Llamada de audio con ${nombre}`
-              : `Docente anfitrión · Llamada con ${nombre}`,
+            `Docente anfitrión · Llamada con ${nombre}`,
             {
               requerirModerador: true,
-              soloAudio: opcionesLlamada.soloAudio === true,
               alConfirmarModerador: async () => {
-                if (resultadoInvitacionJitsi) return resultadoInvitacionJitsi;
-                if (invitacionEnCursoJitsi) return invitacionEnCursoJitsi;
-                invitacionEnCursoJitsi = (async () => {
                 const duracionMinutos = obtenerDuracionJitsi();
                 const expiraEn = new Date(Date.now() + duracionMinutos * 60000).toISOString();
                 const idLlamada = `${Date.now()}-${estudiante.uid}`;
@@ -17118,7 +15883,6 @@
                 });
                 renderPanelProfesor?.();
                 return {
-                  idLlamada,
                   expiraEn,
                   alVencer: async () => {
                     const participantes = participantesHistorialJitsi([estudiante], idLlamada);
@@ -17163,44 +15927,9 @@
                     return true;
                   }
                 };
-                })();
-                try {
-                  resultadoInvitacionJitsi = await invitacionEnCursoJitsi;
-                  return resultadoInvitacionJitsi;
-                } finally {
-                  invitacionEnCursoJitsi = null;
-                }
               }
             }
           );
-          if (salaAbierta && jitsiOpcionesPendientes?.alConfirmarModerador) {
-            try {
-              const resultado = await jitsiOpcionesPendientes.alConfirmarModerador();
-              if (resultado === false) throw new Error('Firebase rechazó la invitación.');
-              if (resultado?.expiraEn) iniciarCuentaRegresivaJitsi(resultado.expiraEn, resultado.alVencer, resultado.alExtender);
-              const estado = document.getElementById('jitsiEstado');
-              const estadoExterno = document.getElementById('jitsiExternalEstado');
-              const botonConfirmar = document.getElementById('confirmarAnfitrionJitsi');
-              if (estado) estado.textContent = opcionesLlamada.soloAudio === true
-                ? 'Invitación de llamada de audio enviada al estudiante.'
-                : 'Invitación de llamada enviada al estudiante.';
-              if (estadoExterno) estadoExterno.textContent = 'El estudiante ya recibió la invitación y puede ingresar a la sala.';
-              if (botonConfirmar) botonConfirmar.hidden = true;
-              if (opcionesLlamada.soloAudio === true) {
-                window.dispatchEvent(new CustomEvent('jitsi-invitacion-audio-enviada', {
-                  detail: {
-                    estudianteUid: estudiante.uid,
-                    llamadaId: resultado?.idLlamada || '',
-                    estudianteNombre: nombre
-                  }
-                }));
-              }
-            } catch (error) {
-              console.error('No se pudo enviar la invitación Jitsi de inmediato:', error);
-              const estado = document.getElementById('jitsiEstado');
-              if (estado) estado.textContent = 'No se pudo enviar la invitación. Revisá Firebase e intentá nuevamente.';
-            }
-          }
         };
         window.cerrarSalaJitsiProfesor = async function(indice) {
           const estudiante = window.estudiantesProfesor?.[indice] || estudiantesProfesor?.[indice];
@@ -17863,7 +16592,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260904-28"></script>
+    <script src="mejoras-seguimiento.js?v=20260903-2"></script>
   </body>
 </html>
 
