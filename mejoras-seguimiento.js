@@ -24,8 +24,8 @@ function aplicarTemaPanelDocente(tema){
   boton.innerHTML=`<i class="fa-solid ${icono}" aria-hidden="true"></i><span>Modo ${accion}</span>`;
   boton.title=`Cambiar a modo ${accion}`;
   boton.setAttribute("aria-label",`Cambiar a modo ${accion}`);
-  boton.setAttribute("aria-pressed",String(claro));
- });
+   boton.setAttribute("aria-pressed",String(claro));
+  });
 }
 function alternarTemaAplicacion(){
  const tema=document.body.classList.contains("teacher-light-mode")?"dark":"light";
@@ -43,9 +43,9 @@ function asegurarTemaAplicacion(){
   boton.dataset.appThemeToggle="";
   const progreso=contenedor.querySelector(".progress-wrapper");
   progreso?contenedor.insertBefore(boton,progreso):contenedor.appendChild(boton);
-  boton.onclick=alternarTemaAplicacion;
- }
- aplicarTemaPanelDocente(localStorage.getItem(CLAVE_TEMA_PANEL_DOCENTE)==="light"?"light":"dark");
+   boton.onclick=alternarTemaAplicacion;
+   }
+  aplicarTemaPanelDocente(localStorage.getItem(CLAVE_TEMA_PANEL_DOCENTE)==="light"?"light":"dark");
 }
 function asegurarTemaPanelDocente(){
  const barra=document.querySelector("#panelProfesorModal .teacher-panel-toolbar");if(!barra)return;
@@ -611,7 +611,7 @@ function iniciarAlertasChatCooperativoEstudiante(){
  window.__firmaAlertasChatCooperativo=firma;
  asegurarPopupMensajeCooperativoEstudiante();
  secciones.forEach(sectionId=>{
-  const detener=window.escucharChatColaborativoFirebase(user.uid,sectionId,(mensajes,error)=>{
+   const detener=window.escucharChatColaborativoFirebase(user.uid,sectionId,(mensajes,error)=>{
    if(error)return;
    const recibidos=(Array.isArray(mensajes)?mensajes:[]).filter(item=>item?.rol==="docente"&&item.autorUid!==user.uid&&item.autorNombre!=="Sistema de llamada");
    const ultimo=recibidos.at(-1)||null;
@@ -623,10 +623,10 @@ function iniciarAlertasChatCooperativoEstudiante(){
    if(!ultimo||!ultimo.id||ultimo.id===anterior)return;
    ultimoMensajeDocentePorSeccion.set(sectionId,ultimo.id);
    mostrarPopupMensajeCooperativoEstudiante(ultimo,sectionId);
-  },{limite:1});
-  if(typeof detener==="function")detenerAlertasChatEstudiante.push(detener);
- });
-}
+   },{rol:"estudiante"});
+    if(typeof detener==="function")detenerAlertasChatEstudiante.push(detener);
+  });
+ }
 function fechaChatColaborativo(valor){
  const fecha=valor?.toDate?valor.toDate():valor?.seconds?new Date(valor.seconds*1000):new Date(valor||0);
  return Number.isFinite(fecha.getTime())&&fecha.getTime()>0?fecha.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit"}):"Ahora";
@@ -663,7 +663,7 @@ function activarChatColaborativoDocente(uid,sectionId){
  const modal=document.getElementById("editorColaborativoDocenteModal"),lista=modal?.querySelector("#chatColaborativoDocenteLista"),estado=modal?.querySelector("#chatColaborativoDocenteEstado");if(!modal||!lista)return;
  if(detenerChatColaborativoDocente)detenerChatColaborativoDocente();
  estado.textContent="Chat en vivo";
- detenerChatColaborativoDocente=window.escucharChatColaborativoFirebase?.(uid,sectionId,(mensajes,error)=>{notificarMensajeColaborativo(mensajes,"docente");renderChatColaborativo(lista,mensajes,"docente",error)})||null;
+  detenerChatColaborativoDocente=window.escucharChatColaborativoFirebase?.(uid,sectionId,(mensajes,error)=>{notificarMensajeColaborativo(mensajes,"docente");renderChatColaborativo(lista,mensajes,"docente",error)},{rol:"docente"})||null;
 }
 function renderHistorialAportesColaborativo(contenedor,aportes=[],error=null){
  if(!contenedor)return;
@@ -736,14 +736,14 @@ function asegurarChatColaborativoEstudiante(){
  document.body.appendChild(modal);
  const cerrar=()=>{modal.classList.remove("active");if(detenerChatColaborativoEstudiante){detenerChatColaborativoEstudiante();detenerChatColaborativoEstudiante=null;}if(detenerPresenciaChatEstudiante){detenerPresenciaChatEstudiante();detenerPresenciaChatEstudiante=null;}};
  modal.querySelector("#cerrarChatColaborativoEstudiante").onclick=cerrar;modal.onclick=e=>{if(e.target===modal)cerrar()};
- const enviar=async()=>{const campo=modal.querySelector("#chatColaborativoEstudianteTexto"),boton=modal.querySelector("#enviarChatColaborativoEstudiante"),estado=modal.querySelector("#chatColaborativoEstudianteEstado"),texto=campo.value.trim();if(!texto)return;boton.disabled=true;const ok=await window.enviarChatColaborativoFirebase?.({uid:modal.dataset.uid,sectionId:modal.dataset.sectionId,texto,rol:"estudiante"});boton.disabled=false;if(ok){campo.value="";estado.textContent="Mensaje enviado";}else estado.textContent="No se pudo enviar";};
+  const enviar=async()=>{const campo=modal.querySelector("#chatColaborativoEstudianteTexto"),boton=modal.querySelector("#enviarChatColaborativoEstudiante"),estado=modal.querySelector("#chatColaborativoEstudianteEstado"),texto=campo.value.trim();if(!texto)return;boton.disabled=true;const ok=await window.enviarChatColaborativoFirebase?.({uid:modal.dataset.uid,sectionId:modal.dataset.sectionId,texto,rol:"estudiante"});boton.disabled=false;if(ok){campo.value="";estado.textContent="Mensaje enviado";}else{const detalle=window.ultimoErrorChatColaborativo?.message||"Firebase rechazo la operacion";estado.textContent=`No se pudo enviar: ${detalle}`;}};
  modal.querySelector("#enviarChatColaborativoEstudiante").onclick=enviar;modal.querySelector("#chatColaborativoEstudianteTexto").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();enviar();}});
 }
 window.abrirChatColaborativoEstudiante=function(sectionId){
  const user=window.firebaseCurrentUser;if(!user){alert("Iniciá sesión como estudiante para usar el chat.");return;}
  asegurarChatColaborativoEstudiante();const modal=document.getElementById("chatColaborativoEstudianteModal"),sec=(typeof seccionesData!=="undefined"?seccionesData:[]).find(x=>x.id===sectionId),lista=modal.querySelector("#chatColaborativoEstudianteLista"),estado=modal.querySelector("#chatColaborativoEstudianteEstado");
  modal.dataset.uid=user.uid;modal.dataset.sectionId=sectionId;modal.querySelector("#chatColaborativoEstudianteAlumno").textContent=`${sec?.title||"Desafío"} · mensajes de la sesión de cooperación`;lista.innerHTML='<p class="collab-chat-empty">Conectando el chat…</p>';estado.textContent="Chat en vivo";modal.classList.add("active");
- if(detenerChatColaborativoEstudiante)detenerChatColaborativoEstudiante();if(detenerPresenciaChatEstudiante)detenerPresenciaChatEstudiante();detenerChatColaborativoEstudiante=window.escucharChatColaborativoFirebase?.(user.uid,sectionId,(mensajes,error)=>{notificarMensajeColaborativo(mensajes,"estudiante");renderChatColaborativo(lista,mensajes,"estudiante",error)})||null;detenerPresenciaChatEstudiante=window.escucharPresenciaColaborativaFirebase?.(user.uid,sectionId,(participantes,error)=>renderPresenciaChatColaborativo(modal.querySelector("#chatColaborativoEstudiantePresencia"),participantes,error))||null;
+  if(detenerChatColaborativoEstudiante)detenerChatColaborativoEstudiante();if(detenerPresenciaChatEstudiante)detenerPresenciaChatEstudiante();detenerChatColaborativoEstudiante=window.escucharChatColaborativoFirebase?.(user.uid,sectionId,(mensajes,error)=>{notificarMensajeColaborativo(mensajes,"estudiante");renderChatColaborativo(lista,mensajes,"estudiante",error)},{rol:"estudiante"})||null;detenerPresenciaChatEstudiante=window.escucharPresenciaColaborativaFirebase?.(user.uid,sectionId,(participantes,error)=>renderPresenciaChatColaborativo(modal.querySelector("#chatColaborativoEstudiantePresencia"),participantes,error),{rol:"estudiante"})||null;
 };
 function asegurarEditorColaborativoDocente(){
  if(document.getElementById("editorColaborativoDocenteModal"))return;
@@ -791,7 +791,7 @@ function asegurarEditorColaborativoDocente(){
  modal.querySelector("#iniciarAudioCooperativo").onclick=async()=>{const indice=Number(modal.dataset.studentIndex);if(!Number.isInteger(indice)){alert("No se pudo identificar al estudiante para la llamada.");return;}await window.abrirJitsiDocente?.(indice,{soloAudio:true});};
  modal.querySelector("#pausarEdicionCooperativa").onclick=async()=>{const boton=modal.querySelector("#pausarEdicionCooperativa"),pausada=modal.dataset.edicionCooperativaPausada==="true";boton.disabled=true;const ok=await modal.__crdtSession?.establecerPausaCooperacion?.(!pausada);if(!ok)alert("No se pudo actualizar la pausa de edición. Revisá Firebase e intentá nuevamente.");boton.disabled=false;};
  modal.querySelector("#guardarEditorColaborativo").onclick=async()=>{const estado=modal.querySelector("#editorColaborativoGuardado"),boton=modal.querySelector("#guardarEditorColaborativo");boton.disabled=true;estado.textContent="Sincronizando...";try{const ok=await modal.__crdtSession?.flush();if(!ok)throw new Error("sync-pending");estado.textContent="Cambios sincronizados";estado.className="success"}catch{estado.textContent="Hay cambios pendientes; se reintentará automáticamente";estado.className="danger"}finally{boton.disabled=false}};
- const enviar=async()=>{const campo=modal.querySelector("#chatColaborativoDocenteTexto"),boton=modal.querySelector("#enviarChatColaborativoDocente"),estado=modal.querySelector("#chatColaborativoDocenteEstado"),texto=campo.value.trim();if(!texto)return;boton.disabled=true;const ok=await window.enviarChatColaborativoFirebase?.({uid:modal.dataset.uid,sectionId:modal.dataset.sectionId,texto,rol:"docente"});boton.disabled=false;if(ok){campo.value="";estado.textContent="Mensaje enviado";}else estado.textContent="No se pudo enviar";};
+  const enviar=async()=>{const campo=modal.querySelector("#chatColaborativoDocenteTexto"),boton=modal.querySelector("#enviarChatColaborativoDocente"),estado=modal.querySelector("#chatColaborativoDocenteEstado"),texto=campo.value.trim();if(!texto)return;boton.disabled=true;const ok=await window.enviarChatColaborativoFirebase?.({uid:modal.dataset.uid,sectionId:modal.dataset.sectionId,texto,rol:"docente"});boton.disabled=false;if(ok){campo.value="";estado.textContent="Mensaje enviado";}else{const detalle=window.ultimoErrorChatColaborativo?.message||"Firebase rechazo la operacion";estado.textContent=`No se pudo enviar: ${detalle}`;}};
  modal.querySelector("#enviarChatColaborativoDocente").onclick=enviar;modal.querySelector("#chatColaborativoDocenteTexto").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();enviar();}});
  modal.querySelectorAll("[data-quick-reply]").forEach(boton=>boton.onclick=()=>{modal.querySelector("#chatColaborativoDocenteTexto").value=boton.dataset.quickReply||"";modal.querySelector("#chatColaborativoDocenteTexto").focus();});
  modal.querySelector("#iniciarAudioDesdeChat").onclick=()=>modal.querySelector("#iniciarAudioCooperativo")?.click();
