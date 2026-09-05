@@ -631,6 +631,118 @@
         cursor: not-allowed;
       }
 
+      .codemirror-host{
+        --cm-font-size:.9rem;
+        position:relative;
+        display:flex;
+        flex-direction:column;
+        min-height:260px;
+        background:#0b1020;
+        border-top:1px solid rgba(148,163,184,.18);
+      }
+      .codemirror-host .cm-editor{
+        min-height:260px;
+        height:100%;
+        flex:1 1 auto;
+        font:400 var(--cm-font-size)/1.55 "Fira Code",Consolas,monospace;
+        color:#e2e8f0;
+        background:#0b1020;
+      }
+      .codemirror-host .cm-scroller{overflow:auto;min-height:260px;font-size:inherit}
+      .codemirror-host .cm-content{padding:.85rem 1rem 2rem;caret-color:#f8fafc}
+      .codemirror-host .cm-focused{outline:2px solid rgba(56,189,248,.55);outline-offset:-2px}
+      .codemirror-host .cm-gutters{
+        background:#111827;
+        color:#64748b;
+        border-right:1px solid rgba(148,163,184,.18);
+      }
+      .codemirror-host .cm-activeLineGutter,
+      .codemirror-host .cm-activeLine{background:rgba(56,189,248,.08)}
+      .codemirror-host .cm-selectionBackground{background:rgba(56,189,248,.25)!important}
+      .codemirror-host.cm-disabled{opacity:.72;filter:saturate(.7);pointer-events:none}
+      .codemirror-source-hidden{display:none!important}
+      .cm-workbench-toolbar{
+        display:grid;
+        grid-template-columns:minmax(160px,1fr) repeat(4,36px) auto auto;
+        align-items:center;
+        gap:.38rem;
+        padding:.45rem .55rem;
+        border-bottom:1px solid rgba(148,163,184,.22);
+        background:#111827;
+        font:600 .7rem/1.2 "Inter",sans-serif;
+      }
+      .cm-workbench-search{position:relative;min-width:0}
+      .cm-workbench-search i{
+        position:absolute;
+        left:.58rem;
+        top:50%;
+        color:#64748b;
+        transform:translateY(-50%);
+        pointer-events:none;
+      }
+      .cm-workbench-search input{
+        width:100%;
+        min-width:0;
+        height:34px;
+        padding:.38rem .55rem .38rem 1.8rem;
+        border:1px solid rgba(148,163,184,.32);
+        border-radius:5px;
+        background:#0f172a;
+        color:#e2e8f0;
+        font:inherit;
+      }
+      .cm-workbench-toolbar button,
+      .cm-workbench-toolbar select{
+        height:34px;
+        border:1px solid rgba(148,163,184,.3);
+        border-radius:5px;
+        background:#1e293b;
+        color:#cbd5e1;
+        cursor:pointer;
+      }
+      .cm-workbench-toolbar button{display:grid;place-items:center;width:36px;padding:0}
+      .cm-workbench-toolbar button:hover,
+      .cm-workbench-toolbar button[aria-pressed="true"]{
+        border-color:#38bdf8;
+        background:#075985;
+        color:#fff;
+      }
+      .cm-workbench-toolbar select{max-width:118px;padding:0 .45rem}
+      .cm-workbench-position{color:#7dd3fc;white-space:nowrap;font-variant-numeric:tabular-nums}
+      .cm-workbench-status{grid-column:1/-1;min-height:0;color:#94a3b8;font-size:.64rem}
+      .cm-workbench-status:empty{display:none}
+      .cm-author-teacher{background:rgba(34,197,94,.16);border-bottom:1px solid rgba(74,222,128,.65)}
+      .cm-author-student{background:rgba(59,130,246,.16);border-bottom:1px solid rgba(96,165,250,.65)}
+      .cm-author-base{background:transparent}
+      .cm-remote-cursors{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden}
+      .cm-remote-cursor{
+        position:absolute;
+        width:2px;
+        height:1.45em;
+        border-radius:2px;
+        background:#fbbf24;
+        box-shadow:0 0 0 1px rgba(251,191,36,.2);
+      }
+      .cm-remote-cursor.student{background:#60a5fa}
+      .cm-remote-cursor.teacher{background:#4ade80}
+      .cm-remote-cursor-label{
+        position:absolute;
+        left:4px;
+        top:-1.1em;
+        padding:.1rem .25rem;
+        border-radius:3px;
+        background:rgba(15,23,42,.94);
+        color:#e2e8f0;
+        font:600 .58rem/1.2 Inter,sans-serif;
+        white-space:nowrap;
+      }
+      @media(max-width:720px){
+        .codemirror-host,.codemirror-host .cm-editor,.codemirror-host .cm-scroller{min-height:230px}
+        .cm-workbench-toolbar{grid-template-columns:minmax(0,1fr) repeat(4,36px)}
+        .cm-workbench-toolbar select{max-width:none}
+        .cm-workbench-toolbar select,.cm-workbench-position{grid-column:1/-1}
+      }
+
       .console-output {
         background: #000;
         color: #10b981;
@@ -2824,10 +2936,47 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, collectionGroup, onSnapshot, getDocs, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, collectionGroup, query, orderBy, limit, onSnapshot, getDocs, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
       import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
       import { getAI, getTemplateGenerativeModel, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
       import * as Y from "https://cdn.jsdelivr.net/npm/yjs@13.6.31/+esm";
+      import {
+        Compartment,
+        Decoration,
+        EditorState,
+        EditorView,
+        keymap,
+        lineNumbers,
+        highlightActiveLine,
+        drawSelection,
+        defaultKeymap,
+        indentWithTab,
+        javascript,
+        closeBrackets,
+        closeBracketsKeymap,
+        autocompletion,
+        completionKeymap,
+        startCompletion
+      } from "./codemirror-bundle.js?v=20260905-1";
+
+      window.CodeMirror6 = {
+        Compartment,
+        Decoration,
+        EditorState,
+        EditorView,
+        keymap,
+        lineNumbers,
+        highlightActiveLine,
+        drawSelection,
+        defaultKeymap,
+        indentWithTab,
+        javascript,
+        closeBrackets,
+        closeBracketsKeymap,
+        autocompletion,
+        completionKeymap,
+        startCompletion
+      };
 
       // ============================================================
       // PEGA AQUÍ LA CONFIGURACIÓN DE TU PROYECTO FIREBASE
@@ -3385,8 +3534,9 @@
           const colaboracion = datos.colaboracionDocente || {};
           if (colaboracion.sectionId && typeof colaboracion.codigo === "string") {
             const editorColaborativo = document.getElementById(`editor-${colaboracion.sectionId}`);
-            if (editorColaborativo && editorColaborativo.dataset.crdtActivo !== "true" && document.activeElement !== editorColaborativo && editorColaborativo.value !== colaboracion.codigo) {
+            if (editorColaborativo && editorColaborativo.dataset.crdtActivo !== "true" && document.activeElement !== editorColaborativo && !editorColaborativo.__codeMirrorView?.hasFocus && editorColaborativo.value !== colaboracion.codigo) {
               editorColaborativo.value = colaboracion.codigo;
+              editorColaborativo.__syncCodeMirror?.(colaboracion.codigo);
               setLocalStorage(`draft_editor-${colaboracion.sectionId}`, colaboracion.codigo);
               if (typeof actualizarMetricasEditor === "function") actualizarMetricasEditor(colaboracion.sectionId);
               if (typeof actualizarEstadoEditorEstudiante === "function") actualizarEstadoEditorEstudiante(colaboracion.sectionId, "saved", `Actualizado por ${colaboracion.actualizadoPor || "docente"}`);
@@ -4194,6 +4344,7 @@
         textarea.addEventListener("input", aplicarLocal);
         textarea.addEventListener("keyup", actualizarCursor);
         textarea.addEventListener("click", actualizarCursor);
+        textarea.addEventListener("cm-selection-change", actualizarCursor);
         sesion.texto.observe(aplicarRemoto);
         const quitarEstado = sesion.onStatus(info => {
           if (!estadoElemento) return;
@@ -4654,6 +4805,7 @@
           textarea.removeEventListener("input", aplicarLocal);
           textarea.removeEventListener("keyup", actualizarCursor);
           textarea.removeEventListener("click", actualizarCursor);
+          textarea.removeEventListener("cm-selection-change", actualizarCursor);
           sesion.texto.unobserve(aplicarRemoto);
           quitarEstado();
           quitarPresencia();
@@ -9801,7 +9953,7 @@
                                   <div class="editor-container">
                                       <div class="editor-header">
                                           <span><i class="fa-solid fa-file-code"></i> Editor JavaScript</span>
-                                          <span>ES6</span>
+                                          <span title="Editor profesional con resaltado, autocompletado y números de línea">CodeMirror 6 · JavaScript</span>
                                       </div>
                                       <label class="sr-only" for="editor-${sec.id}">Código para ${sec.title}</label>
                                       <textarea id="editor-${sec.id}" class="code-editor" aria-label="Código para ${sec.title}" spellcheck="false" autocapitalize="off" autocomplete="off" ${isFinalized ? 'disabled' : ''}>${savedCode}</textarea>
@@ -12310,8 +12462,339 @@
           return texto;
       }
 
+      function inicializarEditorCodeMirror(textarea) {
+          if (!textarea || textarea.__codeMirrorView) return textarea?.__codeMirrorView || null;
+          const CM = window.CodeMirror6;
+          if (!CM) return null;
+          const {
+              Compartment,
+              Decoration,
+              EditorState,
+              EditorView,
+              keymap,
+              lineNumbers,
+              highlightActiveLine,
+              drawSelection,
+              defaultKeymap,
+              indentWithTab,
+              javascript,
+              closeBrackets,
+              closeBracketsKeymap,
+              autocompletion,
+              completionKeymap,
+              startCompletion
+          } = CM;
+
+          const host = document.createElement("div");
+          host.className = "codemirror-host";
+          textarea.parentNode.insertBefore(host, textarea);
+          textarea.classList.add("codemirror-source-hidden");
+
+          const barra = document.createElement("div");
+          barra.className = "cm-workbench-toolbar";
+          barra.setAttribute("role", "toolbar");
+          barra.setAttribute("aria-label", "Herramientas del editor de código");
+          barra.innerHTML = `
+              <label class="cm-workbench-search">
+                  <span class="sr-only">Buscar en el código</span>
+                  <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                  <input type="search" placeholder="Buscar en el código" autocomplete="off">
+              </label>
+              <button type="button" data-cm-find title="Buscar siguiente" aria-label="Buscar siguiente"><i class="fa-solid fa-arrow-down"></i></button>
+              <button type="button" data-cm-replace title="Reemplazar selección" aria-label="Reemplazar selección"><i class="fa-solid fa-arrow-right-arrow-left"></i></button>
+              <button type="button" data-cm-undo title="Deshacer" aria-label="Deshacer"><i class="fa-solid fa-rotate-left"></i></button>
+              <button type="button" data-cm-redo title="Rehacer" aria-label="Rehacer"><i class="fa-solid fa-rotate-right"></i></button>
+              <button type="button" data-cm-complete title="Mostrar sugerencias (Ctrl+Espacio)" aria-label="Mostrar sugerencias"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+              <select data-cm-font aria-label="Tamaño de fuente">
+                  <option value=".8rem">Pequeña</option>
+                  <option value=".9rem" selected>Normal</option>
+                  <option value="1rem">Grande</option>
+                  <option value="1.1rem">Muy grande</option>
+              </select>
+              <button type="button" data-cm-wrap title="Ajustar líneas largas" aria-label="Ajustar líneas largas" aria-pressed="false"><i class="fa-solid fa-align-left"></i></button>
+              <span class="cm-workbench-position" aria-live="polite">Línea 1, columna 1</span>
+              <span class="cm-workbench-status" aria-live="polite"></span>`;
+          host.appendChild(barra);
+
+          const cursores = document.createElement("div");
+          cursores.className = "cm-remote-cursors";
+          host.appendChild(cursores);
+
+          let sincronizando = false;
+          let restaurandoHistorial = false;
+          let ultimoGrupoHistorial = 0;
+          const historialDeshacer = [];
+          const historialRehacer = [];
+          const ajusteLineas = new Compartment();
+          const autoriasCodigo = new Compartment();
+          const posicionCursor = barra.querySelector(".cm-workbench-position");
+          const estadoHerramientas = barra.querySelector(".cm-workbench-status");
+
+          const actualizarPosicion = estado => {
+              const cabeza = estado.selection.main.head;
+              const linea = estado.doc.lineAt(cabeza);
+              posicionCursor.textContent = `Línea ${linea.number}, columna ${cabeza - linea.from + 1}`;
+          };
+
+          let view;
+          const reemplazarDocumento = (valor, conservarHistorial = true) => {
+              const siguiente = String(valor || "");
+              if (!view || view.state.doc.toString() === siguiente) return;
+              if (!conservarHistorial) sincronizando = true;
+              view.dispatch({
+                  changes: { from: 0, to: view.state.doc.length, insert: siguiente },
+                  selection: { anchor: Math.min(siguiente.length, textarea.selectionStart || 0) }
+              });
+              sincronizando = false;
+          };
+
+          const deshacer = () => {
+              const anterior = historialDeshacer.pop();
+              if (anterior === undefined) {
+                  estadoHerramientas.textContent = "No hay más cambios para deshacer.";
+                  return true;
+              }
+              historialRehacer.push(view.state.doc.toString());
+              restaurandoHistorial = true;
+              reemplazarDocumento(anterior);
+              restaurandoHistorial = false;
+              estadoHerramientas.textContent = "Cambio deshecho.";
+              return true;
+          };
+
+          const rehacer = () => {
+              const siguiente = historialRehacer.pop();
+              if (siguiente === undefined) {
+                  estadoHerramientas.textContent = "No hay cambios para rehacer.";
+                  return true;
+              }
+              historialDeshacer.push(view.state.doc.toString());
+              restaurandoHistorial = true;
+              reemplazarDocumento(siguiente);
+              restaurandoHistorial = false;
+              estadoHerramientas.textContent = "Cambio rehecho.";
+              return true;
+          };
+
+          const atajos = keymap.of([
+              { key: "Mod-z", run: deshacer },
+              { key: "Mod-Shift-z", run: rehacer },
+              { key: "Mod-y", run: rehacer },
+              { key: "Mod-s", run: () => { window.guardarAhoraFirebase?.(); return true; } },
+              { key: "Mod-Enter", run: () => { window.ejecutarCodigo?.(textarea.id.replace("editor-", "")); return true; } },
+              ...defaultKeymap,
+              ...closeBracketsKeymap,
+              ...completionKeymap,
+              indentWithTab
+          ]);
+
+          try {
+              view = new EditorView({
+                  state: EditorState.create({
+                      doc: textarea.value || "",
+                      extensions: [
+                          lineNumbers(),
+                          javascript(),
+                          closeBrackets(),
+                          autocompletion(),
+                          highlightActiveLine(),
+                          drawSelection(),
+                          ajusteLineas.of([]),
+                          autoriasCodigo.of([]),
+                          atajos,
+                          EditorView.domEventHandlers({
+                              focus: () => {
+                                  textarea.dispatchEvent(new Event("click", { bubbles: true }));
+                                  return false;
+                              },
+                              paste: evento => {
+                                  evento.preventDefault();
+                                  alert("Pegado deshabilitado por seguridad.");
+                                  return true;
+                              },
+                              copy: evento => { evento.preventDefault(); return true; },
+                              cut: evento => { evento.preventDefault(); return true; }
+                          }),
+                          EditorView.updateListener.of(update => {
+                              if (update.docChanged && !sincronizando) {
+                                  const ahora = Date.now();
+                                  const anterior = update.startState.doc.toString();
+                                  if (!restaurandoHistorial) {
+                                      if (!historialDeshacer.length || ahora - ultimoGrupoHistorial > 700) {
+                                          historialDeshacer.push(anterior);
+                                          if (historialDeshacer.length > 100) historialDeshacer.shift();
+                                      }
+                                      historialRehacer.length = 0;
+                                      ultimoGrupoHistorial = ahora;
+                                  }
+                                  textarea.value = update.state.doc.toString();
+                                  textarea.dispatchEvent(new Event("input", { bubbles: true }));
+                              }
+                              if (update.selectionSet) {
+                                  const seleccion = update.state.selection.main;
+                                  textarea.setSelectionRange(seleccion.from, seleccion.to);
+                                  textarea.dispatchEvent(new Event("cm-selection-change"));
+                              }
+                              if (update.selectionSet || update.docChanged) actualizarPosicion(update.state);
+                          })
+                      ]
+                  }),
+                  parent: host
+              });
+          } catch (error) {
+              console.warn("CodeMirror no pudo iniciarse; se mantiene el editor compatible.", error);
+              host.remove();
+              textarea.classList.remove("codemirror-source-hidden");
+              return null;
+          }
+
+          textarea.__codeMirrorView = view;
+          textarea.__codeMirrorHost = host;
+          textarea.__syncCodeMirror = valor => reemplazarDocumento(valor, false);
+          textarea.__getCodeMirrorSelection = () => ({
+              inicio: view.state.selection.main.from,
+              fin: view.state.selection.main.to
+          });
+          textarea.__getCodeMirrorSelectedText = () => {
+              const seleccion = view.state.selection.main;
+              return view.state.sliceDoc(seleccion.from, seleccion.to);
+          };
+          textarea.__setCodeMirrorDisabled = deshabilitado => {
+              const bloqueado = Boolean(deshabilitado);
+              host.classList.toggle("cm-disabled", bloqueado);
+              host.setAttribute("aria-disabled", String(bloqueado));
+              view.contentDOM.contentEditable = bloqueado ? "false" : "true";
+              view.contentDOM.tabIndex = bloqueado ? -1 : 0;
+              if (bloqueado && view.hasFocus) view.contentDOM.blur();
+          };
+          textarea.__renderAuthorDecorations = fragmentos => {
+              let posicion = 0;
+              const limite = view.state.doc.length;
+              const rangos = [];
+              (Array.isArray(fragmentos) ? fragmentos : []).forEach(fragmento => {
+                  const texto = typeof fragmento?.insert === "string" ? fragmento.insert : String(fragmento?.insert || "");
+                  const inicio = Math.min(limite, posicion);
+                  posicion += texto.length;
+                  const fin = Math.min(limite, posicion);
+                  if (fin <= inicio) return;
+                  const rol = fragmento?.attributes?.autorRol;
+                  const clase = rol === "docente" ? "cm-author-teacher" : rol === "estudiante" ? "cm-author-student" : "cm-author-base";
+                  rangos.push(Decoration.mark({ class: clase }).range(inicio, fin));
+              });
+              view.dispatch({
+                  effects: autoriasCodigo.reconfigure(EditorView.decorations.of(Decoration.set(rangos, true)))
+              });
+          };
+          textarea.__renderRemoteCursors = participantes => {
+              textarea.__remoteCursorParticipants = Array.isArray(participantes) ? participantes : [];
+              cursores.replaceChildren();
+              const propio = window.firebaseTeacherUser?.uid || window.firebaseCurrentUser?.uid;
+              textarea.__remoteCursorParticipants
+                  .filter(item => item?.autorUid && item.autorUid !== propio)
+                  .forEach(item => {
+                      const posicion = Math.max(0, Math.min(view.state.doc.length, Number(item.cursorInicio) || 0));
+                      const coordenadas = view.coordsAtPos(posicion);
+                      if (!coordenadas) return;
+                      const rect = host.getBoundingClientRect();
+                      const marcador = document.createElement("span");
+                      marcador.className = `cm-remote-cursor ${item.rol === "docente" ? "teacher" : "student"}`;
+                      marcador.style.left = `${coordenadas.left - rect.left}px`;
+                      marcador.style.top = `${coordenadas.top - rect.top}px`;
+                      const etiqueta = document.createElement("span");
+                      etiqueta.className = "cm-remote-cursor-label";
+                      etiqueta.textContent = item.nombre || (item.rol === "docente" ? "Docente" : "Estudiante");
+                      marcador.appendChild(etiqueta);
+                      cursores.appendChild(marcador);
+                  });
+          };
+
+          textarea.addEventListener("input", () => {
+              if (!sincronizando && view.state.doc.toString() !== textarea.value) {
+                  textarea.__syncCodeMirror(textarea.value);
+              }
+          });
+          textarea.addEventListener("crdt-remote-change", () => {
+              textarea.__syncCodeMirror(textarea.value);
+              textarea.__renderRemoteCursors(textarea.__remoteCursorParticipants || []);
+          });
+          view.scrollDOM.addEventListener("scroll", () => {
+              textarea.__renderRemoteCursors(textarea.__remoteCursorParticipants || []);
+          }, { passive: true });
+
+          const observadorBloqueo = new MutationObserver(() => textarea.__setCodeMirrorDisabled(textarea.disabled));
+          observadorBloqueo.observe(textarea, { attributes: true, attributeFilter: ["disabled"] });
+          textarea.__codeMirrorObserver = observadorBloqueo;
+          textarea.focus = () => view.focus();
+
+          const campoBusqueda = barra.querySelector("input[type=search]");
+          const buscarSiguiente = () => {
+              const termino = campoBusqueda.value;
+              if (!termino) {
+                  estadoHerramientas.textContent = "Escribí un texto para buscar.";
+                  campoBusqueda.focus();
+                  return false;
+              }
+              const documento = view.state.doc.toString();
+              let posicion = documento.indexOf(termino, view.state.selection.main.to);
+              if (posicion < 0) posicion = documento.indexOf(termino);
+              if (posicion < 0) {
+                  estadoHerramientas.textContent = `No se encontró “${termino}”.`;
+                  return false;
+              }
+              const coincidencias = documento.split(termino).length - 1;
+              view.dispatch({ selection: { anchor: posicion, head: posicion + termino.length }, scrollIntoView: true });
+              view.focus();
+              estadoHerramientas.textContent = `${coincidencias} coincidencia${coincidencias === 1 ? "" : "s"}.`;
+              return true;
+          };
+          barra.querySelector("[data-cm-find]").onclick = buscarSiguiente;
+          campoBusqueda.addEventListener("keydown", evento => {
+              if (evento.key === "Enter") { evento.preventDefault(); buscarSiguiente(); }
+              if (evento.key === "Escape") {
+                  campoBusqueda.value = "";
+                  estadoHerramientas.textContent = "";
+                  view.focus();
+              }
+          });
+          barra.querySelector("[data-cm-replace]").onclick = () => {
+              const termino = campoBusqueda.value;
+              if (!termino) {
+                  estadoHerramientas.textContent = "Buscá primero el texto que querés reemplazar.";
+                  campoBusqueda.focus();
+                  return;
+              }
+              const seleccion = view.state.selection.main;
+              if (view.state.sliceDoc(seleccion.from, seleccion.to) !== termino && !buscarSiguiente()) return;
+              const reemplazo = prompt(`Reemplazar “${termino}” por:`, "");
+              if (reemplazo === null) return;
+              const rango = view.state.selection.main;
+              view.dispatch({
+                  changes: { from: rango.from, to: rango.to, insert: reemplazo },
+                  selection: { anchor: rango.from + reemplazo.length }
+              });
+              view.focus();
+              estadoHerramientas.textContent = "Coincidencia reemplazada.";
+          };
+          barra.querySelector("[data-cm-undo]").onclick = deshacer;
+          barra.querySelector("[data-cm-redo]").onclick = rehacer;
+          barra.querySelector("[data-cm-complete]").onclick = () => { view.focus(); startCompletion(view); };
+          barra.querySelector("[data-cm-font]").onchange = evento => host.style.setProperty("--cm-font-size", evento.target.value);
+          barra.querySelector("[data-cm-wrap]").onclick = evento => {
+              const activo = evento.currentTarget.getAttribute("aria-pressed") !== "true";
+              evento.currentTarget.setAttribute("aria-pressed", String(activo));
+              view.dispatch({ effects: ajusteLineas.reconfigure(activo ? EditorView.lineWrapping : []) });
+              view.focus();
+          };
+
+          textarea.__setCodeMirrorDisabled(textarea.disabled);
+          actualizarPosicion(view.state);
+          return view;
+      }
+      window.inicializarEditorCodeMirror = inicializarEditorCodeMirror;
+
       function configurarEditores() {
           document.querySelectorAll('.code-editor').forEach(textarea => {
+              inicializarEditorCodeMirror(textarea);
               const sectionIdInicial = textarea.id.replace('editor-', '');
               actualizarMetricasEditor(sectionIdInicial);
               textarea.addEventListener('click', (e) => {
