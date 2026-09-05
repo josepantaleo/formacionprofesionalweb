@@ -4281,6 +4281,84 @@
           });
           if (abierto) chatMensajes.scrollTop = chatMensajes.scrollHeight;
         };
+        const iniciarMensajes = () => {
+          if (detenerMensajes) return;
+          mostrarEstadoChat("Conectando mensajes…", "is-sending");
+          detenerMensajes = sesion.escucharMensajes((mensajes, error) => {
+            if (error) {
+              mostrarEstadoChat("No se pudieron cargar los mensajes", "is-error");
+              return;
+            }
+            mostrarEstadoChat("Mensajes sincronizados");
+            renderizarMensajes(mensajes);
+          });
+        };
+        const alternarChat = () => {
+          const abrir = chatBody.hidden;
+          chatBody.hidden = !abrir;
+          chatToggle.setAttribute("aria-expanded", String(abrir));
+          chatChevron.className = `fa-solid ${abrir ? "fa-chevron-up" : "fa-chevron-down"}`;
+          if (abrir) {
+            cantidadNoLeidos = 0;
+            actualizarNoLeidos();
+            iniciarMensajes();
+            setTimeout(() => {
+              chatMensajes.scrollTop = chatMensajes.scrollHeight;
+              chatEntrada.focus({ preventScroll: true });
+            }, 0);
+          }
+        };
+        chatToggle.addEventListener("click", alternarChat);
+
+        const respuestasRapidas = sesion.rol === "docente"
+          ? ["Revisá esta línea", "Probá nuevamente", "Está correcto", "Explicame esta parte"]
+          : ["Necesito ayuda", "Ya lo corregí", "¿Está bien así?", "No entiendo el error"];
+        respuestasRapidas.forEach(textoRapido => {
+          const boton = document.createElement("button");
+          boton.type = "button";
+          boton.textContent = textoRapido;
+          boton.addEventListener("click", () => {
+            chatEntrada.value = textoRapido;
+            chatEntrada.dispatchEvent(new Event("input"));
+            chatEntrada.focus();
+          });
+          chatRapidos.appendChild(boton);
+        });
+        chatEntrada.addEventListener("input", () => {
+          chatContador.textContent = `${chatEntrada.value.length}/600`;
+        });
+        chatEntrada.addEventListener("keydown", evento => {
+          if (evento.key === "Enter" && !evento.shiftKey) {
+            evento.preventDefault();
+            chatFormulario.requestSubmit();
+          }
+        });
+        chatFormulario.addEventListener("submit", async evento => {
+          evento.preventDefault();
+          const contenido = chatEntrada.value.trim();
+          if (!contenido || chatEnviar.disabled) return;
+          if (Date.now() - ultimoEnvioMensaje < 800) {
+            mostrarEstadoChat("Esperá un momento antes de enviar otro mensaje", "is-error");
+            return;
+          }
+          ultimoEnvioMensaje = Date.now();
+          chatEnviar.disabled = true;
+          chatEntrada.disabled = true;
+          mostrarEstadoChat("Enviando…", "is-sending");
+          try {
+            await sesion.enviarMensaje(contenido);
+            chatEntrada.value = "";
+            chatContador.textContent = "0/600";
+            mostrarEstadoChat("Mensaje enviado");
+          } catch (error) {
+            console.error("No se pudo enviar el mensaje colaborativo:", error);
+            mostrarEstadoChat("No se pudo enviar. Intentá nuevamente.", "is-error");
+          } finally {
+            chatEnviar.disabled = false;
+            chatEntrada.disabled = false;
+            chatEntrada.focus();
+          }
+        });
         const desvincular = () => {
           clearTimeout(temporizadorPresencia);
           clearTimeout(temporizadorAutorCambio);
@@ -4295,6 +4373,8 @@
           autorCambioElemento.remove();
           quitarHistorial();
           historialElemento.remove();
+          if (detenerMensajes) detenerMensajes();
+          chatElemento.remove();
           delete textarea.__desvincularCRDT;
         };
         textarea.__desvincularCRDT = desvincular;
