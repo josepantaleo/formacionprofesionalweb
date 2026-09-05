@@ -1822,6 +1822,28 @@
         display: block;
         margin-bottom: .2rem;
       }
+      .teacher-tab-review-compact > summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .6rem;
+      }
+      .teacher-tab-review-compact > summary small {
+        color: var(--text-muted);
+        font-size: .72rem;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .teacher-tab-review-compact .teacher-activity-content {
+        padding: .65rem;
+      }
+      .teacher-tab-review-compact .teacher-question {
+        padding: .5rem .6rem;
+        margin-bottom: .4rem;
+      }
+      .teacher-tab-review-compact .teacher-question:last-child {
+        margin-bottom: 0;
+      }
       .teacher-lock-badge {
         display: inline-flex;
         align-items: center;
@@ -12809,7 +12831,7 @@
               return `<details class="teacher-activity" data-section-id="${sec.id}" data-detail-status="${estadoDetalleFinal}"
                   data-detail-search="${escapeHtml(`${sec.title} ${estado} ${estadoDetalleFinal}`.toLowerCase())}"
                   data-detail-grade="${notaFinal === null ? '' : Number(notaFinal)}"
-                  data-detail-priority="${prioridadDetalle}" data-detail-order="${numero}" ${numero === 0 ? 'open' : ''}>
+                  data-detail-priority="${prioridadDetalle}" data-detail-order="${numero}">
                   <summary>
                       <span class="teacher-activity-summary-main">
                           <strong>${escapeHtml(sec.title)}</strong>
@@ -13066,7 +13088,7 @@
               </div>
               ${resumenConsultasHtml}
               ${renderResumenAyudasComprensionProfesor(d)}
-              <details class="teacher-activity" open>
+              <details class="teacher-activity">
                   <summary>Cómo se calculó el promedio académico</summary>
                   <div class="teacher-activity-content">
                       <p><strong>Fórmula:</strong> suma de las notas vigentes evaluadas ÷ cantidad de actividades evaluadas. Las correcciones docentes reemplazan a la nota automática.</p>
@@ -13076,8 +13098,8 @@
                       <p style="margin-top:.7rem;color:var(--text-muted);">Las actividades sin nota automática ni corrección docente no forman parte del promedio.</p>
                   </div>
               </details>
-              <details class="teacher-activity" open>
-                  <summary>Registro de cambios de pestaña y revisión docente</summary>
+              <details class="teacher-activity teacher-tab-review-compact">
+                  <summary>Registro de cambios de pestaña y revisión docente <small>${eventos.length} evento${eventos.length === 1 ? '' : 's'} · ${revision.estado || 'pendiente'}</small></summary>
                   <div class="teacher-activity-content">
                       <p style="color:var(--text-muted);margin-bottom:.7rem;">Estos eventos son indicadores para revisión; no constituyen por sí solos una prueba de fraude.</p>
                       <button class="btn btn-danger" style="margin-bottom:.8rem" onclick="reiniciarSalidasEstudianteProfesor(${indice})">
