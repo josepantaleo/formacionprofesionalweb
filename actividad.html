@@ -2122,6 +2122,38 @@
       .collaboration-chat-message.is-teacher .collaboration-chat-message-head {
         color: #86efac;
       }
+      .collaboration-chat-message-status {
+        display: inline-flex;
+        align-items: center;
+        gap: .22rem;
+        margin-top: .28rem;
+        color: var(--text-muted);
+        font-size: .6rem;
+      }
+      .collaboration-chat-message-status.is-read {
+        color: #7dd3fc;
+      }
+      .collaboration-chat-quote {
+        margin-bottom: .38rem;
+        padding: .38rem .45rem;
+        border-left: 3px solid #3b82f6;
+        border-radius: 3px;
+        background: rgba(2,6,23,.48);
+        color: #bfdbfe;
+        font: .64rem/1.35 "Fira Code", monospace;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .collaboration-chat-message.is-teacher .collaboration-chat-quote {
+        border-left-color: #22c55e;
+        color: #bbf7d0;
+      }
+      .collaboration-chat-quote strong {
+        display: block;
+        margin-bottom: .16rem;
+        font-family: "Inter", sans-serif;
+        color: inherit;
+      }
       .collaboration-chat-quick {
         display: flex;
         flex-wrap: wrap;
@@ -2143,6 +2175,63 @@
         gap: .45rem;
         padding: .55rem .65rem;
         border-top: 1px solid rgba(148,163,184,.2);
+      }
+      .collaboration-chat-citation {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: .45rem;
+        margin: 0 .65rem .45rem;
+        padding: .42rem .5rem;
+        border: 1px solid rgba(56,189,248,.32);
+        border-radius: 5px;
+        background: rgba(14,165,233,.08);
+        color: #bae6fd;
+        font-size: .65rem;
+      }
+      .collaboration-chat-citation[hidden] {
+        display: none;
+      }
+      .collaboration-chat-citation code {
+        display: block;
+        max-height: 58px;
+        margin-top: .2rem;
+        overflow: auto;
+        color: #e0f2fe;
+        white-space: pre-wrap;
+      }
+      .collaboration-chat-citation button,
+      .collaboration-chat-tool {
+        border: 1px solid rgba(148,163,184,.28);
+        border-radius: 5px;
+        background: rgba(30,41,59,.8);
+        color: #cbd5e1;
+        cursor: pointer;
+      }
+      .collaboration-chat-citation button {
+        flex: 0 0 auto;
+        width: 1.7rem;
+        height: 1.7rem;
+      }
+      .collaboration-chat-tools {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: .35rem;
+        padding: 0 .65rem .5rem;
+      }
+      .collaboration-chat-tool {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        min-height: 1.8rem;
+        padding: .3rem .45rem;
+        font-size: .65rem;
+      }
+      .collaboration-chat-tool.is-active {
+        border-color: rgba(34,197,94,.5);
+        background: rgba(34,197,94,.12);
+        color: #86efac;
       }
       .collaboration-chat-composer textarea {
         width: 100%;
@@ -3911,15 +4000,37 @@
               error => fn([], error)
             );
           },
-          async enviarMensaje(contenido) {
+          async actualizarEstadoMensajes(mensajes = [], marcarLeidos = false) {
+            const campoEntrega = rol === "docente" ? "entregadoDocenteEn" : "entregadoEstudianteEn";
+            const campoLectura = rol === "docente" ? "leidoDocenteEn" : "leidoEstudianteEn";
+            const pendientes = mensajes.filter(mensaje =>
+              !mensaje.propio &&
+              (!mensaje[campoEntrega] || (marcarLeidos && !mensaje[campoLectura]))
+            );
+            if (!pendientes.length) return true;
+            await Promise.all(pendientes.slice(-60).map(mensaje => {
+              const cambios = {};
+              if (!mensaje[campoEntrega]) cambios[campoEntrega] = serverTimestamp();
+              if (marcarLeidos && !mensaje[campoLectura]) cambios[campoLectura] = serverTimestamp();
+              return setDoc(doc(mensajesRef, mensaje.id), cambios, { merge: true });
+            }));
+            return true;
+          },
+          async enviarMensaje(contenido, cita = null) {
             const textoMensaje = String(contenido || "").trim().slice(0, 600);
             if (!textoMensaje) return false;
             const id = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`;
+            const citaLimpia = cita && Number(cita.lineaInicio) > 0 ? {
+              lineaInicio: Math.max(1, Number(cita.lineaInicio) || 1),
+              lineaFin: Math.max(1, Number(cita.lineaFin) || Number(cita.lineaInicio) || 1),
+              texto: String(cita.texto || "").slice(0, 1200)
+            } : null;
             await setDoc(doc(mensajesRef, id), {
               id,
               uid,
               sectionId,
               texto: textoMensaje,
+              cita: citaLimpia,
               rol,
               autorUid: user.uid,
               autorNombre: user.displayName || user.email || (rol === "docente" ? "Docente" : "Estudiante"),
@@ -4205,6 +4316,18 @@
           <div class="collaboration-chat-body" hidden>
             <div class="collaboration-chat-messages" aria-live="polite"></div>
             <div class="collaboration-chat-quick"></div>
+            <div class="collaboration-chat-tools">
+              <button class="collaboration-chat-tool collaboration-chat-cite" type="button" title="Citar el texto seleccionado en el editor">
+                <i class="fa-solid fa-code"></i><span>Citar líneas</span>
+              </button>
+              <button class="collaboration-chat-tool collaboration-chat-sound" type="button" aria-pressed="false" title="Activar sonido para mensajes nuevos">
+                <i class="fa-solid fa-volume-xmark"></i><span>Sonido</span>
+              </button>
+            </div>
+            <div class="collaboration-chat-citation" hidden>
+              <div><strong></strong><code></code></div>
+              <button type="button" aria-label="Quitar cita" title="Quitar cita"><i class="fa-solid fa-xmark"></i></button>
+            </div>
             <form class="collaboration-chat-composer">
               <textarea maxlength="600" rows="2" placeholder="Escribí un mensaje sobre esta actividad…" aria-label="Mensaje de cooperación"></textarea>
               <button class="btn btn-primary collaboration-chat-send" type="submit" title="Enviar mensaje" aria-label="Enviar mensaje">
@@ -4221,6 +4344,12 @@
         const chatBody = chatElemento.querySelector(".collaboration-chat-body");
         const chatMensajes = chatElemento.querySelector(".collaboration-chat-messages");
         const chatRapidos = chatElemento.querySelector(".collaboration-chat-quick");
+        const chatCitar = chatElemento.querySelector(".collaboration-chat-cite");
+        const chatSonido = chatElemento.querySelector(".collaboration-chat-sound");
+        const chatCita = chatElemento.querySelector(".collaboration-chat-citation");
+        const chatCitaTitulo = chatCita.querySelector("strong");
+        const chatCitaCodigo = chatCita.querySelector("code");
+        const chatQuitarCita = chatCita.querySelector("button");
         const chatFormulario = chatElemento.querySelector(".collaboration-chat-composer");
         const chatEntrada = chatFormulario.querySelector("textarea");
         const chatEnviar = chatFormulario.querySelector("button");
@@ -4231,8 +4360,45 @@
         let detenerMensajes = null;
         let mensajesInicializados = false;
         let mensajesConocidos = new Set();
+        let mensajesActuales = [];
         let cantidadNoLeidos = 0;
         let ultimoEnvioMensaje = 0;
+        let citaPendiente = null;
+        let sonidoMensajesActivo = localStorage.getItem("cooperation_message_sound") === "true";
+        let contextoAudioMensajes = null;
+
+        const actualizarBotonSonido = () => {
+          chatSonido.classList.toggle("is-active", sonidoMensajesActivo);
+          chatSonido.setAttribute("aria-pressed", String(sonidoMensajesActivo));
+          chatSonido.title = sonidoMensajesActivo
+            ? "Desactivar sonido para mensajes nuevos"
+            : "Activar sonido para mensajes nuevos";
+          const icono = chatSonido.querySelector("i");
+          if (icono) icono.className = `fa-solid ${sonidoMensajesActivo ? "fa-volume-high" : "fa-volume-xmark"}`;
+        };
+        const reproducirSonidoMensaje = () => {
+          if (!sonidoMensajesActivo) return;
+          try {
+            const AudioContexto = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContexto) return;
+            contextoAudioMensajes = contextoAudioMensajes || new AudioContexto();
+            contextoAudioMensajes.resume?.();
+            const oscilador = contextoAudioMensajes.createOscillator();
+            const ganancia = contextoAudioMensajes.createGain();
+            oscilador.type = "sine";
+            oscilador.frequency.value = sesion.rol === "docente" ? 720 : 620;
+            ganancia.gain.setValueAtTime(.0001, contextoAudioMensajes.currentTime);
+            ganancia.gain.exponentialRampToValueAtTime(.12, contextoAudioMensajes.currentTime + .02);
+            ganancia.gain.exponentialRampToValueAtTime(.0001, contextoAudioMensajes.currentTime + .22);
+            oscilador.connect(ganancia);
+            ganancia.connect(contextoAudioMensajes.destination);
+            oscilador.start();
+            oscilador.stop(contextoAudioMensajes.currentTime + .24);
+          } catch (error) {
+            console.warn("No se pudo reproducir el aviso de mensaje:", error);
+          }
+        };
+        actualizarBotonSonido();
 
         const actualizarNoLeidos = () => {
           chatNoLeidos.textContent = String(cantidadNoLeidos);
@@ -4244,14 +4410,20 @@
         };
         const renderizarMensajes = mensajes => {
           const abierto = !chatBody.hidden;
+          const nuevosRemotos = mensajesInicializados
+            ? mensajes.filter(mensaje => !mensaje.propio && !mensajesConocidos.has(mensaje.id))
+            : [];
           if (mensajesInicializados && !abierto) {
-            mensajes.forEach(mensaje => {
-              if (!mensaje.propio && !mensajesConocidos.has(mensaje.id)) cantidadNoLeidos += 1;
-            });
+            cantidadNoLeidos += nuevosRemotos.length;
           }
+          if (nuevosRemotos.length) reproducirSonidoMensaje();
+          mensajesActuales = mensajes;
           mensajesConocidos = new Set(mensajes.map(mensaje => mensaje.id));
           mensajesInicializados = true;
           actualizarNoLeidos();
+          void sesion.actualizarEstadoMensajes(mensajes, abierto).catch(error => {
+            console.error("No se pudo actualizar el estado de los mensajes:", error);
+          });
           chatMensajes.replaceChildren();
           if (!mensajes.length) {
             const vacio = document.createElement("div");
@@ -4276,7 +4448,32 @@
             cabecera.append(autor, hora);
             const contenido = document.createElement("div");
             contenido.textContent = String(mensaje.texto || "");
-            elemento.append(cabecera, contenido);
+            elemento.appendChild(cabecera);
+            if (mensaje.cita?.texto) {
+              const cita = document.createElement("div");
+              cita.className = "collaboration-chat-quote";
+              const citaTitulo = document.createElement("strong");
+              const lineaInicio = Math.max(1, Number(mensaje.cita.lineaInicio) || 1);
+              const lineaFin = Math.max(lineaInicio, Number(mensaje.cita.lineaFin) || lineaInicio);
+              citaTitulo.textContent = lineaInicio === lineaFin
+                ? `Línea ${lineaInicio}`
+                : `Líneas ${lineaInicio}-${lineaFin}`;
+              const citaTexto = document.createElement("span");
+              citaTexto.textContent = String(mensaje.cita.texto || "");
+              cita.append(citaTitulo, citaTexto);
+              elemento.appendChild(cita);
+            }
+            elemento.appendChild(contenido);
+            if (mensaje.propio) {
+              const campoLeido = sesion.rol === "docente" ? "leidoEstudianteEn" : "leidoDocenteEn";
+              const campoEntregado = sesion.rol === "docente" ? "entregadoEstudianteEn" : "entregadoDocenteEn";
+              const leido = Boolean(mensaje[campoLeido]);
+              const entregado = Boolean(mensaje[campoEntregado]);
+              const estado = document.createElement("div");
+              estado.className = `collaboration-chat-message-status${leido ? " is-read" : ""}`;
+              estado.innerHTML = `<i class="fa-solid ${leido ? "fa-check-double" : entregado ? "fa-check-double" : "fa-check"}"></i><span>${leido ? "Leído" : entregado ? "Entregado" : "Enviado"}</span>`;
+              elemento.appendChild(estado);
+            }
             chatMensajes.appendChild(elemento);
           });
           if (abierto) chatMensajes.scrollTop = chatMensajes.scrollHeight;
@@ -4302,6 +4499,11 @@
             cantidadNoLeidos = 0;
             actualizarNoLeidos();
             iniciarMensajes();
+            if (mensajesActuales.length) {
+              void sesion.actualizarEstadoMensajes(mensajesActuales, true).catch(error => {
+                console.error("No se pudieron marcar los mensajes como leídos:", error);
+              });
+            }
             setTimeout(() => {
               chatMensajes.scrollTop = chatMensajes.scrollHeight;
               chatEntrada.focus({ preventScroll: true });
@@ -4309,6 +4511,50 @@
           }
         };
         chatToggle.addEventListener("click", alternarChat);
+        const limpiarCita = () => {
+          citaPendiente = null;
+          chatCita.hidden = true;
+          chatCitaTitulo.textContent = "";
+          chatCitaCodigo.textContent = "";
+        };
+        chatCitar.addEventListener("click", () => {
+          const codigo = textarea.value;
+          let inicio = Math.max(0, Number(textarea.selectionStart) || 0);
+          let fin = Math.max(inicio, Number(textarea.selectionEnd) || inicio);
+          if (inicio === fin) {
+            const inicioLinea = codigo.lastIndexOf("\n", Math.max(0, inicio - 1)) + 1;
+            const finLineaEncontrado = codigo.indexOf("\n", inicio);
+            inicio = inicioLinea;
+            fin = finLineaEncontrado === -1 ? codigo.length : finLineaEncontrado;
+          }
+          const lineaInicio = codigo.slice(0, inicio).split("\n").length;
+          const lineaFin = lineaInicio + codigo.slice(inicio, fin).split("\n").length - 1;
+          const textoCitado = codigo.slice(inicio, fin).trimEnd().slice(0, 1200);
+          if (!textoCitado) {
+            mostrarEstadoChat("Seleccioná una línea de código para citar", "is-error");
+            textarea.focus();
+            return;
+          }
+          citaPendiente = { lineaInicio, lineaFin, texto: textoCitado };
+          chatCitaTitulo.textContent = lineaInicio === lineaFin
+            ? `Citando línea ${lineaInicio}`
+            : `Citando líneas ${lineaInicio}-${lineaFin}`;
+          chatCitaCodigo.textContent = textoCitado;
+          chatCita.hidden = false;
+          chatEntrada.focus();
+        });
+        chatQuitarCita.addEventListener("click", limpiarCita);
+        chatSonido.addEventListener("click", () => {
+          sonidoMensajesActivo = !sonidoMensajesActivo;
+          localStorage.setItem("cooperation_message_sound", String(sonidoMensajesActivo));
+          actualizarBotonSonido();
+          if (sonidoMensajesActivo) {
+            reproducirSonidoMensaje();
+            mostrarEstadoChat("Sonido de mensajes activado");
+          } else {
+            mostrarEstadoChat("Sonido de mensajes desactivado");
+          }
+        });
 
         const respuestasRapidas = sesion.rol === "docente"
           ? ["Revisá esta línea", "Probá nuevamente", "Está correcto", "Explicame esta parte"]
@@ -4346,9 +4592,10 @@
           chatEntrada.disabled = true;
           mostrarEstadoChat("Enviando…", "is-sending");
           try {
-            await sesion.enviarMensaje(contenido);
+            await sesion.enviarMensaje(contenido, citaPendiente);
             chatEntrada.value = "";
             chatContador.textContent = "0/600";
+            limpiarCita();
             mostrarEstadoChat("Mensaje enviado");
           } catch (error) {
             console.error("No se pudo enviar el mensaje colaborativo:", error);
@@ -4374,6 +4621,8 @@
           quitarHistorial();
           historialElemento.remove();
           if (detenerMensajes) detenerMensajes();
+          contextoAudioMensajes?.close?.().catch?.(() => {});
+          contextoAudioMensajes = null;
           chatElemento.remove();
           delete textarea.__desvincularCRDT;
         };
