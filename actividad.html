@@ -167,6 +167,21 @@
         color: var(--text-muted);
         font-size: 0.95rem;
       }
+      .code-version-badge{
+        display:inline-flex;
+        align-items:center;
+        gap:.42rem;
+        padding:.38rem .62rem;
+        border:1px solid rgba(125,211,252,.42);
+        border-radius:999px;
+        background:rgba(14,116,144,.18);
+        color:#bae6fd;
+        font-size:.76rem;
+        font-weight:800;
+        letter-spacing:0;
+        white-space:nowrap;
+      }
+      .code-version-badge i{color:#7dd3fc}
 
       /* Indicador de cambios de pestaña */
       .antifraud-badge {
@@ -2833,6 +2848,9 @@
       const APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY = "6Ld7l5stAAAAABjs2OrNxeDMaKZ6oAGERjopw3U9";
       const FIREBASE_AI_TEMPLATE_ID = "tutor-javascript-ipem146-v1-0-0";
       const FIREBASE_AI_MODEL_NAME = "gemini-2.5-flash";
+      // Versión funcional del código que se sube y se revisa en ambos modos.
+      const VERSION_CODIGO_SUBIDO = "1.0";
+      window.VERSION_CODIGO_SUBIDO = VERSION_CODIGO_SUBIDO;
 
       const firebaseConfigured = !Object.values(firebaseConfig).some(v => String(v).includes("REEMPLAZAR_"));
       const PRIMARY_TEACHER_ADMIN_EMAIL = "ipem146centenario@gmail.com";
@@ -6457,6 +6475,9 @@
         <div
           style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap"
         >
+          <span class="code-version-badge" id="versionCodigoEstudiante" title="Versión del código subido">
+            <i class="fa-solid fa-code-branch"></i> Código subido · v1.0
+          </span>
           <div class="antifraud-badge" id="blurBadge" title="Registro de cambios de pestaña para revisión docente">
             <i class="fa-solid fa-eye"></i> Cambios de pestaña:
             <span id="blurCount">0</span>
@@ -6544,6 +6565,9 @@
             <span class="teacher-panel-heading-icon" aria-hidden="true"><i class="fa-solid fa-chalkboard-user"></i></span>
             <div><h3 id="panelProfesorTitle">Panel del Profesor</h3><p>Estudiantes y progreso sincronizados en tiempo real.</p></div>
           </div>
+          <span class="code-version-badge" id="versionCodigoDocente" title="Versión del código subido que se está revisando">
+            <i class="fa-solid fa-code-branch"></i> Código subido · v1.0
+          </span>
           <div class="teacher-panel-toolbar">
             <button class="btn btn-success" onclick="iniciarClaseDesdeInterfaz(this)"><i class="fa-solid fa-play"></i> Iniciar clase</button>
             <button class="btn btn-danger" onclick="finalizarClaseDesdeInterfaz(this)"><i class="fa-solid fa-stop"></i> Finalizar clase</button>
@@ -8960,6 +8984,7 @@
               ayudasComprension: JSON.parse(JSON.stringify(ayudasComprension || {})),
               contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
               seccionActiva: seccionActivaActual,
+              versionCodigo: VERSION_CODIGO_SUBIDO,
               versionApp: '8.0-desafios-externos-editables-ia'
           };
       }
@@ -15116,6 +15141,7 @@
           renderResumenConsultasIAGeneral(rows);
           document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
               const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
+              const versionCodigo = String(d.versionCodigo || VERSION_CODIGO_SUBIDO);
               const resumenAyudasFila = resumirAyudasComprensionEstudiante(d);
               const ayudasFilaHtml = (resumenAyudasFila.consultasPalabras || resumenAyudasFila.pasosVistos || resumenAyudasFila.verificacionesIntentadas)
                   ? `<div style="margin-top:.35rem;padding:.3rem .45rem;border-radius:5px;background:rgba(56,189,248,.11);color:#bae6fd;font-size:.7rem;line-height:1.35" title="Registro de ayudas de comprensión">
@@ -15167,7 +15193,7 @@
               const claseAcciones = conectadoFila ? 'btn-success teacher-actions-online' : 'btn-secondary';
               const tituloAcciones = conectadoFila ? 'Estudiante en línea. Abrir acciones' : 'Estudiante sin actividad reciente. Abrir acciones';
               const estadoConexionAcciones = conectadoFila ? '<span class="teacher-actions-online-label"><i class="fa-solid fa-circle"></i> En línea</span>' : '';
-          return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn ${claseAcciones} btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="${tituloAcciones}"><i class="fa-solid fa-sliders"></i><span>Acciones</span>${estadoConexionAcciones}</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td></tr>`;
+          return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn ${claseAcciones} btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="${tituloAcciones}"><i class="fa-solid fa-sliders"></i><span>Acciones</span>${estadoConexionAcciones}</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}<div class="code-version-badge" style="margin-top:.4rem;font-size:.68rem;padding:.25rem .45rem"><i class="fa-solid fa-code-branch"></i> Código v${escapeHtml(versionCodigo)}</div>${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td></tr>`;
               }).join('') || '<tr><td colspan="12" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
