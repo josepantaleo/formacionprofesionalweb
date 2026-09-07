@@ -13,8 +13,66 @@ const {
   serverTimestamp
 } = require("firebase/firestore");
 
+const projectId = "ipem146js";
+const uid = "student-1";
+const otherUid = "student-2";
+const teacherUid = "teacher-1";
+const teacherEmail = "docente@example.com";
+const sectionId = "sec-3";
+
+function updatePayload(id, rol, autorUid, autorEmail) {
+  return {
+    id,
+    uid,
+    sectionId,
+    update: "AQID",
+    clienteId: `${rol}-client`,
+    rol,
+    autorUid,
+    autorEmail,
+    creadoEn: serverTimestamp()
+  };
+}
+
+function contributionPayload(id, rol, autorUid, autorEmail, autorNombre) {
+  return {
+    id,
+    uid,
+    sectionId,
+    rol,
+    autorUid,
+    autorEmail,
+    autorNombre,
+    textoAgregado: "const total = 2;",
+    caracteresAgregados: 16,
+    caracteresEliminados: 0,
+    inicio: 0,
+    eliminado: "",
+    insertado: "const total = 2;",
+    lineaInicio: 1,
+    lineaFin: 1,
+    tipo: "edicion",
+    revierteId: "",
+    creadoMs: Date.now(),
+    creadoEn: serverTimestamp()
+  };
+}
+
+function messagePayload(id, rol, autorUid, autorNombre, texto) {
+  return {
+    id,
+    uid,
+    sectionId,
+    texto,
+    rol,
+    autorUid,
+    autorNombre,
+    creadoMs: Date.now(),
+    creadoEn: serverTimestamp()
+  };
+}
+
 async function main() {
-  const projectId = "ipem146js";
   const testEnv = await initializeTestEnvironment({
     projectId,
     firestore: {
@@ -24,149 +82,469 @@ async function main() {
     }
   });
 
-  const uid = "student-1";
-  const teacherUid = "teacher-1";
-  const teacherEmail = "docente@example.com";
+  try {
+    await testEnv.clearFirestore();
+    await testEnv.withSecurityRulesDisabled(async context => {
+      const db = context.firestore();
+      await setDoc(doc(db, "estudiantes", uid), {
+        uid,
+        email: "student@example.com",
+        estadoCuenta: "activo"
+      });
+      await setDoc(doc(db, "estudiantes", otherUid), {
+        uid: otherUid,
+        email: "other@example.com",
+        estadoCuenta: "activo"
+      });
+      await setDoc(doc(db, "docentesAutorizados", teacherEmail), {
+        email: teacherEmail,
+        activo: true
+      });
+    });
 
-  await testEnv.withSecurityRulesDisabled(async context => {
-    const db = context.firestore();
-    await setDoc(doc(db, "estudiantes", uid), {
-      uid,
+    const studentDb = testEnv.authenticatedContext(uid, {
       email: "student@example.com",
-      estadoCuenta: "activo"
-    });
-    await setDoc(doc(db, "docentesAutorizados", teacherEmail), {
+      email_verified: true
+    }).firestore();
+    const otherDb = testEnv.authenticatedContext(otherUid, {
+      email: "other@example.com",
+      email_verified: true
+    }).firestore();
+    const teacherDb = testEnv.authenticatedContext(teacherUid, {
       email: teacherEmail,
-      activo: true
-    });
-    await setDoc(doc(db, "estudiantes", uid, "comentariosDocente", "comentario-1"), {
-      texto: "Revisá la condición del if.",
-      autor: teacherEmail,
-      creadoEn: new Date()
-    });
-  });
+      email_verified: true
+    }).firestore();
+    const anonymousDb = testEnv.unauthenticatedContext().firestore();
 
-  const studentDb = testEnv.authenticatedContext(uid, {
-    email: "student@example.com",
-    email_verified: true
-  }).firestore();
-  const otherDb = testEnv.authenticatedContext("student-2", {
-    email: "other@example.com",
-    email_verified: true
-  }).firestore();
-  const teacherDb = testEnv.authenticatedContext(teacherUid, {
-    email: teacherEmail,
-    email_verified: true
-  }).firestore();
+    const metaStudentRef = doc(studentDb, "estudiantes", uid, "colaboracionCodigo", sectionId);
+    const metaTeacherRef = doc(teacherDb, "estudiantes", uid, "colaboracionCodigo", sectionId);
 
-  const metaRef = doc(studentDb, "estudiantes", uid, "colaboracionCodigo", "sec-3");
-  await assertSucceeds(setDoc(metaRef, {
-    uid,
-    sectionId: "sec-3",
-    semilla: "AQID",
-    creadoEn: serverTimestamp(),
-    creadoPor: "student@example.com",
-    actualizadoEn: serverTimestamp()
-  }));
-  await assertSucceeds(setDoc(metaRef, {
-    uid,
-    sectionId: "sec-3",
-    semilla: "AQID",
-    creadoEn: serverTimestamp(),
-    creadoPor: "student@example.com",
-    actualizadoEn: serverTimestamp(),
-    actualizadoPor: teacherEmail,
-    modoCooperacionActiva: true,
-    edicionCooperativaPausada: false
-  }, { merge: true }));
+    await assertSucceeds(setDoc(metaStudentRef, {
+      uid,
+      sectionId,
+      semilla: "AQID",
+      creadoEn: serverTimestamp(),
+      creadoPor: "student@example.com",
+      actualizadoEn: serverTimestamp()
+    }));
+    await assertFails(getDoc(doc(otherDb, "estudiantes", uid, "colaboracionCodigo", sectionId)));
+    await assertFails(getDoc(doc(anonymousDb, "estudiantes", uid, "colaboracionCodigo", sectionId)));
+    await assertSucceeds(getDoc(metaTeacherRef));
 
-  const updateStudentRef = doc(studentDb, "estudiantes", uid, "colaboracionCodigo", "sec-3", "actualizaciones", "u-student");
-  await assertSucceeds(setDoc(updateStudentRef, {
-    id: "u-student",
-    uid,
-    sectionId: "sec-3",
-    update: "AQID",
-    clienteId: "student-client",
-    rol: "estudiante",
-    autorUid: uid,
-    autorEmail: "student@example.com",
-    creadoEn: serverTimestamp()
-  }));
+    const teacherBeforeConsent = doc(
+      teacherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "actualizaciones",
+      "teacher-before-consent"
+    );
+    await assertFails(setDoc(
+      teacherBeforeConsent,
+      updatePayload("teacher-before-consent", "docente", teacherUid, teacherEmail)
+    ));
+    await assertFails(getDoc(doc(
+      teacherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "presencia",
+      "presence-before-consent"
+    )));
 
-  const updateTeacherRef = doc(teacherDb, "estudiantes", uid, "colaboracionCodigo", "sec-3", "actualizaciones", "u-teacher");
-  await assertSucceeds(setDoc(updateTeacherRef, {
-    id: "u-teacher",
-    uid,
-    sectionId: "sec-3",
-    update: "BAUG",
-    clienteId: "teacher-client",
-    rol: "docente",
-    autorUid: teacherUid,
-    autorEmail: teacherEmail,
-    creadoEn: serverTimestamp()
-  }));
+    await assertSucceeds(setDoc(metaTeacherRef, {
+      modoCooperacionActiva: true,
+      edicionCooperativaPausada: true,
+      estadoConsentimiento: "pendiente",
+      objetivoCooperacion: "Revisar el razonamiento y acordar el siguiente paso.",
+      solicitadoPor: "Docente",
+      solicitudEn: serverTimestamp(),
+      actualizadoEn: serverTimestamp(),
+      actualizadoPor: teacherEmail
+    }, { merge: true }));
 
-  const presenceStudentRef = doc(studentDb, "estudiantes", uid, "colaboracionCodigo", "sec-3", "presencia", "student-client");
-  await assertSucceeds(setDoc(presenceStudentRef, {
-    clienteId: "student-client",
-    uid,
-    sectionId: "sec-3",
-    rol: "estudiante",
-    nombre: "Estudiante",
-    autorUid: uid,
-    cursorInicio: 2,
-    cursorFin: 4,
-    escribiendo: true,
-    activoEn: serverTimestamp()
-  }));
+    await assertFails(setDoc(metaTeacherRef, {
+      modoCooperacionActiva: true,
+      edicionCooperativaPausada: false,
+      estadoConsentimiento: "aceptado",
+      actualizadoEn: serverTimestamp(),
+      actualizadoPor: teacherEmail
+    }, { merge: true }));
 
-  const messageTeacherRef = doc(teacherDb, "estudiantes", uid, "colaboracionCodigo", "sec-3", "mensajes", "m-teacher");
-  await assertSucceeds(setDoc(messageTeacherRef, {
-    id: "m-teacher",
-    uid,
-    sectionId: "sec-3",
-    texto: "Revisá la condición.",
-    rol: "docente",
-    autorUid: teacherUid,
-    autorNombre: "Docente",
-    creadoEn: serverTimestamp()
-  }));
+    await assertSucceeds(setDoc(metaStudentRef, {
+      modoCooperacionActiva: true,
+      edicionCooperativaPausada: false,
+      estadoConsentimiento: "aceptado",
+      respuestaEstudianteEn: serverTimestamp(),
+      actualizadoEn: serverTimestamp(),
+      actualizadoPor: "student@example.com"
+    }, { merge: true }));
 
-  const contributionStudentRef = doc(studentDb, "estudiantes", uid, "colaboracionCodigo", "sec-3", "historialAportes", "a-student");
-  await assertSucceeds(setDoc(contributionStudentRef, {
-    id: "a-student",
-    uid,
-    sectionId: "sec-3",
-    rol: "estudiante",
-    autorUid: uid,
-    autorNombre: "Estudiante",
-    textoAgregado: "const total = 2;",
-    caracteresAgregados: 16,
-    caracteresEliminados: 0,
-    creadoEn: serverTimestamp()
-  }));
+    await assertFails(setDoc(metaTeacherRef, {
+      modoCooperacionActiva: true,
+      edicionCooperativaPausada: true,
+      estadoConsentimiento: "pendiente",
+      objetivoCooperacion: "No debe reiniciar una cooperación ya aceptada.",
+      solicitadoPor: "Docente",
+      solicitudEn: serverTimestamp(),
+      actualizadoEn: serverTimestamp(),
+      actualizadoPor: teacherEmail
+    }, { merge: true }));
 
-  await assertSucceeds(getDoc(messageTeacherRef));
-  await assertSucceeds(getDoc(contributionStudentRef));
-  await assertFails(setDoc(doc(otherDb, "estudiantes", uid, "colaboracionCodigo", "sec-3", "mensajes", "m-other"), {
-    id: "m-other",
-    uid,
-    sectionId: "sec-3",
-    texto: "No autorizado",
-    rol: "estudiante",
-    autorUid: "student-2",
-    autorNombre: "Otro",
-    creadoEn: serverTimestamp()
-  }));
+    const studentUpdateRef = doc(
+      studentDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "actualizaciones",
+      "student-accepted"
+    );
+    const teacherUpdateRef = doc(
+      teacherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "actualizaciones",
+      "teacher-accepted"
+    );
+    await assertSucceeds(setDoc(
+      studentUpdateRef,
+      updatePayload("student-accepted", "estudiante", uid, "student@example.com")
+    ));
+    await assertSucceeds(setDoc(
+      teacherUpdateRef,
+      updatePayload("teacher-accepted", "docente", teacherUid, teacherEmail)
+    ));
 
-  await assertSucceeds(getDoc(doc(studentDb, "estudiantes", uid, "comentariosDocente", "comentario-1")));
-  await assertFails(deleteDoc(doc(studentDb, "estudiantes", uid, "comentariosDocente", "comentario-1")));
-  await assertFails(getDoc(doc(otherDb, "estudiantes", uid, "comentariosDocente", "comentario-1")));
-  await assertSucceeds(getDoc(doc(teacherDb, "estudiantes", uid, "colaboracionCodigo", "sec-3")));
+    await assertSucceeds(setDoc(metaTeacherRef, {
+      edicionCooperativaPausada: true,
+      actualizadoEn: serverTimestamp(),
+      actualizadoPor: teacherEmail
+    }, { merge: true }));
 
-  await testEnv.cleanup();
-  assert.ok(true);
-  console.log("OK: reglas CRDT y comentarios verificadas.");
+    await assertFails(setDoc(doc(
+      studentDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "actualizaciones",
+      "student-paused"
+    ), updatePayload("student-paused", "estudiante", uid, "student@example.com")));
+    await assertFails(setDoc(doc(
+      teacherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "actualizaciones",
+      "teacher-paused"
+    ), updatePayload("teacher-paused", "docente", teacherUid, teacherEmail)));
+
+    await assertSucceeds(setDoc(metaTeacherRef, {
+      edicionCooperativaPausada: false,
+      actualizadoEn: serverTimestamp(),
+      actualizadoPor: teacherEmail
+    }, { merge: true }));
+
+    const contributionStudentRef = doc(
+      studentDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "historialAportes",
+      "student-contribution"
+    );
+    await assertSucceeds(setDoc(
+      contributionStudentRef,
+      contributionPayload(
+        "student-contribution",
+        "estudiante",
+        uid,
+        "student@example.com",
+        "Estudiante"
+      )
+    ));
+    await assertFails(setDoc(doc(
+      studentDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "historialAportes",
+      "missing-author"
+    ), {
+      ...contributionPayload(
+        "missing-author",
+        "estudiante",
+        uid,
+        "student@example.com",
+        "Estudiante"
+      ),
+      autorNombre: undefined
+    }));
+
+    const presenceStudentRef = doc(
+      studentDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "presencia",
+      "student-client"
+    );
+    await assertSucceeds(setDoc(presenceStudentRef, {
+      clienteId: "student-client",
+      uid,
+      sectionId,
+      rol: "estudiante",
+      nombre: "Estudiante",
+      autorUid: uid,
+      cursorInicio: 2,
+      cursorFin: 4,
+      escribiendo: true,
+      activoEn: serverTimestamp()
+    }));
+    await assertFails(setDoc(doc(
+      otherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "presencia",
+      "student-client"
+    ), {
+      clienteId: "student-client",
+      uid,
+      sectionId,
+      rol: "estudiante",
+      nombre: "Intruso",
+      autorUid: otherUid,
+      cursorInicio: 0,
+      cursorFin: 0,
+      escribiendo: false,
+      activoEn: serverTimestamp()
+    }, { merge: true }));
+    await assertSucceeds(deleteDoc(presenceStudentRef));
+
+    const teacherMessageRef = doc(
+      teacherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "mensajes",
+      "teacher-message"
+    );
+    await assertSucceeds(setDoc(
+      teacherMessageRef,
+      messagePayload("teacher-message", "docente", teacherUid, "Docente", "Revisá la condición.")
+    ));
+    const teacherMessageStudentRef = doc(
+      studentDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "mensajes",
+      "teacher-message"
+    );
+    await assertSucceeds(setDoc(teacherMessageStudentRef, {
+      entregadoEstudianteEn: serverTimestamp()
+    }, { merge: true }));
+    await assertSucceeds(setDoc(teacherMessageStudentRef, {
+      leidoEstudianteEn: serverTimestamp()
+    }, { merge: true }));
+    await assertFails(setDoc(doc(
+      otherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "mensajes",
+      "teacher-message"
+    ), {
+      leidoEstudianteEn: serverTimestamp()
+    }, { merge: true }));
+
+    const studentMessageRef = doc(
+      studentDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "mensajes",
+      "student-message"
+    );
+    await assertSucceeds(setDoc(
+      studentMessageRef,
+      messagePayload("student-message", "estudiante", uid, "Estudiante", "¿Está bien así?")
+    ));
+    await assertSucceeds(setDoc(doc(
+      teacherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "mensajes",
+      "student-message"
+    ), {
+      entregadoDocenteEn: serverTimestamp()
+    }, { merge: true }));
+    await assertSucceeds(setDoc(doc(
+      teacherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "mensajes",
+      "student-message"
+    ), {
+      leidoDocenteEn: serverTimestamp()
+    }, { merge: true }));
+    await assertFails(deleteDoc(studentMessageRef));
+    await assertFails(deleteDoc(doc(
+      teacherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "mensajes",
+      "student-message"
+    )));
+
+    await assertSucceeds(setDoc(metaStudentRef, {
+      modoCooperacionActiva: false,
+      edicionCooperativaPausada: true,
+      estadoConsentimiento: "finalizado",
+      respuestaEstudianteEn: serverTimestamp(),
+      actualizadoEn: serverTimestamp(),
+      actualizadoPor: "student@example.com"
+    }, { merge: true }));
+    await assertFails(getDoc(presenceStudentRef));
+    await assertSucceeds(setDoc(doc(
+      studentDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "mensajes",
+      "student-reply-after-finalization"
+    ), messagePayload(
+      "student-reply-after-finalization",
+      "estudiante",
+      uid,
+      "Estudiante",
+      "Recibí el mensaje y continúo trabajando."
+    )));
+
+    await assertSucceeds(setDoc(doc(
+      studentDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "actualizaciones",
+      "student-individual"
+    ), updatePayload("student-individual", "estudiante", uid, "student@example.com")));
+    await assertFails(setDoc(doc(
+      teacherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "actualizaciones",
+      "teacher-after-withdraw"
+    ), updatePayload("teacher-after-withdraw", "docente", teacherUid, teacherEmail)));
+
+    await assertSucceeds(getDoc(contributionStudentRef));
+    await assertFails(deleteDoc(doc(
+      teacherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "historialAportes",
+      "student-contribution"
+    )));
+    await assertFails(deleteDoc(metaTeacherRef));
+
+    const rejectedSection = "sec-rejected";
+    const rejectedStudentMeta = doc(
+      studentDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      rejectedSection
+    );
+    const rejectedTeacherMeta = doc(
+      teacherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      rejectedSection
+    );
+    await assertSucceeds(setDoc(rejectedStudentMeta, {
+      uid,
+      sectionId: rejectedSection,
+      semilla: "AQID",
+      creadoEn: serverTimestamp(),
+      creadoPor: "student@example.com",
+      actualizadoEn: serverTimestamp()
+    }));
+    await assertSucceeds(setDoc(rejectedTeacherMeta, {
+      modoCooperacionActiva: true,
+      edicionCooperativaPausada: true,
+      estadoConsentimiento: "pendiente",
+      objetivoCooperacion: "Acompañar la revisión de la segunda actividad.",
+      solicitadoPor: "Docente",
+      solicitudEn: serverTimestamp(),
+      actualizadoEn: serverTimestamp(),
+      actualizadoPor: teacherEmail
+    }, { merge: true }));
+    await assertSucceeds(setDoc(rejectedStudentMeta, {
+      modoCooperacionActiva: false,
+      edicionCooperativaPausada: true,
+      estadoConsentimiento: "rechazado",
+      respuestaEstudianteEn: serverTimestamp(),
+      actualizadoEn: serverTimestamp(),
+      actualizadoPor: "student@example.com"
+    }, { merge: true }));
+    await assertSucceeds(setDoc(doc(
+      studentDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      rejectedSection,
+      "actualizaciones",
+      "student-after-reject"
+    ), {
+      ...updatePayload("student-after-reject", "estudiante", uid, "student@example.com"),
+      sectionId: rejectedSection
+    }));
+    await assertFails(setDoc(doc(
+      teacherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      rejectedSection,
+      "actualizaciones",
+      "teacher-after-reject"
+    ), {
+      ...updatePayload("teacher-after-reject", "docente", teacherUid, teacherEmail),
+      sectionId: rejectedSection
+    }));
+
+    assert.ok(true);
+    console.log("OK: consentimiento, pausa, CRDT, presencia, chat, lectura e historial verificados.");
+  } finally {
+    await testEnv.cleanup();
+  }
 }
 
 main().catch(error => {

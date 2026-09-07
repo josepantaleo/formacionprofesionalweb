@@ -494,9 +494,11 @@ function asegurarPopupMensajeCooperativoEstudiante(){
  cerrarBoton.replaceWith(contador);
  popup.querySelector("#entendidoPopupMensajeCooperativo").innerHTML='<i class="fa-solid fa-check"></i> Entendido';
  popup.querySelector("#entendidoPopupMensajeCooperativo").onclick=confirmarPopupMensajeCooperativoEstudiante;
- popup.querySelector("#abrirChatDesdePopup").onclick=()=>{
+ popup.querySelector("#abrirChatDesdePopup").onclick=async()=>{
   const sectionId=popup.dataset.sectionId;
-  if(sectionId)window.abrirChatColaborativoEstudiante?.(sectionId);
+  if(!sectionId)return;
+  await confirmarPopupMensajeCooperativoEstudiante();
+  window.abrirChatColaborativoEstudiante?.(sectionId);
  };
 }
 function mostrarPopupMensajeCooperativoEstudianteLegacy(mensaje,sectionId){
@@ -544,10 +546,25 @@ function renderPopupMensajeCooperativoPendiente(){
  popup.hidden=false;
  requestAnimationFrame(()=>popup.classList.add("active"));
 }
-function confirmarPopupMensajeCooperativoEstudiante(){
- if(!mensajesPopupCooperativoPendientes.length)return;
+async function confirmarPopupMensajeCooperativoEstudiante(){
+ const actual=mensajesPopupCooperativoPendientes[0];
+ if(!actual)return false;
+ const boton=document.getElementById("entendidoPopupMensajeCooperativo");
+ if(boton)boton.disabled=true;
+ const leido=await window.marcarMensajeChatColaborativoLeidoFirebase?.({
+  uid:window.firebaseCurrentUser?.uid,
+  sectionId:actual.sectionId,
+  mensajeId:actual.mensaje?.id,
+  rol:"estudiante"
+ });
+ if(leido!==true){
+  if(boton)boton.disabled=false;
+  return false;
+ }
  mensajesPopupCooperativoPendientes.shift();
- renderPopupMensajeCooperativoPendiente();
+  renderPopupMensajeCooperativoPendiente();
+ if(boton)boton.disabled=false;
+ return true;
 }
 function reproducirSonidoPopupCooperativo(){
  try{
@@ -671,7 +688,7 @@ function activarChatColaborativoDocente(uid,sectionId){
  const modal=document.getElementById("editorColaborativoDocenteModal"),lista=modal?.querySelector("#chatColaborativoDocenteLista"),estado=modal?.querySelector("#chatColaborativoDocenteEstado");if(!modal||!lista)return;
  if(detenerChatColaborativoDocente)detenerChatColaborativoDocente();
  estado.textContent="Chat en vivo";
- detenerChatColaborativoDocente=window.escucharChatColaborativoFirebase?.(uid,sectionId,(mensajes,error)=>{notificarMensajeColaborativo(mensajes,"docente");renderChatColaborativo(lista,mensajes,"docente",error)},{rol:"docente",marcarLeidos:()=>modal.classList.contains("active")&&!document.hidden})||null;
+ detenerChatColaborativoDocente=window.escucharChatColaborativoFirebase?.(uid,sectionId,(mensajes,error)=>{notificarMensajeColaborativo(mensajes,"docente");renderChatColaborativo(lista,mensajes,"docente",error)},{rol:"docente",marcarLeidos:()=>modal.classList.contains("active")&&!document.hidden&&document.hasFocus()})||null;
 }
 function renderHistorialAportesColaborativo(contenedor,aportes=[],error=null){
  if(!contenedor)return;
@@ -753,14 +770,30 @@ function asegurarChatColaborativoEstudiante(){
  document.body.appendChild(modal);
  const cerrar=()=>{modal.classList.remove("active");if(detenerChatColaborativoEstudiante){detenerChatColaborativoEstudiante();detenerChatColaborativoEstudiante=null;}if(detenerPresenciaChatEstudiante){detenerPresenciaChatEstudiante();detenerPresenciaChatEstudiante=null;}};
  modal.querySelector("#cerrarChatColaborativoEstudiante").onclick=cerrar;modal.onclick=e=>{if(e.target===modal)cerrar()};
-  const enviar=async()=>{const campo=modal.querySelector("#chatColaborativoEstudianteTexto"),boton=modal.querySelector("#enviarChatColaborativoEstudiante"),estado=modal.querySelector("#chatColaborativoEstudianteEstado"),texto=campo.value.trim();if(!texto)return;boton.disabled=true;const ok=await window.enviarChatColaborativoFirebase?.({uid:modal.dataset.uid,sectionId:modal.dataset.sectionId,texto,rol:"estudiante"});boton.disabled=false;if(ok){campo.value="";estado.textContent="Mensaje enviado";}else{const detalle=window.ultimoErrorChatColaborativo?.message||"Firebase rechazo la operacion";estado.textContent=`No se pudo enviar: ${detalle}`;}};
+  const enviar=async()=>{
+   const campo=modal.querySelector("#chatColaborativoEstudianteTexto"),boton=modal.querySelector("#enviarChatColaborativoEstudiante"),estado=modal.querySelector("#chatColaborativoEstudianteEstado"),texto=campo.value.trim();
+   if(!texto||boton.disabled)return;
+   boton.disabled=true;campo.disabled=true;estado.textContent="Enviando...";
+   try{
+    const enviarFirebase=window.enviarChatColaborativoFirebase;
+    if(typeof enviarFirebase!=="function")throw new Error("El chat todavía no está disponible. Recargá la página.");
+    const ok=await enviarFirebase({uid:modal.dataset.uid,sectionId:modal.dataset.sectionId,texto,rol:"estudiante"});
+    if(!ok)throw new Error(window.ultimoErrorChatColaborativo?.message||"Firebase rechazó la operación");
+    campo.value="";
+    estado.textContent="Mensaje enviado";
+   }catch(error){
+    estado.textContent=`No se pudo enviar: ${error?.message||"revisá la conexión"}`;
+   }finally{
+    boton.disabled=false;campo.disabled=false;campo.focus();
+   }
+  };
  modal.querySelector("#enviarChatColaborativoEstudiante").onclick=enviar;modal.querySelector("#chatColaborativoEstudianteTexto").addEventListener("keydown",e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey)){e.preventDefault();enviar();}});
 }
 window.abrirChatColaborativoEstudiante=function(sectionId){
  const user=window.firebaseCurrentUser;if(!user){alert("Iniciá sesión como estudiante para usar el chat.");return;}
  asegurarChatColaborativoEstudiante();const modal=document.getElementById("chatColaborativoEstudianteModal"),sec=(typeof seccionesData!=="undefined"?seccionesData:[]).find(x=>x.id===sectionId),lista=modal.querySelector("#chatColaborativoEstudianteLista"),estado=modal.querySelector("#chatColaborativoEstudianteEstado");
  modal.dataset.uid=user.uid;modal.dataset.sectionId=sectionId;modal.querySelector("#chatColaborativoEstudianteAlumno").textContent=`${sec?.title||"Desafío"} · mensajes de la sesión de cooperación`;lista.innerHTML='<p class="collab-chat-empty">Conectando el chat…</p>';estado.textContent="Chat en vivo";modal.classList.add("active");
-   if(detenerChatColaborativoEstudiante)detenerChatColaborativoEstudiante();if(detenerPresenciaChatEstudiante)detenerPresenciaChatEstudiante();detenerChatColaborativoEstudiante=window.escucharChatColaborativoFirebase?.(user.uid,sectionId,(mensajes,error)=>{notificarMensajeColaborativo(mensajes,"estudiante");renderChatColaborativo(lista,mensajes,"estudiante",error)},{rol:"estudiante",marcarLeidos:()=>modal.classList.contains("active")&&!document.hidden})||null;detenerPresenciaChatEstudiante=window.escucharPresenciaColaborativaFirebase?.(user.uid,sectionId,(participantes,error)=>renderPresenciaChatColaborativo(modal.querySelector("#chatColaborativoEstudiantePresencia"),participantes,error),{rol:"estudiante"})||null;
+   if(detenerChatColaborativoEstudiante)detenerChatColaborativoEstudiante();if(detenerPresenciaChatEstudiante)detenerPresenciaChatEstudiante();detenerChatColaborativoEstudiante=window.escucharChatColaborativoFirebase?.(user.uid,sectionId,(mensajes,error)=>{notificarMensajeColaborativo(mensajes,"estudiante");renderChatColaborativo(lista,mensajes,"estudiante",error)},{rol:"estudiante",marcarLeidos:()=>modal.classList.contains("active")&&!document.hidden&&document.hasFocus()})||null;detenerPresenciaChatEstudiante=window.escucharPresenciaColaborativaFirebase?.(user.uid,sectionId,(participantes,error)=>renderPresenciaChatColaborativo(modal.querySelector("#chatColaborativoEstudiantePresencia"),participantes,error),{rol:"estudiante"})||null;
 };
 function asegurarEditorColaborativoDocente(){
  if(document.getElementById("editorColaborativoDocenteModal"))return;
@@ -804,7 +837,29 @@ function asegurarEditorColaborativoDocente(){
  document.addEventListener("fullscreenchange",actualizarPantallaCompleta);
  cerrarBoton.addEventListener("click",()=>{if(document.fullscreenElement===caja)document.exitFullscreen().catch(()=>{});modal.classList.remove("is-pseudo-fullscreen")},{capture:true});
  window.inicializarEditorCodeMirror?.(modal.querySelector("#editorColaborativoCodigo"));
- const cerrar=async()=>{modal.classList.remove("active");const editor=modal.querySelector("#editorColaborativoCodigo");editor?.__desvincularCRDT?.();modal.__quitarPresenciaColaborativa?.();modal.__quitarModoCooperacion?.();delete modal.__quitarPresenciaColaborativa;delete modal.__quitarModoCooperacion;if(detenerChatColaborativoDocente){detenerChatColaborativoDocente();detenerChatColaborativoDocente=null;}if(detenerHistorialAportesDocente){detenerHistorialAportesDocente();detenerHistorialAportesDocente=null;}if(modal.__crdtSession){await modal.__crdtSession.destroy();modal.__crdtSession=null;}delete modal.dataset.llamadaAudioColaborativaId;};modal.querySelector("#cerrarEditorColaborativo").onclick=cerrar;modal.onclick=e=>{if(e.target===modal)cerrar()};
+ const cerrar=async()=>{
+  const editor=modal.querySelector("#editorColaborativoCodigo");
+  const estadoGuardado=modal.querySelector("#editorColaborativoGuardado");
+  if(modal.__crdtSession){
+   const cerrada=await modal.__crdtSession.destroy();
+   if(cerrada===false){
+    if(estadoGuardado){
+     estadoGuardado.textContent="No se puede cerrar: hay cambios pendientes de sincronizar";
+     estadoGuardado.className="danger";
+    }
+    return;
+   }
+   modal.__crdtSession=null;
+  }
+  modal.classList.remove("active");
+  editor?.__desvincularCRDT?.();
+  modal.__quitarPresenciaColaborativa?.();modal.__quitarModoCooperacion?.();
+  delete modal.__quitarPresenciaColaborativa;delete modal.__quitarModoCooperacion;
+  if(detenerChatColaborativoDocente){detenerChatColaborativoDocente();detenerChatColaborativoDocente=null;}
+  if(detenerHistorialAportesDocente){detenerHistorialAportesDocente();detenerHistorialAportesDocente=null;}
+  delete modal.dataset.llamadaAudioColaborativaId;
+ };
+ modal.querySelector("#cerrarEditorColaborativo").onclick=cerrar;modal.onclick=e=>{if(e.target===modal)cerrar()};
  modal.querySelector("#iniciarAudioCooperativo").onclick=async()=>{const indice=Number(modal.dataset.studentIndex);if(!Number.isInteger(indice)){alert("No se pudo identificar al estudiante para la llamada.");return;}await window.abrirJitsiDocente?.(indice,{soloAudio:true});};
  modal.querySelector("#pausarEdicionCooperativa").onclick=async()=>{const boton=modal.querySelector("#pausarEdicionCooperativa"),pausada=modal.dataset.edicionCooperativaPausada==="true";boton.disabled=true;const ok=await modal.__crdtSession?.establecerPausaCooperacion?.(!pausada);if(!ok)alert("No se pudo actualizar la pausa de edición. Revisá Firebase e intentá nuevamente.");boton.disabled=false;};
  modal.querySelector("#guardarEditorColaborativo").onclick=async()=>{const estado=modal.querySelector("#editorColaborativoGuardado"),boton=modal.querySelector("#guardarEditorColaborativo");boton.disabled=true;estado.textContent="Sincronizando...";try{const ok=await modal.__crdtSession?.flush();if(!ok)throw new Error("sync-pending");estado.textContent="Cambios sincronizados";estado.className="success"}catch{estado.textContent="Hay cambios pendientes; se reintentará automáticamente";estado.className="danger"}finally{boton.disabled=false}};
@@ -842,12 +897,16 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
  try{
   const autorizado=await window.autorizarDocenteFirebase?.();
   if(!autorizado)throw new Error("teacher-not-authorized");
+  if(modal.__crdtSession){
+   const cerrada=await modal.__crdtSession.destroy();
+   if(cerrada===false)throw new Error("Hay cambios cooperativos pendientes de sincronizar.");
+   modal.__crdtSession=null;
+  }
   editor.__desvincularCRDT?.();
   modal.__quitarPresenciaColaborativa?.();modal.__quitarModoCooperacion?.();
   delete modal.__quitarPresenciaColaborativa;delete modal.__quitarModoCooperacion;
   if(detenerChatColaborativoDocente){detenerChatColaborativoDocente();detenerChatColaborativoDocente=null;}
   if(detenerHistorialAportesDocente){detenerHistorialAportesDocente();detenerHistorialAportesDocente=null;}
-  if(modal.__crdtSession){await modal.__crdtSession.destroy();modal.__crdtSession=null;}
   estado.textContent="Conectando al documento colaborativo...";
   modal.__crdtSession=await window.iniciarEditorCRDTDocente?.({uid:d.uid,sectionId,codigoInicial:codigo,textarea:editor,estado});
    if(!modal.__crdtSession)throw new Error("crdt-session-not-created");
