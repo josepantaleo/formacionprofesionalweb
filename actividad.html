@@ -3974,9 +3974,17 @@
         const estadoListeners = new Set();
         const presenciaListeners = new Set();
         const historialListeners = new Set();
+        const modoCooperacionListeners = new Set();
         let participantesActuales = [];
         let historialCambios = [];
         let cambiosVisualesPendientes = [];
+        let modoCooperacionActual = {
+          activa: false,
+          pausada: false,
+          consentimiento: "sin_solicitud",
+          objetivo: "",
+          solicitadoPor: ""
+        };
         let cola = [];
         let temporizador = null;
         let destruida = false;
@@ -3999,13 +4007,17 @@
         const registrarCambioVisual = cambio => {
           const registro = {
             id: `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`,
-            rol,
-            autorUid: user.uid,
-            autorEmail: user.email || "",
-            inicio: Math.max(0, Number(cambio.inicio) || 0),
-            eliminado: String(cambio.eliminado || "").slice(0, 4000),
-            insertado: String(cambio.insertado || "").slice(0, 4000),
-            lineaInicio: Math.max(1, Number(cambio.lineaInicio) || 1),
+             rol,
+             autorUid: user.uid,
+             autorEmail: user.email || "",
+             autorNombre: user.displayName || user.email || (rol === "docente" ? "Docente" : "Estudiante"),
+             inicio: Math.max(0, Number(cambio.inicio) || 0),
+             eliminado: String(cambio.eliminado || "").slice(0, 4000),
+             insertado: String(cambio.insertado || "").slice(0, 4000),
+             textoAgregado: String(cambio.insertado || "").slice(0, 500),
+             caracteresAgregados: String(cambio.insertado || "").length,
+             caracteresEliminados: String(cambio.eliminado || "").length,
+             lineaInicio: Math.max(1, Number(cambio.lineaInicio) || 1),
             lineaFin: Math.max(1, Number(cambio.lineaFin) || 1),
             tipo: cambio.tipo === "reversion" ? "reversion" : "edicion",
             revierteId: String(cambio.revierteId || ""),
@@ -4049,7 +4061,7 @@
 
         const publicarCola = async () => {
           temporizador = null;
-          if (destruida || !cola.length) return;
+          if (destruida || !cola.length) return true;
           const lote = Y.mergeUpdates(cola);
           cola = [];
           const cambios = cambiosVisualesPendientes;
@@ -4073,19 +4085,21 @@
               actualizadoPor: user.email || user.uid
             }, { merge: true });
             notificar("synced", "Cambios sincronizados");
-            Promise.all(cambios.map(cambio => setDoc(doc(historialAportesRef, cambio.id), {
+             Promise.all(cambios.map(cambio => setDoc(doc(historialAportesRef, cambio.id), {
               ...cambio,
               uid,
               sectionId,
               creadoEn: serverTimestamp()
-            }))).catch(error => console.error("No se pudo guardar el historial visual del cambio:", error));
-          } catch (error) {
+             }))).catch(error => console.error("No se pudo guardar el historial visual del cambio:", error));
+             return true;
+           } catch (error) {
             console.error("No se pudo publicar la actualización CRDT:", error);
             cola.unshift(lote);
-            cambiosVisualesPendientes.unshift(...cambios);
-            notificar("error", "No se pudo sincronizar");
-          }
-        };
+             cambiosVisualesPendientes.unshift(...cambios);
+             notificar("error", "No se pudo sincronizar");
+             return false;
+           }
+         };
 
         documento.on("update", (update, origen) => {
           if (origen === ORIGEN_FIRESTORE_CRDT || origen?.tipo === "firestore-crdt" || destruida) return;
@@ -4151,6 +4165,27 @@
           error => console.error("Error escuchando el historial colaborativo:", error)
         );
 
+        const notificarModoCooperacion = datos => {
+          modoCooperacionActual = {
+            activa: datos?.modoCooperacionActiva === true,
+            pausada: datos?.edicionCooperativaPausada === true,
+            consentimiento: ["pendiente", "aceptado", "rechazado", "finalizado"].includes(datos?.estadoConsentimiento)
+              ? datos.estadoConsentimiento
+              : "sin_solicitud",
+            objetivo: String(datos?.objetivoCooperacion || ""),
+            solicitadoPor: String(datos?.solicitadoPor || "")
+          };
+          modoCooperacionListeners.forEach(fn => fn({ ...modoCooperacionActual }));
+        };
+        const detenerModoCooperacion = onSnapshot(
+          metaRef,
+          snapshot => notificarModoCooperacion(snapshot.exists() ? snapshot.data() : {}),
+          error => {
+            console.error("Error escuchando el modo de cooperación:", error);
+            notificar("error", "No se pudo consultar el consentimiento");
+          }
+        );
+
         let ultimaPresenciaPublicada = "";
         const actualizarPresencia = (cursor = {}, forzar = false) => {
           const inicio = Math.max(0, Number(cursor.inicio) || 0);
@@ -4186,12 +4221,79 @@
             fn(participantesActuales);
             return () => presenciaListeners.delete(fn);
           },
-          onHistory(fn) {
-            historialListeners.add(fn);
-            fn(historialCambios.slice());
-            return () => historialListeners.delete(fn);
-          },
-          registrarCambioVisual,
+           onHistory(fn) {
+             historialListeners.add(fn);
+             fn(historialCambios.slice());
+             return () => historialListeners.delete(fn);
+           },
+           onModoCooperacion(fn) {
+             modoCooperacionListeners.add(fn);
+             fn({ ...modoCooperacionActual });
+             return () => modoCooperacionListeners.delete(fn);
+           },
+           getModoCooperacion() {
+             return { ...modoCooperacionActual };
+           },
+           async solicitarCooperacion(objetivo = "") {
+             if (rol !== "docente") return false;
+             const descripcion = String(objetivo || "Acompañamiento docente sobre la actividad actual").trim().slice(0, 500);
+             await setDoc(metaRef, {
+               modoCooperacionActiva: true,
+               edicionCooperativaPausada: true,
+               estadoConsentimiento: "pendiente",
+               objetivoCooperacion: descripcion,
+               solicitadoPor: user.displayName || user.email || "Docente",
+               solicitudEn: serverTimestamp(),
+               actualizadoEn: serverTimestamp(),
+               actualizadoPor: user.email || user.uid
+             }, { merge: true });
+             return true;
+           },
+           async responderConsentimiento(aceptar) {
+             if (rol !== "estudiante" || modoCooperacionActual.consentimiento !== "pendiente") return false;
+             await setDoc(metaRef, {
+               modoCooperacionActiva: aceptar === true,
+               edicionCooperativaPausada: aceptar !== true,
+               estadoConsentimiento: aceptar === true ? "aceptado" : "rechazado",
+               respuestaEstudianteEn: serverTimestamp(),
+               actualizadoEn: serverTimestamp(),
+               actualizadoPor: user.email || user.uid
+             }, { merge: true });
+             return true;
+           },
+           async retirarConsentimiento() {
+             if (rol !== "estudiante" || modoCooperacionActual.consentimiento !== "aceptado") return false;
+             await setDoc(metaRef, {
+               modoCooperacionActiva: false,
+               edicionCooperativaPausada: true,
+               estadoConsentimiento: "finalizado",
+               respuestaEstudianteEn: serverTimestamp(),
+               actualizadoEn: serverTimestamp(),
+               actualizadoPor: user.email || user.uid
+             }, { merge: true });
+             return true;
+           },
+           async establecerPausaCooperacion(pausada) {
+             if (rol !== "docente" || modoCooperacionActual.consentimiento !== "aceptado") return false;
+             await setDoc(metaRef, {
+               edicionCooperativaPausada: pausada === true,
+               actualizadoEn: serverTimestamp(),
+               actualizadoPor: user.email || user.uid
+             }, { merge: true });
+             return true;
+           },
+           async finalizarCooperacion() {
+             if (rol !== "docente") return false;
+             await setDoc(metaRef, {
+               modoCooperacionActiva: false,
+               edicionCooperativaPausada: true,
+               estadoConsentimiento: "finalizado",
+               actualizadoEn: serverTimestamp(),
+               actualizadoPor: user.email || user.uid
+             }, { merge: true });
+             return true;
+           },
+           registrarCambioVisual,
           escucharMensajes(fn) {
             if (typeof fn !== "function") return () => {};
             return onSnapshot(
@@ -4253,16 +4355,20 @@
             return true;
           },
           actualizarPresencia,
-          async flush() { clearTimeout(temporizador); await publicarCola(); },
+           async flush() {
+             clearTimeout(temporizador);
+             return publicarCola();
+           },
           async destroy() {
             if (destruida) return;
             await this.flush();
             destruida = true;
             clearInterval(latido);
-            detenerActualizaciones();
-            detenerPresencia();
-            detenerHistorialAportes();
-            documento.destroy();
+             detenerActualizaciones();
+             detenerPresencia();
+             detenerHistorialAportes();
+             detenerModoCooperacion();
+             documento.destroy();
             sesionesCodigoCRDT.delete(clave);
             try { await deleteDoc(presenciaRef); } catch (_) {}
           }
@@ -4283,6 +4389,65 @@
           estadoElemento.insertAdjacentElement("afterend", autorCambioElemento);
         } else {
           textarea.parentElement?.insertBefore(autorCambioElemento, textarea);
+        }
+        let consentimientoElemento = null;
+        let quitarModoCooperacion = () => {};
+        if (sesion.rol === "estudiante") {
+          consentimientoElemento = document.createElement("section");
+          consentimientoElemento.className = "cooperation-consent-panel";
+          consentimientoElemento.hidden = true;
+          consentimientoElemento.setAttribute("aria-live", "polite");
+          consentimientoElemento.innerHTML = `
+            <div class="cooperation-consent-copy">
+              <strong><i class="fa-solid fa-handshake-angle"></i> Solicitud de cooperación docente</strong>
+              <p class="cooperation-consent-objective"></p>
+              <small>Podés aceptar, continuar trabajando de manera individual o retirar el permiso más adelante. Tu código y tu historial se conservan.</small>
+            </div>
+            <div class="cooperation-consent-actions">
+              <button class="btn btn-success cooperation-consent-accept" type="button"><i class="fa-solid fa-check"></i> Aceptar cooperación</button>
+              <button class="btn btn-secondary cooperation-consent-decline" type="button"><i class="fa-solid fa-user"></i> Continuar individualmente</button>
+              <button class="btn btn-warning cooperation-consent-withdraw" type="button" hidden><i class="fa-solid fa-hand"></i> Retirar permiso</button>
+            </div>`;
+          autorCambioElemento.insertAdjacentElement("afterend", consentimientoElemento);
+          const aceptar = consentimientoElemento.querySelector(".cooperation-consent-accept");
+          const rechazar = consentimientoElemento.querySelector(".cooperation-consent-decline");
+          const retirar = consentimientoElemento.querySelector(".cooperation-consent-withdraw");
+          const responder = async acepta => {
+            [aceptar, rechazar, retirar].forEach(boton => { boton.disabled = true; });
+            try {
+              const ok = acepta === null
+                ? await sesion.retirarConsentimiento()
+                : await sesion.responderConsentimiento(acepta);
+              if (!ok) throw new Error("consent-update-rejected");
+            } catch (error) {
+              console.error("No se pudo actualizar el consentimiento de cooperación:", error);
+              alert("No se pudo registrar tu decisión. Revisá la conexión e intentá nuevamente.");
+            } finally {
+              [aceptar, rechazar, retirar].forEach(boton => { boton.disabled = false; });
+            }
+          };
+          aceptar.addEventListener("click", () => responder(true));
+          rechazar.addEventListener("click", () => responder(false));
+          retirar.addEventListener("click", () => responder(null));
+          quitarModoCooperacion = sesion.onModoCooperacion(modo => {
+            const pendiente = modo.consentimiento === "pendiente";
+            const aceptada = modo.consentimiento === "aceptado" && modo.activa;
+            const bloqueada = pendiente || (aceptada && modo.pausada);
+            consentimientoElemento.hidden = !pendiente && !aceptada;
+            consentimientoElemento.classList.toggle("is-active", aceptada);
+            consentimientoElemento.classList.toggle("is-paused", aceptada && modo.pausada);
+            consentimientoElemento.querySelector(".cooperation-consent-objective").textContent = pendiente
+              ? `${modo.solicitadoPor || "El docente"} solicita trabajar sobre este código: ${modo.objetivo || "acompañamiento en la actividad actual"}.`
+              : modo.pausada
+                ? "La cooperación está aceptada, pero la edición compartida está pausada por el docente."
+                : "Cooperación aceptada. Ambos participantes pueden editar y conversar en esta actividad.";
+            aceptar.hidden = !pendiente;
+            rechazar.hidden = !pendiente;
+            retirar.hidden = !aceptada;
+            textarea.dataset.cooperationLocked = String(bloqueada);
+            textarea.disabled = bloqueada;
+            textarea.__setCodeMirrorDisabled?.(bloqueada);
+          });
         }
         let temporizadorAutorCambio = null;
         const marcarCambio = (rol, nombre = "") => {
@@ -4833,6 +4998,8 @@
           quitarPresencia();
           presenciaElemento.remove();
           autorCambioElemento.remove();
+          quitarModoCooperacion();
+          consentimientoElemento?.remove();
           quitarHistorial();
           historialElemento.remove();
           if (detenerMensajes) detenerMensajes();
@@ -4854,24 +5021,36 @@
       window.iniciarColaboracionCRDTEstudiante = async function() {
         const user = window.firebaseCurrentUser;
         if (!user || !cuentaEstudianteActiva) return;
-        await Promise.all(seccionesData.map(async sec => {
-          const textarea = document.getElementById(`editor-${sec.id}`);
-          if (!textarea || textarea.disabled) return;
-          const estado = document.getElementById(`editor-state-${sec.id}`);
-          try {
-            const sesion = await iniciarSesionCodigoCRDT({
-              uid: user.uid,
-              sectionId: sec.id,
-              codigoInicial: textarea.value,
-              rol: "estudiante"
-            });
-            vincularTextareaCodigoCRDT(textarea, sesion, sec.id, estado);
-          } catch (error) {
-            console.error(`No se pudo iniciar CRDT en ${sec.id}:`, error);
-            if (estado) estado.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Colaboración no disponible';
-          }
-        }));
+        const sectionId = document.querySelector(".section-card.active")?.id || seccionesData[0]?.id;
+        const sec = seccionesData.find(item => item.id === sectionId);
+        const textarea = sec ? document.getElementById(`editor-${sec.id}`) : null;
+        if (!sec || !textarea || (textarea.disabled && textarea.dataset.cooperationLocked !== "true")) return;
+        const activa = window.__sesionCRDTEstudianteActiva;
+        if (activa?.uid === user.uid && activa.sectionId === sec.id && activa.sesion) return;
+        if (activa?.textarea) activa.textarea.__desvincularCRDT?.();
+        if (activa?.sesion) await activa.sesion.destroy().catch(error => {
+          console.warn("No se pudo cerrar la sesión cooperativa anterior:", error);
+        });
+        const estado = document.getElementById(`editor-state-${sec.id}`);
+        try {
+          const sesion = await iniciarSesionCodigoCRDT({
+            uid: user.uid,
+            sectionId: sec.id,
+            codigoInicial: textarea.value,
+            rol: "estudiante"
+          });
+          vincularTextareaCodigoCRDT(textarea, sesion, sec.id, estado);
+          window.__sesionCRDTEstudianteActiva = { uid: user.uid, sectionId: sec.id, textarea, sesion };
+        } catch (error) {
+          console.error(`No se pudo iniciar CRDT en ${sec.id}:`, error);
+          if (estado) estado.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Colaboración no disponible';
+        }
       };
+      window.addEventListener("seccion-estudiante-cambiada", () => {
+        window.setTimeout(() => {
+          void window.iniciarColaboracionCRDTEstudiante?.();
+        }, 0);
+      });
 
       function contextoChatColaborativoFirebase(rolSolicitado = "") {
         if (rolSolicitado === "docente" && window.firebaseTeacherUser && teacherDb) {
@@ -4913,13 +5092,19 @@
 
             const campoEntrega = rol === "docente" ? "entregadoDocenteEn" : "entregadoEstudianteEn";
             const campoLectura = rol === "docente" ? "leidoDocenteEn" : "leidoEstudianteEn";
+            const debeMarcarLeido = typeof opciones.marcarLeidos === "function"
+              ? opciones.marcarLeidos() === true
+              : opciones.marcarLeidos === true;
             mensajes
-              .filter(mensaje => mensaje.autorUid !== user.uid && (!mensaje[campoEntrega] || !mensaje[campoLectura]))
+              .filter(mensaje =>
+                mensaje.autorUid !== user.uid &&
+                (!mensaje[campoEntrega] || (debeMarcarLeido && !mensaje[campoLectura]))
+              )
               .slice(-60)
               .forEach(mensaje => {
                 const cambios = {};
                 if (!mensaje[campoEntrega]) cambios[campoEntrega] = serverTimestamp();
-                if (!mensaje[campoLectura]) cambios[campoLectura] = serverTimestamp();
+                if (debeMarcarLeido && !mensaje[campoLectura]) cambios[campoLectura] = serverTimestamp();
                 setDoc(doc(referencia, mensaje.id), cambios, { merge: true }).catch(error => {
                   if (error?.code !== "permission-denied") {
                     console.warn("No se pudo confirmar el mensaje cooperativo:", error);

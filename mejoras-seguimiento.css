@@ -542,6 +542,39 @@ textarea.collab-source-editor{position:relative!important;z-index:1!important;co
 }
 
 #mensajeriaDocenteModal{z-index:11500!important}
+
+.cooperation-consent-panel{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:1rem;
+ margin:.75rem 0;
+ padding:.9rem 1rem;
+ border:1px solid rgba(245,158,11,.55);
+ border-left:4px solid #f59e0b;
+ border-radius:8px;
+ background:rgba(120,53,15,.22);
+ color:#f8fafc;
+}
+.cooperation-consent-panel[hidden]{display:none}
+.cooperation-consent-panel.is-active{border-color:rgba(16,185,129,.55);border-left-color:#10b981;background:rgba(6,78,59,.2)}
+.cooperation-consent-panel.is-paused{border-color:rgba(245,158,11,.55);border-left-color:#f59e0b;background:rgba(120,53,15,.22)}
+.cooperation-consent-copy{min-width:0}
+.cooperation-consent-copy strong{display:flex;align-items:center;gap:.45rem;color:#fef3c7}
+.cooperation-consent-panel.is-active .cooperation-consent-copy strong{color:#a7f3d0}
+.cooperation-consent-copy p{margin:.35rem 0;color:#e2e8f0;line-height:1.45}
+.cooperation-consent-copy small{display:block;color:#cbd5e1;line-height:1.4}
+.cooperation-consent-actions{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end;flex:0 0 auto}
+.cooperation-consent-actions .btn{white-space:normal}
+body.teacher-light-mode .cooperation-consent-panel{background:#fff7ed;color:#172033}
+body.teacher-light-mode .cooperation-consent-panel.is-active{background:#ecfdf5}
+body.teacher-light-mode .cooperation-consent-copy p{color:#334155}
+body.teacher-light-mode .cooperation-consent-copy small{color:#64748b}
+@media(max-width:760px){
+ .cooperation-consent-panel{align-items:stretch;flex-direction:column}
+ .cooperation-consent-actions{display:grid;grid-template-columns:1fr}
+ .cooperation-consent-actions .btn{width:100%}
+}
 #mensajeriaDocenteModal .teacher-message-box{position:relative;z-index:1;max-height:calc(100dvh - 2rem);overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain}
 .teacher-message-box{width:min(760px,calc(100vw - 1.25rem));max-width:760px;padding:1.1rem!important;box-sizing:border-box}
 .teacher-message-header{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;margin-bottom:.85rem}
