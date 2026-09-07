@@ -3948,6 +3948,29 @@
         };
       }
 
+      async function describirErrorDecisionCooperacion(error, user = window.firebaseCurrentUser) {
+        const codigo = String(error?.code || "");
+        if (codigo.includes("permission-denied")) {
+          try {
+            const estudiante = user?.uid
+              ? await getDoc(doc(db, "estudiantes", user.uid))
+              : null;
+            const estadoCuenta = estudiante?.exists()
+              ? estudiante.data()?.estadoCuenta
+              : "sin_registro";
+            if (estadoCuenta !== "activo") {
+              return `Firestore rechazó la decisión porque la cuenta figura como "${estadoCuenta || "pendiente"}". El docente debe aprobar o reactivar la cuenta.`;
+            }
+          } catch (_) {}
+          return "Firestore rechazó la decisión. Las reglas publicadas no coinciden con esta versión: publicá el archivo reglas.txt actualizado en Firebase.";
+        }
+        if (codigo.includes("unavailable") || codigo.includes("network") || navigator.onLine === false) {
+          return "No hay conexión con Firebase. Verificá Internet e intentá nuevamente.";
+        }
+        const detalle = String(error?.message || codigo || "error desconocido").slice(0, 240);
+        return `No se pudo registrar la decisión: ${detalle}`;
+      }
+
       async function iniciarSesionCodigoCRDT({ uid, sectionId, codigoInicial = "", rol = "estudiante" }) {
         if (!uid || !sectionId) throw new Error("crdt-invalid-target");
         if (rol === "docente" && !(await window.autorizarDocenteFirebase?.())) {
@@ -4504,7 +4527,7 @@
               if (!ok) throw new Error("consent-update-rejected");
             } catch (error) {
               console.error("No se pudo actualizar el consentimiento de cooperación:", error);
-              alert("No se pudo registrar tu decisión. Revisá la conexión e intentá nuevamente.");
+              alert(await describirErrorDecisionCooperacion(error));
             } finally {
               [aceptar, rechazar, retirar].forEach(boton => { boton.disabled = false; });
             }
@@ -4516,16 +4539,16 @@
             const pendiente = modo.consentimiento === "pendiente";
             const aceptada = modo.consentimiento === "aceptado" && modo.activa;
             const bloqueada = pendiente || (aceptada && modo.pausada);
-            consentimientoElemento.hidden = !pendiente && !aceptada;
+            consentimientoElemento.hidden = !aceptada;
             consentimientoElemento.classList.toggle("is-active", aceptada);
             consentimientoElemento.classList.toggle("is-paused", aceptada && modo.pausada);
-            consentimientoElemento.querySelector(".cooperation-consent-objective").textContent = pendiente
-              ? `${modo.solicitadoPor || "El docente"} solicita trabajar sobre este código: ${modo.objetivo || "acompañamiento en la actividad actual"}.`
-              : modo.pausada
+            consentimientoElemento.querySelector("strong").innerHTML =
+              '<i class="fa-solid fa-handshake-angle"></i> Cooperación docente autorizada';
+            consentimientoElemento.querySelector(".cooperation-consent-objective").textContent = modo.pausada
                 ? "La cooperación está aceptada, pero la edición compartida está pausada por el docente."
                 : "Cooperación aceptada. Ambos participantes pueden editar y conversar en esta actividad.";
-            aceptar.hidden = !pendiente;
-            rechazar.hidden = !pendiente;
+            aceptar.hidden = true;
+            rechazar.hidden = true;
             retirar.hidden = !aceptada;
             actualizarBloqueoEditorEstudiante(sectionId, bloqueada);
           });
@@ -5217,7 +5240,7 @@
             }
           } catch (error) {
             console.error("No se pudo responder la solicitud global de cooperación:", error);
-            alert("No se pudo registrar tu decisión. Revisá la conexión e intentá nuevamente.");
+            alert(await describirErrorDecisionCooperacion(error, user));
           } finally {
             botones.forEach(boton => { boton.disabled = false; });
           }
@@ -7299,7 +7322,7 @@
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
 </script>
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260907-1">
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260907-2">
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -19086,7 +19109,7 @@
            }
          }, 1500);
       })();    </script>
-    <script src="mejoras-seguimiento.js?v=20260907-1"></script>
+    <script src="mejoras-seguimiento.js?v=20260907-2"></script>
   </body>
 </html>
 

@@ -63,6 +63,17 @@ assert.ok(
   "La autorizacion debe ser visible aunque la solicitud pertenezca a otra actividad"
 );
 assert.ok(
+  html.includes("consentimientoElemento.hidden = !aceptada") &&
+    html.includes("aceptar.hidden = true") &&
+    html.includes("rechazar.hidden = true"),
+  "Aceptar o rechazar debe mostrarse una sola vez en el panel global"
+);
+assert.ok(
+  html.includes("describirErrorDecisionCooperacion") &&
+    html.includes("Las reglas publicadas no coinciden con esta versión"),
+  "Un rechazo de consentimiento debe mostrar un diagnostico accionable"
+);
+assert.ok(
   html.includes("actualizarBloqueoEditorEstudiante(sectionId, bloqueada)") &&
     html.includes("Boolean(actividadesFinalizadas[sectionId])") &&
     html.includes("Boolean(modulosPausados[sectionId])"),

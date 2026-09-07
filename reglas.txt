@@ -1,4 +1,4 @@
-﻿rules_version = '2';
+rules_version = '2';
 
 // Actualizado el 5 de septiembre de 2026.
 // Incluye auditoría segura, mensajería, colaboración CRDT, presencia y aportes.

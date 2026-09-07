@@ -226,6 +226,14 @@ async function main() {
       actualizadoPor: teacherEmail
     }, { merge: true }));
 
+    const contributionWithoutAuthor = contributionPayload(
+      "missing-author",
+      "estudiante",
+      uid,
+      "student@example.com",
+      "Estudiante"
+    );
+    delete contributionWithoutAuthor.autorNombre;
     await assertFails(setDoc(doc(
       studentDb,
       "estudiantes",
@@ -278,16 +286,7 @@ async function main() {
       sectionId,
       "historialAportes",
       "missing-author"
-    ), {
-      ...contributionPayload(
-        "missing-author",
-        "estudiante",
-        uid,
-        "student@example.com",
-        "Estudiante"
-      ),
-      autorNombre: undefined
-    }));
+    ), contributionWithoutAuthor));
 
     const presenceStudentRef = doc(
       studentDb,

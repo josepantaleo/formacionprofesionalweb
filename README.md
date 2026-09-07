@@ -57,3 +57,4 @@ npm.cmd run test:rules
 ```
 
 La prueba de reglas requiere Java 11 o superior porque Firebase Emulator Suite ya no admite Java 8.
+El 7 de septiembre de 2026 la suite completa fue ejecutada correctamente con Eclipse Temurin JDK 17.0.20.1.
