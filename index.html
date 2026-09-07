@@ -4019,54 +4019,258 @@ console.log(nombreFormateado);</code></pre>
                  12 SCOPE
             ================================================== -->
 
+        <!-- =================================================
+             12 SCOPE
+        ================================================== -->
         <section id="scope" class="clase">
-          <h2 class="titulo-clase">Scope y buenas prácticas</h2>
+          <h2 class="titulo-clase">Scope: alcance de las variables</h2>
 
-          <p>El scope determina dónde podemos utilizar una variable.</p>
+          <p class="descripcion">
+            El <strong>scope</strong> o alcance determina desde qué parte del programa
+            podemos acceder a una variable. Comprenderlo ayuda a evitar errores,
+            organizar el código y construir programas más fáciles de mantener.
+          </p>
+
+          <div class="card">
+            <h2>🎯 Objetivos de la clase</h2>
+            <ul>
+              <li>Comprender qué significa <strong>scope</strong>.</li>
+              <li>Diferenciar alcance global, de función y de bloque.</li>
+              <li>Comprender el comportamiento de <code>let</code>, <code>const</code> y <code>var</code>.</li>
+              <li>Entender por qué una variable puede existir en un lugar y no en otro.</li>
+              <li>Evitar variables globales innecesarias.</li>
+              <li>Relacionar scope con funciones, eventos y aplicaciones web.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣ ¿Qué significa Scope?</h2>
+            <p>
+              Scope significa <strong>alcance</strong>. Indica la zona del programa
+              en la que una variable puede ser utilizada.
+            </p>
+            <p>
+              Podemos imaginar cada bloque o función como una habitación. Una
+              variable creada dentro de una habitación puede no estar disponible
+              fuera de ella.
+            </p>
+          </div>
 
           <div class="codigo">
             <pre><code>const nombre = "Ana";
 
 if (true) {
+  const mensaje = "Hola";
 
-    const mensaje = "Hola";
-
-    let edad = 15;
-
-    console.log(nombre);
-
-    console.log(mensaje);
-
-    console.log(edad);
-
+  console.log(nombre);  // funciona
+  console.log(mensaje); // funciona
 }
 
-// mensaje y edad no existen
-// fuera del bloque.</code></pre>
+console.log(nombre);    // funciona
+// console.log(mensaje); // ❌ no existe aquí</code></pre>
           </div>
 
           <div class="card">
-            <h3>Tres niveles de alcance</h3>
+            <h2>2️⃣ Scope global</h2>
+            <p>
+              Una variable declarada fuera de funciones y bloques puede estar
+              disponible desde diferentes partes del programa, según el contexto.
+            </p>
+            <p>
+              Aunque es posible utilizar variables globales, conviene evitar
+              crear muchas porque diferentes partes del programa pueden depender
+              de ellas y modificar su estado.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const curso = "JavaScript";
+
+function mostrarCurso() {
+  console.log(curso);
+}
+
+mostrarCurso();
+console.log(curso);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>3️⃣ Scope de función</h2>
+            <p>
+              Una variable declarada dentro de una función pertenece al alcance
+              de esa función. Desde fuera no podemos acceder directamente a ella.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>function calcular() {
+  const resultado = 20 + 10;
+
+  console.log(resultado);
+}
+
+calcular();
+
+// ❌ resultado no existe fuera de calcular()
+// console.log(resultado);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>4️⃣ Scope de bloque</h2>
+            <p>
+              <code>let</code> y <code>const</code> respetan el alcance de un bloque
+              delimitado por llaves <code>{ }</code>. Esto aparece en
+              <code>if</code>, <code>for</code>, <code>while</code> y otros bloques.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>if (true) {
+  let edad = 15;
+  const mensaje = "Hola";
+
+  console.log(edad);
+  console.log(mensaje);
+}
+
+// ❌ No están disponibles aquí
+// console.log(edad);
+// console.log(mensaje);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>5️⃣ let, const y var</h2>
             <ul>
-              <li><strong>Global:</strong> accesible desde gran parte del programa.</li>
-              <li><strong>De función:</strong> existe solamente dentro de la función.</li>
-              <li><strong>De bloque:</strong> existe dentro de llaves con <code>let</code> o <code>const</code>.</li>
+              <li><strong>const:</strong> preferido cuando no necesitamos reasignar la variable.</li>
+              <li><strong>let:</strong> utilizado cuando necesitamos cambiar su valor.</li>
+              <li><strong>var:</strong> forma antigua de declarar variables; puede tener un comportamiento de alcance diferente y se recomienda evitarlo en código moderno.</li>
+            </ul>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const nombre = "Ana";
+
+let contador = 0;
+contador++;
+
+console.log(nombre);
+console.log(contador);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>6️⃣ Scope dentro de un bucle</h2>
+            <p>
+              Las variables declaradas con <code>let</code> dentro del
+              <code>for</code> pertenecen al bloque del bucle.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>for (let i = 1; i <= 3; i++) {
+  console.log("Vuelta:", i);
+}
+
+// ❌ i no existe aquí
+// console.log(i);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>7️⃣ Scope y funciones anidadas</h2>
+            <p>
+              Una función interna puede acceder a variables disponibles en los
+              ámbitos exteriores. Este comportamiento será muy importante cuando
+              trabajemos con funciones, eventos y callbacks.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>function exterior() {
+  const mensaje = "Hola";
+
+  function interior() {
+    console.log(mensaje);
+  }
+
+  interior();
+}
+
+exterior();</code></pre>
+          </div>
+
+          <div class="nota">
+            <strong>💡 Idea clave</strong>
+            <p>
+              El código interior puede acceder a variables de ámbitos exteriores
+              disponibles para él, pero una variable creada en un ámbito interno
+              no aparece mágicamente en el ámbito exterior.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>8️⃣ ¿Por qué es importante el Scope?</h2>
+            <ul>
+              <li>Evita conflictos entre variables.</li>
+              <li>Reduce dependencias innecesarias.</li>
+              <li>Facilita encontrar errores.</li>
+              <li>Permite organizar programas grandes.</li>
+              <li>Ayuda a escribir funciones independientes.</li>
+              <li>Es fundamental para trabajar con eventos y formularios.</li>
             </ul>
           </div>
 
           <div class="card">
-            <h2>Buenas prácticas</h2>
+            <h2>⚠️ Error frecuente</h2>
+            <p>
+              Crear muchas variables globales porque parece más sencillo al
+              principio. En proyectos grandes esto puede producir nombres
+              repetidos, modificaciones inesperadas y código difícil de mantener.
+            </p>
+          </div>
 
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 1</span>
+            <h2>Detectar el alcance</h2>
+            <p>
+              Indicá cuáles variables pueden utilizarse dentro y fuera de un
+              <code>if</code>. Explicá por qué.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 2</span>
+            <h2>Scope de función</h2>
+            <p>
+              Creá una función que tenga una variable local y comprobá qué ocurre
+              cuando intentás utilizarla fuera de la función.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 3</span>
+            <h2>Scope en un contador</h2>
+            <p>
+              Creá un <code>for</code> con <code>let</code> y explicá por qué la
+              variable del contador no debería utilizarse fuera del bucle.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🏆 DESAFÍO FINAL</span>
+            <h2>Organizar un programa</h2>
+            <p>
+              Creá un pequeño programa de alumnos utilizando funciones separadas.
+              Evitá variables globales innecesarias y justificá qué variables son
+              locales y cuáles deben compartirse.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>📌 Resumen</h2>
             <ul>
-              <li>Usar <code>const</code> por defecto.</li>
-
-              <li>Usar <code>let</code> cuando el valor debe cambiar.</li>
-
-              <li>Elegir nombres claros.</li>
-
-              <li>Evitar código repetido.</li>
-
-              <li>Separar el programa en funciones pequeñas.</li>
+              <li><strong>Global:</strong> ámbito exterior del programa.</li>
+              <li><strong>Función:</strong> variables disponibles dentro de una función.</li>
+              <li><strong>Bloque:</strong> alcance de <code>let</code> y <code>const</code> dentro de llaves.</li>
+              <li><strong>Buena práctica:</strong> mantener las variables lo más cerca posible del lugar donde se utilizan.</li>
             </ul>
           </div>
         </section>
@@ -4075,58 +4279,305 @@ if (true) {
                  13 DOM
             ================================================== -->
 
+        <!-- =================================================
+             13 DOM
+        ================================================== -->
         <section id="dom" class="clase">
-          <h2 class="titulo-clase">DOM</h2>
+          <h2 class="titulo-clase">DOM: JavaScript y la página web</h2>
 
-          <p>
-            El DOM permite acceder y modificar los elementos HTML desde
-            JavaScript.
+          <p class="descripcion">
+            El <strong>DOM (Document Object Model)</strong> representa el documento
+            HTML como una estructura de objetos que JavaScript puede consultar,
+            modificar, crear y eliminar.
           </p>
 
+          <div class="card">
+            <h2>🎯 Objetivos de la clase</h2>
+            <ul>
+              <li>Comprender qué es el DOM.</li>
+              <li>Seleccionar elementos HTML.</li>
+              <li>Cambiar texto, atributos y clases.</li>
+              <li>Modificar estilos mediante JavaScript.</li>
+              <li>Crear, agregar y eliminar elementos.</li>
+              <li>Recorrer elementos y trabajar con listas.</li>
+              <li>Preparar el código para trabajar con eventos.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣ ¿Qué es el DOM?</h2>
+            <p>
+              Cuando el navegador carga un documento HTML, construye una
+              representación estructurada del contenido. JavaScript puede utilizar
+              esa representación para interactuar con la página.
+            </p>
+          </div>
+
           <div class="codigo">
-            <pre><code>const titulo =
-    document.querySelector("#titulo");
+            <pre><code>HTML
+  ↓
+Navegador
+  ↓
+DOM
+  ↓
+JavaScript
+  ↓
+Cambios visibles en la página</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>2️⃣ Seleccionar un elemento con querySelector()</h2>
+            <p>
+              <code>querySelector()</code> permite buscar el primer elemento que
+              coincide con un selector CSS.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const titulo = document.querySelector("#titulo");
 
 if (titulo) {
-    titulo.textContent =
-        "Hola JavaScript";
-
-    titulo.classList.add("destacado");
+  titulo.textContent = "Hola JavaScript";
 }</code></pre>
           </div>
 
-          <div class="nota">
-            <strong>Comprobá que el elemento exista</strong>
+          <div class="card">
+            <h2>3️⃣ Seleccionar varios elementos</h2>
             <p>
-              <code>querySelector()</code> devuelve <code>null</code> cuando no
-              encuentra el elemento. Comprobarlo evita errores al acceder a sus
-              propiedades.
+              <code>querySelectorAll()</code> devuelve una colección de elementos
+              que coincide con el selector indicado.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const botones = document.querySelectorAll(".boton");
+
+botones.forEach(boton => {
+  console.log(boton.textContent);
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>4️⃣ Cambiar texto</h2>
+            <p>
+              Para texto visible, <code>textContent</code> es una opción clara y
+              segura.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const mensaje = document.querySelector("#mensaje");
+
+mensaje.textContent = "Contenido actualizado";</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>5️⃣ Cambiar clases con classList</h2>
+            <ul>
+              <li><code>add()</code> → agrega una clase.</li>
+              <li><code>remove()</code> → elimina una clase.</li>
+              <li><code>toggle()</code> → agrega o quita una clase.</li>
+              <li><code>contains()</code> → comprueba si existe.</li>
+            </ul>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const tarjeta = document.querySelector(".tarjeta");
+
+tarjeta.classList.add("destacada");
+tarjeta.classList.toggle("activa");
+
+console.log(
+  tarjeta.classList.contains("activa")
+);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>6️⃣ Leer y modificar atributos</h2>
+            <p>
+              Los atributos HTML también pueden consultarse y modificarse.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const enlace = document.querySelector("#enlace");
+
+console.log(enlace.getAttribute("href"));
+
+enlace.setAttribute(
+  "href",
+  "https://example.com"
+);
+
+enlace.setAttribute("target", "_blank");</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>7️⃣ Crear elementos</h2>
+            <p>
+              <code>createElement()</code> crea un nuevo nodo que después podemos
+              agregar al documento.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const lista = document.querySelector("#lista");
+
+const elemento = document.createElement("li");
+
+elemento.textContent = "Nuevo elemento";
+
+lista.appendChild(elemento);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>8️⃣ Eliminar elementos</h2>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const elemento = document.querySelector("#elemento");
+
+if (elemento) {
+  elemento.remove();
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>9️⃣ Crear una lista completa desde JavaScript</h2>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const nombres = ["Ana", "Juan", "Lucía"];
+
+const lista = document.querySelector("#lista");
+
+nombres.forEach(nombre => {
+  const li = document.createElement("li");
+
+  li.textContent = nombre;
+
+  lista.appendChild(li);
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>🔟 value: trabajar con campos</h2>
+            <p>
+              En inputs, selects y textareas utilizamos normalmente
+              <code>value</code> para leer o modificar el contenido del control.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const nombre = document.querySelector("#nombre");
+
+console.log(nombre.value);
+
+nombre.value = "Ana";</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣1️⃣ innerHTML: usarlo con cuidado</h2>
+            <p>
+              <code>innerHTML</code> permite interpretar HTML, pero cuando el
+              contenido proviene de usuarios es preferible utilizar
+              <code>textContent</code> para evitar introducir HTML no deseado.
+            </p>
+          </div>
+
+          <div class="nota">
+            <strong>💡 Regla práctica</strong>
+            <p>
+              Si querés colocar solamente texto escrito por el usuario,
+              preferí <code>textContent</code>.
             </p>
           </div>
 
           <div class="card">
-            <h3>Crear y agregar elementos</h3>
-            <p>
-              Para contenido de texto, preferí <code>textContent</code>. Usar
-              <code>innerHTML</code> con datos del usuario puede introducir
-              contenido no deseado.
-            </p>
+            <h2>1️⃣2️⃣ Recorrer el DOM</h2>
           </div>
 
           <div class="codigo">
-            <pre><code>const lista =
-    document.querySelector("#lista");
+            <pre><code>const tarjetas = document.querySelectorAll(".card");
 
-const elemento =
-    document.createElement("li");
+tarjetas.forEach((tarjeta, indice) => {
+  console.log("Tarjeta:", indice + 1);
+});</code></pre>
+          </div>
 
-elemento.textContent =
-    "Nuevo contenido";
+          <div class="card">
+            <h2>🧠 DOM + datos + interfaz</h2>
+            <p>
+              Una aplicación web suele seguir este recorrido:
+            </p>
+            <ol>
+              <li>Obtener datos.</li>
+              <li>Procesarlos con JavaScript.</li>
+              <li>Crear o seleccionar elementos.</li>
+              <li>Actualizar el DOM.</li>
+              <li>Responder nuevamente a las acciones del usuario.</li>
+            </ol>
+          </div>
 
-lista.appendChild(elemento);
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 1</span>
+            <h2>Cambiar un título</h2>
+            <p>
+              Seleccioná un título mediante <code>querySelector()</code> y cambiá
+              su contenido con <code>textContent</code>.
+            </p>
+          </div>
 
-// Para quitarlo:
-// elemento.remove();</code></pre>
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 2</span>
+            <h2>Crear una lista</h2>
+            <p>
+              Creá un array de cinco nombres y generá cinco elementos
+              <code>&lt;li&gt;</code> utilizando <code>createElement()</code>.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 3</span>
+            <h2>Mostrar un contador</h2>
+            <p>
+              Creá un número en JavaScript y mostralo dentro de un elemento HTML.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 4</span>
+            <h2>Agregar y quitar una clase</h2>
+            <p>
+              Utilizá <code>classList.add()</code>, <code>remove()</code> y
+              <code>toggle()</code>.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🏆 DESAFÍO FINAL</span>
+            <h2>Lista dinámica de estudiantes</h2>
+            <p>
+              Creá un array de estudiantes y mostrálos en una lista o tabla.
+              Cada estudiante debe aparecer mediante elementos creados con
+              JavaScript. Agregá un botón para eliminar un estudiante.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>📌 Resumen DOM</h2>
+            <ul>
+              <li><code>querySelector()</code> → selecciona un elemento.</li>
+              <li><code>querySelectorAll()</code> → selecciona varios.</li>
+              <li><code>textContent</code> → cambia texto.</li>
+              <li><code>classList</code> → administra clases.</li>
+              <li><code>getAttribute()</code> → lee atributos.</li>
+              <li><code>setAttribute()</code> → modifica atributos.</li>
+              <li><code>createElement()</code> → crea elementos.</li>
+              <li><code>appendChild()</code> → agrega elementos.</li>
+              <li><code>remove()</code> → elimina elementos.</li>
+              <li><code>value</code> → lee valores de controles de formulario.</li>
+            </ul>
           </div>
         </section>
 
@@ -4134,55 +4585,289 @@ lista.appendChild(elemento);
                  14 EVENTOS
             ================================================== -->
 
+        <!-- =================================================
+             14 EVENTOS
+        ================================================== -->
         <section id="eventos" class="clase">
-          <h2 class="titulo-clase">Eventos</h2>
+          <h2 class="titulo-clase">Eventos en JavaScript</h2>
 
-          <p>
-            Los eventos permiten reaccionar a acciones del usuario, como hacer
-            clic, escribir, enviar un formulario o presionar una tecla.
+          <p class="descripcion">
+            Los <strong>eventos</strong> permiten que JavaScript responda a las
+            acciones del usuario y a situaciones que ocurren en el navegador.
           </p>
 
           <div class="card">
-            <h3>Escuchar un evento</h3>
+            <h2>🎯 Objetivos</h2>
+            <ul>
+              <li>Comprender qué es un evento.</li>
+              <li>Utilizar <code>addEventListener()</code>.</li>
+              <li>Trabajar con eventos de mouse, teclado y formularios.</li>
+              <li>Comprender el objeto <code>event</code>.</li>
+              <li>Usar <code>preventDefault()</code>.</li>
+              <li>Conocer propagación y delegación de eventos.</li>
+              <li>Construir interfaces interactivas.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣ ¿Qué es un evento?</h2>
             <p>
-              <code>addEventListener()</code> recibe el nombre del evento y una
-              función que se ejecutará cuando ese evento ocurra.
+              Un evento es algo que sucede y que JavaScript puede detectar:
+              un clic, una tecla, un cambio en un campo, el envío de un formulario,
+              el movimiento del mouse o la carga de la página.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>2️⃣ addEventListener()</h2>
+            <p>
+              <code>addEventListener()</code> conecta un elemento con una función
+              que se ejecutará cuando ocurra determinado evento.
             </p>
           </div>
 
           <div class="codigo">
-            <pre><code>const boton =
-    document.querySelector("#boton");
+            <pre><code>const boton = document.querySelector("#boton");
 
-boton.addEventListener(
-    "click",
-    function(evento) {
-
-        console.log("Hiciste clic");
-        console.log(evento.target);
-
-    }
-);</code></pre>
+boton.addEventListener("click", () => {
+  console.log("Hiciste clic");
+});</code></pre>
           </div>
 
           <div class="card">
-            <h3>Eventos frecuentes</h3>
+            <h2>3️⃣ Eventos de mouse</h2>
             <ul>
-              <li><code>click</code>: clic sobre un elemento.</li>
-              <li><code>input</code>: cambia el valor de un campo.</li>
-              <li><code>change</code>: se confirma un cambio.</li>
-              <li><code>submit</code>: se envía un formulario.</li>
-              <li><code>keydown</code>: se presiona una tecla.</li>
+              <li><code>click</code> → clic.</li>
+              <li><code>dblclick</code> → doble clic.</li>
+              <li><code>mouseenter</code> → entra el mouse.</li>
+              <li><code>mouseleave</code> → sale el mouse.</li>
+              <li><code>mousedown</code> → se presiona un botón del mouse.</li>
+              <li><code>mouseup</code> → se suelta el botón.</li>
             </ul>
           </div>
 
-          <div class="ejercicio">
-            <span>PRÁCTICA</span>
-            <h3>Contador de clics</h3>
+          <div class="codigo">
+            <pre><code>const tarjeta = document.querySelector("#tarjeta");
+
+tarjeta.addEventListener("mouseenter", () => {
+  tarjeta.classList.add("destacada");
+});
+
+tarjeta.addEventListener("mouseleave", () => {
+  tarjeta.classList.remove("destacada");
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>4️⃣ Eventos de teclado</h2>
+            <ul>
+              <li><code>keydown</code> → se presiona una tecla.</li>
+              <li><code>keyup</code> → se libera una tecla.</li>
+            </ul>
+          </div>
+
+          <div class="codigo">
+            <pre><code>document.addEventListener("keydown", evento => {
+  console.log("Tecla:", evento.key);
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>5️⃣ El objeto event</h2>
             <p>
-              Creá un botón y un texto. Cada clic debe aumentar un contador y
-              actualizar el texto mediante <code>textContent</code>.
+              La función que responde a un evento puede recibir un objeto con
+              información sobre lo sucedido.
             </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const boton = document.querySelector("#boton");
+
+boton.addEventListener("click", evento => {
+  console.log("Elemento:", evento.target);
+  console.log("Tipo:", evento.type);
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>6️⃣ input y change</h2>
+            <p>
+              <code>input</code> permite reaccionar mientras el usuario modifica
+              un campo. <code>change</code> suele utilizarse cuando se confirma
+              un cambio en el control.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const nombre = document.querySelector("#nombre");
+
+nombre.addEventListener("input", evento => {
+  console.log("Valor actual:", evento.target.value);
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>7️⃣ submit y preventDefault()</h2>
+            <p>
+              Los formularios tienen un comportamiento predeterminado. Si queremos
+              procesarlos con JavaScript antes de enviarlos, podemos utilizar
+              <code>preventDefault()</code>.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const formulario = document.querySelector("#formulario");
+
+formulario.addEventListener("submit", evento => {
+  evento.preventDefault();
+
+  console.log("Formulario procesado por JavaScript");
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>8️⃣ Contador de clics</h2>
+          </div>
+
+          <div class="codigo">
+            <pre><code>let contador = 0;
+
+const boton = document.querySelector("#boton");
+const resultado = document.querySelector("#resultado");
+
+boton.addEventListener("click", () => {
+  contador++;
+
+  resultado.textContent =
+    `Clics: ${contador}`;
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>9️⃣ Propagación de eventos</h2>
+            <p>
+              Los eventos pueden propagarse entre elementos relacionados. Para
+              entender interfaces más grandes es importante conocer
+              <code>target</code> y <code>currentTarget</code>.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const contenedor = document.querySelector("#contenedor");
+
+contenedor.addEventListener("click", evento => {
+  console.log("Elemento que originó el evento:", evento.target);
+  console.log("Elemento que escucha:", evento.currentTarget);
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>🔟 Delegación de eventos</h2>
+            <p>
+              En lugar de colocar un listener individual en cada elemento de una
+              lista, podemos escuchar el evento desde un contenedor y utilizar
+              <code>event.target</code>. Esto resulta especialmente útil cuando
+              los elementos se crean dinámicamente.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const lista = document.querySelector("#lista");
+
+lista.addEventListener("click", evento => {
+  if (evento.target.matches("button")) {
+    console.log(
+      "Botón seleccionado:",
+      evento.target.textContent
+    );
+  }
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣1️⃣ Cargar la página</h2>
+            <p>
+              Podemos ejecutar código cuando el documento ya fue cargado mediante
+              <code>DOMContentLoaded</code>.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>document.addEventListener(
+  "DOMContentLoaded",
+  () => {
+    console.log("DOM listo");
+  }
+);</code></pre>
+          </div>
+
+          <div class="nota">
+            <strong>⚠️ Error frecuente</strong>
+            <p>
+              No confundas registrar un evento con ejecutarlo inmediatamente.
+              En <code>addEventListener("click", funcion)</code> se entrega la
+              función para que el navegador la ejecute cuando ocurra el evento.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 1</span>
+            <h2>Botón interactivo</h2>
+            <p>
+              Creá un botón que cambie el texto de un párrafo cada vez que se
+              haga clic.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 2</span>
+            <h2>Contador</h2>
+            <p>
+              Creá botones para sumar uno, restar uno y reiniciar un contador.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 3</span>
+            <h2>Teclado</h2>
+            <p>
+              Mostrá en pantalla la última tecla presionada por el usuario.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 4</span>
+            <h2>Campo en vivo</h2>
+            <p>
+              Mostrá debajo de un input la cantidad de caracteres escritos
+              utilizando el evento <code>input</code>.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🏆 DESAFÍO FINAL</span>
+            <h2>Lista interactiva</h2>
+            <p>
+              Creá una lista de tareas. El usuario debe poder agregar tareas,
+              marcarlas como completadas y eliminarlas. Utilizá eventos y
+              delegación de eventos.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>📌 Eventos esenciales</h2>
+            <ul>
+              <li><code>click</code> → clic.</li>
+              <li><code>input</code> → cambio inmediato de un campo.</li>
+              <li><code>change</code> → cambio confirmado.</li>
+              <li><code>submit</code> → envío de formulario.</li>
+              <li><code>keydown</code> → tecla presionada.</li>
+              <li><code>keyup</code> → tecla liberada.</li>
+              <li><code>DOMContentLoaded</code> → DOM listo.</li>
+              <li><code>preventDefault()</code> → evita el comportamiento predeterminado.</li>
+              <li><code>event.target</code> → elemento que originó el evento.</li>
+              <li><code>event.currentTarget</code> → elemento que ejecuta el listener.</li>
+            </ul>
           </div>
         </section>
 
@@ -4190,91 +4875,352 @@ boton.addEventListener(
                  15 FORMULARIOS
             ================================================== -->
 
+        <!-- =================================================
+             15 FORMULARIOS
+        ================================================== -->
         <section id="formularios" class="clase">
-          <h2 class="titulo-clase">Formularios</h2>
+          <h2 class="titulo-clase">Formularios: recibir, validar y procesar datos</h2>
 
-          <p>
-            JavaScript puede leer y validar los datos ingresados. HTML debe
-            aportar primero etiquetas, tipos de campo y restricciones básicas.
+          <p class="descripcion">
+            Los formularios permiten que una aplicación reciba información del
+            usuario. HTML define la estructura y las restricciones básicas;
+            JavaScript puede leer, validar, procesar y mostrar esos datos sin
+            recargar la página.
           </p>
 
+          <div class="card">
+            <h2>🎯 Objetivos</h2>
+            <ul>
+              <li>Identificar los controles principales de un formulario.</li>
+              <li>Leer valores con <code>value</code>.</li>
+              <li>Procesar el evento <code>submit</code>.</li>
+              <li>Evitar el envío automático cuando sea necesario.</li>
+              <li>Validar datos.</li>
+              <li>Mostrar mensajes de error.</li>
+              <li>Trabajar con checkbox, radio y select.</li>
+              <li>Preparar datos para guardarlos en LocalStorage o enviarlos a un servidor.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣ Estructura básica</h2>
+            <p>
+              Un formulario utiliza <code>&lt;form&gt;</code> y distintos controles
+              como <code>input</code>, <code>select</code>, <code>textarea</code>
+              y botones.
+            </p>
+          </div>
+
           <div class="codigo">
-            <pre><code class="language-html">&lt;form id="formulario" novalidate&gt;
+            <pre><code>&lt;form id="formulario"&gt;
   &lt;label for="nombre"&gt;Nombre&lt;/label&gt;
   &lt;input
     id="nombre"
     name="nombre"
     type="text"
     required
-    minlength="2"
-    aria-describedby="errorNombre"
   /&gt;
-  &lt;p id="errorNombre" aria-live="polite"&gt;&lt;/p&gt;
-  &lt;button type="submit"&gt;Guardar&lt;/button&gt;
+
+  &lt;button type="submit"&gt;
+    Guardar
+  &lt;/button&gt;
 &lt;/form&gt;</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>2️⃣ Leer un input</h2>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const nombre = document.querySelector("#nombre");
+
+console.log(nombre.value);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>3️⃣ trim(): limpiar datos</h2>
+            <p>
+              Los datos escritos por una persona pueden contener espacios
+              innecesarios. <code>trim()</code> permite limpiar los extremos.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const valor = nombre.value.trim();
+
+if (valor === "") {
+  console.log("Debe ingresar un nombre");
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>4️⃣ Procesar submit</h2>
           </div>
 
           <div class="codigo">
             <pre><code>const formulario =
-    document.querySelector("#formulario");
+  document.querySelector("#formulario");
 
-const nombre =
-    document.querySelector("#nombre");
+formulario.addEventListener("submit", evento => {
+  evento.preventDefault();
 
-formulario.addEventListener(
-    "submit",
-    function(evento) {
+  const nombre =
+    document.querySelector("#nombre").value.trim();
 
-        evento.preventDefault();
-
-        if (nombre.value.trim() === "") {
-
-            const errorNombre =
-                document.querySelector(
-                    "#errorNombre"
-                );
-
-            errorNombre.textContent =
-                "Ingresá tu nombre";
-
-            nombre.focus();
-
-            return;
-
-        }
-
-        console.log(
-            "Nombre:",
-            nombre.value
-        );
-
-    }
-);</code></pre>
+  console.log("Nombre:", nombre);
+});</code></pre>
           </div>
 
           <div class="card">
-            <h3>Validación en dos niveles</h3>
+            <h2>5️⃣ Validación HTML</h2>
+            <p>
+              HTML ya proporciona herramientas de validación como
+              <code>required</code>, <code>minlength</code>, <code>maxlength</code>,
+              <code>min</code>, <code>max</code>, <code>pattern</code> y tipos
+              como <code>email</code> y <code>number</code>.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>&lt;input
+  type="email"
+  name="correo"
+  required
+/&gt;
+
+&lt;input
+  type="number"
+  name="edad"
+  min="6"
+  max="100"
+  required
+/&gt;</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>6️⃣ Validación JavaScript</h2>
+            <p>
+              JavaScript permite agregar reglas específicas del problema y mostrar
+              mensajes personalizados.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const edad = Number(
+  document.querySelector("#edad").value
+);
+
+if (!Number.isInteger(edad) || edad < 6) {
+  console.log("Edad no válida");
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>7️⃣ Mostrar errores</h2>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const errorNombre =
+  document.querySelector("#errorNombre");
+
+if (nombre === "") {
+  errorNombre.textContent =
+    "Ingresá tu nombre";
+
+  document.querySelector("#nombre").focus();
+
+  return;
+}
+
+errorNombre.textContent = "";</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>8️⃣ Checkbox</h2>
+            <p>
+              Para un checkbox podemos consultar <code>checked</code>.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const acepta =
+  document.querySelector("#acepta");
+
+if (acepta.checked) {
+  console.log("Aceptó");
+} else {
+  console.log("No aceptó");
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>9️⃣ Radio buttons</h2>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const seleccionado =
+  document.querySelector(
+    'input[name="turno"]:checked'
+  );
+
+if (seleccionado) {
+  console.log(
+    "Turno:",
+    seleccionado.value
+  );
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>🔟 Select</h2>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const curso =
+  document.querySelector("#curso");
+
+console.log(curso.value);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣1️⃣ FormData</h2>
+            <p>
+              <code>FormData</code> permite obtener los datos de un formulario
+              utilizando los atributos <code>name</code> de los controles.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const formulario =
+  document.querySelector("#formulario");
+
+formulario.addEventListener("submit", evento => {
+  evento.preventDefault();
+
+  const datos = new FormData(formulario);
+
+  console.log(datos.get("nombre"));
+  console.log(datos.get("correo"));
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣2️⃣ Validación completa</h2>
+          </div>
+
+          <div class="codigo">
+            <pre><code>formulario.addEventListener("submit", evento => {
+  evento.preventDefault();
+
+  const nombre =
+    document.querySelector("#nombre").value.trim();
+
+  const correo =
+    document.querySelector("#correo").value.trim();
+
+  if (nombre.length < 2) {
+    console.log("Nombre demasiado corto");
+    return;
+  }
+
+  if (!correo.includes("@")) {
+    console.log("Correo no válido");
+    return;
+  }
+
+  console.log("Formulario válido");
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣3️⃣ Buenas prácticas</h2>
             <ul>
-              <li>
-                <strong>HTML:</strong> <code>required</code>,
-                <code>minlength</code>, <code>type="email"</code> y otros
-                atributos.
-              </li>
-              <li>
-                <strong>JavaScript:</strong> reglas propias del problema y
-                mensajes dinámicos.
-              </li>
+              <li>Usar etiquetas <code>label</code> correctamente.</li>
+              <li>Dar nombres claros a los campos.</li>
+              <li>Validar tanto en el cliente como en el servidor cuando exista servidor.</li>
+              <li>No confiar en datos del usuario.</li>
+              <li>Mostrar errores cerca del campo correspondiente.</li>
+              <li>No guardar contraseñas ni datos sensibles en LocalStorage.</li>
+              <li>Separar validación, procesamiento y presentación cuando el proyecto crece.</li>
             </ul>
           </div>
 
-          <div class="ejercicio">
-            <span>PRÁCTICA</span>
-            <h3>Registro de estudiante</h3>
+          <div class="nota">
+            <strong>⚠️ Importante</strong>
             <p>
-              Creá un formulario con nombre, edad y correo. Validá los campos,
-              mostrales mensajes junto a cada control y agregá los datos a una
-              lista sin recargar la página.
+              La validación del navegador mejora la experiencia, pero no reemplaza
+              la validación del servidor en una aplicación que envía datos a un
+              backend.
             </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 1</span>
+            <h2>Formulario de estudiante</h2>
+            <p>
+              Creá un formulario con nombre, edad y curso. Mostrá los datos
+              ingresados en la consola.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 2</span>
+            <h2>Validar nombre</h2>
+            <p>
+              El nombre debe tener como mínimo dos caracteres y no puede estar
+              vacío.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 3</span>
+            <h2>Validar edad</h2>
+            <p>
+              Convertí el valor a número y comprobá que sea un entero dentro de
+              un rango razonable.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 4</span>
+            <h2>Formulario con mensajes</h2>
+            <p>
+              Mostrá un mensaje específico debajo de cada campo que tenga un
+              error y colocá el foco en el primer campo inválido.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🏆 DESAFÍO FINAL</span>
+            <h2>Registro de estudiantes</h2>
+            <p>
+              Creá un formulario para registrar estudiantes con nombre, edad,
+              curso y correo. Validá los campos, mostrá mensajes y agregá los
+              registros a una lista sin recargar la página.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>📌 Flujo de un formulario</h2>
+            <pre><code>Usuario escribe
+      ↓
+Evento submit
+      ↓
+preventDefault()
+      ↓
+Leer datos
+      ↓
+Limpiar datos
+      ↓
+Validar
+      ↓
+¿Correctos?
+   ↙       ↘
+ NO         SÍ
+ ↓          ↓
+Error     Procesar
+            ↓
+       Mostrar / guardar</code></pre>
           </div>
         </section>
 
@@ -4282,86 +5228,414 @@ formulario.addEventListener(
                  15 LOCAL STORAGE
             ================================================== -->
 
+        <!-- =================================================
+             16 LOCALSTORAGE
+        ================================================== -->
         <section id="localstorage" class="clase">
-          <h2 class="titulo-clase">LocalStorage</h2>
+          <h2 class="titulo-clase">LocalStorage: guardar datos en el navegador</h2>
 
-          <p>Permite guardar pequeños datos en el navegador.</p>
+          <p class="descripcion">
+            <strong>LocalStorage</strong> permite guardar pequeños datos en el
+            navegador para que permanezcan disponibles después de cerrar o
+            recargar la página.
+          </p>
 
-          <div class="codigo">
-            <pre><code>localStorage.setItem(
-    "nombre",
-    "Ana"
-);
-
-const nombre =
-    localStorage.getItem("nombre");
-
-console.log(nombre);
-
-localStorage.removeItem("nombre");
-
-// localStorage.clear();</code></pre>
-          </div>
-
-          <div class="codigo">
-            <pre><code>const usuario = {
-
-    nombre: "Lucas",
-
-    puntos: 120
-
-};
-
-localStorage.setItem(
-    "usuario",
-    JSON.stringify(usuario)
-);
-
-const datos =
-    JSON.parse(
-        localStorage.getItem("usuario")
-    );
-
-console.log(datos.nombre);
-
-console.log(datos.puntos);</code></pre>
+          <div class="card">
+            <h2>🎯 Objetivos</h2>
+            <ul>
+              <li>Comprender qué es LocalStorage.</li>
+              <li>Guardar información con <code>setItem()</code>.</li>
+              <li>Leer información con <code>getItem()</code>.</li>
+              <li>Eliminar datos.</li>
+              <li>Limpiar todo el almacenamiento del sitio.</li>
+              <li>Guardar objetos y arrays mediante JSON.</li>
+              <li>Combinar formularios + DOM + LocalStorage.</li>
+            </ul>
           </div>
 
           <div class="card">
-            <h3>Lectura segura</h3>
+            <h2>1️⃣ ¿Qué es LocalStorage?</h2>
             <p>
-              El dato puede no existir o contener JSON inválido. Conviene usar
-              un valor inicial y capturar errores.
+              Es un mecanismo de almacenamiento del navegador que trabaja con
+              pares <strong>clave → valor</strong>.
+            </p>
+            <p>
+              Los valores almacenados se manejan como texto. Por eso, para
+              guardar arrays u objetos necesitamos convertirlos a JSON.
             </p>
           </div>
 
           <div class="codigo">
-            <pre><code>function leerJugadores() {
-    try {
-        const texto =
-            localStorage.getItem("jugadores");
+            <pre><code>localStorage.setItem(
+  "nombre",
+  "Ana"
+);</code></pre>
+          </div>
 
-        return texto
-            ? JSON.parse(texto)
-            : [];
-    } catch (error) {
-        console.error(
-            "No se pudieron leer los datos",
-            error
-        );
+          <div class="card">
+            <h2>2️⃣ Leer un dato</h2>
+          </div>
 
-        return [];
-    }
+          <div class="codigo">
+            <pre><code>const nombre =
+  localStorage.getItem("nombre");
+
+console.log(nombre);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>3️⃣ ¿Qué ocurre si la clave no existe?</h2>
+            <p>
+              <code>getItem()</code> devuelve <code>null</code> cuando no encuentra
+              la clave solicitada.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const ciudad =
+  localStorage.getItem("ciudad");
+
+if (ciudad === null) {
+  console.log("No hay una ciudad guardada");
 }</code></pre>
           </div>
 
-          <div class="nota">
-            <strong>Límites y privacidad</strong>
+          <div class="card">
+            <h2>4️⃣ Modificar un dato</h2>
             <p>
-              <code>localStorage</code> guarda texto en ese navegador. No es una
-              base de datos y no debe usarse para contraseñas ni información
-              sensible.
+              Guardar nuevamente utilizando la misma clave reemplaza el valor
+              anterior.
             </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>localStorage.setItem("nombre", "Ana");
+
+localStorage.setItem("nombre", "Lucía");
+
+console.log(
+  localStorage.getItem("nombre")
+);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>5️⃣ Eliminar una clave</h2>
+          </div>
+
+          <div class="codigo">
+            <pre><code>localStorage.removeItem("nombre");</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>6️⃣ Vaciar LocalStorage</h2>
+            <p>
+              <code>clear()</code> elimina las claves almacenadas para el origen
+              correspondiente. Utilizalo con cuidado.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>localStorage.clear();</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>7️⃣ Guardar un objeto con JSON.stringify()</h2>
+            <p>
+              Como LocalStorage guarda texto, convertimos el objeto a una cadena
+              JSON antes de almacenarlo.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const estudiante = {
+  nombre: "Ana",
+  edad: 15,
+  curso: "5A"
+};
+
+localStorage.setItem(
+  "estudiante",
+  JSON.stringify(estudiante)
+);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>8️⃣ Recuperar un objeto con JSON.parse()</h2>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const datos =
+  localStorage.getItem("estudiante");
+
+if (datos) {
+  const estudiante =
+    JSON.parse(datos);
+
+  console.log(estudiante.nombre);
+  console.log(estudiante.curso);
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>9️⃣ Guardar un array</h2>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const alumnos = [
+  "Ana",
+  "Juan",
+  "Lucía"
+];
+
+localStorage.setItem(
+  "alumnos",
+  JSON.stringify(alumnos)
+);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>🔟 Recuperar un array</h2>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const guardados =
+  localStorage.getItem("alumnos");
+
+const alumnos =
+  guardados ? JSON.parse(guardados) : [];
+
+console.log(alumnos);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣1️⃣ Patrón guardar → leer → modificar → guardar</h2>
+            <p>
+              Una aplicación sencilla puede recuperar los datos, modificarlos en
+              memoria y volver a guardarlos.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const guardados =
+  localStorage.getItem("alumnos");
+
+const alumnos =
+  guardados ? JSON.parse(guardados) : [];
+
+alumnos.push("Pedro");
+
+localStorage.setItem(
+  "alumnos",
+  JSON.stringify(alumnos)
+);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣2️⃣ Formulario + LocalStorage</h2>
+            <p>
+              Podemos utilizar un formulario para crear datos y LocalStorage para
+              conservarlos al recargar la página.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const formulario =
+  document.querySelector("#formulario");
+
+const input =
+  document.querySelector("#nombre");
+
+formulario.addEventListener("submit", evento => {
+  evento.preventDefault();
+
+  const nombre = input.value.trim();
+
+  if (nombre === "") {
+    return;
+  }
+
+  localStorage.setItem("nombre", nombre);
+
+  input.value = "";
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣3️⃣ Cargar datos al iniciar</h2>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const nombreGuardado =
+  localStorage.getItem("nombre");
+
+if (nombreGuardado) {
+  console.log(
+    "Bienvenido:",
+    nombreGuardado
+  );
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣4️⃣ Persistencia del progreso</h2>
+            <p>
+              LocalStorage puede servir para conservar preferencias simples,
+              progreso local, configuraciones y datos de una práctica.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const progreso = {
+  introduccion: true,
+  variables: true,
+  dom: false,
+  eventos: false
+};
+
+localStorage.setItem(
+  "progresoCurso",
+  JSON.stringify(progreso)
+);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣5️⃣ LocalStorage no es una base de datos</h2>
+            <ul>
+              <li>Los datos quedan en el navegador del usuario.</li>
+              <li>No sirven por sí solos para compartir información entre computadoras.</li>
+              <li>No reemplazan una base de datos como Firestore o una base de datos de servidor.</li>
+              <li>No debe utilizarse para contraseñas ni información sensible.</li>
+              <li>El usuario puede borrar los datos del navegador.</li>
+            </ul>
+          </div>
+
+          <div class="nota">
+            <strong>🔐 Seguridad</strong>
+            <p>
+              No guardes secretos, contraseñas, tokens sensibles ni información
+              privada en LocalStorage. Para datos importantes de una aplicación
+              real se necesita una arquitectura de almacenamiento y seguridad
+              adecuada.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣6️⃣ Proyecto: lista de tareas persistente</h2>
+            <p>
+              El siguiente patrón combina arrays, objetos, funciones, DOM,
+              eventos y LocalStorage.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>let tareas = [];
+
+const guardadas =
+  localStorage.getItem("tareas");
+
+if (guardadas) {
+  tareas = JSON.parse(guardadas);
+}
+
+function guardarTareas() {
+  localStorage.setItem(
+    "tareas",
+    JSON.stringify(tareas)
+  );
+}
+
+function agregarTarea(texto) {
+  tareas.push({
+    texto,
+    completada: false
+  });
+
+  guardarTareas();
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣7️⃣ Pensar la aplicación completa</h2>
+            <pre><code>Formulario
+    ↓
+Evento submit
+    ↓
+Validar datos
+    ↓
+Modificar array
+    ↓
+JSON.stringify()
+    ↓
+LocalStorage
+    ↓
+JSON.parse()
+    ↓
+DOM
+    ↓
+Interfaz actualizada</code></pre>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 1</span>
+            <h2>Guardar nombre</h2>
+            <p>
+              Guardá un nombre con <code>setItem()</code> y recuperalo con
+              <code>getItem()</code>.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 2</span>
+            <h2>Preferencia de tema</h2>
+            <p>
+              Guardá una preferencia como <code>"claro"</code> u
+              <code>"oscuro"</code> y recuperala cuando se cargue la página.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 3</span>
+            <h2>Array de estudiantes</h2>
+            <p>
+              Guardá un array de nombres usando <code>JSON.stringify()</code> y
+              recuperalo utilizando <code>JSON.parse()</code>.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🚀 EJERCICIO 4</span>
+            <h2>Formulario persistente</h2>
+            <p>
+              Creá un formulario que guarde el nombre del estudiante y muestre el
+              nombre guardado después de recargar la página.
+            </p>
+          </div>
+
+          <div class="ejercicio">
+            <span>🏆 DESAFÍO FINAL</span>
+            <h2>Lista de tareas persistente</h2>
+            <p>
+              Construí una aplicación donde el usuario pueda agregar tareas,
+              marcarlas como completadas y eliminarlas. Los cambios deben
+              mantenerse después de recargar la página.
+            </p>
+            <p>
+              <strong>Condición:</strong> utilizar formularios, eventos, DOM,
+              arrays, objetos, <code>JSON.stringify()</code>,
+              <code>JSON.parse()</code> y LocalStorage.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>📌 Métodos principales</h2>
+            <ul>
+              <li><code>setItem(clave, valor)</code> → guarda.</li>
+              <li><code>getItem(clave)</code> → recupera.</li>
+              <li><code>removeItem(clave)</code> → elimina una clave.</li>
+              <li><code>clear()</code> → elimina el almacenamiento del origen.</li>
+              <li><code>JSON.stringify()</code> → objeto/array → texto JSON.</li>
+              <li><code>JSON.parse()</code> → texto JSON → objeto/array.</li>
+            </ul>
           </div>
         </section>
 
