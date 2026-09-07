@@ -5646,75 +5646,647 @@ Interfaz actualizada</code></pre>
         <section id="json-fetch" class="clase">
           <h2 class="titulo-clase">JSON y Fetch</h2>
 
-          <p>
-            JSON permite intercambiar información. Fetch permite realizar
-            solicitudes a servidores.
+          <p class="descripcion">
+            JSON y Fetch permiten trabajar con datos externos y comunicar una
+            página web con servidores y APIs. En esta clase vamos a pasar de
+            trabajar solamente con datos locales a consumir información real.
           </p>
+
+          <div class="card">
+            <h2>🎯 Objetivos de la clase</h2>
+            <ul>
+              <li>Comprender qué es JSON y por qué se utiliza.</li>
+              <li>Diferenciar un objeto JavaScript de un texto JSON.</li>
+              <li>Convertir datos con <code>JSON.stringify()</code> y <code>JSON.parse()</code>.</li>
+              <li>Comprender el funcionamiento de <code>fetch()</code>.</li>
+              <li>Trabajar con respuestas HTTP y <code>response.ok</code>.</li>
+              <li>Usar <code>async/await</code> para escribir código asíncrono más claro.</li>
+              <li>Enviar información a una API mediante POST.</li>
+              <li>Detectar y manejar errores de red, HTTP y de datos.</li>
+              <li>Mostrar datos obtenidos de una API dentro del DOM.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣ ¿Qué es JSON?</h2>
+            <p>
+              <strong>JSON</strong> significa <em>JavaScript Object Notation</em>.
+              Es un formato de texto utilizado para representar y transportar
+              información de manera estructurada.
+            </p>
+            <p>
+              Aunque su sintaxis se parece a la de los objetos JavaScript,
+              JSON es <strong>texto</strong>. Esto es importante porque los
+              servidores normalmente envían y reciben datos en este formato.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>{
+  "nombre": "Sofía",
+  "edad": 14,
+  "puntos": 85,
+  "activo": true
+}</code></pre>
+          </div>
+
+          <div class="nota">
+            <strong>💡 Recordá</strong>
+            <p>
+              En JSON las propiedades se escriben entre comillas dobles y no
+              se utilizan funciones, comentarios ni valores como
+              <code>undefined</code>.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>2️⃣ Objeto JavaScript vs JSON</h2>
+            <p>Un objeto JavaScript puede escribirse así:</p>
+          </div>
 
           <div class="codigo">
             <pre><code>const alumno = {
-
-    nombre: "Sofía",
-    edad: 14,
-    puntos: 85
-
+  nombre: "Sofía",
+  edad: 14,
+  puntos: 85
 };
 
-const textoJSON =
-    JSON.stringify(alumno);
+console.log(alumno.nombre);</code></pre>
+          </div>
+
+          <p>
+            El mismo dato representado como JSON es un texto:
+          </p>
+
+          <div class="codigo">
+            <pre><code>const textoJSON = '{"nombre":"Sofía","edad":14,"puntos":85}';
+
+console.log(typeof textoJSON); // string</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>3️⃣ JSON.stringify() — Objeto → JSON</h2>
+            <p>
+              <code>JSON.stringify()</code> convierte un objeto o array de
+              JavaScript en una cadena de texto JSON.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const alumno = {
+  nombre: "Sofía",
+  edad: 14,
+  puntos: 85
+};
+
+const textoJSON = JSON.stringify(alumno);
 
 console.log(textoJSON);
+console.log(typeof textoJSON);</code></pre>
+          </div>
 
-const objeto =
-    JSON.parse(textoJSON);
+          <div class="card">
+            <h2>4️⃣ JSON.parse() — JSON → Objeto</h2>
+            <p>
+              <code>JSON.parse()</code> realiza el proceso contrario: recibe
+              texto JSON válido y lo convierte en un valor JavaScript.
+            </p>
+          </div>
 
-console.log(objeto.nombre);</code></pre>
+          <div class="codigo">
+            <pre><code>const textoJSON = '{"nombre":"Sofía","edad":14,"puntos":85}';
+
+const alumno = JSON.parse(textoJSON);
+
+console.log(alumno);
+console.log(alumno.nombre);
+console.log(typeof alumno);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>5️⃣ JSON con arrays</h2>
+            <p>
+              JSON también permite representar listas de datos y estructuras
+              más grandes.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const alumnos = [
+  { nombre: "Ana", nota: 9 },
+  { nombre: "Juan", nota: 6 },
+  { nombre: "Lucía", nota: 10 }
+];
+
+const datos = JSON.stringify(alumnos);
+const recuperados = JSON.parse(datos);
+
+console.log(recuperados);
+console.log(recuperados[0].nombre);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>6️⃣ ¿Qué es Fetch?</h2>
+            <p>
+              <code>fetch()</code> permite realizar solicitudes HTTP desde
+              JavaScript. Se utiliza para obtener información de un servidor,
+              enviar datos o comunicarse con una API.
+            </p>
+            <p>
+              Una petición es <strong>asíncrona</strong>: el navegador puede
+              continuar trabajando mientras espera la respuesta.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>fetch("https://jsonplaceholder.typicode.com/users")
+  .then(respuesta =&gt; respuesta.json())
+  .then(datos =&gt; {
+    console.log(datos);
+  })
+  .catch(error =&gt; {
+    console.error("Error:", error);
+  });</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>7️⃣ Fetch con async/await</h2>
+            <p>
+              <code>async/await</code> permite escribir código asíncrono con una
+              estructura más fácil de leer.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>async function cargarUsuarios() {
+  const respuesta = await fetch(
+    "https://jsonplaceholder.typicode.com/users"
+  );
+
+  const usuarios = await respuesta.json();
+
+  console.log(usuarios);
+}
+
+cargarUsuarios();</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>8️⃣ response.ok — Comprobar la respuesta</h2>
+            <p>
+              Una petición puede completarse técnicamente aunque el servidor
+              responda con un estado HTTP de error. Por eso conviene comprobar
+              <code>response.ok</code> antes de procesar los datos.
+            </p>
           </div>
 
           <div class="codigo">
             <pre><code>async function cargarDatos() {
+  const respuesta = await fetch(
+    "https://jsonplaceholder.typicode.com/users"
+  );
 
-    try {
+  if (!respuesta.ok) {
+    throw new Error(
+      `Error HTTP: ${respuesta.status} ${respuesta.statusText}`
+    );
+  }
 
-        const respuesta =
-            await fetch(
-                "https://jsonplaceholder.typicode.com/users"
-            );
-
-        if (!respuesta.ok) {
-            throw new Error(
-                `Error HTTP: ${respuesta.status}`
-            );
-        }
-
-        const usuarios =
-            await respuesta.json();
-
-        console.log(usuarios);
-
-    } catch (error) {
-
-        console.error(
-            "Ocurrió un error:",
-            error
-        );
-
-    }
-
+  const datos = await respuesta.json();
+  console.log(datos);
 }
 
 cargarDatos();</code></pre>
           </div>
 
           <div class="card">
-            <h3>Qué ocurre en una petición</h3>
-            <ol>
-              <li><code>fetch()</code> inicia la solicitud.</li>
-              <li><code>await</code> espera la respuesta sin bloquear la página.</li>
-              <li><code>response.ok</code> comprueba el estado HTTP.</li>
-              <li><code>response.json()</code> convierte el cuerpo en datos.</li>
-              <li><code>catch</code> maneja fallos de red o errores lanzados.</li>
-            </ol>
+            <h2>9️⃣ Estados HTTP importantes</h2>
+            <ul>
+              <li><strong>200:</strong> solicitud correcta.</li>
+              <li><strong>201:</strong> recurso creado correctamente.</li>
+              <li><strong>400:</strong> solicitud incorrecta.</li>
+              <li><strong>401:</strong> falta autenticación válida.</li>
+              <li><strong>403:</strong> acceso prohibido.</li>
+              <li><strong>404:</strong> recurso no encontrado.</li>
+              <li><strong>500:</strong> error interno del servidor.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>🔟 GET — Obtener datos</h2>
+            <p>
+              <code>GET</code> es el método más habitual para solicitar datos
+              a una API.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>async function obtenerUsuarios() {
+  try {
+    const respuesta = await fetch(
+      "https://jsonplaceholder.typicode.com/users"
+    );
+
+    if (!respuesta.ok) {
+      throw new Error(`HTTP ${respuesta.status}`);
+    }
+
+    const usuarios = await respuesta.json();
+
+    for (const usuario of usuarios) {
+      console.log(usuario.name, usuario.email);
+    }
+  } catch (error) {
+    console.error("No se pudieron obtener los usuarios:", error.message);
+  }
+}
+
+obtenerUsuarios();</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣1️⃣ Mostrar los datos en el DOM</h2>
+            <p>
+              Una API es realmente útil cuando los datos obtenidos pueden
+              convertirse en información visible para el usuario.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>&lt;ul id="listaUsuarios"&gt;&lt;/ul&gt;
+
+&lt;script&gt;
+async function mostrarUsuarios() {
+  const lista = document.querySelector("#listaUsuarios");
+
+  try {
+    const respuesta = await fetch(
+      "https://jsonplaceholder.typicode.com/users"
+    );
+
+    if (!respuesta.ok) {
+      throw new Error(`HTTP ${respuesta.status}`);
+    }
+
+    const usuarios = await respuesta.json();
+
+    usuarios.forEach(usuario =&gt; {
+      const li = document.createElement("li");
+      li.textContent = `${usuario.name} — ${usuario.email}`;
+      lista.appendChild(li);
+    });
+  } catch (error) {
+    lista.textContent = "No fue posible cargar los usuarios.";
+    console.error(error);
+  }
+}
+
+mostrarUsuarios();
+&lt;/script&gt;</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣2️⃣ GET con una URL específica</h2>
+            <p>
+              Muchas APIs permiten solicitar un recurso individual utilizando
+              un identificador.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>async function obtenerUsuario(id) {
+  const respuesta = await fetch(
+    `https://jsonplaceholder.typicode.com/users/${id}`
+  );
+
+  if (!respuesta.ok) {
+    throw new Error(`Usuario no encontrado. HTTP ${respuesta.status}`);
+  }
+
+  return await respuesta.json();
+}
+
+obtenerUsuario(3)
+  .then(usuario =&gt; console.log(usuario))
+  .catch(error =&gt; console.error(error.message));</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣3️⃣ POST — Enviar datos</h2>
+            <p>
+              Con <code>POST</code> podemos enviar información al servidor.
+              Cuando enviamos un objeto como JSON debemos convertirlo con
+              <code>JSON.stringify()</code> y especificar el tipo de contenido.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>async function crearAlumno() {
+  const alumno = {
+    nombre: "Carlos",
+    edad: 16,
+    curso: "5A"
+  };
+
+  const respuesta = await fetch(
+    "https://jsonplaceholder.typicode.com/users",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(alumno)
+    }
+  );
+
+  if (!respuesta.ok) {
+    throw new Error(`Error HTTP: ${respuesta.status}`);
+  }
+
+  const resultado = await respuesta.json();
+
+  console.log("Servidor respondió:", resultado);
+}
+
+crearAlumno().catch(error =&gt; {
+  console.error("No se pudo crear el alumno:", error.message);
+});</code></pre>
+          </div>
+
+          <div class="nota">
+            <strong>⚠️ Importante</strong>
+            <p>
+              JSONPlaceholder es una API de práctica. Los ejemplos sirven para
+              aprender el funcionamiento de las solicitudes; no deben
+              interpretarse como un sistema real de almacenamiento permanente.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣4️⃣ PUT y PATCH</h2>
+            <p>
+              <code>PUT</code> suele utilizarse para reemplazar un recurso y
+              <code>PATCH</code> para modificar solamente una parte.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const cambios = {
+  nombre: "Carlos actualizado"
+};
+
+const respuesta = await fetch(
+  "https://jsonplaceholder.typicode.com/users/1",
+  {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(cambios)
+  }
+);
+
+if (!respuesta.ok) {
+  throw new Error(`HTTP ${respuesta.status}`);
+}
+
+console.log(await respuesta.json());</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣5️⃣ DELETE — Eliminar datos</h2>
+            <p>
+              <code>DELETE</code> se utiliza para solicitar la eliminación de
+              un recurso.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>async function eliminarUsuario(id) {
+  const respuesta = await fetch(
+    `https://jsonplaceholder.typicode.com/users/${id}`,
+    {
+      method: "DELETE"
+    }
+  );
+
+  if (!respuesta.ok) {
+    throw new Error(`No se pudo eliminar. HTTP ${respuesta.status}`);
+  }
+
+  console.log("Solicitud de eliminación correcta");
+}
+
+eliminarUsuario(1).catch(error =&gt; {
+  console.error(error.message);
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣6️⃣ Flujo completo de una petición</h2>
+            <pre><code>JavaScript
+    ↓
+fetch()
+    ↓
+Solicitud HTTP
+    ↓
+Servidor / API
+    ↓
+Respuesta HTTP
+    ↓
+response.ok
+    ↓
+response.json()
+    ↓
+Datos JavaScript
+    ↓
+Procesamiento
+    ↓
+DOM</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣7️⃣ Validar los datos recibidos</h2>
+            <p>
+              No debemos asumir que una API siempre devuelve exactamente lo que
+              esperamos. Podemos comprobar que el resultado tenga la estructura
+              necesaria antes de utilizarlo.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>async function cargarUsuarios() {
+  const respuesta = await fetch(
+    "https://jsonplaceholder.typicode.com/users"
+  );
+
+  if (!respuesta.ok) {
+    throw new Error(`HTTP ${respuesta.status}`);
+  }
+
+  const datos = await respuesta.json();
+
+  if (!Array.isArray(datos)) {
+    throw new Error("La API no devolvió una lista de usuarios");
+  }
+
+  for (const usuario of datos) {
+    if (!usuario.name || !usuario.email) {
+      console.warn("Usuario con datos incompletos:", usuario);
+      continue;
+    }
+
+    console.log(usuario.name, usuario.email);
+  }
+}
+
+cargarUsuarios().catch(error =&gt; {
+  console.error("Error:", error.message);
+});</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣8️⃣ Manejo completo de errores</h2>
+            <p>
+              Una aplicación más robusta combina <code>try</code>,
+              <code>catch</code>, <code>response.ok</code> y validaciones.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>async function cargarDatos() {
+  const mensaje = document.querySelector("#mensaje");
+
+  try {
+    mensaje.textContent = "Cargando...";
+
+    const respuesta = await fetch(
+      "https://jsonplaceholder.typicode.com/users"
+    );
+
+    if (!respuesta.ok) {
+      throw new Error(
+        `El servidor respondió con HTTP ${respuesta.status}`
+      );
+    }
+
+    const datos = await respuesta.json();
+
+    if (!Array.isArray(datos)) {
+      throw new Error("Formato de datos inesperado");
+    }
+
+    mensaje.textContent = `Se cargaron ${datos.length} usuarios.`;
+  } catch (error) {
+    mensaje.textContent = "No fue posible cargar los datos.";
+    console.error(error);
+  }
+}
+
+cargarDatos();</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>🧠 Diferencia entre errores de Fetch</h2>
+            <ul>
+              <li>
+                <strong>Error de red:</strong> la solicitud no pudo completarse,
+                por ejemplo por falta de conexión o problemas de acceso.
+              </li>
+              <li>
+                <strong>Error HTTP:</strong> el servidor respondió, pero indicó
+                un estado como 404 o 500. Se detecta con <code>response.ok</code>
+                o <code>response.status</code>.
+              </li>
+              <li>
+                <strong>Error de datos:</strong> la respuesta llegó, pero no
+                tiene el formato esperado o no se puede convertir correctamente.
+              </li>
+            </ul>
+          </div>
+
+          <div class="ejercicios">
+            <h2>🎯 Ejercicios</h2>
+
+            <h3>Ejercicio 1 — Convertir a JSON</h3>
+            <p>
+              Creá un objeto llamado <code>producto</code> con nombre, precio y
+              stock. Convertí el objeto a JSON con <code>JSON.stringify()</code>
+              y mostralo en consola.
+            </p>
+
+            <h3>Ejercicio 2 — Recuperar JSON</h3>
+            <p>
+              Tomá un texto JSON que represente un estudiante. Utilizá
+              <code>JSON.parse()</code> y mostrale su nombre y nota.
+            </p>
+
+            <h3>Ejercicio 3 — Array en JSON</h3>
+            <p>
+              Creá un array de cinco productos. Convertí el array a JSON y luego
+              recuperalo nuevamente como array.
+            </p>
+
+            <h3>Ejercicio 4 — GET</h3>
+            <p>
+              Utilizá <code>fetch()</code> para obtener usuarios de
+              <code>https://jsonplaceholder.typicode.com/users</code> y mostrá
+              en consola el nombre de cada uno.
+            </p>
+
+            <h3>Ejercicio 5 — GET con error</h3>
+            <p>
+              Cambiá la URL para solicitar un recurso inexistente. Utilizá
+              <code>response.ok</code> y <code>response.status</code> para
+              detectar el error.
+            </p>
+
+            <h3>Ejercicio 6 — DOM + Fetch</h3>
+            <p>
+              Creá una lista HTML y cargá en ella los nombres obtenidos desde
+              una API utilizando <code>createElement()</code> y
+              <code>textContent</code>.
+            </p>
+
+            <h3>Ejercicio 7 — POST</h3>
+            <p>
+              Creá un objeto estudiante y enviá sus datos utilizando
+              <code>POST</code>, <code>JSON.stringify()</code> y el header
+              <code>Content-Type: application/json</code>.
+            </p>
+
+            <h3>Ejercicio 8 — Validación</h3>
+            <p>
+              Comprobá que la respuesta obtenida sea un array antes de recorrerla.
+              Si no lo es, lanzá un error con <code>throw new Error()</code>.
+            </p>
+
+            <h3>🏆 Desafío final — Mini aplicación de usuarios</h3>
+            <p>
+              Construí una página que tenga un botón
+              <strong>“Cargar usuarios”</strong>. Al presionarlo debe realizar
+              un <code>fetch()</code>, mostrar un mensaje de carga, obtener los
+              usuarios, crear tarjetas con nombre, email y ciudad, y mostrar un
+              mensaje de error si la solicitud falla.
+            </p>
+            <p>
+              <strong>Condiciones:</strong> utilizar
+              <code>async/await</code>, <code>try/catch</code>,
+              <code>response.ok</code>, <code>response.json()</code>, arrays,
+              objetos y DOM.
+            </p>
+          </div>
+
+          <div class="nota">
+            <strong>📌 Para recordar</strong>
+            <p>
+              <code>JSON.stringify()</code> → JavaScript a texto JSON.<br />
+              <code>JSON.parse()</code> → texto JSON a JavaScript.<br />
+              <code>fetch()</code> → realiza solicitudes HTTP.<br />
+              <code>response.ok</code> → indica si el estado HTTP fue exitoso.<br />
+              <code>response.json()</code> → convierte el cuerpo JSON en datos JavaScript.<br />
+              <code>async/await</code> → facilita el trabajo con operaciones asíncronas.
+            </p>
           </div>
         </section>
 
@@ -5725,168 +6297,847 @@ cargarDatos();</code></pre>
         <section id="errores" class="clase">
           <h2 class="titulo-clase">Errores y depuración</h2>
 
-          <p>Aprender a encontrar errores es fundamental.</p>
-
-          <div class="codigo">
-            <pre><code>try {
-
-    const numero =
-        Number("abc");
-
-    if (Number.isNaN(numero)) {
-
-        throw new Error(
-            "No es un número válido"
-        );
-
-    }
-
-    console.log(numero);
-
-} catch (error) {
-
-    console.error(
-        error.message
-    );
-
-}</code></pre>
-          </div>
-
-          <div class="card">
-            <h2>Herramientas del navegador</h2>
-
-            <p>
-              Practicá con
-              <code>console.log()</code>, <code>console.table()</code>,
-              breakpoints y el panel Console.
-            </p>
-          </div>
-
-          <div class="card">
-            <h3>Tipos de errores</h3>
-            <ul>
-              <li>
-                <strong>Sintaxis:</strong> el código no respeta la gramática del
-                lenguaje.
-              </li>
-              <li>
-                <strong>Ejecución:</strong> el programa comienza, pero una
-                instrucción falla.
-              </li>
-              <li>
-                <strong>Lógica:</strong> el programa funciona, aunque devuelve
-                un resultado incorrecto.
-              </li>
-            </ul>
-          </div>
-
-          <div class="codigo">
-            <pre><code>function convertirEdad(valor) {
-    const edad = Number(valor);
-
-    if (Number.isNaN(edad)) {
-        throw new TypeError(
-            "La edad debe ser numérica"
-        );
-    }
-
-    return edad;
-}
-
-try {
-    console.log(convertirEdad("quince"));
-} catch (error) {
-    console.error(error.message);
-} finally {
-    console.log("Validación terminada");
-}</code></pre>
-          </div>
-        </section>
-
-        <!-- =================================================
-                 18 PROYECTO FINAL
-            ================================================== -->
-
-        <section id="proyecto" class="clase">
-          <h2 class="titulo-clase">Proyecto final: Sistema de torneo de ajedrez</h2>
-
-          <p>
-            Integrá todo lo aprendido construyendo una pequeña aplicación web.
+          <p class="descripcion">
+            Un buen programador no solamente escribe código: también sabe
+            encontrar, interpretar, corregir y prevenir errores. En esta clase
+            vamos a aprender a utilizar las herramientas del navegador para
+            detectar problemas de sintaxis, ejecución, lógica, datos y red.
           </p>
 
           <div class="card">
-            <h2>Objetivo</h2>
+            <h2>🎯 Objetivos de la clase</h2>
+            <ul>
+              <li>Reconocer los principales tipos de errores.</li>
+              <li>Interpretar mensajes de la consola.</li>
+              <li>Utilizar <code>try</code>, <code>catch</code> y <code>finally</code>.</li>
+              <li>Lanzar errores personalizados con <code>throw</code>.</li>
+              <li>Validar datos antes de utilizarlos.</li>
+              <li>Detectar errores relacionados con JSON y Fetch.</li>
+              <li>Utilizar herramientas de DevTools y breakpoints.</li>
+              <li>Desarrollar una estrategia ordenada para depurar programas.</li>
+            </ul>
+          </div>
 
+          <div class="card">
+            <h2>1️⃣ ¿Qué es un error?</h2>
             <p>
-              Crear una aplicación para registrar jugadores, asignar puntos y
-              mostrar una clasificación.
+              Un error ocurre cuando el programa no puede realizar correctamente
+              una instrucción o cuando el resultado obtenido no es el esperado.
+            </p>
+            <p>
+              Algunos errores impiden que el programa comience. Otros aparecen
+              durante la ejecución y también existen errores de lógica donde el
+              programa funciona, pero produce un resultado incorrecto.
             </p>
           </div>
 
           <div class="card">
-            <h2>Etapa 1 — Datos</h2>
+            <h2>2️⃣ Error de sintaxis</h2>
+            <p>
+              Se produce cuando el código no respeta las reglas de escritura de
+              JavaScript. El navegador normalmente señala dónde encontró el
+              problema.
+            </p>
+          </div>
 
-            <ul>
-              <li>Crear un array de jugadores.</li>
+          <div class="codigo">
+            <pre><code>// Falta cerrar el paréntesis
+console.log("Hola";
 
-              <li>Cada jugador debe ser un objeto.</li>
-
-              <li>Guardar nombre, categoría y puntos.</li>
-            </ul>
+// Versión correcta
+console.log("Hola");</code></pre>
           </div>
 
           <div class="card">
-            <h2>Etapa 2 — Funciones</h2>
+            <h2>3️⃣ ReferenceError</h2>
+            <p>
+              Aparece cuando intentamos utilizar una variable que no existe en
+              el contexto actual.
+            </p>
+          </div>
 
-            <ul>
-              <li>Agregar jugador.</li>
+          <div class="codigo">
+            <pre><code>const nombre = "Ana";
 
-              <li>Eliminar jugador.</li>
-
-              <li>Sumar puntos.</li>
-
-              <li>Buscar jugador.</li>
-            </ul>
+console.log(nombre);
+console.log(edad); // ReferenceError</code></pre>
           </div>
 
           <div class="card">
-            <h2>Etapa 3 — DOM</h2>
+            <h2>4️⃣ TypeError</h2>
+            <p>
+              Ocurre cuando intentamos realizar una operación que no es válida
+              para el tipo de dato que estamos utilizando.
+            </p>
+          </div>
 
-            <ul>
-              <li>Mostrar jugadores en una tabla.</li>
+          <div class="codigo">
+            <pre><code>const alumno = null;
 
-              <li>Crear botones de acción.</li>
-
-              <li>Actualizar la clasificación sin recargar.</li>
-            </ul>
+// TypeError: no podemos acceder a nombre desde null
+console.log(alumno.nombre);</code></pre>
           </div>
 
           <div class="card">
-            <h2>Etapa 4 — Persistencia</h2>
+            <h2>5️⃣ RangeError</h2>
+            <p>
+              Se produce cuando un valor está fuera del rango permitido por una
+              operación.
+            </p>
+          </div>
 
-            <p>Guardar los jugadores en LocalStorage.</p>
+          <div class="codigo">
+            <pre><code>const numero = 10;
+
+try {
+  console.log(numero.toFixed(101));
+} catch (error) {
+  console.error("RangeError:", error.message);
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>6️⃣ Error de lógica</h2>
+            <p>
+              Es especialmente importante porque el programa puede ejecutarse
+              sin mostrar un error en rojo, pero entregar un resultado incorrecto.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const precio = 1000;
+const cantidad = 3;
+
+// Error lógico: debería multiplicar, no sumar.
+const total = precio + cantidad;
+
+console.log(total);</code></pre>
+          </div>
+
+          <div class="nota">
+            <strong>🧠 Pregunta clave</strong>
+            <p>
+              Si el navegador no muestra un error, eso no significa que el
+              programa esté necesariamente bien. Siempre debemos comprobar que
+              el resultado sea correcto.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>7️⃣ try / catch</h2>
+            <p>
+              <code>try</code> contiene el código que puede producir un error.
+              Si ocurre un error, <code>catch</code> permite capturarlo y
+              responder de una manera controlada.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>try {
+  const numero = Number("abc");
+
+  if (Number.isNaN(numero)) {
+    throw new Error("El valor no es un número válido");
+  }
+
+  console.log(numero);
+} catch (error) {
+  console.error("Ocurrió un error:", error.message);
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>8️⃣ finally</h2>
+            <p>
+              <code>finally</code> se ejecuta tanto si ocurre un error como si
+              la operación termina correctamente. Es útil para indicar que una
+              tarea finalizó o para limpiar recursos.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>try {
+  console.log("Procesando datos...");
+} catch (error) {
+  console.error(error.message);
+} finally {
+  console.log("Proceso terminado");
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>9️⃣ throw — Crear nuestros propios errores</h2>
+            <p>
+              Podemos utilizar <code>throw</code> para detener una operación y
+              generar un error cuando una condición no es válida.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>function validarEdad(edad) {
+  if (!Number.isFinite(edad)) {
+    throw new Error("La edad debe ser un número");
+  }
+
+  if (edad &lt; 0) {
+    throw new Error("La edad no puede ser negativa");
+  }
+
+  return true;
+}
+
+try {
+  validarEdad(-5);
+} catch (error) {
+  console.error(error.message);
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>🔟 Validar datos antes de procesarlos</h2>
+            <p>
+              Muchas fallas pueden evitarse comprobando los datos antes de
+              utilizarlos.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>function calcularPromedio(notas) {
+  if (!Array.isArray(notas)) {
+    throw new Error("Se esperaba un array de notas");
+  }
+
+  if (notas.length === 0) {
+    throw new Error("No hay notas para calcular");
+  }
+
+  if (!notas.every(nota =&gt; Number.isFinite(nota))) {
+    throw new Error("Todas las notas deben ser números");
+  }
+
+  const suma = notas.reduce(
+    (total, nota) =&gt; total + nota,
+    0
+  );
+
+  return suma / notas.length;
+}
+
+try {
+  console.log(calcularPromedio([8, 9, 10]));
+} catch (error) {
+  console.error(error.message);
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣1️⃣ Errores con JSON.parse()</h2>
+            <p>
+              Si el texto no tiene un formato JSON válido,
+              <code>JSON.parse()</code> puede producir un error. Por eso es
+              recomendable utilizarlo dentro de un <code>try/catch</code> cuando
+              los datos pueden ser externos o desconocidos.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const texto = '{nombre: "Ana"}';
+
+try {
+  const objeto = JSON.parse(texto);
+  console.log(objeto);
+} catch (error) {
+  console.error("JSON inválido:", error.message);
+}</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣2️⃣ Errores con Fetch</h2>
+            <p>
+              Con <code>fetch()</code> debemos diferenciar un problema de red
+              de una respuesta HTTP con estado de error.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>async function cargarDatos() {
+  try {
+    const respuesta = await fetch(
+      "https://jsonplaceholder.typicode.com/usuarios-inexistentes"
+    );
+
+    if (!respuesta.ok) {
+      throw new Error(
+        `Error HTTP ${respuesta.status}: ${respuesta.statusText}`
+      );
+    }
+
+    const datos = await respuesta.json();
+    console.log(datos);
+  } catch (error) {
+    console.error("No se pudieron cargar los datos:", error.message);
+  }
+}
+
+cargarDatos();</code></pre>
+          </div>
+
+          <div class="nota">
+            <strong>⚠️ Error frecuente con Fetch</strong>
+            <p>
+              <code>fetch()</code> no considera automáticamente un estado HTTP
+              como 404 o 500 una excepción. Por eso debemos comprobar
+              <code>response.ok</code> y, cuando sea necesario, lanzar nuestro
+              propio error con <code>throw</code>.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣3️⃣ console.log(), console.error() y console.warn()</h2>
+            <p>
+              La consola es una de las herramientas principales para conocer
+              qué está haciendo nuestro programa.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const usuario = {
+  nombre: "Ana",
+  edad: 16
+};
+
+console.log("Usuario:", usuario);
+console.warn("Esta es una advertencia");
+console.error("Este es un mensaje de error");
+console.table([usuario]);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣4️⃣ console.table()</h2>
+            <p>
+              Cuando trabajamos con arrays de objetos, <code>console.table()</code>
+              permite visualizar los datos en forma de tabla y facilita el
+              análisis.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const alumnos = [
+  { nombre: "Ana", nota: 9 },
+  { nombre: "Juan", nota: 6 },
+  { nombre: "Lucía", nota: 10 }
+];
+
+console.table(alumnos);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣5️⃣ Debugger</h2>
+            <p>
+              La instrucción <code>debugger</code> puede detener la ejecución
+              cuando las herramientas de desarrollo del navegador están abiertas.
+              Esto permite observar variables y seguir el programa paso a paso.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>function calcularTotal(precio, cantidad) {
+  const subtotal = precio * cantidad;
+
+  debugger;
+
+  return subtotal;
+}
+
+console.log(calcularTotal(1500, 4));</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣6️⃣ Breakpoints en DevTools</h2>
+            <p>
+              También podemos colocar un breakpoint haciendo clic sobre el
+              número de línea dentro de las herramientas de desarrollo del
+              navegador.
+            </p>
+            <ol>
+              <li>Abrí las herramientas del navegador con F12.</li>
+              <li>Ingresá en la pestaña <strong>Sources</strong>.</li>
+              <li>Buscá el archivo JavaScript.</li>
+              <li>Hacé clic sobre el número de línea.</li>
+              <li>Ejecutá nuevamente el programa.</li>
+              <li>Observá las variables y avanzá instrucción por instrucción.</li>
+            </ol>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣7️⃣ Estrategia para encontrar errores</h2>
+            <pre><code>1. ¿El código tiene un error de sintaxis?
+             ↓
+2. ¿La consola muestra algún mensaje?
+             ↓
+3. ¿Qué línea indica el error?
+             ↓
+4. ¿Qué valores tienen las variables?
+             ↓
+5. ¿La condición realmente se cumple?
+             ↓
+6. ¿El resultado coincide con lo esperado?
+             ↓
+7. Probar nuevamente después de corregir</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣8️⃣ Ejemplo de depuración</h2>
+            <p>
+              El siguiente programa debería calcular el total de una compra.
+              Buscá el error lógico antes de mirar la solución.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const precio = 1500;
+const cantidad = 4;
+const descuento = 10;
+
+const subtotal = precio + cantidad;
+const montoDescuento = subtotal * descuento / 100;
+const total = subtotal - montoDescuento;
+
+console.log("Subtotal:", subtotal);
+console.log("Descuento:", montoDescuento);
+console.log("Total:", total);</code></pre>
+          </div>
+
+          <div class="nota">
+            <strong>🔎 Analizá</strong>
+            <p>
+              El problema está en el cálculo del subtotal. Si el precio es
+              $1500 y se compran 4 unidades, debemos multiplicar precio por
+              cantidad.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>const precio = 1500;
+const cantidad = 4;
+const descuento = 10;
+
+const subtotal = precio * cantidad;
+const montoDescuento = subtotal * descuento / 100;
+const total = subtotal - montoDescuento;
+
+console.log("Subtotal:", subtotal);
+console.log("Descuento:", montoDescuento);
+console.log("Total:", total);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>1️⃣9️⃣ Errores de alcance (Scope)</h2>
+            <p>
+              Una variable declarada dentro de una función o bloque puede no
+              estar disponible fuera de ese contexto.
+            </p>
+          </div>
+
+          <div class="codigo">
+            <pre><code>function calcular() {
+  const resultado = 30;
+  console.log(resultado);
+}
+
+calcular();
+
+// Error: resultado no existe fuera de la función.
+// console.log(resultado);</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>2️⃣0️⃣ Errores frecuentes que debemos evitar</h2>
+            <ul>
+              <li>Escribir mal el nombre de una variable.</li>
+              <li>Usar una variable antes de declararla.</li>
+              <li>Confundir <code>=</code> con <code>===</code>.</li>
+              <li>Olvidar aumentar un contador en un bucle.</li>
+              <li>Intentar acceder a una propiedad de <code>null</code> o <code>undefined</code>.</li>
+              <li>No validar datos recibidos de formularios o APIs.</li>
+              <li>No comprobar <code>response.ok</code> en Fetch.</li>
+              <li>Intentar hacer <code>JSON.parse()</code> sobre JSON inválido.</li>
+              <li>Modificar el DOM sin comprobar que el elemento exista.</li>
+              <li>Corregir un error sin volver a probar el programa.</li>
+            </ul>
+          </div>
+
+          <div class="ejercicios">
+            <h2>🎯 Ejercicios</h2>
+
+            <h3>Ejercicio 1 — Encontrar el error</h3>
+            <p>
+              El siguiente código tiene un error. Encontralo y corregilo:
+            </p>
+            <pre><code>const nombre = "Ana";
+console.log(nomre);</code></pre>
+
+            <h3>Ejercicio 2 — TypeError</h3>
+            <p>
+              Analizá un programa que intenta acceder a una propiedad de
+              <code>null</code>. Utilizá <code>try/catch</code> para evitar que
+              el programa se detenga sin control.
+            </p>
+
+            <h3>Ejercicio 3 — Validación</h3>
+            <p>
+              Creá una función que reciba una edad y lance un error si el valor
+              no es un número o es menor que cero.
+            </p>
+
+            <h3>Ejercicio 4 — JSON</h3>
+            <p>
+              Utilizá <code>try/catch</code> para intentar convertir un texto
+              JSON inválido. Mostrá un mensaje comprensible al usuario.
+            </p>
+
+            <h3>Ejercicio 5 — Fetch</h3>
+            <p>
+              Realizá una petición con <code>fetch()</code>, comprobá
+              <code>response.ok</code> y capturá los errores con
+              <code>try/catch</code>.
+            </p>
+
+            <h3>Ejercicio 6 — Depuración</h3>
+            <p>
+              Utilizá <code>console.table()</code> para analizar un array de
+              estudiantes con nombre, curso y nota.
+            </p>
+
+            <h3>Ejercicio 7 — Breakpoint</h3>
+            <p>
+              Colocá un breakpoint en una función que calcule un promedio y
+              observá el valor de cada variable antes de obtener el resultado.
+            </p>
+
+            <h3>🏆 Desafío final — Programa resistente a errores</h3>
+            <p>
+              Creá una aplicación que reciba nombre, edad y tres notas de un
+              estudiante. Validá todos los datos, calculá el promedio y
+              mostrale el resultado. Si algún dato es incorrecto, el programa
+              debe mostrar un mensaje claro sin detener toda la aplicación.
+            </p>
+            <p>
+              <strong>Condiciones:</strong> utilizar funciones,
+              <code>try/catch</code>, <code>throw</code>, validaciones,
+              arrays, <code>reduce()</code> y mensajes mediante el DOM.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>📌 Para recordar</h2>
+            <ul>
+              <li><code>SyntaxError</code> → código escrito incorrectamente.</li>
+              <li><code>ReferenceError</code> → variable o referencia inexistente.</li>
+              <li><code>TypeError</code> → operación no válida para un tipo.</li>
+              <li><code>RangeError</code> → valor fuera de un rango permitido.</li>
+              <li><strong>Error lógico</strong> → el programa funciona, pero el resultado está mal.</li>
+              <li><code>try/catch</code> → permite controlar errores.</li>
+              <li><code>throw</code> → permite generar errores intencionalmente.</li>
+              <li><code>finally</code> → se ejecuta al finalizar el proceso.</li>
+              <li><code>console</code> → ayuda a observar y analizar el programa.</li>
+              <li><code>debugger</code> y breakpoints → permiten ejecutar paso a paso.</li>
+            </ul>
+          </div>
+        </section>
+<!-- =================================================
+                 19 PROYECTO FINAL
+            ================================================== -->
+
+        <section id="proyecto" class="clase">
+          <h2 class="titulo-clase">Proyecto final: Integración de JavaScript</h2>
+
+          <p class="descripcion">
+            Llegaste al proyecto final. En esta etapa vas a demostrar que podés
+            transformar los contenidos del curso en una aplicación web funcional.
+            Podés elegir <strong>uno de los cinco proyectos propuestos</strong>.
+          </p>
+
+          <div class="card">
+            <h2>🎯 Objetivo general</h2>
+            <p>
+              Construir una aplicación utilizando los contenidos estudiados en
+              JavaScript básico, desde variables y condicionales hasta DOM,
+              formularios, LocalStorage, JSON, Fetch y manejo de errores.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>📚 Contenidos que debe integrar</h2>
+            <ul>
+              <li>Variables: <code>let</code> y <code>const</code>.</li>
+              <li>Tipos de datos y operadores.</li>
+              <li>Condicionales.</li>
+              <li>Funciones.</li>
+              <li>Arrays y bucles.</li>
+              <li>Objetos.</li>
+              <li>Métodos de arrays: <code>map()</code>, <code>filter()</code>, <code>find()</code>, <code>reduce()</code> u otros.</li>
+              <li>Strings y métodos de strings.</li>
+              <li>Scope.</li>
+              <li>DOM.</li>
+              <li>Eventos.</li>
+              <li>Formularios y validación.</li>
+              <li>LocalStorage.</li>
+              <li>JSON: <code>JSON.stringify()</code> y <code>JSON.parse()</code>.</li>
+              <li>Fetch y <code>async/await</code> cuando corresponda.</li>
+              <li>Manejo de errores con <code>try/catch</code>.</li>
+            </ul>
+          </div>
+
+          <div class="nota">
+            <strong>💡 Importante</strong>
+            <p>
+              No se busca solamente que la aplicación se vea bien. El objetivo
+              principal es demostrar que comprendés cómo organizar los datos,
+              procesarlos con JavaScript y actualizar la interfaz mediante el DOM.
+            </p>
+          </div>
+
+          <!-- PROYECTO 1 -->
+          <div class="card">
+            <h2>🟢 Proyecto 1 — Sistema de gestión de estudiantes</h2>
+            <p>
+              Crear una aplicación para registrar estudiantes y consultar sus
+              resultados académicos.
+            </p>
+
+            <h3>Datos mínimos</h3>
+            <ul>
+              <li>Nombre y apellido.</li>
+              <li>Edad.</li>
+              <li>Curso.</li>
+              <li>Nota.</li>
+            </ul>
+
+            <h3>Funciones obligatorias</h3>
+            <ul>
+              <li>Agregar estudiante.</li>
+              <li>Eliminar estudiante.</li>
+              <li>Buscar estudiante.</li>
+              <li>Mostrar estudiantes en una tabla.</li>
+              <li>Calcular promedio general.</li>
+              <li>Indicar aprobado o desaprobado.</li>
+              <li>Ordenar estudiantes por nota.</li>
+              <li>Guardar los datos en LocalStorage.</li>
+            </ul>
+
+            <h3>⭐ Desafío extra</h3>
+            <p>
+              Agregar filtros por curso y estadísticas de aprobados, desaprobados
+              y mejor promedio.
+            </p>
+          </div>
+
+          <!-- PROYECTO 2 -->
+          <div class="card">
+            <h2>🔵 Proyecto 2 — Tienda online</h2>
+            <p>
+              Crear una pequeña tienda virtual de ropa, accesorios, tecnología
+              u otra categoría elegida por el estudiante.
+            </p>
+
+            <h3>Datos mínimos del producto</h3>
+            <ul>
+              <li>Nombre.</li>
+              <li>Categoría.</li>
+              <li>Precio.</li>
+              <li>Stock.</li>
+              <li>Imagen.</li>
+            </ul>
+
+            <h3>Funciones obligatorias</h3>
+            <ul>
+              <li>Mostrar catálogo.</li>
+              <li>Buscar productos.</li>
+              <li>Filtrar por categoría.</li>
+              <li>Ordenar por precio.</li>
+              <li>Agregar productos al carrito.</li>
+              <li>Modificar cantidades.</li>
+              <li>Eliminar productos del carrito.</li>
+              <li>Calcular subtotal, descuento y total.</li>
+              <li>Guardar el carrito en LocalStorage.</li>
+            </ul>
+
+            <h3>⭐ Desafío extra</h3>
+            <p>
+              Cargar los productos desde un archivo <code>productos.json</code>
+              utilizando <code>fetch()</code> y controlar errores de carga.
+            </p>
+          </div>
+
+          <!-- PROYECTO 3 -->
+          <div class="card">
+            <h2>🟠 Proyecto 3 — Aplicación de consulta de datos</h2>
+            <p>
+              Crear una aplicación que consulte información desde una API y la
+              presente de manera clara en pantalla. Puede ser de clima, usuarios,
+              películas, países, productos, noticias u otro tema apropiado.
+            </p>
+
+            <h3>Funciones obligatorias</h3>
+            <ul>
+              <li>Formulario para realizar una búsqueda.</li>
+              <li>Uso de <code>fetch()</code>.</li>
+              <li>Uso de <code>async/await</code>.</li>
+              <li>Procesamiento de una respuesta JSON.</li>
+              <li>Mostrar los resultados mediante el DOM.</li>
+              <li>Mostrar un mensaje mientras se cargan los datos.</li>
+              <li>Comprobar <code>response.ok</code>.</li>
+              <li>Controlar errores HTTP y errores de red.</li>
+            </ul>
+
+            <h3>⭐ Desafío extra</h3>
+            <p>
+              Guardar las últimas búsquedas en LocalStorage y permitir recuperarlas
+              desde la interfaz.
+            </p>
+          </div>
+
+          <!-- PROYECTO 4 -->
+          <div class="card">
+            <h2>🔴 Proyecto 4 — Gestor de tareas</h2>
+            <p>
+              Construir una aplicación de productividad para crear, organizar y
+              completar tareas.
+            </p>
+
+            <h3>Cada tarea puede contener</h3>
+            <ul>
+              <li>Título.</li>
+              <li>Descripción.</li>
+              <li>Categoría.</li>
+              <li>Prioridad.</li>
+              <li>Fecha.</li>
+              <li>Estado: pendiente o completada.</li>
+            </ul>
+
+            <h3>Funciones obligatorias</h3>
+            <ul>
+              <li>Agregar tareas.</li>
+              <li>Editar tareas.</li>
+              <li>Eliminar tareas.</li>
+              <li>Marcar como completada.</li>
+              <li>Buscar tareas.</li>
+              <li>Filtrar por estado y prioridad.</li>
+              <li>Mostrar estadísticas.</li>
+              <li>Guardar y recuperar tareas mediante LocalStorage y JSON.</li>
+            </ul>
+
+            <h3>⭐ Desafío extra</h3>
+            <p>
+              Incorporar modo claro/oscuro y conservar la preferencia del usuario.
+            </p>
+          </div>
+
+          <!-- PROYECTO 5 -->
+          <div class="card">
+            <h2>🟣 Proyecto 5 — Dashboard de administración</h2>
+            <p>
+              Proyecto integrador avanzado. Crear un panel para administrar un
+              pequeño comercio, emprendimiento, institución o servicio.
+            </p>
+
+            <h3>Módulos sugeridos</h3>
+            <ul>
+              <li><strong>Productos:</strong> alta, edición, eliminación, búsqueda y stock.</li>
+              <li><strong>Clientes:</strong> registro, búsqueda y validación.</li>
+              <li><strong>Ventas:</strong> selección de cliente, productos y cantidades.</li>
+              <li><strong>Estadísticas:</strong> totales, ingresos y productos con poco stock.</li>
+              <li><strong>Configuración:</strong> preferencias almacenadas localmente.</li>
+            </ul>
+
+            <h3>Debe integrar</h3>
+            <ul>
+              <li>Arrays y objetos para representar los datos.</li>
+              <li>Funciones para separar responsabilidades.</li>
+              <li>Métodos avanzados de arrays.</li>
+              <li>Formularios y validaciones.</li>
+              <li>DOM y eventos.</li>
+              <li>LocalStorage.</li>
+              <li>JSON.</li>
+              <li>Fetch para cargar datos externos o archivos JSON.</li>
+              <li><code>try/catch</code> y control de errores.</li>
+            </ul>
+
+            <h3>🏆 Desafío máximo</h3>
+            <p>
+              Organizar el proyecto en archivos separados: HTML, CSS, JavaScript
+              y datos JSON, manteniendo el código ordenado y reutilizable.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>🧩 Estructura mínima del proyecto</h2>
+            <pre><code>mi-proyecto/
+│
+├── index.html
+├── style.css
+├── script.js
+│
+└── data/
+    └── datos.json</code></pre>
+          </div>
+
+          <div class="card">
+            <h2>📋 Requisitos obligatorios para aprobar</h2>
+            <ol>
+              <li>La aplicación debe funcionar sin errores graves en la consola.</li>
+              <li>Debe existir una interfaz HTML clara y organizada.</li>
+              <li>El comportamiento debe estar programado con JavaScript.</li>
+              <li>Debe utilizar funciones para organizar el código.</li>
+              <li>Debe utilizar arrays y objetos.</li>
+              <li>Debe modificar el DOM.</li>
+              <li>Debe responder a eventos del usuario.</li>
+              <li>Debe tener al menos un formulario con validación.</li>
+              <li>Debe utilizar LocalStorage.</li>
+              <li>Debe utilizar JSON.</li>
+              <li>Debe implementar manejo de errores.</li>
+              <li>En los proyectos que utilicen datos externos, debe utilizar Fetch.</li>
+              <li>El código debe estar comentado cuando sea necesario.</li>
+              <li>Los nombres de variables y funciones deben ser claros.</li>
+              <li>La aplicación debe ser usable desde computadora y celular.</li>
+            </ol>
+          </div>
+
+          <div class="card">
+            <h2>📊 Evaluación sugerida</h2>
+            <ul>
+              <li><strong>20%</strong> — Funcionamiento general.</li>
+              <li><strong>20%</strong> — Uso correcto de JavaScript.</li>
+              <li><strong>15%</strong> — DOM y eventos.</li>
+              <li><strong>15%</strong> — Formularios y validación.</li>
+              <li><strong>10%</strong> — LocalStorage y JSON.</li>
+              <li><strong>10%</strong> — Manejo de errores.</li>
+              <li><strong>10%</strong> — Organización, diseño y presentación.</li>
+            </ul>
           </div>
 
           <div class="ejercicio">
-            <span>🏆 DESAFÍO FINAL</span>
-
-            <h2>De programador a creador</h2>
-
+            <span>🏆 PROYECTO FINAL</span>
+            <h2>De estudiante a desarrollador</h2>
             <p>
-              Construí una versión funcional del sistema. Dividí el problema en
-              partes, investigá, probá, detectá errores y mejorá
-              progresivamente.
+              Elegí uno de los cinco proyectos y desarrollá una primera versión
+              funcional. No intentes construir todo de una vez: dividí el problema
+              en pequeñas partes, probá cada función, detectá errores y mejorá la
+              aplicación progresivamente.
+            </p>
+            <p>
+              <strong>Entrega:</strong> carpeta completa del proyecto con todos los
+              archivos necesarios y una breve explicación de qué hace la aplicación
+              y qué contenidos de JavaScript utilizaste.
             </p>
           </div>
 
           <div class="nota">
-            <strong>💡 Método de aprendizaje</strong>
-
+            <strong>💡 Método de trabajo</strong>
             <p>
-              <strong>
-                APRENDER → PRACTICAR → JUGAR → CREAR → PROBAR → ANALIZAR →
-                MEJORAR
-              </strong>
+              <strong>PLANIFICAR → PROGRAMAR → PROBAR → DETECTAR ERRORES →
+              CORREGIR → MEJORAR → PRESENTAR</strong>
             </p>
           </div>
         </section>
