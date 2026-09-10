@@ -1,10 +1,41 @@
 (function(){
 "use strict";
+if(window.__mejorasSeguimientoInicializadas)return;
+window.__mejorasSeguimientoInicializadas=true;
 const VERSION_REQUERIDA="1.3.0";
 const CLAVE_TEMA_PANEL_DOCENTE="teacher_panel_theme";
 let historialActual=[],estudianteHistorial=null,revisionesActuales=new Map(),salidasSeleccionadas=new Set(),grupoRevisionActual="",filtroRapidoHistorial="";
 let historialMensajesDocente=[],detenerHistorialMensajesDocente=null;
-const txt=v=>String(v||"").trim();
+const txt=v=>String(v??"").trim();
+function leerPreferencia(clave,valorPredeterminado=""){
+ try{return localStorage.getItem(clave)??valorPredeterminado}catch{return valorPredeterminado}
+}
+function guardarPreferencia(clave,valor){
+ try{localStorage.setItem(clave,valor);return true}catch{return false}
+}
+function prefiereMovimientoReducido(){
+ return window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches===true;
+}
+function desplazarA(elemento,bloque="start"){
+ elemento?.scrollIntoView?.({block:bloque,behavior:prefiereMovimientoReducido()?"auto":"smooth"});
+}
+function actualizarViewportMovil(){
+ const viewport=window.visualViewport,alto=Math.round(viewport?.height||window.innerHeight||0);
+ if(alto>0)document.documentElement.style.setProperty("--app-viewport-height",`${alto}px`);
+ const tecladoAbierto=Boolean(viewport&&window.matchMedia("(max-width: 900px)").matches&&window.innerHeight-viewport.height>140);
+ document.body.classList.toggle("mobile-virtual-keyboard-open",tecladoAbierto);
+}
+function iniciarViewportMovil(){
+ actualizarViewportMovil();
+ window.visualViewport?.addEventListener("resize",actualizarViewportMovil,{passive:true});
+ window.visualViewport?.addEventListener("scroll",actualizarViewportMovil,{passive:true});
+ window.addEventListener("orientationchange",actualizarViewportMovil,{passive:true});
+ window.addEventListener("pagehide",()=>{
+  window.visualViewport?.removeEventListener("resize",actualizarViewportMovil);
+  window.visualViewport?.removeEventListener("scroll",actualizarViewportMovil);
+  window.removeEventListener("orientationchange",actualizarViewportMovil);
+ },{once:true});
+}
 function duracionLegible(segundos){
  const total=Math.max(0,Math.round(Number(segundos)||0)),horas=Math.floor(total/3600),minutos=Math.floor((total%3600)/60),resto=total%60;
  if(horas)return`${horas} h ${minutos} min`;
@@ -12,7 +43,9 @@ function duracionLegible(segundos){
  return`${resto} s`;
 }
 function horaLegible(valor){
- const fecha=new Date(ms(valor));
+ const marca=ms(valor);
+ if(!marca)return"Sin hora";
+ const fecha=new Date(marca);
  return Number.isFinite(fecha.getTime())?fecha.toLocaleTimeString("es-AR",{hour:"2-digit",minute:"2-digit",second:"2-digit"}):"Sin hora";
 }
 function aplicarTemaPanelDocente(tema){
@@ -29,7 +62,7 @@ function aplicarTemaPanelDocente(tema){
 }
 function alternarTemaAplicacion(){
  const tema=document.body.classList.contains("teacher-light-mode")?"dark":"light";
- localStorage.setItem(CLAVE_TEMA_PANEL_DOCENTE,tema);
+ guardarPreferencia(CLAVE_TEMA_PANEL_DOCENTE,tema);
  aplicarTemaPanelDocente(tema);
 }
 function asegurarTemaAplicacion(){
@@ -45,7 +78,7 @@ function asegurarTemaAplicacion(){
   progreso?contenedor.insertBefore(boton,progreso):contenedor.appendChild(boton);
    boton.onclick=alternarTemaAplicacion;
    }
-  aplicarTemaPanelDocente(localStorage.getItem(CLAVE_TEMA_PANEL_DOCENTE)==="light"?"light":"dark");
+  aplicarTemaPanelDocente(leerPreferencia(CLAVE_TEMA_PANEL_DOCENTE)==="light"?"light":"dark");
 }
 function asegurarTemaPanelDocente(){
  const barra=document.querySelector("#panelProfesorModal .teacher-panel-toolbar");if(!barra)return;
@@ -60,9 +93,16 @@ function asegurarTemaPanelDocente(){
   cerrar?barra.insertBefore(boton,cerrar):barra.appendChild(boton);
   boton.onclick=alternarTemaAplicacion;
  }
- aplicarTemaPanelDocente(localStorage.getItem(CLAVE_TEMA_PANEL_DOCENTE)==="light"?"light":"dark");
+ aplicarTemaPanelDocente(leerPreferencia(CLAVE_TEMA_PANEL_DOCENTE)==="light"?"light":"dark");
 }
-function ms(v){if(v?.toMillis)return v.toMillis();if(v?.seconds)return Number(v.seconds)*1000;const n=Date.parse(v||"");return Number.isFinite(n)?n:0}
+function ms(v){
+ if(v?.toMillis)return v.toMillis();
+ if(v?.seconds)return Number(v.seconds)*1000;
+ if(v instanceof Date)return Number.isFinite(v.getTime())?v.getTime():0;
+ if(typeof v==="number")return Number.isFinite(v)&&v>0?v:0;
+ const n=Date.parse(v??"");
+ return Number.isFinite(n)?n:0;
+}
 function dominioCoincide(dominio,lista){const d=txt(dominio).toLowerCase().replace(/^www\./,"");return(Array.isArray(lista)?lista:[]).some(x=>{x=txt(x).toLowerCase().replace(/^www\./,"");return x&&(d===x||d.endsWith(`.${x}`))})}
 function estadoExtension(d){
  const e=d?.seguimientoExtension||{},c=window.configuracionSeguimientoActual||{},ultimo=ms(e.ultimaSenalEn),edad=ultimo?Math.max(0,(Date.now()-ultimo)/1000):Infinity,aviso=Math.max(15,Number(c.avisoSinConexionSegundos)||30),alerta=Math.max(aviso,Number(c.alertaSinConexionSegundos)||120);
@@ -144,7 +184,7 @@ function asegurarPestanasPanelDocente(){
  [...contenido.children].filter(x=>x!==nav&&!Object.values(paneles).includes(x)).forEach(x=>paneles.resumen.appendChild(x));
  asegurarCentroMovilDocente(paneles.estudiantes);
  nav.querySelectorAll("[data-teacher-tab]").forEach(b=>b.onclick=()=>{activarPestanaDocente(b.dataset.teacherTab);if(window.matchMedia("(max-width: 900px)").matches){nav.querySelectorAll(".show-mobile-tooltip").forEach(x=>x.classList.remove("show-mobile-tooltip"));b.classList.add("show-mobile-tooltip");clearTimeout(b._tooltipTimer);b._tooltipTimer=setTimeout(()=>b.classList.remove("show-mobile-tooltip"),1600)}});
- activarPestanaDocente(localStorage.getItem("teacher_panel_active_tab")||"resumen");actualizarBadgesPestanas();
+ activarPestanaDocente(leerPreferencia("teacher_panel_active_tab","resumen"));actualizarBadgesPestanas();
 }
 function cantidadFiltrosMovilesActivos(){
  const valores={filtroProfesor:"",filtroEmailProfesor:"",filtroCursoProfesor:"",filtroDivisionProfesor:"",filtroTurnoProfesor:"",filtroEstadoProfesor:"",filtroBloqueoProfesor:"",filtroProgresoProfesor:"",filtroSalidasProfesor:"",filtroNotaProfesor:"",filtroDescuentoProfesor:"",filtroActualizacionProfesor:"",filtroSeguimientoProfesor:"",filtroDominioSeguimientoProfesor:"",ordenProfesor:"actualizacion-desc"};
@@ -198,7 +238,7 @@ function asegurarCentroMovilDocente(panel=null){
  actualizarCentroMovilDocente();
 }
 function activarPestanaDocente(id){
- const valido=["resumen","estudiantes","seguimiento","solicitudes","docentes"].includes(id)?id:"resumen";document.querySelectorAll(".teacher-workspace-tab").forEach(b=>{const activo=b.dataset.teacherTab===valido;b.classList.toggle("active",activo);b.setAttribute("aria-selected",String(activo));b.tabIndex=activo?0:-1});document.querySelectorAll(".teacher-workspace-panel").forEach(p=>{const activo=p.dataset.teacherPanel===valido;p.classList.toggle("active",activo);p.hidden=!activo});localStorage.setItem("teacher_panel_active_tab",valido);document.querySelector(`#teacherWorkspacePanel-${valido}`)?.scrollIntoView({block:"start",behavior:"smooth"});
+ const valido=["resumen","estudiantes","seguimiento","solicitudes","docentes"].includes(id)?id:"resumen";document.querySelectorAll(".teacher-workspace-tab").forEach(b=>{const activo=b.dataset.teacherTab===valido;b.classList.toggle("active",activo);b.setAttribute("aria-selected",String(activo));b.tabIndex=activo?0:-1});document.querySelectorAll(".teacher-workspace-panel").forEach(p=>{const activo=p.dataset.teacherPanel===valido;p.classList.toggle("active",activo);p.hidden=!activo});guardarPreferencia("teacher_panel_active_tab",valido);const panel=document.querySelector(`#teacherWorkspacePanel-${valido}`);if(window.matchMedia("(max-width: 900px)").matches){document.getElementById("panelProfesorModal")?.scrollTo({top:0,behavior:"auto"});desplazarA(panel)}else desplazarA(panel);
 }
 function actualizarBadgesPestanas(){
  const datos=Array.isArray(estudiantesProfesor)?estudiantesProfesor:[],activos=datos.filter(x=>x.estadoCuenta==="activo"),pendientes=datos.filter(x=>x.estadoCuenta==="pendiente").length,problemas=activos.filter(x=>{const e=estadoExtension(x);return x.pantallaBloqueada===true||["sin-conexion","interrumpida","no-instalada"].includes(e.codigo)||claseDominio(x.seguimientoExtension?.dominioActual).clase==="danger"}).length,valores={resumen:problemas,estudiantes:datos.length,seguimiento:problemas,solicitudes:pendientes,docentes:Array.isArray(window.TEACHER_EMAILS)?window.TEACHER_EMAILS.length:0};Object.entries(valores).forEach(([id,n])=>{const x=document.querySelector(`[data-tab-count="${id}"]`),boton=document.querySelector(`[data-teacher-tab="${id}"]`);if(x)x.textContent=String(n);if(boton){const etiqueta=boton.dataset.tabLabel||id;boton.dataset.tooltip=`${etiqueta} · ${n}`;boton.setAttribute("aria-label",`${etiqueta}: ${n}`);boton.title=`${etiqueta}: ${n}`}});
@@ -798,7 +838,7 @@ window.abrirChatColaborativoEstudiante=function(sectionId){
 function asegurarEditorColaborativoDocente(){
  if(document.getElementById("editorColaborativoDocenteModal"))return;
  const modal=document.createElement("div");modal.id="editorColaborativoDocenteModal";modal.className="modal-overlay";modal.setAttribute("role","dialog");modal.setAttribute("aria-modal","true");
- modal.innerHTML=`<div class="modal-box teacher-collab-box"><div class="teacher-program-header"><div><h3><i class="fa-solid fa-code-branch"></i> Editor colaborativo en vivo</h3><p id="editorColaborativoAlumno"></p><small id="editorColaborativoEstado">Conectando...</small></div><button class="btn btn-secondary" id="cerrarEditorColaborativo" type="button"><i class="fa-solid fa-xmark"></i></button></div><div class="teacher-collab-presence" id="editorColaborativoPresencia"><i class="fa-solid fa-people-arrows"></i><span>Esperando al estudiante…</span></div><div class="collab-author-legend" aria-label="Referencias de autoría del código"><strong><i class="fa-solid fa-palette"></i> Aportes:</strong><span class="collab-author-key student">Estudiante</span><span class="collab-author-key teacher">Docente</span><span class="collab-author-key base">Código inicial</span></div><textarea id="editorColaborativoCodigo" class="teacher-collab-editor" spellcheck="false"></textarea><div class="teacher-program-actions"><span id="editorColaborativoGuardado" role="status">Sincronización automática</span><div style="display:flex;gap:.45rem;flex-wrap:wrap"><button class="btn btn-success" id="iniciarAudioCooperativo" type="button" title="Iniciar una llamada de audio con el estudiante"><i class="fa-solid fa-headset"></i> Llamada de audio</button><button class="btn btn-warning" id="pausarEdicionCooperativa" type="button" aria-pressed="false"><i class="fa-solid fa-pause"></i> Pausar edición</button><button class="btn btn-primary" id="guardarEditorColaborativo" type="button"><i class="fa-solid fa-arrows-rotate"></i> Sincronizar ahora</button></div></div><section class="collab-history"><div class="collab-history-header"><strong><i class="fa-solid fa-clock-rotate-left"></i> Historial de aportes</strong><small id="historialAportesDocenteEstado">Conectando...</small></div><div id="historialAportesDocenteLista" class="collab-history-list" aria-live="polite"></div></section><section class="collab-chat"><div class="collab-chat-header"><strong><i class="fa-solid fa-comments"></i> Chat con el estudiante</strong><span id="chatColaborativoDocenteEstado" class="collab-chat-status">Conectando...</span></div><div class="collab-chat-tools"><button class="btn btn-success" id="iniciarAudioDesdeChat" type="button"><i class="fa-solid fa-headset"></i> Iniciar audio</button><button class="btn btn-secondary" id="compartirSeleccionChat" type="button"><i class="fa-solid fa-share-from-square"></i> Compartir selección</button><button class="btn btn-warning" id="finalizarCooperacionDocente" type="button" title="Finalizar la edición compartida conservando las evidencias"><i class="fa-solid fa-circle-stop"></i> Finalizar cooperación</button></div><div class="collab-quick-replies"><button type="button" data-quick-reply="Revisá esta parte y contame qué observás.">Revisá esta parte</button><button type="button" data-quick-reply="Probá ejecutar el código y compartime el error.">Probá y compartime el error</button><button type="button" data-quick-reply="Muy bien, continuá con el siguiente paso.">Continuá</button></div><div id="chatColaborativoDocenteLista" class="collab-chat-messages" aria-live="polite"></div><div class="collab-chat-compose"><textarea id="chatColaborativoDocenteTexto" maxlength="1200" rows="3" placeholder="Escribí una indicación o respuesta..."></textarea><button class="btn btn-primary" id="enviarChatColaborativoDocente" type="button"><i class="fa-solid fa-paper-plane"></i> Enviar</button></div></section></div>`;
+ modal.innerHTML=`<div class="modal-box teacher-collab-box"><div class="teacher-program-header"><div><h3><i class="fa-solid fa-code-branch"></i> Editor colaborativo en vivo</h3><p id="editorColaborativoAlumno"></p><small id="editorColaborativoEstado">Conectando...</small></div><button class="btn btn-secondary" id="cerrarEditorColaborativo" type="button" aria-label="Cerrar editor colaborativo"><i class="fa-solid fa-xmark"></i></button></div><nav class="teacher-collab-mobile-nav" aria-label="Secciones de cooperación"><button type="button" data-collab-target="editorColaborativoCodigo" aria-pressed="true"><i class="fa-solid fa-code"></i><span>Código</span></button><button type="button" data-collab-target="collabChatDocente" aria-pressed="false"><i class="fa-solid fa-comments"></i><span>Chat</span></button><button type="button" data-collab-target="collabHistoryDocente" aria-pressed="false"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial</span></button></nav><div class="teacher-collab-presence" id="editorColaborativoPresencia"><i class="fa-solid fa-people-arrows"></i><span>Esperando al estudiante…</span></div><div class="collab-author-legend" aria-label="Referencias de autoría del código"><strong><i class="fa-solid fa-palette"></i> Aportes:</strong><span class="collab-author-key student">Estudiante</span><span class="collab-author-key teacher">Docente</span><span class="collab-author-key base">Código inicial</span></div><textarea id="editorColaborativoCodigo" class="teacher-collab-editor" spellcheck="false" aria-label="Código colaborativo"></textarea><div class="teacher-program-actions"><span id="editorColaborativoGuardado" role="status">Sincronización automática</span><div style="display:flex;gap:.45rem;flex-wrap:wrap"><button class="btn btn-success" id="iniciarAudioCooperativo" type="button" title="Iniciar una llamada de audio con el estudiante"><i class="fa-solid fa-headset"></i> Llamada de audio</button><button class="btn btn-warning" id="pausarEdicionCooperativa" type="button" aria-pressed="false"><i class="fa-solid fa-pause"></i> Pausar edición</button><button class="btn btn-primary" id="guardarEditorColaborativo" type="button"><i class="fa-solid fa-arrows-rotate"></i> Sincronizar ahora</button></div></div><section id="collabHistoryDocente" class="collab-history"><div class="collab-history-header"><strong><i class="fa-solid fa-clock-rotate-left"></i> Historial de aportes</strong><small id="historialAportesDocenteEstado">Conectando...</small></div><div id="historialAportesDocenteLista" class="collab-history-list" aria-live="polite"></div></section><section id="collabChatDocente" class="collab-chat"><div class="collab-chat-header"><strong><i class="fa-solid fa-comments"></i> Chat con el estudiante</strong><span id="chatColaborativoDocenteEstado" class="collab-chat-status">Conectando...</span></div><div class="collab-chat-tools"><button class="btn btn-success" id="iniciarAudioDesdeChat" type="button"><i class="fa-solid fa-headset"></i> Iniciar audio</button><button class="btn btn-secondary" id="compartirSeleccionChat" type="button"><i class="fa-solid fa-share-from-square"></i> Compartir selección</button><button class="btn btn-warning" id="finalizarCooperacionDocente" type="button" title="Finalizar la edición compartida conservando las evidencias"><i class="fa-solid fa-circle-stop"></i> Finalizar cooperación</button></div><div class="collab-quick-replies"><button type="button" data-quick-reply="Revisá esta parte y contame qué observás.">Revisá esta parte</button><button type="button" data-quick-reply="Probá ejecutar el código y compartime el error.">Probá y compartime el error</button><button type="button" data-quick-reply="Muy bien, continuá con el siguiente paso.">Continuá</button></div><div id="chatColaborativoDocenteLista" class="collab-chat-messages" aria-live="polite"></div><div class="collab-chat-compose"><textarea id="chatColaborativoDocenteTexto" maxlength="1200" rows="3" placeholder="Escribí una indicación o respuesta..." aria-label="Mensaje para el estudiante"></textarea><button class="btn btn-primary" id="enviarChatColaborativoDocente" type="button"><i class="fa-solid fa-paper-plane"></i> Enviar</button></div></section></div>`;
  document.body.appendChild(modal);
  const cabeceraEstado=modal.querySelector("#editorColaborativoEstado");
  if(cabeceraEstado){
@@ -809,6 +849,12 @@ function asegurarEditorColaborativoDocente(){
   grupo.insertAdjacentHTML("beforeend",'<span id="estadoCursoCooperativo" class="teacher-collab-course-status is-waiting"><i class="fa-solid fa-clock"></i><span>Preparando</span></span>');
  }
  const caja=modal.querySelector(".teacher-collab-box"),cabecera=modal.querySelector(".teacher-program-header"),cerrarBoton=modal.querySelector("#cerrarEditorColaborativo");
+ const navegacionMovil=modal.querySelector(".teacher-collab-mobile-nav");
+ navegacionMovil?.querySelectorAll("[data-collab-target]").forEach(boton=>boton.addEventListener("click",()=>{
+  navegacionMovil.querySelectorAll("[data-collab-target]").forEach(item=>item.setAttribute("aria-pressed",String(item===boton)));
+  const objetivo=document.getElementById(boton.dataset.collabTarget);
+  desplazarA(objetivo?.closest?.(".codemirror-host")||objetivo);
+ }));
  const botonPantalla=document.createElement("button");
  botonPantalla.id="pantallaCompletaEditorCooperativo";
  botonPantalla.type="button";
@@ -1202,19 +1248,19 @@ function estadoPublicoRevision(estado){
 async function cargarResumenSeguimientoEstudiante(){
  asegurarResumenSeguimientoEstudiante();const panel=document.getElementById("studentTabTrackingSummary"),contenido=document.getElementById("studentTabSummaryContent"),user=window.firebaseCurrentUser;
  if(!panel||!contenido)return;if(!user||esSesionDocenteActual()){panel.hidden=true;return}panel.hidden=false;contenido.innerHTML='<p class="student-tab-loading"><i class="fa-solid fa-spinner fa-spin"></i> Actualizando seguimiento...</p>';window.ultimoErrorResumenPestanasEstudiante=null;
- const resultado=await window.obtenerResumenPestanasEstudianteFirebase?.()||{historial:[],revisiones:[]},historial=Array.isArray(resultado.historial)?resultado.historial:[],revisiones=Array.isArray(resultado.revisiones)?resultado.revisiones:[],mapa=new Map(revisiones.map(r=>[r.salidaGrupoId,r])),grupos=agrupar(historial),datos=grupos.map(g=>{const d=datosGrupo(g),revision=mapa.get(g.id)||{estado:"pendiente",revisado:false,contabiliza:true};return{...d,revisionPublica:revision}});
+ const resultado=await Promise.resolve(window.obtenerResumenPestanasEstudianteFirebase?.()).catch(error=>{window.ultimoErrorResumenPestanasEstudiante=error;console.warn("No se pudo cargar el resumen de pestañas:",error);return{historial:[],revisiones:[]}})||{historial:[],revisiones:[]},historial=Array.isArray(resultado.historial)?resultado.historial:[],revisiones=Array.isArray(resultado.revisiones)?resultado.revisiones:[],mapa=new Map(revisiones.map(r=>[r.salidaGrupoId,r])),grupos=agrupar(historial),datos=grupos.map(g=>{const d=datosGrupo(g),revision=mapa.get(g.id)||{estado:"pendiente",revisado:false,contabiliza:true};return{...d,revisionPublica:revision}});
  const revisadas=datos.filter(d=>d.revisionPublica.revisado===true||d.revisionPublica.estado!=="pendiente"),pendientes=Math.max(0,datos.length-revisadas.length),tiempo=datos.reduce((s,d)=>s+d.segundos,0),ultimas=datos.slice(0,6);
  if(!historial.length&&window.ultimoErrorResumenPestanasEstudiante){contenido.innerHTML='<div class="student-tab-empty danger"><i class="fa-solid fa-triangle-exclamation"></i><div><strong>No se pudo cargar el resumen</strong><span>Verificá que las reglas actualizadas de Firestore estén publicadas.</span></div></div>';return}
  contenido.innerHTML=`<div class="student-tab-stats"><div><small>Salidas registradas</small><strong>${datos.length||Number(document.getElementById("blurCount")?.textContent)||0}</strong></div><div><small>Revisadas</small><strong>${revisadas.length}</strong></div><div><small>Pendientes</small><strong>${pendientes}</strong></div><div><small>Tiempo registrado</small><strong>${duracionLegible(tiempo)}</strong></div></div>${ultimas.length?`<div class="student-tab-list">${ultimas.map((d,indice)=>{const revision=d.revisionPublica,[etiqueta,clase,icono]=estadoPublicoRevision(revision.estado),dominio=d.dominios[0]||"Pestaña externa";return`<article><span class="student-tab-order">${indice+1}</span><div><strong>${escapeHtml(dominio)}</strong><small>${escapeHtml(new Date(d.inicio).toLocaleString("es-AR"))} · ${escapeHtml(duracionLegible(d.segundos))} · ${d.paginas} página${d.paginas===1?"":"s"}</small></div><span class="tab-review-badge ${clase}"><i class="fa-solid ${icono}"></i>${escapeHtml(etiqueta)}</span></article>`}).join("")}</div><p class="student-tab-privacy"><i class="fa-solid fa-shield-halved"></i> Se muestra el estado general de la revisión. Las observaciones internas permanecen en el panel docente.</p>`:'<div class="student-tab-empty"><i class="fa-solid fa-circle-info"></i><div><strong>Todavía no hay recorridos externos</strong><span>Cuando se registre una salida, aparecerá aquí junto con su estado de revisión.</span></div></div>'}`;
 }
 window.actualizarResumenSeguimientoEstudiante=cargarResumenSeguimientoEstudiante;
 
-const renderOriginal=renderPanelProfesor;
-renderPanelProfesor=function(){renderOriginal();asegurarPaneles();mejorarTabla()};
-const limpiarOriginal=limpiarFiltrosProfesor;
-limpiarFiltrosProfesor=function(){limpiarOriginal();const e=document.getElementById("filtroSeguimientoProfesor"),d=document.getElementById("filtroDominioSeguimientoProfesor");if(e)e.value="";if(d)d.value="";filtrarTabla()};
-const historialOriginal=abrirHistorialPestanas;
-abrirHistorialPestanas=async function(indice){
+const renderOriginal=typeof renderPanelProfesor==="function"?renderPanelProfesor:null;
+if(renderOriginal)renderPanelProfesor=function(){renderOriginal();asegurarPaneles();mejorarTabla()};
+const limpiarOriginal=typeof limpiarFiltrosProfesor==="function"?limpiarFiltrosProfesor:null;
+if(limpiarOriginal)limpiarFiltrosProfesor=function(){limpiarOriginal();const e=document.getElementById("filtroSeguimientoProfesor"),d=document.getElementById("filtroDominioSeguimientoProfesor");if(e)e.value="";if(d)d.value="";filtrarTabla()};
+const historialOriginal=typeof abrirHistorialPestanas==="function"?abrirHistorialPestanas:null;
+if(historialOriginal)abrirHistorialPestanas=async function(indice){
  await historialOriginal(indice);estudianteHistorial=estudiantesProfesor[indice]||null;if(!estudianteHistorial?.uid)return;
  [historialActual]=await Promise.all([window.obtenerHistorialPestanasFirebase?.(estudianteHistorial.uid)||[]]);const revisiones=await window.obtenerRevisionesPestanasFirebase?.(estudianteHistorial.uid)||[];revisionesActuales=new Map(revisiones.map(r=>[r.salidaGrupoId,r]));void window.sincronizarRevisionesPublicasPestanasFirebase?.(estudianteHistorial.uid,revisiones);salidasSeleccionadas.clear();asegurarFiltrosHistorial();asegurarModalesRevision();
  const cargarSelect=(id,primera,valores)=>{const s=document.getElementById(id);if(s)s.innerHTML=`<option value="">${primera}</option>`+[...new Set(valores.filter(Boolean))].sort((a,b)=>String(a).localeCompare(String(b),"es",{numeric:true})).map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("")};
@@ -1229,5 +1275,10 @@ window.addEventListener("seccion-estudiante-cambiada",()=>setTimeout(iniciarAler
 document.addEventListener("keydown",evento=>{
  const actual=evento.target.closest?.(".teacher-workspace-tab");if(!actual||!["ArrowLeft","ArrowRight","Home","End"].includes(evento.key))return;const botones=[...document.querySelectorAll(".teacher-workspace-tab")],indice=botones.indexOf(actual);let siguiente=indice;if(evento.key==="ArrowRight")siguiente=(indice+1)%botones.length;if(evento.key==="ArrowLeft")siguiente=(indice-1+botones.length)%botones.length;if(evento.key==="Home")siguiente=0;if(evento.key==="End")siguiente=botones.length-1;evento.preventDefault();botones[siguiente]?.focus();activarPestanaDocente(botones[siguiente]?.dataset.teacherTab);
 });
-asegurarTemaAplicacion();asegurarPaneles();asegurarResumenSeguimientoEstudiante();setTimeout(cargarResumenSeguimientoEstudiante,1800);setTimeout(iniciarAlertasChatCooperativoEstudiante,2200);setInterval(mejorarTabla,10000);setInterval(()=>{if(!document.hidden)cargarResumenSeguimientoEstudiante()},60000);
+iniciarViewportMovil();asegurarTemaAplicacion();asegurarPaneles();asegurarResumenSeguimientoEstudiante();setTimeout(cargarResumenSeguimientoEstudiante,1800);setTimeout(iniciarAlertasChatCooperativoEstudiante,2200);
+const intervalosMejoras=[
+ setInterval(()=>{if(!document.hidden)mejorarTabla()},10000),
+ setInterval(()=>{if(!document.hidden)cargarResumenSeguimientoEstudiante()},60000)
+];
+window.addEventListener("pagehide",()=>intervalosMejoras.forEach(clearInterval),{once:true});
 })();

@@ -2,15 +2,69 @@
 
 Carpeta preparada para publicarse con GitHub Pages.
 
-## Publicacion
+## Estructura principal
 
-1. Subir todos los archivos de esta carpeta a la raiz del repositorio.
+- `index.html`: portada pública.
+- `style.css`: estilos de la portada.
+- `app.js`: comportamiento de la portada.
+- `actividad.html`: marcado de la actividad interactiva.
+- `actividad-base.css`: estilos base de la actividad.
+- `actividad-firebase.js`: autenticación, Firestore, IA, Yjs y configuración de CodeMirror.
+- `actividad-app.js`: actividades, evaluación y lógica principal.
+- `actividad-cooperacion.js`: cooperación y llamadas Jitsi.
+- `mejoras-seguimiento.css`: panel docente, seguimiento y adaptación móvil.
+- `mejoras-seguimiento.js`: panel docente, seguimiento, mensajería y editor colaborativo.
+- `codemirror-bundle.js`: dependencias compiladas del editor.
+
+El orden de carga declarado en `actividad.html` debe conservarse.
+
+## Publicación en GitHub Pages
+
+1. Subir todos los archivos de esta carpeta a la raíz del repositorio.
 2. En GitHub, abrir `Settings > Pages`.
-3. Seleccionar la rama principal y la carpeta raiz.
-4. Publicar las reglas de `reglas.txt` por separado en Firebase Firestore.
-5. Agregar el dominio de GitHub Pages a los dominios autorizados de Firebase Authentication.
+3. En `Build and deployment`, seleccionar `Deploy from a branch`.
+4. Seleccionar la rama `main` y la carpeta `/ (root)`.
+5. Guardar y esperar a que GitHub muestre la dirección publicada.
+6. Publicar las reglas de `reglas.txt` por separado en Firebase Firestore.
+7. Agregar el dominio de GitHub Pages a los dominios autorizados de Firebase Authentication.
 
-`index.html` es la pagina de entrada. `actividad.html` se conserva como copia con el nombre original.
+`index.html` es la página de entrada y enlaza con `actividad.html`.
+
+### Archivos que no deben publicarse
+
+El `.gitignore` excluye:
+
+- copias `.bak`;
+- registros de Firebase;
+- archivos `.env` y claves privadas;
+- paquetes ZIP generados;
+- perfiles y capturas locales de validación;
+- borradores HTML antiguos que no utiliza `index.html`.
+
+La configuración web `apiKey` de Firebase se ejecuta en el navegador y no reemplaza las reglas de seguridad. Debe restringirse al proyecto y a los dominios autorizados desde Google Cloud y Firebase.
+
+## Subida inicial con Git
+
+```powershell
+git init
+git add .
+git commit -m "Modulariza actividad y mejora experiencia móvil"
+git branch -M main
+git remote add origin https://github.com/USUARIO/REPOSITORIO.git
+git push -u origin main
+```
+
+Si el repositorio remoto ya contiene archivos, clonarlo primero o agregar el remoto y revisar su historial antes de realizar el primer `push`.
+
+## Actualización del 10 de septiembre de 2026
+
+- `actividad.html` fue separado en módulos HTML, CSS y JavaScript.
+- Se mantuvo el orden de ejecución y la compatibilidad con las funciones globales existentes.
+- Se mejoró la navegación móvil del panel docente.
+- El modo cooperación incorpora accesos directos a Código, Chat e Historial.
+- Los modales responden a la altura real del navegador y al teclado virtual.
+- Se añadieron áreas táctiles accesibles y soporte para zonas seguras.
+- Los tres scripts clásicos fueron validados sintácticamente en Chromium.
 
 ## Base incorporada el 4 de septiembre de 2026
 

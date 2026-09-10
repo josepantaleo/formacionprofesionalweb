@@ -3682,3 +3682,264 @@ body.teacher-light-mode .teacher-detail-quick-filters button.is-active{
     display:none;
   }
 }
+
+/* Accesibilidad: conservar estados y foco en el modo de alto contraste del sistema. */
+@media(forced-colors:active){
+  .teacher-workspace-tab,
+  .tracking-status-badge,
+  .tab-review-badge,
+  .collab-chat-message,
+  .teacher-mobile-filter-chips button{
+    border:1px solid CanvasText;
+    forced-color-adjust:auto;
+  }
+  .teacher-workspace-tab.active,
+  .teacher-mobile-filter-chips button.is-active{
+    outline:2px solid Highlight;
+    outline-offset:2px;
+  }
+  .tracking-status-badge.ok{
+    outline:2px solid LinkText;
+  }
+  .tracking-status-badge.warning,
+  .tracking-status-badge.danger{
+    outline:2px solid Mark;
+  }
+}
+
+/* Navegación móvil y adaptación al teclado virtual. */
+.teacher-collab-mobile-nav{
+  display:none;
+}
+
+@media(max-width:900px){
+  .modal-overlay{
+    height:var(--app-viewport-height,100dvh);
+    max-height:var(--app-viewport-height,100dvh);
+  }
+
+  button,
+  [role="button"],
+  input,
+  select,
+  textarea{
+    touch-action:manipulation;
+  }
+
+  #panelProfesorModal .teacher-panel-content{
+    padding-bottom:calc(5.65rem + env(safe-area-inset-bottom))!important;
+  }
+
+  #panelProfesorModal .teacher-workspace-tabs{
+    left:max(.35rem,env(safe-area-inset-left));
+    right:max(.35rem,env(safe-area-inset-right));
+    bottom:max(.35rem,env(safe-area-inset-bottom));
+    gap:.2rem;
+    padding:.3rem;
+  }
+
+  #panelProfesorModal .teacher-workspace-tab,
+  #panelProfesorModal .teacher-workspace-tab:last-child{
+    display:flex;
+    flex-direction:column;
+    gap:.14rem;
+    min-height:52px;
+    padding:.35rem .18rem;
+    line-height:1;
+  }
+
+  #panelProfesorModal .teacher-workspace-tab>span:not(.teacher-workspace-tab-count){
+    display:block;
+    max-width:100%;
+    overflow:hidden;
+    color:inherit;
+    font-size:.57rem;
+    font-weight:800;
+    line-height:1.1;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  #panelProfesorModal .teacher-workspace-tab-count{
+    position:absolute;
+    top:.18rem;
+    right:max(.2rem,calc(50% - 1.45rem));
+    display:grid!important;
+    min-width:17px;
+    height:17px;
+    padding:0 .2rem;
+    font-size:.55rem;
+  }
+
+  #panelProfesorModal .teacher-workspace-tab::before,
+  #panelProfesorModal .teacher-workspace-tab::after{
+    display:none!important;
+  }
+
+  #panelProfesorModal .teacher-workspace-tab.active{
+    background:rgba(14,165,233,.2);
+    box-shadow:inset 0 0 0 1px rgba(56,189,248,.45);
+  }
+
+  #panelProfesorModal input,
+  #panelProfesorModal select,
+  #panelProfesorModal textarea,
+  #editorColaborativoDocenteModal input,
+  #editorColaborativoDocenteModal select,
+  #editorColaborativoDocenteModal textarea,
+  #chatColaborativoEstudianteModal textarea{
+    font-size:16px!important;
+  }
+
+  .teacher-mobile-search,
+  .teacher-mobile-search input,
+  #teacherMobileAdvancedToggle,
+  .teacher-mobile-filter-chips button,
+  .teacher-mobile-quick-action{
+    min-height:44px;
+  }
+
+  body.mobile-virtual-keyboard-open #panelProfesorModal .teacher-workspace-tabs{
+    opacity:0;
+    pointer-events:none;
+    transform:translateY(calc(100% + 1rem));
+  }
+
+  body.mobile-virtual-keyboard-open #panelProfesorModal .teacher-panel-content{
+    padding-bottom:1rem!important;
+  }
+
+  #editorColaborativoDocenteModal{
+    height:var(--app-viewport-height,100dvh);
+    max-height:var(--app-viewport-height,100dvh);
+    padding:max(.25rem,env(safe-area-inset-top)) max(.25rem,env(safe-area-inset-right)) max(.25rem,env(safe-area-inset-bottom)) max(.25rem,env(safe-area-inset-left));
+  }
+
+  #editorColaborativoDocenteModal .teacher-collab-box{
+    width:100%;
+    max-height:calc(var(--app-viewport-height,100dvh) - max(.5rem,env(safe-area-inset-top)) - max(.5rem,env(safe-area-inset-bottom)));
+    margin:0;
+    overscroll-behavior:contain;
+    scroll-padding-top:8.5rem;
+  }
+
+  #editorColaborativoDocenteModal .teacher-collab-mobile-nav{
+    position:sticky;
+    top:4.65rem;
+    z-index:7;
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:.35rem;
+    margin:0 0 .6rem;
+    padding:.35rem;
+    border:1px solid rgba(56,189,248,.28);
+    border-radius:7px;
+    background:rgba(2,6,23,.96);
+    box-shadow:0 5px 15px rgba(0,0,0,.24);
+  }
+
+  #editorColaborativoDocenteModal .teacher-collab-mobile-nav button{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:.32rem;
+    min-width:0;
+    min-height:44px;
+    padding:.4rem;
+    border:1px solid rgba(148,163,184,.28);
+    border-radius:6px;
+    background:#1e293b;
+    color:#cbd5e1;
+    font-size:.68rem;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  #editorColaborativoDocenteModal .teacher-collab-mobile-nav button[aria-pressed="true"]{
+    border-color:#38bdf8;
+    background:rgba(14,165,233,.2);
+    color:#e0f2fe;
+  }
+
+  #editorColaborativoDocenteModal .codemirror-host,
+  #editorColaborativoDocenteModal #editorColaborativoCodigo,
+  #editorColaborativoDocenteModal #collabChatDocente,
+  #editorColaborativoDocenteModal #collabHistoryDocente{
+    scroll-margin-top:8.5rem;
+  }
+
+  #editorColaborativoDocenteModal.is-pseudo-fullscreen .teacher-collab-box,
+  #editorColaborativoDocenteModal .teacher-collab-box:fullscreen{
+    height:var(--app-viewport-height,100dvh)!important;
+    grid-template-rows:auto auto auto auto minmax(300px,55vh) auto auto minmax(260px,1fr);
+    grid-template-areas:
+      "header"
+      "nav"
+      "presence"
+      "legend"
+      "editor"
+      "actions"
+      "history"
+      "chat";
+    padding-top:max(.55rem,env(safe-area-inset-top))!important;
+    padding-bottom:max(.55rem,env(safe-area-inset-bottom))!important;
+  }
+
+  #editorColaborativoDocenteModal.is-pseudo-fullscreen .teacher-collab-mobile-nav,
+  #editorColaborativoDocenteModal .teacher-collab-box:fullscreen .teacher-collab-mobile-nav{
+    grid-area:nav;
+    top:0;
+  }
+
+  #editorColaborativoDocenteModal .collab-chat-compose{
+    position:sticky;
+    bottom:0;
+    z-index:6;
+    grid-template-columns:minmax(0,1fr) auto;
+    padding:.5rem 0 max(.15rem,env(safe-area-inset-bottom));
+    background:#0f172a;
+  }
+
+  #editorColaborativoDocenteModal .collab-chat-compose textarea{
+    min-height:48px;
+    max-height:130px;
+  }
+
+  #editorColaborativoDocenteModal .collab-chat-compose .btn{
+    min-width:48px;
+    min-height:48px;
+    padding:.55rem .7rem;
+  }
+
+  .jitsi-box{
+    max-height:calc(var(--app-viewport-height,100dvh) - max(.5rem,env(safe-area-inset-top)) - max(.5rem,env(safe-area-inset-bottom)))!important;
+  }
+
+  .jitsi-frame-container{
+    height:clamp(300px,58dvh,620px);
+  }
+}
+
+@media(max-width:430px){
+  #panelProfesorModal .teacher-workspace-tab>span:not(.teacher-workspace-tab-count){
+    font-size:.52rem;
+  }
+
+  #editorColaborativoDocenteModal .teacher-program-header{
+    grid-template-columns:minmax(0,1fr) 44px 44px;
+  }
+
+  #editorColaborativoDocenteModal .teacher-collab-mobile-nav button span{
+    font-size:.62rem;
+  }
+
+  #editorColaborativoDocenteModal .collab-chat-compose .btn{
+    width:48px;
+    overflow:hidden;
+    font-size:0;
+  }
+
+  #editorColaborativoDocenteModal .collab-chat-compose .btn i{
+    font-size:.95rem;
+  }
+}
