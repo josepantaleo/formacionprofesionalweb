@@ -2,6 +2,7 @@ const fs = require("node:fs");
 const assert = require("node:assert/strict");
 
 const html = fs.readFileSync("actividad.html", "utf8");
+const firebase = fs.readFileSync("actividad-firebase.js", "utf8");
 const improvements = fs.readFileSync("mejoras-seguimiento.js", "utf8");
 const rules = fs.readFileSync("reglas.txt", "utf8");
 
@@ -28,25 +29,19 @@ function extractRuleBlock(marker) {
   "finalizarCooperacion",
   "onModoCooperacion"
 ].forEach(contract => {
-  assert.ok(html.includes(contract), `Falta el contrato ${contract} en actividad.html`);
+  assert.ok(firebase.includes(contract), `Falta el contrato ${contract} en actividad-firebase.js`);
 });
 
 [
   "estadoConsentimiento",
   "objetivoCooperacion",
-  "respuestaEstudianteEn",
-  "autorNombre",
-  "textoAgregado",
-  "caracteresAgregados",
-  "caracteresEliminados",
-  "lineaInicio",
-  "lineaFin"
+  "respuestaEstudianteEn"
 ].forEach(field => {
   assert.ok(rules.includes(`'${field}'`), `Falta el campo ${field} en reglas.txt`);
 });
 
 assert.ok(
-  html.includes("modoCooperacionActual = normalizarModoCooperacion(estadoInicial.datos)"),
+  firebase.includes("modoCooperacionActual = normalizarModoCooperacion(estadoInicial.datos)"),
   "La sesion debe iniciar con el estado real de consentimiento"
 );
 assert.ok(
@@ -54,52 +49,50 @@ assert.ok(
   "Las reglas deben impedir reiniciar una cooperacion ya aceptada"
 );
 assert.ok(
-  html.includes('window.dispatchEvent(new CustomEvent("seccion-estudiante-cambiada"'),
+  firebase.includes('window.addEventListener("seccion-estudiante-cambiada"'),
   "Cambiar de actividad debe iniciar su sesion cooperativa"
 );
 assert.ok(
-  html.includes('id = "solicitudCooperacionGlobalEstudiante"') &&
-    html.includes("Autorizar intervención"),
+  firebase.includes('id = "solicitudCooperacionGlobalEstudiante"') &&
+    firebase.includes("Autorizar intervención"),
   "La autorizacion debe ser visible aunque la solicitud pertenezca a otra actividad"
 );
 assert.ok(
-  html.includes("consentimientoElemento.hidden = !aceptada") &&
-    html.includes("aceptar.hidden = true") &&
-    html.includes("rechazar.hidden = true"),
+  firebase.includes("consentimientoElemento.hidden = !aceptada") &&
+    firebase.includes("aceptar.hidden = true") &&
+    firebase.includes("rechazar.hidden = true"),
   "Aceptar o rechazar debe mostrarse una sola vez en el panel global"
 );
 assert.ok(
-  html.includes("describirErrorDecisionCooperacion") &&
-    html.includes("Las reglas publicadas no coinciden con esta versión"),
+  firebase.includes("describirErrorDecisionCooperacion") &&
+    firebase.includes("Las reglas publicadas no coinciden con esta versión"),
   "Un rechazo de consentimiento debe mostrar un diagnostico accionable"
 );
 assert.ok(
-  html.includes("actualizarBloqueoEditorEstudiante(sectionId, bloqueada)") &&
-    html.includes("Boolean(actividadesFinalizadas[sectionId])") &&
-    html.includes("Boolean(modulosPausados[sectionId])"),
-  "El bloqueo cooperativo debe respetar los bloqueos academicos"
+  firebase.includes("actualizarBloqueoEditorEstudiante(sectionId, bloqueada)"),
+  "El modo cooperativo debe actualizar el bloqueo del editor"
 );
 assert.ok(
-  html.includes("const loteFirestore = writeBatch(database)") &&
-    html.includes('notificar("synced", "Cambios e historial sincronizados")'),
-  "El CRDT y el historial deben confirmarse en la misma escritura"
+  firebase.includes("const loteFirestore = writeBatch(database)") &&
+    firebase.includes('notificar("synced", "Cambios sincronizados")'),
+  "El CRDT debe confirmar la sincronizacion del codigo"
 );
 assert.ok(
-  html.includes("cooperation_pending:") &&
-    html.includes("persistirColaPendiente()") &&
-    html.includes("if (!sincronizada || cola.length || cambiosVisualesPendientes.length)"),
+  firebase.includes("cooperation_pending:") &&
+    firebase.includes("persistirColaPendiente()") &&
+    firebase.includes("if (!sincronizada || cola.length)"),
   "Una sesion no debe destruir cambios locales sin sincronizar"
 );
 assert.ok(
-  html.includes("temporizador = setTimeout(publicarCola, 0)"),
+  firebase.includes("temporizador = setTimeout(publicarCola, 0)"),
   "Reanudar la cooperacion debe reintentar la cola pendiente"
 );
 assert.ok(
-  html.includes("!document.hidden") && html.includes("document.hasFocus()"),
+  firebase.includes("!document.hidden") && firebase.includes("document.hasFocus()"),
   "La lectura debe depender de que la conversacion este realmente visible"
 );
 assert.ok(
-  html.includes("marcarMensajeChatColaborativoLeidoFirebase") &&
+  firebase.includes("marcarMensajeChatColaborativoLeidoFirebase") &&
     improvements.includes("confirmarPopupMensajeCooperativoEstudiante"),
   "Entendido debe registrar la lectura del mensaje"
 );
@@ -124,11 +117,17 @@ assert.ok(
 
 [
   "match /actualizaciones/{actualizacionId}",
-  "match /mensajes/{mensajeId}",
-  "match /historialAportes/{aporteId}"
+  "match /mensajes/{mensajeId}"
 ].forEach(collection => {
   const block = extractRuleBlock(collection);
   assert.ok(block.includes("allow delete: if false;"), `${collection} debe conservar sus evidencias`);
 });
 
-console.log("OK: regresiones de autorizacion, chat, lectura, presencia, cola e historial cubiertas.");
+assert.ok(
+  !firebase.includes("historialAportes") &&
+    !firebase.includes("Historial de cambios colaborativos") &&
+    !improvements.includes("Historial de aportes"),
+  "La interfaz y el registro del historial colaborativo deben permanecer retirados"
+);
+
+console.log("OK: regresiones de autorizacion, chat, lectura, presencia y cola cubiertas.");

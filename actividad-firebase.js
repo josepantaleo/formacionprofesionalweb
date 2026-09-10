@@ -1054,17 +1054,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const metaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId);
         const actualizacionesRef = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "actualizaciones");
         const presenciaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "presencia", clienteId);
-        const historialAportesRef = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "historialAportes");
-        const historialAportesQuery = query(historialAportesRef, orderBy("creadoEn", "desc"), limit(150));
         const mensajesRef = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes");
         const vistos = new Set();
         const estadoListeners = new Set();
         const presenciaListeners = new Set();
-        const historialListeners = new Set();
         const modoCooperacionListeners = new Set();
         let participantesActuales = [];
-        let historialCambios = [];
-        let cambiosVisualesPendientes = [];
         const normalizarModoCooperacion = datos => ({
           activa: datos?.modoCooperacionActiva === true,
           pausada: datos?.edicionCooperativaPausada === true,
@@ -1081,13 +1076,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const colaRespaldoClave = `cooperation_pending:${rol}:${uid}:${sectionId}:${user.uid}`;
         const persistirColaPendiente = () => {
           try {
-            if (!cola.length && !cambiosVisualesPendientes.length) {
+            if (!cola.length) {
               localStorage.removeItem(colaRespaldoClave);
               return;
             }
             localStorage.setItem(colaRespaldoClave, JSON.stringify({
               update: cola.length ? bytesABase64(Y.mergeUpdates(cola)) : "",
-              cambios: cambiosVisualesPendientes,
               guardadoEn: Date.now()
             }));
           } catch (error) {
@@ -1099,40 +1093,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const notificarPresencia = participantes => {
           participantesActuales = participantes;
           presenciaListeners.forEach(fn => fn(participantes));
-        };
-        const notificarHistorial = () => historialListeners.forEach(fn => fn(historialCambios.slice()));
-        const agregarCambiosHistorial = cambios => {
-          (Array.isArray(cambios) ? cambios : []).forEach(cambio => {
-            if (!cambio?.id || historialCambios.some(item => item.id === cambio.id)) return;
-            historialCambios.push(cambio);
-          });
-          historialCambios.sort((a, b) => Number(a.creadoMs || 0) - Number(b.creadoMs || 0));
-          if (historialCambios.length > 150) historialCambios = historialCambios.slice(-150);
-          notificarHistorial();
-        };
-        const registrarCambioVisual = cambio => {
-          const registro = {
-            id: `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`,
-             rol,
-             autorUid: user.uid,
-             autorEmail: user.email || "",
-             autorNombre: user.displayName || user.email || (rol === "docente" ? "Docente" : "Estudiante"),
-             inicio: Math.max(0, Number(cambio.inicio) || 0),
-             eliminado: String(cambio.eliminado || "").slice(0, 4000),
-             insertado: String(cambio.insertado || "").slice(0, 4000),
-             textoAgregado: String(cambio.insertado || "").slice(0, 500),
-             caracteresAgregados: String(cambio.insertado || "").length,
-             caracteresEliminados: String(cambio.eliminado || "").length,
-             lineaInicio: Math.max(1, Number(cambio.lineaInicio) || 1),
-            lineaFin: Math.max(1, Number(cambio.lineaFin) || 1),
-            tipo: cambio.tipo === "reversion" ? "reversion" : "edicion",
-            revierteId: String(cambio.revierteId || ""),
-            creadoMs: Date.now()
-          };
-          cambiosVisualesPendientes.push(registro);
-          agregarCambiosHistorial([registro]);
-          persistirColaPendiente();
-          return registro;
         };
         const estadoInicial = await runTransaction(database, async transaction => {
           const snapshot = await transaction.get(metaRef);
@@ -1156,13 +1116,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         modoCooperacionActual = normalizarModoCooperacion(estadoInicial.datos);
         Y.applyUpdate(documento, base64ABytes(estadoInicial.semilla), ORIGEN_FIRESTORE_CRDT);
 
-        const [iniciales, historialInicial] = await Promise.all([
-          getDocs(actualizacionesRef),
-          getDocs(historialAportesQuery).catch(() => null)
-        ]);
-        if (historialInicial) {
-          agregarCambiosHistorial(historialInicial.docs.map(item => ({ id: item.id, ...item.data() })));
-        }
+        const iniciales = await getDocs(actualizacionesRef);
         iniciales.docs.forEach(item => {
           vistos.add(item.id);
           const datosIniciales = item.data();
@@ -1176,10 +1130,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             Y.applyUpdate(documento, updateRecuperado, { tipo: "local-recovery", rol });
             cola.push(updateRecuperado);
           }
-          if (Array.isArray(respaldo?.cambios)) {
-            cambiosVisualesPendientes.push(...respaldo.cambios);
-            agregarCambiosHistorial(respaldo.cambios);
-          }
         } catch (error) {
           console.warn("No se pudo recuperar la cola cooperativa local:", error);
         }
@@ -1189,8 +1139,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           if (destruida || !cola.length) return true;
           const lote = Y.mergeUpdates(cola);
           cola = [];
-          const cambios = cambiosVisualesPendientes;
-          cambiosVisualesPendientes = [];
           const id = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`;
           notificar("syncing", "Sincronizando cambios");
           try {
@@ -1210,25 +1158,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               actualizadoEn: serverTimestamp(),
               actualizadoPor: user.email || user.uid
             }, { merge: true });
-            if (cambios.length > 450) {
-              throw new Error("Demasiados cambios pendientes para una sola sincronización");
-            }
-            cambios.forEach(cambio => {
-              loteFirestore.set(doc(historialAportesRef, cambio.id), {
-                ...cambio,
-                uid,
-                sectionId,
-                creadoEn: serverTimestamp()
-              });
-            });
             await loteFirestore.commit();
             localStorage.removeItem(colaRespaldoClave);
-            notificar("synced", "Cambios e historial sincronizados");
+            notificar("synced", "Cambios sincronizados");
             return true;
           } catch (error) {
             console.error("No se pudo publicar la actualización CRDT:", error);
             cola.unshift(lote);
-            cambiosVisualesPendientes.unshift(...cambios);
             persistirColaPendiente();
             notificar("error", "Cambios pendientes; se reintentarán");
             return false;
@@ -1298,17 +1234,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             }
           );
         };
-        const detenerHistorialAportes = onSnapshot(
-          historialAportesQuery,
-          snapshot => {
-            const nuevos = snapshot.docChanges()
-              .filter(cambio => cambio.type !== "removed")
-              .map(cambio => ({ id: cambio.doc.id, ...cambio.doc.data() }));
-            agregarCambiosHistorial(nuevos);
-          },
-          error => console.error("Error escuchando el historial colaborativo:", error)
-        );
-
         const notificarModoCooperacion = datos => {
           const modoAnterior = modoCooperacionActual;
           modoCooperacionActual = normalizarModoCooperacion(datos);
@@ -1384,11 +1309,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             fn(participantesActuales);
             return () => presenciaListeners.delete(fn);
           },
-           onHistory(fn) {
-             historialListeners.add(fn);
-             fn(historialCambios.slice());
-             return () => historialListeners.delete(fn);
-           },
            onModoCooperacion(fn) {
              modoCooperacionListeners.add(fn);
              fn({ ...modoCooperacionActual });
@@ -1458,8 +1378,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
              }, { merge: true });
              return true;
            },
-           registrarCambioVisual,
-          escucharMensajes(fn) {
+           escucharMensajes(fn) {
             if (typeof fn !== "function") return () => {};
             return onSnapshot(
               query(mensajesRef, orderBy("creadoEn", "desc"), limit(60)),
@@ -1527,7 +1446,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           async destroy() {
             if (destruida) return;
             const sincronizada = await this.flush();
-            if (!sincronizada || cola.length || cambiosVisualesPendientes.length) {
+            if (!sincronizada || cola.length) {
               persistirColaPendiente();
               return false;
             }
@@ -1535,7 +1454,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             clearInterval(latido);
              detenerActualizaciones();
              detenerEscuchaPresencia();
-             detenerHistorialAportes();
              detenerModoCooperacion();
             documento.destroy();
             sesionesCodigoCRDT.delete(clave);
@@ -1654,30 +1572,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             transaccion.origin?.autorEmail || ""
           );
         };
-        const sincronizarTextoLocal = (metadatos = {}) => {
+        const sincronizarTextoLocal = () => {
           const anterior = sesion.texto.toString();
           const siguiente = textarea.value;
           if (anterior === siguiente) return;
           const cambio = diferenciaTextoCRDT(anterior, siguiente);
-          const eliminado = anterior.slice(cambio.inicio, cambio.inicio + cambio.eliminar);
-          const lineaInicio = anterior.slice(0, cambio.inicio).split("\n").length;
-          const lineaFin = lineaInicio + Math.max(
-            eliminado.split("\n").length,
-            String(cambio.insertar || "").split("\n").length
-          ) - 1;
           sesion.documento.transact(() => {
             if (cambio.eliminar) sesion.texto.delete(cambio.inicio, cambio.eliminar);
             if (cambio.insertar) sesion.texto.insert(cambio.inicio, cambio.insertar);
           }, origenLocal);
-          sesion.registrarCambioVisual({
-            inicio: cambio.inicio,
-            eliminado,
-            insertado: cambio.insertar,
-            lineaInicio,
-            lineaFin,
-            tipo: metadatos.tipo,
-            revierteId: metadatos.revierteId
-          });
           marcarCambio(sesion.rol);
           sesion.actualizarPresencia({ inicio: textarea.selectionStart, fin: textarea.selectionEnd });
         };
@@ -1750,106 +1653,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             presenciaElemento.appendChild(restantes);
           }
         });
-        const historialElemento = document.createElement("section");
-        historialElemento.className = "collaboration-history";
-        historialElemento.innerHTML = `
-          <div class="collaboration-history-header">
-            <div>
-              <div class="collaboration-history-title"><i class="fa-solid fa-code-commit"></i> Historial de cambios colaborativos</div>
-              <div class="collaboration-history-legend">
-                <span><i class="fa-solid fa-circle teacher-color"></i> Docente</span>
-                <span><i class="fa-solid fa-circle student-color"></i> Alumno</span>
-              </div>
-            </div>
-          </div>
-          <div class="collaboration-history-list"></div>`;
-        const cabeceraHistorial = historialElemento.querySelector(".collaboration-history-header");
-        const listaHistorial = historialElemento.querySelector(".collaboration-history-list");
-        let botonRevertir = null;
-        if (sesion.rol === "docente") {
-          botonRevertir = document.createElement("button");
-          botonRevertir.type = "button";
-          botonRevertir.className = "btn btn-secondary collaboration-history-revert";
-          botonRevertir.innerHTML = '<i class="fa-solid fa-rotate-left"></i><span>Revertir último cambio del alumno</span>';
-          cabeceraHistorial.appendChild(botonRevertir);
-        }
-        textarea.insertAdjacentElement("afterend", historialElemento);
-        let ultimoHistorialCambios = [];
-        const cambiosRevertidos = cambios => new Set(
-          cambios.filter(item => item.tipo === "reversion" && item.revierteId).map(item => item.revierteId)
-        );
-        const ultimoCambioAlumnoRevertible = cambios => {
-          const revertidos = cambiosRevertidos(cambios);
-          return [...cambios].reverse().find(item => item.rol === "estudiante" && !revertidos.has(item.id));
-        };
-        const renderizarHistorial = cambios => {
-          ultimoHistorialCambios = cambios;
-          const revertidos = cambiosRevertidos(cambios);
-          listaHistorial.replaceChildren();
-          const visibles = cambios.slice(-30).reverse();
-          if (!visibles.length) {
-            const vacio = document.createElement("div");
-            vacio.className = "collaboration-history-empty";
-            vacio.textContent = "Todavía no hay cambios registrados en esta sesión.";
-            listaHistorial.appendChild(vacio);
-          }
-          visibles.forEach(cambio => {
-            const entrada = document.createElement("article");
-            entrada.className = `collaboration-history-entry${cambio.rol === "docente" ? " is-teacher" : ""}${revertidos.has(cambio.id) ? " is-reverted" : ""}`;
-            const contenido = document.createElement("div");
-            const cabecera = document.createElement("div");
-            cabecera.className = "collaboration-history-entry-head";
-            const autor = document.createElement("strong");
-            autor.textContent = cambio.tipo === "reversion"
-              ? "Docente · reversión"
-              : (cambio.rol === "docente" ? "Docente" : "Alumno");
-            const lineas = document.createElement("span");
-            lineas.textContent = cambio.lineaInicio === cambio.lineaFin
-              ? `Línea ${cambio.lineaInicio}`
-              : `Líneas ${cambio.lineaInicio}-${cambio.lineaFin}`;
-            cabecera.append(autor, lineas);
-            const codigo = document.createElement("div");
-            codigo.className = "collaboration-history-entry-code";
-            const insertado = String(cambio.insertado || "");
-            const eliminado = String(cambio.eliminado || "");
-            codigo.textContent = insertado
-              ? `+ ${insertado.slice(0, 240)}${insertado.length > 240 ? "…" : ""}`
-              : `- ${eliminado.slice(0, 240)}${eliminado.length > 240 ? "…" : ""}`;
-            contenido.append(cabecera, codigo);
-            entrada.appendChild(contenido);
-            listaHistorial.appendChild(entrada);
-          });
-          if (botonRevertir) {
-            const ultimo = ultimoCambioAlumnoRevertible(cambios);
-            botonRevertir.disabled = !ultimo;
-            botonRevertir.title = ultimo
-              ? `Revertir cambio del alumno en línea ${ultimo.lineaInicio}`
-              : "No hay cambios del alumno disponibles para revertir";
-          }
-        };
-        const quitarHistorial = sesion.onHistory(renderizarHistorial);
-        if (botonRevertir) {
-          botonRevertir.addEventListener("click", () => {
-            const cambio = ultimoCambioAlumnoRevertible(ultimoHistorialCambios);
-            if (!cambio) return;
-            const actual = textarea.value;
-            const inicio = Math.max(0, Number(cambio.inicio) || 0);
-            const insertado = String(cambio.insertado || "");
-            const eliminado = String(cambio.eliminado || "");
-            if (inicio > actual.length || (insertado && actual.slice(inicio, inicio + insertado.length) !== insertado)) {
-              alert("No se puede revertir automáticamente porque el código cambió después en esa misma posición. Revisá el historial antes de modificarlo manualmente.");
-              return;
-            }
-            const etiquetaLinea = cambio.lineaInicio === cambio.lineaFin
-              ? `la línea ${cambio.lineaInicio}`
-              : `las líneas ${cambio.lineaInicio}-${cambio.lineaFin}`;
-            if (!confirm(`¿Revertir el último cambio del alumno en ${etiquetaLinea}? La reversión quedará registrada como un cambio del docente.`)) return;
-            textarea.value = actual.slice(0, inicio) + eliminado + actual.slice(inicio + insertado.length);
-            textarea.setSelectionRange(inicio, inicio + eliminado.length);
-            sincronizarTextoLocal({ tipo: "reversion", revierteId: cambio.id });
-            textarea.focus();
-          });
-        }
         const chatElemento = document.createElement("section");
         chatElemento.className = "collaboration-chat";
         chatElemento.innerHTML = `
@@ -1886,7 +1689,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               <span class="collaboration-chat-counter">0/600</span>
             </div>
           </div>`;
-        historialElemento.insertAdjacentElement("afterend", chatElemento);
+        textarea.insertAdjacentElement("afterend", chatElemento);
         const chatToggle = chatElemento.querySelector(".collaboration-chat-toggle");
         const chatBody = chatElemento.querySelector(".collaboration-chat-body");
         const chatMensajes = chatElemento.querySelector(".collaboration-chat-messages");
@@ -2183,8 +1986,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           autorCambioElemento.remove();
           quitarModoCooperacion();
           consentimientoElemento?.remove();
-          quitarHistorial();
-          historialElemento.remove();
           if (detenerMensajes) detenerMensajes();
           document.removeEventListener("visibilitychange", revisarVisibilidadChat);
           window.removeEventListener("focus", marcarMensajesVisibles);

@@ -491,7 +491,7 @@ function abrirProgramacionDocente(indice){
  cargarHistorialProgramacionDocente(d.uid);
 }
 window.abrirProgramacionDocente=abrirProgramacionDocente;
-let detenerChatColaborativoDocente=null,detenerChatColaborativoEstudiante=null,detenerHistorialAportesDocente=null,detenerHistorialAportesEstudiante=null;
+let detenerChatColaborativoDocente=null,detenerChatColaborativoEstudiante=null;
 let detenerPresenciaChatEstudiante=null;
 let detenerAlertasChatEstudiante=[];
 const ultimoMensajeDocentePorSeccion=new Map();
@@ -730,21 +730,6 @@ function activarChatColaborativoDocente(uid,sectionId){
  estado.textContent="Chat en vivo";
  detenerChatColaborativoDocente=window.escucharChatColaborativoFirebase?.(uid,sectionId,(mensajes,error)=>{notificarMensajeColaborativo(mensajes,"docente");renderChatColaborativo(lista,mensajes,"docente",error)},{rol:"docente",marcarLeidos:()=>modal.classList.contains("active")&&!document.hidden&&document.hasFocus()})||null;
 }
-function renderHistorialAportesColaborativo(contenedor,aportes=[],error=null){
- if(!contenedor)return;
- if(error){contenedor.innerHTML='<p class="collab-history-empty">No se pudo cargar el historial de aportes.</p>';return;}
- contenedor.innerHTML=aportes.length?aportes.map(aporte=>{
-  const rol=aporte.rol==="docente"?"teacher":"student",nombre=aporte.autorNombre||(rol==="teacher"?"Docente":"Estudiante"),agregados=Math.max(0,Number(aporte.caracteresAgregados)||0),eliminados=Math.max(0,Number(aporte.caracteresEliminados)||0),muestra=String(aporte.textoAgregado||"").trim();
-  const detalle=[agregados?`+${agregados} caracteres`:"",eliminados?`−${eliminados} caracteres`: ""].filter(Boolean).join(" · ")||"Cambio de formato";
-  return `<article class="collab-history-item ${rol}"><i class="fa-solid ${rol==="teacher"?"fa-chalkboard-user":"fa-user-graduate"}"></i><div><small>${escaparProgramacion(nombre)} · ${fechaChatColaborativo(aporte.creadoEn)} · ${detalle}</small>${muestra?`<p>${escaparProgramacion(muestra)}</p>`:""}</div></article>`;
- }).join(""):'<p class="collab-history-empty">Todavía no hay aportes registrados en esta sesión.</p>';
-}
-function activarHistorialAportesDocente(uid,sectionId){
- const modal=document.getElementById("editorColaborativoDocenteModal"),lista=modal?.querySelector("#historialAportesDocenteLista"),estado=modal?.querySelector("#historialAportesDocenteEstado");if(!modal||!lista)return;
- if(detenerHistorialAportesDocente)detenerHistorialAportesDocente();
- estado.textContent="Actualización en vivo";
- detenerHistorialAportesDocente=window.escucharHistorialAportesColaborativoFirebase?.(uid,sectionId,(aportes,error)=>renderHistorialAportesColaborativo(lista,aportes,error))||null;
-}
 function renderPresenciaEditorColaborativo(modal,participantes=[]){
  const aviso=modal?.querySelector("#editorColaborativoPresencia");if(!aviso)return;
  const pausada=modal.dataset.edicionCooperativaPausada==="true",consentimiento=modal.dataset.consentimientoCooperativo||"sin_solicitud",uidDocente=uidSesionColaborativa("docente"),activos=(participantes||[]).filter(item=>item?.autorUid);
@@ -789,20 +774,6 @@ function actualizarPausaEditorColaborativo(modal,modo={}){
  }
  renderPresenciaEditorColaborativo(modal,modal.__participantesColaborativos||[]);
 }
-function asegurarHistorialAportesEstudiante(){
- if(document.getElementById("historialAportesColaborativoModal"))return;
- const modal=document.createElement("div");modal.id="historialAportesColaborativoModal";modal.className="modal-overlay";modal.setAttribute("role","dialog");modal.setAttribute("aria-modal","true");
- modal.innerHTML=`<div class="modal-box teacher-program-box"><div class="teacher-program-header"><div><h3><i class="fa-solid fa-clock-rotate-left"></i> Historial de aportes</h3><p id="historialAportesColaborativoAlumno">Cambios registrados durante la cooperación.</p></div><button class="btn btn-secondary" id="cerrarHistorialAportesColaborativo" type="button" aria-label="Cerrar historial"><i class="fa-solid fa-xmark"></i></button></div><section class="collab-history"><div class="collab-history-header"><strong><i class="fa-solid fa-code-commit"></i> Aportes al código</strong><small id="historialAportesColaborativoEstado">Conectando...</small></div><div id="historialAportesColaborativoLista" class="collab-history-list" aria-live="polite"></div></section></div>`;
- document.body.appendChild(modal);
- const cerrar=()=>{modal.classList.remove("active");if(detenerHistorialAportesEstudiante){detenerHistorialAportesEstudiante();detenerHistorialAportesEstudiante=null;}};
- modal.querySelector("#cerrarHistorialAportesColaborativo").onclick=cerrar;modal.onclick=e=>{if(e.target===modal)cerrar()};
-}
-window.abrirHistorialAportesColaborativoEstudiante=function(sectionId){
- const user=window.firebaseCurrentUser;if(!user){alert("Iniciá sesión como estudiante para ver los aportes.");return;}
- asegurarHistorialAportesEstudiante();const modal=document.getElementById("historialAportesColaborativoModal"),sec=(typeof seccionesData!=="undefined"?seccionesData:[]).find(x=>x.id===sectionId),lista=modal.querySelector("#historialAportesColaborativoLista"),estado=modal.querySelector("#historialAportesColaborativoEstado");
- modal.dataset.uid=user.uid;modal.dataset.sectionId=sectionId;modal.querySelector("#historialAportesColaborativoAlumno").textContent=`${sec?.title||"Desafío"} · cambios de estudiante y docente`;lista.innerHTML='<p class="collab-history-empty">Cargando aportes…</p>';estado.textContent="Actualización en vivo";modal.classList.add("active");
- if(detenerHistorialAportesEstudiante)detenerHistorialAportesEstudiante();detenerHistorialAportesEstudiante=window.escucharHistorialAportesColaborativoFirebase?.(user.uid,sectionId,(aportes,error)=>renderHistorialAportesColaborativo(lista,aportes,error))||null;
-};
 function asegurarChatColaborativoEstudiante(){
  if(document.getElementById("chatColaborativoEstudianteModal"))return;
  const modal=document.createElement("div");modal.id="chatColaborativoEstudianteModal";modal.className="modal-overlay";modal.setAttribute("role","dialog");modal.setAttribute("aria-modal","true");
@@ -838,7 +809,7 @@ window.abrirChatColaborativoEstudiante=function(sectionId){
 function asegurarEditorColaborativoDocente(){
  if(document.getElementById("editorColaborativoDocenteModal"))return;
  const modal=document.createElement("div");modal.id="editorColaborativoDocenteModal";modal.className="modal-overlay";modal.setAttribute("role","dialog");modal.setAttribute("aria-modal","true");
- modal.innerHTML=`<div class="modal-box teacher-collab-box"><div class="teacher-program-header"><div><h3><i class="fa-solid fa-code-branch"></i> Editor colaborativo en vivo</h3><p id="editorColaborativoAlumno"></p><small id="editorColaborativoEstado">Conectando...</small></div><button class="btn btn-secondary" id="cerrarEditorColaborativo" type="button" aria-label="Cerrar editor colaborativo"><i class="fa-solid fa-xmark"></i></button></div><nav class="teacher-collab-mobile-nav" aria-label="Secciones de cooperación"><button type="button" data-collab-target="editorColaborativoCodigo" aria-pressed="true"><i class="fa-solid fa-code"></i><span>Código</span></button><button type="button" data-collab-target="collabChatDocente" aria-pressed="false"><i class="fa-solid fa-comments"></i><span>Chat</span></button><button type="button" data-collab-target="collabHistoryDocente" aria-pressed="false"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial</span></button></nav><div class="teacher-collab-presence" id="editorColaborativoPresencia"><i class="fa-solid fa-people-arrows"></i><span>Esperando al estudiante…</span></div><div class="collab-author-legend" aria-label="Referencias de autoría del código"><strong><i class="fa-solid fa-palette"></i> Aportes:</strong><span class="collab-author-key student">Estudiante</span><span class="collab-author-key teacher">Docente</span><span class="collab-author-key base">Código inicial</span></div><textarea id="editorColaborativoCodigo" class="teacher-collab-editor" spellcheck="false" aria-label="Código colaborativo"></textarea><div class="teacher-program-actions"><span id="editorColaborativoGuardado" role="status">Sincronización automática</span><div style="display:flex;gap:.45rem;flex-wrap:wrap"><button class="btn btn-success" id="iniciarAudioCooperativo" type="button" title="Iniciar una llamada de audio con el estudiante"><i class="fa-solid fa-headset"></i> Llamada de audio</button><button class="btn btn-warning" id="pausarEdicionCooperativa" type="button" aria-pressed="false"><i class="fa-solid fa-pause"></i> Pausar edición</button><button class="btn btn-primary" id="guardarEditorColaborativo" type="button"><i class="fa-solid fa-arrows-rotate"></i> Sincronizar ahora</button></div></div><section id="collabHistoryDocente" class="collab-history"><div class="collab-history-header"><strong><i class="fa-solid fa-clock-rotate-left"></i> Historial de aportes</strong><small id="historialAportesDocenteEstado">Conectando...</small></div><div id="historialAportesDocenteLista" class="collab-history-list" aria-live="polite"></div></section><section id="collabChatDocente" class="collab-chat"><div class="collab-chat-header"><strong><i class="fa-solid fa-comments"></i> Chat con el estudiante</strong><span id="chatColaborativoDocenteEstado" class="collab-chat-status">Conectando...</span></div><div class="collab-chat-tools"><button class="btn btn-success" id="iniciarAudioDesdeChat" type="button"><i class="fa-solid fa-headset"></i> Iniciar audio</button><button class="btn btn-secondary" id="compartirSeleccionChat" type="button"><i class="fa-solid fa-share-from-square"></i> Compartir selección</button><button class="btn btn-warning" id="finalizarCooperacionDocente" type="button" title="Finalizar la edición compartida conservando las evidencias"><i class="fa-solid fa-circle-stop"></i> Finalizar cooperación</button></div><div class="collab-quick-replies"><button type="button" data-quick-reply="Revisá esta parte y contame qué observás.">Revisá esta parte</button><button type="button" data-quick-reply="Probá ejecutar el código y compartime el error.">Probá y compartime el error</button><button type="button" data-quick-reply="Muy bien, continuá con el siguiente paso.">Continuá</button></div><div id="chatColaborativoDocenteLista" class="collab-chat-messages" aria-live="polite"></div><div class="collab-chat-compose"><textarea id="chatColaborativoDocenteTexto" maxlength="1200" rows="3" placeholder="Escribí una indicación o respuesta..." aria-label="Mensaje para el estudiante"></textarea><button class="btn btn-primary" id="enviarChatColaborativoDocente" type="button"><i class="fa-solid fa-paper-plane"></i> Enviar</button></div></section></div>`;
+ modal.innerHTML=`<div class="modal-box teacher-collab-box"><div class="teacher-program-header"><div><h3><i class="fa-solid fa-code-branch"></i> Editor colaborativo en vivo</h3><p id="editorColaborativoAlumno"></p><small id="editorColaborativoEstado">Conectando...</small></div><button class="btn btn-secondary" id="cerrarEditorColaborativo" type="button" aria-label="Cerrar editor colaborativo"><i class="fa-solid fa-xmark"></i></button></div><nav class="teacher-collab-mobile-nav" aria-label="Secciones de cooperación"><button type="button" data-collab-target="editorColaborativoCodigo" aria-pressed="true"><i class="fa-solid fa-code"></i><span>Código</span></button><button type="button" data-collab-target="collabChatDocente" aria-pressed="false"><i class="fa-solid fa-comments"></i><span>Chat</span></button></nav><div class="teacher-collab-presence" id="editorColaborativoPresencia"><i class="fa-solid fa-people-arrows"></i><span>Esperando al estudiante…</span></div><div class="collab-author-legend" aria-label="Referencias de autoría del código"><strong><i class="fa-solid fa-palette"></i> Aportes:</strong><span class="collab-author-key student">Estudiante</span><span class="collab-author-key teacher">Docente</span><span class="collab-author-key base">Código inicial</span></div><textarea id="editorColaborativoCodigo" class="teacher-collab-editor" spellcheck="false" aria-label="Código colaborativo"></textarea><div class="teacher-program-actions"><span id="editorColaborativoGuardado" role="status">Sincronización automática</span><div style="display:flex;gap:.45rem;flex-wrap:wrap"><button class="btn btn-success" id="iniciarAudioCooperativo" type="button" title="Iniciar una llamada de audio con el estudiante"><i class="fa-solid fa-headset"></i> Llamada de audio</button><button class="btn btn-warning" id="pausarEdicionCooperativa" type="button" aria-pressed="false"><i class="fa-solid fa-pause"></i> Pausar edición</button><button class="btn btn-primary" id="guardarEditorColaborativo" type="button"><i class="fa-solid fa-arrows-rotate"></i> Sincronizar ahora</button></div></div><section id="collabChatDocente" class="collab-chat"><div class="collab-chat-header"><strong><i class="fa-solid fa-comments"></i> Chat con el estudiante</strong><span id="chatColaborativoDocenteEstado" class="collab-chat-status">Conectando...</span></div><div class="collab-chat-tools"><button class="btn btn-success" id="iniciarAudioDesdeChat" type="button"><i class="fa-solid fa-headset"></i> Iniciar audio</button><button class="btn btn-secondary" id="compartirSeleccionChat" type="button"><i class="fa-solid fa-share-from-square"></i> Compartir selección</button><button class="btn btn-warning" id="finalizarCooperacionDocente" type="button" title="Finalizar la edición compartida"><i class="fa-solid fa-circle-stop"></i> Finalizar cooperación</button></div><div class="collab-quick-replies"><button type="button" data-quick-reply="Revisá esta parte y contame qué observás.">Revisá esta parte</button><button type="button" data-quick-reply="Probá ejecutar el código y compartime el error.">Probá y compartime el error</button><button type="button" data-quick-reply="Muy bien, continuá con el siguiente paso.">Continuá</button></div><div id="chatColaborativoDocenteLista" class="collab-chat-messages" aria-live="polite"></div><div class="collab-chat-compose"><textarea id="chatColaborativoDocenteTexto" maxlength="1200" rows="3" placeholder="Escribí una indicación o respuesta..." aria-label="Mensaje para el estudiante"></textarea><button class="btn btn-primary" id="enviarChatColaborativoDocente" type="button"><i class="fa-solid fa-paper-plane"></i> Enviar</button></div></section></div>`;
  document.body.appendChild(modal);
  const cabeceraEstado=modal.querySelector("#editorColaborativoEstado");
  if(cabeceraEstado){
@@ -902,7 +873,6 @@ function asegurarEditorColaborativoDocente(){
   modal.__quitarPresenciaColaborativa?.();modal.__quitarModoCooperacion?.();
   delete modal.__quitarPresenciaColaborativa;delete modal.__quitarModoCooperacion;
   if(detenerChatColaborativoDocente){detenerChatColaborativoDocente();detenerChatColaborativoDocente=null;}
-  if(detenerHistorialAportesDocente){detenerHistorialAportesDocente();detenerHistorialAportesDocente=null;}
   delete modal.dataset.llamadaAudioColaborativaId;
  };
  modal.querySelector("#cerrarEditorColaborativo").onclick=cerrar;modal.onclick=e=>{if(e.target===modal)cerrar()};
@@ -916,7 +886,7 @@ function asegurarEditorColaborativoDocente(){
  modal.querySelector("#compartirSeleccionChat").onclick=()=>{const editor=modal.querySelector("#editorColaborativoCodigo"),campo=modal.querySelector("#chatColaborativoDocenteTexto"),rango=editor?.__getCodeMirrorSelection?.()||{inicio:editor?.selectionStart||0,fin:editor?.selectionEnd||0},seleccion=(editor?.__getCodeMirrorSelectedText?.()||editor?.value.slice(rango.inicio,rango.fin)||"").trim();if(!seleccion){alert("Seleccioná primero una parte del código.");return;}if(!campo)return;campo.value=`Te comparto esta parte del código:\n\n\`\`\`javascript\n${seleccion}\n\`\`\``;campo.focus();};
  modal.querySelector("#finalizarCooperacionDocente").onclick=async()=>{
   const boton=modal.querySelector("#finalizarCooperacionDocente"),estado=modal.querySelector("#chatColaborativoDocenteEstado");
-  const confirmacion=await mostrarConfirmacionDocente({tipo:"warning",icono:"fa-circle-stop",titulo:"Finalizar cooperación",mensaje:"Se cerrará la edición compartida de esta actividad.",detalles:["El estudiante podrá continuar trabajando individualmente.","El código, los mensajes y el historial de aportes se conservarán.","Una nueva cooperación requerirá otra solicitud y aceptación."],confirmarTexto:"Finalizar cooperación",confirmarIcono:"fa-circle-stop",confirmarClase:"btn-warning"});
+  const confirmacion=await mostrarConfirmacionDocente({tipo:"warning",icono:"fa-circle-stop",titulo:"Finalizar cooperación",mensaje:"Se cerrará la edición compartida de esta actividad.",detalles:["El estudiante podrá continuar trabajando individualmente.","El código y los mensajes se conservarán.","Una nueva cooperación requerirá otra solicitud y aceptación."],confirmarTexto:"Finalizar cooperación",confirmarIcono:"fa-circle-stop",confirmarClase:"btn-warning"});
   if(!confirmacion?.confirmado)return;
   boton.disabled=true;estado.textContent="Finalizando cooperación...";
   const ok=await modal.__crdtSession?.finalizarCooperacion?.();
@@ -952,7 +922,6 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
   modal.__quitarPresenciaColaborativa?.();modal.__quitarModoCooperacion?.();
   delete modal.__quitarPresenciaColaborativa;delete modal.__quitarModoCooperacion;
   if(detenerChatColaborativoDocente){detenerChatColaborativoDocente();detenerChatColaborativoDocente=null;}
-  if(detenerHistorialAportesDocente){detenerHistorialAportesDocente();detenerHistorialAportesDocente=null;}
   estado.textContent="Conectando al documento colaborativo...";
   modal.__crdtSession=await window.iniciarEditorCRDTDocente?.({uid:d.uid,sectionId,codigoInicial:codigo,textarea:editor,estado});
    if(!modal.__crdtSession)throw new Error("crdt-session-not-created");
@@ -961,7 +930,6 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
    modal.__quitarPresenciaColaborativa=modal.__crdtSession.onPresence?.(participantes=>{modal.__participantesColaborativos=participantes;editor.__renderRemoteCursors?.(participantes);renderPresenciaEditorColaborativo(modal,participantes);})||null;
    modal.__quitarModoCooperacion=modal.__crdtSession.onModoCooperacion?.(modo=>actualizarPausaEditorColaborativo(modal,modo))||null;
    activarChatColaborativoDocente(d.uid,sectionId);
-   activarHistorialAportesDocente(d.uid,sectionId);
    const modoActual=modal.__crdtSession.getModoCooperacion?.()||{};
    if(!(modoActual.consentimiento==="aceptado"&&modoActual.activa===true)){
     const objetivo=`Acompañamiento docente en ${sec?.title||sectionId}: revisar el razonamiento, probar el código y acordar el siguiente paso.`;
@@ -975,7 +943,6 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
   actualizarEstadoCursoCooperativo(modal,"error");
   console.error(error);
   if(detenerChatColaborativoDocente){detenerChatColaborativoDocente();detenerChatColaborativoDocente=null;}
-  if(detenerHistorialAportesDocente){detenerHistorialAportesDocente();detenerHistorialAportesDocente=null;}
   const codigoError=String(error?.code||error?.message||"");
   const detalle=codigoError.includes("permission-denied")?"Firestore rechazó la colaboración. Publicá la versión actualizada de reglas.txt.":codigoError.includes("teacher-not-authorized")?"La cuenta docente no está autorizada.":codigoError.includes("firebase-not-ready")?"Firebase todavía no está listo. Recargá la página e intentá nuevamente.":String(error?.message||"Revisá la conexión y las reglas de Firestore.");
   estado.textContent="No se pudo iniciar la colaboración";salida.textContent=detalle;salida.className="danger";
