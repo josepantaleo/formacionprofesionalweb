@@ -22,7 +22,7 @@
     <!-- Librería pdf-lib para cifrar y proteger el PDF generado -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
-    <script type="module" src="actividad-firebase.js?v=20260910-2"></script>
+    <script type="module" src="actividad-firebase.js?v=20260910-3"></script>
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -254,10 +254,13 @@
         <section id="mantenimientoJitsiAdministrador" class="teacher-admin-maintenance" hidden>
           <div>
             <h3><i class="fa-solid fa-database"></i> Mantenimiento administrativo</h3>
-            <p>El historial Jitsi nuevo está desactivado. Esta operación elimina definitivamente los documentos históricos que todavía existan en Firestore.</p>
+            <p>Los historiales Jitsi y de aportes colaborativos ya no se generan. Estas operaciones eliminan definitivamente los documentos antiguos que todavía existan en Firestore.</p>
           </div>
           <button class="btn btn-danger" id="btnEliminarHistorialJitsiFirestore" type="button" onclick="abrirEliminacionHistorialJitsiAdministrador()">
             <i class="fa-solid fa-trash-can"></i> Eliminar historial Jitsi
+          </button>
+          <button class="btn btn-danger" id="btnEliminarHistorialAportesFirestore" type="button" onclick="eliminarHistorialAportesAdministrador()">
+            <i class="fa-solid fa-code-commit"></i> Eliminar aportes antiguos
           </button>
         </section>
         <div class="teacher-icon-legend" role="note" aria-label="Leyenda de iconos del panel docente">
@@ -881,9 +884,9 @@
       </button>
     </div>
 
-    <script src="actividad-app.js?v=20260910-1"></script>
+    <script src="actividad-app.js?v=20260910-2"></script>
     <script src="actividad-cooperacion.js?v=20260910-1"></script>
-    <script src="mejoras-seguimiento.js?v=20260910-3"></script>
+    <script src="mejoras-seguimiento.js?v=20260910-4"></script>
   </body>
 </html>
 

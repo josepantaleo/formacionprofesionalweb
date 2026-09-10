@@ -18,6 +18,8 @@ const uid = "student-1";
 const otherUid = "student-2";
 const teacherUid = "teacher-1";
 const teacherEmail = "docente@example.com";
+const principalUid = "principal-admin-1";
+const principalEmail = "ipem146centenario@gmail.com";
 const sectionId = "sec-3";
 
 function updatePayload(id, rol, autorUid, autorEmail) {
@@ -100,6 +102,21 @@ async function main() {
         email: teacherEmail,
         activo: true
       });
+      await setDoc(doc(
+        db,
+        "estudiantes",
+        uid,
+        "colaboracionCodigo",
+        sectionId,
+        "historialAportes",
+        "legacy-contribution"
+      ), contributionPayload(
+        "legacy-contribution",
+        "estudiante",
+        uid,
+        "student@example.com",
+        "Estudiante"
+      ));
     });
 
     const studentDb = testEnv.authenticatedContext(uid, {
@@ -112,6 +129,10 @@ async function main() {
     }).firestore();
     const teacherDb = testEnv.authenticatedContext(teacherUid, {
       email: teacherEmail,
+      email_verified: true
+    }).firestore();
+    const principalDb = testEnv.authenticatedContext(principalUid, {
+      email: principalEmail,
       email_verified: true
     }).firestore();
     const anonymousDb = testEnv.unauthenticatedContext().firestore();
@@ -156,8 +177,8 @@ async function main() {
 
     await assertSucceeds(setDoc(metaTeacherRef, {
       modoCooperacionActiva: true,
-      edicionCooperativaPausada: true,
-      estadoConsentimiento: "pendiente",
+      edicionCooperativaPausada: false,
+      estadoConsentimiento: "aceptado",
       objetivoCooperacion: "Revisar el razonamiento y acordar el siguiente paso.",
       solicitadoPor: "Docente",
       solicitudEn: serverTimestamp(),
@@ -165,19 +186,10 @@ async function main() {
       actualizadoPor: teacherEmail
     }, { merge: true }));
 
-    await assertFails(setDoc(metaTeacherRef, {
-      modoCooperacionActiva: true,
-      edicionCooperativaPausada: false,
-      estadoConsentimiento: "aceptado",
-      actualizadoEn: serverTimestamp(),
-      actualizadoPor: teacherEmail
-    }, { merge: true }));
-
-    await assertSucceeds(setDoc(metaStudentRef, {
-      modoCooperacionActiva: true,
-      edicionCooperativaPausada: false,
-      estadoConsentimiento: "aceptado",
-      respuestaEstudianteEn: serverTimestamp(),
+    await assertFails(setDoc(metaStudentRef, {
+      modoCooperacionActiva: false,
+      edicionCooperativaPausada: true,
+      estadoConsentimiento: "finalizado",
       actualizadoEn: serverTimestamp(),
       actualizadoPor: "student@example.com"
     }, { merge: true }));
@@ -226,14 +238,6 @@ async function main() {
       actualizadoPor: teacherEmail
     }, { merge: true }));
 
-    const contributionWithoutAuthor = contributionPayload(
-      "missing-author",
-      "estudiante",
-      uid,
-      "student@example.com",
-      "Estudiante"
-    );
-    delete contributionWithoutAuthor.autorNombre;
     await assertFails(setDoc(doc(
       studentDb,
       "estudiantes",
@@ -268,7 +272,7 @@ async function main() {
       "historialAportes",
       "student-contribution"
     );
-    await assertSucceeds(setDoc(
+    await assertFails(setDoc(
       contributionStudentRef,
       contributionPayload(
         "student-contribution",
@@ -286,7 +290,13 @@ async function main() {
       sectionId,
       "historialAportes",
       "missing-author"
-    ), contributionWithoutAuthor));
+    ), contributionPayload(
+      "missing-author",
+      "estudiante",
+      uid,
+      "student@example.com",
+      "Estudiante"
+    )));
 
     const presenceStudentRef = doc(
       studentDb,
@@ -417,13 +427,12 @@ async function main() {
       "student-message"
     )));
 
-    await assertSucceeds(setDoc(metaStudentRef, {
+    await assertSucceeds(setDoc(metaTeacherRef, {
       modoCooperacionActiva: false,
       edicionCooperativaPausada: true,
       estadoConsentimiento: "finalizado",
-      respuestaEstudianteEn: serverTimestamp(),
       actualizadoEn: serverTimestamp(),
-      actualizadoPor: "student@example.com"
+      actualizadoPor: teacherEmail
     }, { merge: true }));
     await assertFails(getDoc(presenceStudentRef));
     await assertSucceeds(setDoc(doc(
@@ -461,7 +470,35 @@ async function main() {
       "teacher-after-withdraw"
     ), updatePayload("teacher-after-withdraw", "docente", teacherUid, teacherEmail)));
 
-    await assertSucceeds(getDoc(contributionStudentRef));
+    const legacyContributionStudentRef = doc(
+      studentDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "historialAportes",
+      "legacy-contribution"
+    );
+    const legacyContributionTeacherRef = doc(
+      teacherDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "historialAportes",
+      "legacy-contribution"
+    );
+    const legacyContributionPrincipalRef = doc(
+      principalDb,
+      "estudiantes",
+      uid,
+      "colaboracionCodigo",
+      sectionId,
+      "historialAportes",
+      "legacy-contribution"
+    );
+    await assertFails(getDoc(legacyContributionStudentRef));
+    await assertFails(getDoc(legacyContributionTeacherRef));
     await assertFails(deleteDoc(doc(
       teacherDb,
       "estudiantes",
@@ -471,6 +508,12 @@ async function main() {
       "historialAportes",
       "student-contribution"
     )));
+    await assertSucceeds(getDoc(legacyContributionPrincipalRef));
+    await assertSucceeds(deleteDoc(legacyContributionPrincipalRef));
+    const deletedLegacyContribution = await assertSucceeds(
+      getDoc(legacyContributionPrincipalRef)
+    );
+    assert.equal(deletedLegacyContribution.exists(), false);
     await assertFails(deleteDoc(metaTeacherRef));
 
     const rejectedSection = "sec-rejected";
@@ -488,25 +531,41 @@ async function main() {
       "colaboracionCodigo",
       rejectedSection
     );
-    await assertSucceeds(setDoc(rejectedStudentMeta, {
-      uid,
-      sectionId: rejectedSection,
-      semilla: "AQID",
-      creadoEn: serverTimestamp(),
-      creadoPor: "student@example.com",
-      actualizadoEn: serverTimestamp()
-    }));
+    await testEnv.withSecurityRulesDisabled(async context => {
+      await setDoc(doc(
+        context.firestore(),
+        "estudiantes",
+        uid,
+        "colaboracionCodigo",
+        rejectedSection
+      ), {
+        uid,
+        sectionId: rejectedSection,
+        semilla: "AQID",
+        creadoEn: serverTimestamp(),
+        creadoPor: "student@example.com",
+        actualizadoEn: serverTimestamp(),
+        actualizadoPor: "student@example.com",
+        modoCooperacionActiva: false,
+        edicionCooperativaPausada: true,
+        estadoConsentimiento: "rechazado",
+        objetivoCooperacion: "Sesion antigua rechazada.",
+        solicitadoPor: "Docente",
+        solicitudEn: serverTimestamp(),
+        respuestaEstudianteEn: serverTimestamp()
+      });
+    });
     await assertSucceeds(setDoc(rejectedTeacherMeta, {
       modoCooperacionActiva: true,
-      edicionCooperativaPausada: true,
-      estadoConsentimiento: "pendiente",
+      edicionCooperativaPausada: false,
+      estadoConsentimiento: "aceptado",
       objetivoCooperacion: "Acompañar la revisión de la segunda actividad.",
       solicitadoPor: "Docente",
       solicitudEn: serverTimestamp(),
       actualizadoEn: serverTimestamp(),
       actualizadoPor: teacherEmail
     }, { merge: true }));
-    await assertSucceeds(setDoc(rejectedStudentMeta, {
+    await assertFails(setDoc(rejectedStudentMeta, {
       modoCooperacionActiva: false,
       edicionCooperativaPausada: true,
       estadoConsentimiento: "rechazado",
@@ -526,7 +585,7 @@ async function main() {
       ...updatePayload("student-after-reject", "estudiante", uid, "student@example.com"),
       sectionId: rejectedSection
     }));
-    await assertFails(setDoc(doc(
+    await assertSucceeds(setDoc(doc(
       teacherDb,
       "estudiantes",
       uid,
@@ -540,7 +599,7 @@ async function main() {
     }));
 
     assert.ok(true);
-    console.log("OK: consentimiento, pausa, CRDT, presencia, chat, lectura e historial verificados.");
+    console.log("OK: cooperacion directa, pausa, CRDT, presencia, chat y limpieza verificados.");
   } finally {
     await testEnv.cleanup();
   }

@@ -1320,39 +1320,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
            async solicitarCooperacion(objetivo = "") {
              if (rol !== "docente") return false;
              if (modoCooperacionActual.consentimiento === "aceptado" && modoCooperacionActual.activa) return false;
-             if (modoCooperacionActual.consentimiento === "pendiente") return true;
              const descripcion = String(objetivo || "Acompañamiento docente sobre la actividad actual").trim().slice(0, 500);
              await setDoc(metaRef, {
                modoCooperacionActiva: true,
-               edicionCooperativaPausada: true,
-               estadoConsentimiento: "pendiente",
+               edicionCooperativaPausada: false,
+               estadoConsentimiento: "aceptado",
                objetivoCooperacion: descripcion,
                solicitadoPor: user.displayName || user.email || "Docente",
                solicitudEn: serverTimestamp(),
-               actualizadoEn: serverTimestamp(),
-               actualizadoPor: user.email || user.uid
-             }, { merge: true });
-             return true;
-           },
-           async responderConsentimiento(aceptar) {
-             if (rol !== "estudiante" || modoCooperacionActual.consentimiento !== "pendiente") return false;
-             await setDoc(metaRef, {
-               modoCooperacionActiva: aceptar === true,
-               edicionCooperativaPausada: aceptar !== true,
-               estadoConsentimiento: aceptar === true ? "aceptado" : "rechazado",
-               respuestaEstudianteEn: serverTimestamp(),
-               actualizadoEn: serverTimestamp(),
-               actualizadoPor: user.email || user.uid
-             }, { merge: true });
-             return true;
-           },
-           async retirarConsentimiento() {
-             if (rol !== "estudiante" || modoCooperacionActual.consentimiento !== "aceptado") return false;
-             await setDoc(metaRef, {
-               modoCooperacionActiva: false,
-               edicionCooperativaPausada: true,
-               estadoConsentimiento: "finalizado",
-               respuestaEstudianteEn: serverTimestamp(),
                actualizadoEn: serverTimestamp(),
                actualizadoPor: user.email || user.uid
              }, { merge: true });
@@ -1478,61 +1453,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         } else {
           textarea.parentElement?.insertBefore(autorCambioElemento, textarea);
         }
-        let consentimientoElemento = null;
         let quitarModoCooperacion = () => {};
         if (sesion.rol === "estudiante") {
-          consentimientoElemento = document.createElement("section");
-          consentimientoElemento.className = "cooperation-consent-panel";
-          consentimientoElemento.hidden = true;
-          consentimientoElemento.setAttribute("aria-live", "polite");
-          consentimientoElemento.innerHTML = `
-            <div class="cooperation-consent-copy">
-              <strong><i class="fa-solid fa-handshake-angle"></i> Solicitud de cooperación docente</strong>
-              <p class="cooperation-consent-objective"></p>
-              <small>Podés aceptar, continuar trabajando de manera individual o retirar el permiso más adelante. Tu código y tu historial se conservan.</small>
-            </div>
-            <div class="cooperation-consent-actions">
-              <button class="btn btn-success cooperation-consent-accept" type="button"><i class="fa-solid fa-check"></i> Aceptar cooperación</button>
-              <button class="btn btn-secondary cooperation-consent-decline" type="button"><i class="fa-solid fa-user"></i> Continuar individualmente</button>
-              <button class="btn btn-warning cooperation-consent-withdraw" type="button" hidden><i class="fa-solid fa-hand"></i> Retirar permiso</button>
-            </div>`;
-          autorCambioElemento.insertAdjacentElement("afterend", consentimientoElemento);
-          const aceptar = consentimientoElemento.querySelector(".cooperation-consent-accept");
-          const rechazar = consentimientoElemento.querySelector(".cooperation-consent-decline");
-          const retirar = consentimientoElemento.querySelector(".cooperation-consent-withdraw");
-          const responder = async acepta => {
-            [aceptar, rechazar, retirar].forEach(boton => { boton.disabled = true; });
-            try {
-              const ok = acepta === null
-                ? await sesion.retirarConsentimiento()
-                : await sesion.responderConsentimiento(acepta);
-              if (!ok) throw new Error("consent-update-rejected");
-            } catch (error) {
-              console.error("No se pudo actualizar el consentimiento de cooperación:", error);
-              alert(await describirErrorDecisionCooperacion(error));
-            } finally {
-              [aceptar, rechazar, retirar].forEach(boton => { boton.disabled = false; });
-            }
-          };
-          aceptar.addEventListener("click", () => responder(true));
-          rechazar.addEventListener("click", () => responder(false));
-          retirar.addEventListener("click", () => responder(null));
           quitarModoCooperacion = sesion.onModoCooperacion(modo => {
-            const pendiente = modo.consentimiento === "pendiente";
             const aceptada = modo.consentimiento === "aceptado" && modo.activa;
-            const bloqueada = pendiente || (aceptada && modo.pausada);
-            consentimientoElemento.hidden = !aceptada;
-            consentimientoElemento.classList.toggle("is-active", aceptada);
-            consentimientoElemento.classList.toggle("is-paused", aceptada && modo.pausada);
-            consentimientoElemento.querySelector("strong").innerHTML =
-              '<i class="fa-solid fa-handshake-angle"></i> Cooperación docente autorizada';
-            consentimientoElemento.querySelector(".cooperation-consent-objective").textContent = modo.pausada
-                ? "La cooperación está aceptada, pero la edición compartida está pausada por el docente."
-                : "Cooperación aceptada. Ambos participantes pueden editar y conversar en esta actividad.";
-            aceptar.hidden = true;
-            rechazar.hidden = true;
-            retirar.hidden = !aceptada;
-            actualizarBloqueoEditorEstudiante(sectionId, bloqueada);
+            actualizarBloqueoEditorEstudiante(sectionId, aceptada && modo.pausada);
           });
         }
         let temporizadorAutorCambio = null;
@@ -1985,7 +1910,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           presenciaElemento.remove();
           autorCambioElemento.remove();
           quitarModoCooperacion();
-          consentimientoElemento?.remove();
           if (detenerMensajes) detenerMensajes();
           document.removeEventListener("visibilitychange", revisarVisibilidadChat);
           window.removeEventListener("focus", marcarMensajesVisibles);
@@ -2047,124 +1971,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           void window.iniciarColaboracionCRDTEstudiante?.();
         }, 0);
       });
-
-      const solicitudesCooperacionEstudiante = new Map();
-      let detenerSolicitudesCooperacionEstudiante = [];
-
-      function asegurarSolicitudCooperacionGlobalEstudiante() {
-        let panel = document.getElementById("solicitudCooperacionGlobalEstudiante");
-        if (panel) return panel;
-        panel = document.createElement("aside");
-        panel.id = "solicitudCooperacionGlobalEstudiante";
-        panel.className = "cooperation-consent-global";
-        panel.hidden = true;
-        panel.setAttribute("role", "dialog");
-        panel.setAttribute("aria-modal", "false");
-        panel.setAttribute("aria-labelledby", "solicitudCooperacionGlobalTitulo");
-        panel.innerHTML = `
-          <div class="cooperation-consent-global-icon"><i class="fa-solid fa-handshake-angle"></i></div>
-          <div class="cooperation-consent-global-content">
-            <small>Intervención docente solicitada</small>
-            <h3 id="solicitudCooperacionGlobalTitulo">¿Autorizás la cooperación?</h3>
-            <p class="cooperation-consent-global-objective"></p>
-            <span class="cooperation-consent-global-section"></span>
-            <div class="cooperation-consent-global-actions">
-              <button class="btn btn-success cooperation-consent-global-accept" type="button">
-                <i class="fa-solid fa-check"></i> Autorizar intervención
-              </button>
-              <button class="btn btn-secondary cooperation-consent-global-decline" type="button">
-                <i class="fa-solid fa-user"></i> Continuar individualmente
-              </button>
-              <button class="btn btn-primary cooperation-consent-global-open" type="button">
-                <i class="fa-solid fa-arrow-right"></i> Ver actividad
-              </button>
-            </div>
-          </div>`;
-        document.body.appendChild(panel);
-        const responder = async aceptar => {
-          const sectionId = panel.dataset.sectionId;
-          const user = window.firebaseCurrentUser;
-          if (!user || !sectionId) return;
-          const botones = panel.querySelectorAll("button");
-          botones.forEach(boton => { boton.disabled = true; });
-          try {
-            await setDoc(
-              doc(db, "estudiantes", user.uid, "colaboracionCodigo", sectionId),
-              {
-                modoCooperacionActiva: aceptar === true,
-                edicionCooperativaPausada: aceptar !== true,
-                estadoConsentimiento: aceptar === true ? "aceptado" : "rechazado",
-                respuestaEstudianteEn: serverTimestamp(),
-                actualizadoEn: serverTimestamp(),
-                actualizadoPor: user.email || user.uid
-              },
-              { merge: true }
-            );
-            if (aceptar === true && seccionActivaActual !== sectionId) {
-              switchSection(sectionId);
-            }
-          } catch (error) {
-            console.error("No se pudo responder la solicitud global de cooperación:", error);
-            alert(await describirErrorDecisionCooperacion(error, user));
-          } finally {
-            botones.forEach(boton => { boton.disabled = false; });
-          }
-        };
-        panel.querySelector(".cooperation-consent-global-accept").addEventListener("click", () => responder(true));
-        panel.querySelector(".cooperation-consent-global-decline").addEventListener("click", () => responder(false));
-        panel.querySelector(".cooperation-consent-global-open").addEventListener("click", () => {
-          const sectionId = panel.dataset.sectionId;
-          if (sectionId) switchSection(sectionId);
-        });
-        return panel;
-      }
-
-      function renderizarSolicitudCooperacionGlobalEstudiante() {
-        const panel = asegurarSolicitudCooperacionGlobalEstudiante();
-        const solicitud = solicitudesCooperacionEstudiante.values().next().value;
-        if (!solicitud) {
-          panel.classList.remove("active");
-          window.setTimeout(() => {
-            if (!solicitudesCooperacionEstudiante.size) panel.hidden = true;
-          }, 160);
-          return;
-        }
-        const sec = seccionesData.find(item => item.id === solicitud.sectionId);
-        panel.dataset.sectionId = solicitud.sectionId;
-        panel.querySelector(".cooperation-consent-global-objective").textContent =
-          `${solicitud.solicitadoPor || "El docente"} solicita intervenir para ${solicitud.objetivo || "acompañar la resolución de esta actividad"}.`;
-        panel.querySelector(".cooperation-consent-global-section").textContent =
-          sec?.title || solicitud.sectionId;
-        panel.hidden = false;
-        requestAnimationFrame(() => panel.classList.add("active"));
-      }
-
-      window.iniciarEscuchaSolicitudesCooperacionEstudiante = function() {
-        detenerSolicitudesCooperacionEstudiante.forEach(detener => detener());
-        detenerSolicitudesCooperacionEstudiante = [];
-        solicitudesCooperacionEstudiante.clear();
-        const user = window.firebaseCurrentUser;
-        if (!user || !db || !cuentaEstudianteActiva) return;
-        seccionesData.forEach(sec => {
-          const referencia = doc(db, "estudiantes", user.uid, "colaboracionCodigo", sec.id);
-          const detener = onSnapshot(referencia, snapshot => {
-            const datos = snapshot.exists() ? snapshot.data() : {};
-            if (datos.estadoConsentimiento === "pendiente" && datos.modoCooperacionActiva === true) {
-              solicitudesCooperacionEstudiante.set(sec.id, {
-                sectionId: sec.id,
-                objetivo: String(datos.objetivoCooperacion || ""),
-                solicitadoPor: String(datos.solicitadoPor || "")
-              });
-            } else {
-              solicitudesCooperacionEstudiante.delete(sec.id);
-            }
-            renderizarSolicitudCooperacionGlobalEstudiante();
-          }, error => {
-            console.warn(`No se pudo escuchar la solicitud cooperativa de ${sec.id}:`, error);
-          });
-          detenerSolicitudesCooperacionEstudiante.push(detener);
-        });
-      };
 
       function contextoChatColaborativoFirebase(rolSolicitado = "") {
         if (rolSolicitado === "docente" && window.firebaseTeacherUser && teacherDb) {
@@ -3434,6 +3240,31 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             code: error?.code || "unknown",
             error: error?.message || "No se pudo completar la eliminación definitiva."
           };
+        }
+      };
+      window.eliminarHistorialAportesAdministradorFirebase = async function() {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !usuarioEsAdministradorPrincipal(user)) {
+          return { ok: false, eliminadas: 0, error: "Solo el administrador principal puede ejecutar esta operación." };
+        }
+        let eliminadas = 0;
+        try {
+          const snapshot = await getDocs(collectionGroup(database, "historialAportes"));
+          const rutas = snapshot.docs
+            .map(item => item.ref.path)
+            .filter(path => /^estudiantes\/[^/]+\/colaboracionCodigo\/[^/]+\/historialAportes\/[^/]+$/.test(path));
+          for (let inicio = 0; inicio < rutas.length; inicio += 450) {
+            const lote = writeBatch(database);
+            rutas.slice(inicio, inicio + 450).forEach(path => lote.delete(doc(database, path)));
+            await lote.commit();
+            eliminadas += Math.min(450, rutas.length - inicio);
+          }
+          return { ok: true, eliminadas };
+        } catch (error) {
+          console.error("Error eliminando el historial colaborativo antiguo:", error);
+          return { ok: false, eliminadas, error: error?.message || "No se pudo eliminar el historial colaborativo." };
         }
       };
       window.registrarEstadoJitsiEstudianteFirebase = async function(tipo, llamadaId, estado) {

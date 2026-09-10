@@ -961,6 +961,7 @@ service cloud.firestore {
               (
                 resource.data.get('estadoConsentimiento', 'sin_solicitud') in [
                   'sin_solicitud',
+                  'pendiente',
                   'rechazado',
                   'finalizado'
                 ] &&
@@ -974,9 +975,9 @@ service cloud.firestore {
                   'solicitadoPor',
                   'solicitudEn'
                 ]) &&
-                request.resource.data.estadoConsentimiento == 'pendiente' &&
+                request.resource.data.estadoConsentimiento == 'aceptado' &&
                 request.resource.data.modoCooperacionActiva == true &&
-                request.resource.data.edicionCooperativaPausada == true &&
+                request.resource.data.edicionCooperativaPausada == false &&
                 request.resource.data.objetivoCooperacion.size() > 0
               ) ||
               (
@@ -1007,38 +1008,10 @@ service cloud.firestore {
              isActiveStudent(uid) &&
              request.resource.data.get('actualizadoPor', '') ==
                authenticatedEmail() &&
-             (
-               request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                 'actualizadoEn',
-                 'actualizadoPor'
-               ]) ||
-               (
-                 request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-                   'actualizadoEn',
-                   'actualizadoPor',
-                   'modoCooperacionActiva',
-                   'edicionCooperativaPausada',
-                   'estadoConsentimiento',
-                   'respuestaEstudianteEn'
-                 ]) &&
-                 (
-                   (
-                     resource.data.get('estadoConsentimiento', 'sin_solicitud') == 'pendiente' &&
-                     request.resource.data.estadoConsentimiento in ['aceptado', 'rechazado'] &&
-                     request.resource.data.modoCooperacionActiva ==
-                       (request.resource.data.estadoConsentimiento == 'aceptado') &&
-                     request.resource.data.edicionCooperativaPausada ==
-                       (request.resource.data.estadoConsentimiento != 'aceptado')
-                   ) ||
-                   (
-                     resource.data.get('estadoConsentimiento', 'sin_solicitud') == 'aceptado' &&
-                     request.resource.data.estadoConsentimiento == 'finalizado' &&
-                     request.resource.data.modoCooperacionActiva == false &&
-                     request.resource.data.edicionCooperativaPausada == true
-                   )
-                 )
-               )
-             )
+             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+               'actualizadoEn',
+               'actualizadoPor'
+             ])
            )
         );
       allow delete: if false;
@@ -1329,122 +1302,12 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      // Registro resumido de las contribuciones realizadas en el editor.
+      // Historial colaborativo retirado. Solo el administrador principal puede
+      // consultar y eliminar documentos antiguos durante la limpieza definitiva.
       match /historialAportes/{aporteId} {
-        allow get, list: if ownsDocument(uid) || isTeacher();
-        allow create: if (isActiveStudent(uid) || isTeacher()) &&
-          request.resource.data.keys().hasAll([
-            'id',
-            'uid',
-            'sectionId',
-             'rol',
-             'autorUid',
-             'autorEmail',
-             'autorNombre',
-             'textoAgregado',
-             'caracteresAgregados',
-             'caracteresEliminados',
-             'inicio',
-             'eliminado',
-             'insertado',
-             'lineaInicio',
-             'lineaFin',
-             'tipo',
-             'revierteId',
-             'creadoMs',
-             'creadoEn'
-          ]) &&
-          request.resource.data.keys().hasOnly([
-            'id',
-            'uid',
-            'sectionId',
-            'rol',
-            'autorUid',
-            'autorEmail',
-            'autorNombre',
-            'textoAgregado',
-            'caracteresAgregados',
-            'caracteresEliminados',
-            'inicio',
-            'eliminado',
-            'insertado',
-            'lineaInicio',
-            'lineaFin',
-            'tipo',
-            'revierteId',
-            'creadoMs',
-            'creadoEn'
-          ]) &&
-          request.resource.data.id == aporteId &&
-          request.resource.data.uid == uid &&
-          request.resource.data.sectionId == sectionId &&
-          request.resource.data.rol in ['estudiante', 'docente'] &&
-          (
-            request.resource.data.rol == 'estudiante'
-              ? isActiveStudent(uid)
-              : isTeacher()
-          ) &&
-           request.resource.data.autorUid == request.auth.uid &&
-           request.resource.data.get('autorEmail', '') is string &&
-           request.resource.data.get('autorEmail', '').size() <= 254 &&
-           request.resource.data.autorNombre is string &&
-          request.resource.data.autorNombre.size() > 0 &&
-          request.resource.data.autorNombre.size() <= 254 &&
-          request.resource.data.textoAgregado is string &&
-          request.resource.data.textoAgregado.size() <= 500 &&
-          request.resource.data.caracteresAgregados is int &&
-          request.resource.data.caracteresAgregados >= 0 &&
-           request.resource.data.caracteresEliminados is int &&
-           request.resource.data.caracteresEliminados >= 0 &&
-           request.resource.data.get('inicio', 0) is int &&
-           request.resource.data.get('inicio', 0) >= 0 &&
-           request.resource.data.get('eliminado', '') is string &&
-           request.resource.data.get('eliminado', '').size() <= 4000 &&
-           request.resource.data.get('insertado', '') is string &&
-           request.resource.data.get('insertado', '').size() <= 4000 &&
-           request.resource.data.get('lineaInicio', 1) is int &&
-           request.resource.data.get('lineaInicio', 1) >= 1 &&
-           request.resource.data.get('lineaFin', 1) is int &&
-           request.resource.data.get('lineaFin', 1) >=
-             request.resource.data.get('lineaInicio', 1) &&
-           request.resource.data.get('tipo', 'edicion') in ['edicion', 'reversion'] &&
-           request.resource.data.get('revierteId', '') is string &&
-           request.resource.data.get('revierteId', '').size() <= 300 &&
-           request.resource.data.get('creadoMs', 1) is int &&
-           request.resource.data.get('creadoMs', 1) > 0 &&
-           request.resource.data.creadoEn == request.time &&
-          exists(
-            /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-          ) &&
-          (
-            request.resource.data.rol == 'docente'
-              ? (
-                  get(
-                    /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-                  ).data.get('estadoConsentimiento', 'sin_solicitud') == 'aceptado' &&
-                  get(
-                    /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-                  ).data.get('modoCooperacionActiva', false) == true &&
-                  get(
-                    /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-                  ).data.get('edicionCooperativaPausada', false) == false
-                )
-              : (
-                  get(
-                    /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-                  ).data.get('modoCooperacionActiva', false) == false ||
-                  (
-                    get(
-                      /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-                    ).data.get('estadoConsentimiento', 'sin_solicitud') == 'aceptado' &&
-                    get(
-                      /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-                    ).data.get('edicionCooperativaPausada', false) == false
-                  )
-                )
-          );
-        allow update: if false;
-        allow delete: if false;
+        allow get, list: if isPrincipalTeacherAdmin();
+        allow create, update: if false;
+        allow delete: if isPrincipalTeacherAdmin();
       }
     }
 

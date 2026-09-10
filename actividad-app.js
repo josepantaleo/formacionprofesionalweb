@@ -2622,7 +2622,6 @@
 
           document.getElementById('currentTitle').innerText = seccionesData[0].title;
           configurarEditores();
-          window.iniciarEscuchaSolicitudesCooperacionEstudiante?.();
           await window.iniciarColaboracionCRDTEstudiante?.();
           bloquearCopiaYPegado();
           actualizarProgreso();
@@ -5748,6 +5747,31 @@
           }
           const confirmacionInput = document.getElementById('confirmacionEliminarHistorialJitsi');
           if (confirmacionInput) confirmacionInput.value = '';
+      }
+
+      async function eliminarHistorialAportesAdministrador() {
+          if (window.esAdministradorPrincipalDocente?.() !== true) {
+              alert('Solo la cuenta administradora principal puede realizar esta operación.');
+              return;
+          }
+          const confirmacion = prompt('Esta operación elimina definitivamente todos los aportes colaborativos antiguos. Escribí BORRAR APORTES para continuar.');
+          if (String(confirmacion || '').trim().toUpperCase() !== 'BORRAR APORTES') return;
+          const boton = document.getElementById('btnEliminarHistorialAportesFirestore');
+          const original = boton?.innerHTML || '';
+          if (boton) {
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Eliminando aportes...';
+          }
+          const resultado = await window.eliminarHistorialAportesAdministradorFirebase?.();
+          if (boton) {
+              boton.disabled = false;
+              boton.innerHTML = original;
+          }
+          if (!resultado?.ok) {
+              alert(`${resultado?.error || 'No se pudo completar la eliminación.'} Eliminados antes del error: ${Number(resultado?.eliminadas || 0)}.`);
+              return;
+          }
+          alert(`Limpieza completada. Se eliminaron ${Number(resultado.eliminadas || 0)} documento(s) antiguos de historialAportes.`);
       }
 
       function abrirPanelProfesor() {
