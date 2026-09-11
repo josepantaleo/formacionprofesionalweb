@@ -571,7 +571,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               cronometrosPausados: datos.cronometrosPausados === true,
               cronometrosReinicioId: datos.cronometrosReinicioId || "",
               cronometrosActualizadosPor: datos.cronometrosActualizadosPor || "",
-              configuracionSeguimiento: datos.configuracionSeguimiento || {}
+              configuracionSeguimiento: datos.configuracionSeguimiento || {},
+              rubricaSocratica: datos.rubricaSocratica || {}
             }
           }));
         }, error => {
@@ -2665,6 +2666,62 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           return true;
         } catch (error) {
           console.error("Error guardando la configuración de seguimiento:", error);
+          return false;
+        }
+      };
+
+      window.guardarRubricaSocraticaFirebase = async function(rubrica) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return false;
+        const { user, database } = contextoDocenteFirebase();
+        if (!user || !database) return false;
+        const limitarPunto = (valor, respaldo) => {
+          const numero = Number(valor);
+          return Number.isFinite(numero) ? Math.max(0, Math.min(1, numero)) : respaldo;
+        };
+        const normalizada = {
+          puntos: {
+            completa: limitarPunto(rubrica?.puntos?.completa, 1),
+            incompleta: limitarPunto(rubrica?.puntos?.incompleta, 0.7),
+            parcial: limitarPunto(rubrica?.puntos?.parcial, 0.3),
+            incorrecta: limitarPunto(rubrica?.puntos?.incorrecta, 0)
+          },
+          palabrasMinimas: Math.max(6, Math.min(100, Number(rubrica?.palabrasMinimas) || 18)),
+          criterios: {
+            desarrollo: rubrica?.criterios?.desarrollo !== false,
+            justificacion: rubrica?.criterios?.justificacion !== false,
+            evidencia: rubrica?.criterios?.evidencia !== false,
+            consecuencia: rubrica?.criterios?.consecuencia !== false
+          },
+          actualizadaPor: user.email || user.displayName || user.uid,
+          actualizadaEn: new Date().toISOString()
+        };
+        if (!(normalizada.puntos.completa > 0) ||
+            !(normalizada.puntos.completa >= normalizada.puntos.incompleta &&
+              normalizada.puntos.incompleta >= normalizada.puntos.parcial &&
+              normalizada.puntos.parcial >= normalizada.puntos.incorrecta) ||
+            !Object.values(normalizada.criterios).some(Boolean)) {
+          return false;
+        }
+        try {
+          const claseId = idClaseActual();
+          await setDoc(doc(database, "controlClase", claseId), {
+            rubricaSocratica: normalizada,
+            zonaHoraria: "America/Argentina/Buenos_Aires"
+          }, { merge: true });
+          const auditoriaId = `${Date.now()}-${user.uid}`.replace(/[^a-zA-Z0-9._-]/g, "_");
+          await setDoc(doc(database, "controlClase", claseId, "historialConfiguracion", auditoriaId), {
+            id: auditoriaId,
+            claseId,
+            tipo: "rubrica-socratica",
+            docenteUid: user.uid,
+            docente: user.email || user.displayName || user.uid,
+            configuracion: normalizada,
+            cambiadoEn: serverTimestamp()
+          });
+          return true;
+        } catch (error) {
+          console.error("Error guardando la rúbrica socrática:", error);
           return false;
         }
       };

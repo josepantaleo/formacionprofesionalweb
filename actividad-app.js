@@ -949,6 +949,56 @@
           dominiosIgnorados: []
       };
       window.configuracionSeguimientoActual = configuracionSeguimientoActual;
+      const RUBRICA_SOCRATICA_PREDETERMINADA = {
+          puntos: { completa: 1, incompleta: 0.7, parcial: 0.3, incorrecta: 0 },
+          palabrasMinimas: 18,
+          criterios: {
+              desarrollo: true,
+              justificacion: true,
+              evidencia: true,
+              consecuencia: true
+          }
+      };
+      let rubricaSocraticaActual = JSON.parse(JSON.stringify(RUBRICA_SOCRATICA_PREDETERMINADA));
+      window.rubricaSocraticaActual = rubricaSocraticaActual;
+
+      function normalizarRubricaSocratica(valor = {}) {
+          const puntosRecibidos = valor.puntos || {};
+          const criteriosRecibidos = valor.criterios || {};
+          const numero = (dato, respaldo) => {
+              const convertido = Number(dato);
+              return Number.isFinite(convertido) ? Math.max(0, Math.min(1, convertido)) : respaldo;
+          };
+          return {
+              puntos: {
+                  completa: numero(puntosRecibidos.completa, 1),
+                  incompleta: numero(puntosRecibidos.incompleta, 0.7),
+                  parcial: numero(puntosRecibidos.parcial, 0.3),
+                  incorrecta: numero(puntosRecibidos.incorrecta, 0)
+              },
+              palabrasMinimas: Math.max(6, Math.min(100, Number(valor.palabrasMinimas) || 18)),
+              criterios: {
+                  desarrollo: criteriosRecibidos.desarrollo !== false,
+                  justificacion: criteriosRecibidos.justificacion !== false,
+                  evidencia: criteriosRecibidos.evidencia !== false,
+                  consecuencia: criteriosRecibidos.consecuencia !== false
+              },
+              actualizadaPor: String(valor.actualizadaPor || ""),
+              actualizadaEn: valor.actualizadaEn || null
+          };
+      }
+
+      function aplicarRubricaSocratica(valor) {
+          rubricaSocraticaActual = normalizarRubricaSocratica(valor);
+          window.rubricaSocraticaActual = rubricaSocraticaActual;
+          completarFormularioRubricaSocratica();
+      }
+      try {
+          const rubricaGuardadaLocal = JSON.parse(localStorage.getItem("rubrica_socratica_docente") || "null");
+          if (rubricaGuardadaLocal) aplicarRubricaSocratica(rubricaGuardadaLocal);
+      } catch (e) {
+          console.warn("No se pudo recuperar la rúbrica socrática local:", e);
+      }
       let ignorarSalidasHasta = Date.now() + 5000;
       let ultimoEventoVisibilidad = 0;
       let temporizadorPerdidaFoco = null;
@@ -1353,6 +1403,7 @@
           };
           LIMITE_SALIDAS_PARA_BLOQUEO = Math.max(1, Number(configuracionSeguimientoActual.limiteSalidas) || 5);
           window.configuracionSeguimientoActual = configuracionSeguimientoActual;
+          aplicarRubricaSocratica(datos.rubricaSocratica || rubricaSocraticaActual);
           ignorarSalidasHasta = Date.now() + 3000;
           claseHabilitada = Boolean(iniciada);
           const overlay = document.getElementById('classStartOverlay');
@@ -3991,76 +4042,36 @@
 
       const preguntasSocraticas = [
           {
-              q: (code, ideal) => `Si tuvieras que defender tu código ante otro programador, ¿qué parte de tu solución considerarías indispensable y por qué?`,
-              opciones: (code, ideal) => [
-                  {t:"La parte que realmente participa en la resolución del problema, explicando su función.", c:true},
-                  {t:"La parte que tiene más líneas, aunque no sea necesaria.", c:false},
-                  {t:"Cualquier código que se parezca visualmente a la solución de IA.", c:false},
-                  {t:"No es necesario justificar ninguna decisión.", c:false}
-              ]
+              respuestaAbierta: true,
+              q: () => `Elegí una decisión concreta de tu código, nombrá la variable, condición, bucle o función involucrada y explicá qué problema resuelve. ¿Qué cambiaría en el resultado si la eliminaras o la reemplazaras?`
           },
           {
-              q: (code, ideal) => `¿Qué podría ocurrir si modificas una de las decisiones principales de tu código sin revisar las demás instrucciones que dependen de ella?`,
-              opciones: (code, ideal) => [
-                  {t:"Podrían producirse resultados incorrectos.", c:true},
-                  {t:"Podrían romperse dependencias entre partes del programa.", c:true},
-                  {t:"El programa necesariamente se vuelve más eficiente.", c:false},
-                  {t:"La modificación nunca puede afectar otras instrucciones.", c:false}
-              ]
+              respuestaAbierta: true,
+              q: () => `Proponé un caso de prueba diferente del ejemplo de la consigna. Indicá la entrada, anticipá la salida y explicá qué parte de tu código permite obtener ese resultado.`
           },
           {
-              q: (code, ideal) => `La IA propone una solución diferente a la tuya. ¿Qué preguntas deberías hacerte antes de afirmar que la solución de IA es mejor?`,
-              opciones: (code, ideal) => [
-                  {t:"¿Ambas soluciones cumplen realmente el objetivo del desafío?", c:true},
-                  {t:"¿Cuál solución es más clara y mantenible?", c:true},
-                  {t:"¿Cuál tiene más líneas de código?", c:false},
-                  {t:"¿Cuál utiliza nombres de variables más largos?", c:false}
-              ]
+              respuestaAbierta: true,
+              q: () => `Compará una diferencia concreta entre tu solución y la solución de referencia. Elegí un criterio —claridad, robustez, eficiencia o facilidad de mantenimiento— y defendé cuál decisión es más adecuada y en qué situación podría convenir la otra.`
           },
           {
-              q: (code, ideal) => `Si tu código funciona con el ejemplo proporcionado, ¿qué deberías investigar para decidir si realmente es una solución viable?`,
-              opciones: (code, ideal) => [
-                  {t:"Qué ocurre con otros valores de entrada.", c:true},
-                  {t:"Qué ocurre en casos límite o inesperados.", c:true},
-                  {t:"Si la solución depende accidentalmente de un único ejemplo.", c:true},
-                  {t:"Si el código tiene exactamente el mismo aspecto que la solución de IA.", c:false}
-              ]
+              respuestaAbierta: true,
+              q: () => `Identificá una suposición que hace tu código sobre los datos de entrada. Construí un caso límite que cuestione esa suposición y explicá cómo comprobarías o mejorarías el comportamiento del programa.`
           },
           {
-              q: (code, ideal) => `Imagina que mañana otro estudiante debe mantener tu código. ¿Qué características deberías evaluar críticamente?`,
-              opciones: (code, ideal) => [
-                  {t:"Claridad de las variables y estructuras.", c:true},
-                  {t:"Separación lógica de responsabilidades.", c:true},
-                  {t:"Facilidad para detectar y corregir errores.", c:true},
-                  {t:"Cantidad máxima posible de instrucciones.", c:false}
-              ]
+              respuestaAbierta: true,
+              q: () => `Imaginá que otro estudiante debe modificar tu programa sin preguntarte nada. Señalá la parte que podría resultarle más difícil de comprender y proponé una mejora concreta que conserve el comportamiento.`
           },
           {
-              q: (code, ideal) => `¿Qué evidencia necesitarías para sostener que tu código es mejor que la solución de IA?`,
-              opciones: (code, ideal) => [
-                  {t:"Demostrar que cumple los requisitos.", c:true},
-                  {t:"Mostrar que funciona en diferentes casos.", c:true},
-                  {t:"Explicar por qué tus decisiones técnicas son adecuadas.", c:true},
-                  {t:"Decir simplemente que tu código es más corto.", c:false}
-              ]
+              respuestaAbierta: true,
+              q: () => `Tu programa produce la salida esperada, pero eso no demuestra por sí solo que la solución sea correcta. ¿Qué evidencias adicionales reunirías y qué error podría seguir oculto aunque el ejemplo funcione?`
           },
           {
-              q: (code, ideal) => `Si descubres que tu código obtiene el resultado correcto por una razón accidental, ¿qué actitud demuestra mayor excelencia?`,
-              opciones: (code, ideal) => [
-                  {t:"Investigar por qué funciona realmente.", c:true},
-                  {t:"Probar otros casos para confirmar el comportamiento.", c:true},
-                  {t:"Modificarlo si existe una solución más robusta.", c:true},
-                  {t:"Dejarlo igual porque una prueba funcionó.", c:false}
-              ]
+              respuestaAbierta: true,
+              q: () => `Si descubrís que el resultado correcto apareció por una coincidencia, describí cómo localizarías la causa, qué prueba usarías para confirmarla y qué modificación harías para evitar que vuelva a ocurrir.`
           },
           {
-              q: (code, ideal) => `¿Qué diferencia existe entre que un código "funcione" y que sea una solución técnicamente excelente?`,
-              opciones: (code, ideal) => [
-                  {t:"Un código puede funcionar y aun así ser difícil de mantener.", c:true},
-                  {t:"La excelencia también considera claridad, robustez y adecuación al problema.", c:true},
-                  {t:"Funcionamiento y excelencia siempre significan exactamente lo mismo.", c:false},
-                  {t:"Un código excelente necesariamente tiene más líneas.", c:false}
-              ]
+              respuestaAbierta: true,
+              q: () => `Usando un ejemplo específico de tu código, explicá la diferencia entre “obtener la salida correcta” y construir una solución técnicamente sólida. Proponé una mejora y justificá qué calidad aporta.`
           }
       ];
 
@@ -4667,18 +4678,25 @@
           const configuradas = Array.isArray(sec.preguntasSocraticas) ? sec.preguntasSocraticas.filter(Boolean) : [];
           const base = mezclarArray(analistaPlantillas).slice(0,4);
           const personalizadas = configuradas.slice(0,2).map(q => ({
-              tipo:"SOCRÁTICA", categoria:"SOCRÁTICA DEL DESAFÍO", q:()=>q,
-              opciones:()=>[
-                {t:"Relacionar la decisión del código con el objetivo del desafío y justificarla.",c:true},
-                {t:"Copiar una solución completa sin comprenderla.",c:false},
-                {t:"Elegir la respuesta más larga.",c:false},
-                {t:"Suponer que funciona sin probar otros casos.",c:false}
-              ]
+              tipo:"SOCRÁTICA",
+              categoria:"SOCRÁTICA DEL DESAFÍO",
+              respuestaAbierta:true,
+              q:()=>`${q} Fundamentá tu respuesta con una decisión concreta del código, una evidencia y una consecuencia.`
           }));
           const gen = mezclarArray(preguntasSocraticas).slice(0,Math.max(0,2-personalizadas.length));
-          return [...base.map(p=>({...p,categoria:"ANÁLISIS TÉCNICO"})),...personalizadas,...gen.map(p=>({...p,categoria:"SOCRÁTICA"}))].map((p,i)=>{
-            let opciones=mezclarArray(p.opciones(code,ideal));if(!opciones.some(x=>x.c))opciones[0].c=true;
-            return {id:i,tipo:p.tipo,q:p.q(code,ideal),opciones};
+          return [...base.map(p=>({...p,categoria:"ANÁLISIS TÉCNICO"})),...personalizadas,...gen.map(p=>({...p,tipo:"SOCRÁTICA",categoria:"SOCRÁTICA"}))].map((p,i)=>{
+            const respuestaAbierta = p.respuestaAbierta === true || p.tipo === "SOCRÁTICA";
+            const opciones = respuestaAbierta ? [] : mezclarArray(p.opciones(code,ideal));
+            if (!respuestaAbierta && !opciones.some(x=>x.c)) opciones[0].c=true;
+            return {
+                id:i,
+                tipo:p.tipo,
+                categoria:p.categoria,
+                q:p.q(code,ideal),
+                opciones,
+                respuestaAbierta,
+                codigoContexto:code
+            };
           });
       }
 
@@ -4700,12 +4718,26 @@
                   <strong>${i + 1}. ${p.q}</strong>
                   <div style="margin:.4rem 0 .7rem;color:var(--text-muted);font-size:.75rem">
                       <span class="analyst-badge">${p.categoria || "ANÁLISIS"}</span>
-                      ${p.tipo === "ESTUDIANTE" ? "🔵 Basada en tu código" :
+                      ${p.respuestaAbierta ? "🟠 Respuesta razonada sobre tu solución" :
+                        p.tipo === "ESTUDIANTE" ? "🔵 Basada en tu código" :
                         p.tipo === "IA" ? "🟣 Basada en la solución de IA" :
                         "🟢 Comparación entre ambos códigos"}
-                      <br>Puede haber <strong>más de una respuesta correcta</strong>.
+                      <br>${p.respuestaAbierta
+                          ? "Incluí una decisión concreta, una justificación, una evidencia y una consecuencia o mejora."
+                          : 'Puede haber <strong>más de una respuesta correcta</strong>.'}
                   </div>
-                   ${p.opciones.map((op,j) => `
+                   ${p.respuestaAbierta ? `
+                       <label class="analyst-open-label" for="analyst-open-${sectionId}-${i}">
+                           Tu explicación
+                       </label>
+                       <textarea class="analyst-open-response"
+                                 id="analyst-open-${sectionId}-${i}"
+                                 name="analyst-open-${sectionId}-${i}"
+                                 rows="5"
+                                 maxlength="900"
+                                 placeholder="Escribí entre 3 y 6 oraciones. No alcanza con decir que funciona: explicá por qué y con qué evidencia."></textarea>
+                       <div class="analyst-open-counter">Máximo 900 caracteres</div>
+                   ` : p.opciones.map((op,j) => `
                        <label class="analyst-option">
                            <input type="checkbox"
                                   name="analyst-${sectionId}-${i}"
@@ -4725,6 +4757,7 @@
        }
 
        function calificarRespuestaAnalista(marcadas, reales) {
+           const puntosRubrica = normalizarRubricaSocratica(rubricaSocraticaActual).puntos;
            const aciertos = marcadas.filter(x => reales.includes(x)).length;
            const errores = marcadas.filter(x => !reales.includes(x)).length;
            const faltantes = reales.filter(x => !marcadas.includes(x)).length;
@@ -4733,7 +4766,7 @@
                return {
                    nivel: "completa",
                    etiqueta: "Correcta completa",
-                   puntos: 1,
+                   puntos: puntosRubrica.completa,
                    detalle: "Identificaste todas las opciones correctas sin agregar afirmaciones incorrectas."
                };
            }
@@ -4741,7 +4774,7 @@
                return {
                    nivel: "incompleta",
                    etiqueta: "Correcta incompleta",
-                   puntos: 0.7,
+                   puntos: puntosRubrica.incompleta,
                    detalle: `Tu razonamiento es correcto, pero faltó reconocer ${faltantes} opción${faltantes === 1 ? "" : "es"} válida${faltantes === 1 ? "" : "s"}.`
                };
            }
@@ -4749,22 +4782,98 @@
                return {
                    nivel: "parcial",
                    etiqueta: "Parcial con errores",
-                   puntos: 0.3,
+                   puntos: puntosRubrica.parcial,
                    detalle: `Reconociste ${aciertos} opción${aciertos === 1 ? "" : "es"} válida${aciertos === 1 ? "" : "s"}, pero también elegiste ${errores} incorrecta${errores === 1 ? "" : "s"}.`
                };
            }
            return {
                nivel: "incorrecta",
                etiqueta: "Incorrecta",
-               puntos: 0,
+               puntos: puntosRubrica.incorrecta,
                detalle: "Las opciones elegidas no aportan evidencia correcta para esta pregunta."
            };
        }
 
+       function calificarRazonamientoSocratico(respuestaOriginal, codigo) {
+           const rubrica = normalizarRubricaSocratica(rubricaSocraticaActual);
+           const respuesta = String(respuestaOriginal || "").trim();
+           const normalizada = normalizarEvaluacion(respuesta);
+           const palabras = normalizada.split(/\s+/).filter(Boolean);
+           const trivial = /^(no se|no sé|nose|porque si|porque sí|funciona|esta bien|está bien|da igual|no entiendo)[.! ]*$/i.test(respuesta);
+           const identificadoresCodigo = [...new Set(
+               String(codigo || "").match(/\b[A-Za-z_$][\w$]{2,}\b/g) || []
+           )]
+               .map(normalizarEvaluacion)
+               .filter(x => !/^(const|let|var|function|return|console|log|true|false|null|undefined|else|while|for|if)$/.test(x));
+           const mencionaIdentificador = identificadoresCodigo.some(id =>
+               id.length >= 3 && new RegExp(`\\b${id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(normalizada)
+           );
+           const criterios = [
+               {
+                   clave: "desarrollo",
+                   nombre: "desarrollo suficiente",
+                   cumple: palabras.length >= rubrica.palabrasMinimas
+               },
+               {
+                   clave: "justificacion",
+                   nombre: "justificación causal",
+                   cumple: /\b(porque|por que|ya que|debido|entonces|por lo tanto|por eso|permite|evita|provoca|genera|hace que)\b/.test(normalizada)
+               },
+               {
+                   clave: "evidencia",
+                   nombre: "evidencia del código o de una prueba",
+                   cumple: mencionaIdentificador ||
+                       /\b(variable|funcion|condicion|bucle|for|while|if|return|entrada|salida|resultado|prueba|caso|valor|error|linea|console|array|objeto)\b/.test(normalizada)
+               },
+               {
+                   clave: "consecuencia",
+                   nombre: "consecuencia, límite o mejora",
+                   cumple: /\b(si |cambi|elimin|reemplaz|mejor|podria|podría|fall|limite|límite|riesgo|manten|robust|clar|eficien|correg|evitar|comprobar|verificar)\b/.test(normalizada)
+               }
+           ];
+           const criteriosActivos = criterios.filter(x => rubrica.criterios[x.clave] !== false);
+           const cumplidos = criteriosActivos.filter(x => x.cumple);
+           const faltantes = criteriosActivos.filter(x => !x.cumple);
+
+           if (!respuesta || palabras.length < 6 || trivial) {
+               return {
+                   nivel: "incorrecta",
+                   etiqueta: "Razonamiento insuficiente",
+                   puntos: 0,
+                   detalle: "La respuesta es demasiado breve o no presenta una explicación verificable.",
+                   criteriosCumplidos: cumplidos.map(x => x.nombre),
+                   criteriosFaltantes: faltantes.map(x => x.nombre)
+               };
+           }
+
+           const cantidad = cumplidos.length;
+           const totalCriterios = criteriosActivos.length;
+           const nivel = cantidad === totalCriterios ? "completa" :
+               cantidad === Math.max(1, totalCriterios - 1) ? "incompleta" :
+               cantidad > 0 ? "parcial" : "incorrecta";
+           const etiqueta = nivel === "completa" ? "Razonamiento completo" :
+               nivel === "incompleta" ? "Razonamiento correcto incompleto" :
+               nivel === "parcial" ? "Razonamiento parcial" : "Razonamiento insuficiente";
+           const puntos = Number(rubrica.puntos[nivel] || 0);
+           const detalle = faltantes.length
+               ? `Se reconoció ${cumplidos.map(x => x.nombre).join(", ") || "una idea inicial"}. Falta fortalecer: ${faltantes.map(x => x.nombre).join(", ")}.`
+               : "La respuesta identifica una decisión, la justifica con evidencia y analiza sus consecuencias.";
+           return {
+               nivel,
+               etiqueta,
+               puntos,
+               detalle,
+               criteriosCumplidos: cumplidos.map(x => x.nombre),
+               criteriosFaltantes: faltantes.map(x => x.nombre),
+               rubricaAplicada: rubrica
+           };
+       }
+
        function resaltarRespuestasAnalista(sectionId) {
-          const preguntas = (window.analistaActual && window.analistaActual[sectionId]) || [];
-          preguntas.forEach((p, i) => {
-              const inputs = document.querySelectorAll(`input[name="analyst-${sectionId}-${i}"]`);
+           const preguntas = (window.analistaActual && window.analistaActual[sectionId]) || [];
+           preguntas.forEach((p, i) => {
+               if (p.respuestaAbierta) return;
+               const inputs = document.querySelectorAll(`input[name="analyst-${sectionId}-${i}"]`);
               inputs.forEach((input, j) => {
                   const label = input.closest(".analyst-option");
                   if (!label) return;
@@ -4780,9 +4889,10 @@
 
        function evaluarAnalista(sectionId) {
            const preguntas = (window.analistaActual && window.analistaActual[sectionId]) || [];
+           const rubricaAplicada = normalizarRubricaSocratica(rubricaSocraticaActual);
            let correctas = 0;
            let respondidas = 0;
-           let maxPuntos = preguntas.length;
+           let maxPuntos = preguntas.length * rubricaAplicada.puntos.completa;
            let puntosObtenidos = 0;
            const resultadosPreguntas = [];
            const conteoNiveles = {
@@ -4793,17 +4903,28 @@
            };
 
            preguntas.forEach((p,i) => {
-              const marcadas = [...document.querySelectorAll(`input[name="analyst-${sectionId}-${i}"]:checked`)]
-                  .map(x => Number(x.value)).sort((a,b)=>a-b);
-
-              if (marcadas.length) respondidas++;
-
-              const reales = p.opciones
-                  .map((x,j)=>x.c ? j : null)
-                  .filter(x=>x !== null)
-                  .sort((a,b)=>a-b);
-
-               const resultadoPregunta = calificarRespuestaAnalista(marcadas, reales);
+               let resultadoPregunta;
+               if (p.respuestaAbierta) {
+                   const respuestaTexto = document.getElementById(`analyst-open-${sectionId}-${i}`)?.value.trim() || "";
+                   if (respuestaTexto) respondidas++;
+                   resultadoPregunta = {
+                       ...calificarRazonamientoSocratico(respuestaTexto, p.codigoContexto),
+                       respuestaTexto
+                   };
+               } else {
+                   const marcadas = [...document.querySelectorAll(`input[name="analyst-${sectionId}-${i}"]:checked`)]
+                       .map(x => Number(x.value)).sort((a,b)=>a-b);
+                   if (marcadas.length) respondidas++;
+                   const reales = p.opciones
+                       .map((x,j)=>x.c ? j : null)
+                       .filter(x=>x !== null)
+                       .sort((a,b)=>a-b);
+                   resultadoPregunta = {
+                       ...calificarRespuestaAnalista(marcadas, reales),
+                       seleccionadas: marcadas,
+                       correctas: reales
+                   };
+               }
                resultadosPreguntas.push(resultadoPregunta);
                conteoNiveles[resultadoPregunta.nivel]++;
                if (resultadoPregunta.nivel === "completa") correctas++;
@@ -4813,7 +4934,7 @@
           const result = document.getElementById(`analyst-result-${sectionId}`);
 
            if (respondidas < preguntas.length) {
-               result.innerHTML = `⚠️ Debes responder todas las preguntas. Recuerda que algunas pueden tener 2 o más respuestas correctas.`;
+               result.innerHTML = `⚠️ Debes responder todas las preguntas. Las socráticas requieren una explicación escrita y las técnicas pueden tener varias opciones correctas.`;
                return;
            }
 
@@ -4852,14 +4973,14 @@
                `<strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>` +
                `Código: <strong>${notaCodigo}/10</strong> (70%).<br>` +
                `Preguntas: <strong>${notaPreguntas}/10</strong> (30%).<br>` +
-               `<strong>Desglose:</strong> ${conteoNiveles.completa} completas (1,00), ${conteoNiveles.incompleta} correctas incompletas (0,70), ${conteoNiveles.parcial} parciales con errores (0,30) y ${conteoNiveles.incorrecta} incorrectas (0,00).<br>` +
+               `<strong>Desglose:</strong> ${conteoNiveles.completa} completas (${rubricaAplicada.puntos.completa.toFixed(2)}), ${conteoNiveles.incompleta} correctas incompletas (${rubricaAplicada.puntos.incompleta.toFixed(2)}), ${conteoNiveles.parcial} parciales (${rubricaAplicada.puntos.parcial.toFixed(2)}) y ${conteoNiveles.incorrecta} incorrectas (${rubricaAplicada.puntos.incorrecta.toFixed(2)}).<br>` +
                `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
               `Excelencia: <strong>${excelencia}</strong>.<br>` +
               `Las preguntas mezclaron evidencias de tu código, de la solución IA, de la comparación entre ambos y situaciones de razonamiento socrático.` +
               (limiteFinal ? `<br><strong>${escaparTextoAnalista(limiteFinal)}</strong>` : "");
 
-          resaltarRespuestasAnalista(sectionId);
-          document.querySelectorAll(`#analyst-${sectionId} input`).forEach(el => el.disabled = true);
+           resaltarRespuestasAnalista(sectionId);
+           document.querySelectorAll(`#analyst-${sectionId} input, #analyst-${sectionId} textarea`).forEach(el => el.disabled = true);
           document.getElementById(`analyst-submit-${sectionId}`).disabled = true;
 
           historialResultados[sectionId].notaPreguntas = notaPreguntas;
@@ -4867,15 +4988,11 @@
           historialResultados[sectionId].notaIA = notaFinal;
           historialResultados[sectionId].analista = {
               correctas,
-              total: maxPuntos,
+              total: preguntas.length,
+              maxPuntos: Number(maxPuntos.toFixed(2)),
               porcentaje,
                puntosObtenidos: Number(puntosObtenidos.toFixed(2)),
-               rubrica: {
-                   completa: 1,
-                   incompleta: 0.7,
-                   parcial: 0.3,
-                   incorrecta: 0
-               },
+               rubrica: rubricaAplicada,
                conteoNiveles,
                viabilidad,
               excelencia,
@@ -4883,16 +5000,19 @@
                   tipo: p.tipo,
                   categoria: p.categoria || "ANÁLISIS",
                   pregunta: p.q,
+                  formato: p.respuestaAbierta ? "abierta" : "seleccion-multiple",
                   opciones: p.opciones.map(x => ({
                       texto: x.t || "",
                       correcta: !!x.c
                   })),
-                   seleccionadas: [...document.querySelectorAll(`input[name="analyst-${sectionId}-${i}"]:checked`)]
-                       .map(x => Number(x.value)),
-                   correctas: p.opciones.map((x,j)=>x.c?j:null).filter(x=>x!==null),
+                   respuestaTexto: resultadosPreguntas[i]?.respuestaTexto || "",
+                   seleccionadas: resultadosPreguntas[i]?.seleccionadas || [],
+                   correctas: resultadosPreguntas[i]?.correctas || [],
                    nivel: resultadosPreguntas[i]?.nivel || "incorrecta",
                    etiquetaNivel: resultadosPreguntas[i]?.etiqueta || "Incorrecta",
-                   puntos: resultadosPreguntas[i]?.puntos || 0
+                   puntos: resultadosPreguntas[i]?.puntos || 0,
+                   criteriosCumplidos: resultadosPreguntas[i]?.criteriosCumplidos || [],
+                   criteriosFaltantes: resultadosPreguntas[i]?.criteriosFaltantes || []
                }))
           };
           actividadesFinalizadas[sectionId] = true;
@@ -5058,6 +5178,13 @@
 
               if (p.respuestaTexto) {
                   texto += `   Respuesta del estudiante: ${p.respuestaTexto}\n`;
+              }
+              texto += `   Nivel: ${p.etiquetaNivel || p.nivel || "Sin clasificar"} · ${Number(p.puntos || 0).toFixed(2)}/1,00\n`;
+              if (Array.isArray(p.criteriosCumplidos) && p.criteriosCumplidos.length) {
+                  texto += `   Criterios cumplidos: ${p.criteriosCumplidos.join(", ")}\n`;
+              }
+              if (Array.isArray(p.criteriosFaltantes) && p.criteriosFaltantes.length) {
+                  texto += `   Criterios a fortalecer: ${p.criteriosFaltantes.join(", ")}\n`;
               }
               texto += "\n";
           });
@@ -5837,6 +5964,181 @@
           alert(`Limpieza completada. Se eliminaron ${Number(resultado.eliminadas || 0)} documento(s) antiguos de historialAportes.`);
       }
 
+      function completarFormularioRubricaSocratica() {
+          const rubrica = normalizarRubricaSocratica(rubricaSocraticaActual);
+          const asignarValor = (id, valor) => {
+              const campo = document.getElementById(id);
+              if (campo) campo.value = valor;
+          };
+          const asignarCheck = (id, valor) => {
+              const campo = document.getElementById(id);
+              if (campo) campo.checked = valor !== false;
+          };
+          asignarValor("rubricaPuntosCompleta", rubrica.puntos.completa);
+          asignarValor("rubricaPuntosIncompleta", rubrica.puntos.incompleta);
+          asignarValor("rubricaPuntosParcial", rubrica.puntos.parcial);
+          asignarValor("rubricaPuntosIncorrecta", rubrica.puntos.incorrecta);
+          asignarValor("rubricaPalabrasMinimas", rubrica.palabrasMinimas);
+          asignarCheck("rubricaCriterioDesarrollo", rubrica.criterios.desarrollo);
+          asignarCheck("rubricaCriterioJustificacion", rubrica.criterios.justificacion);
+          asignarCheck("rubricaCriterioEvidencia", rubrica.criterios.evidencia);
+          asignarCheck("rubricaCriterioConsecuencia", rubrica.criterios.consecuencia);
+      }
+
+      function leerFormularioRubricaSocratica() {
+          const numero = id => Number(document.getElementById(id)?.value);
+          return normalizarRubricaSocratica({
+              puntos: {
+                  completa: numero("rubricaPuntosCompleta"),
+                  incompleta: numero("rubricaPuntosIncompleta"),
+                  parcial: numero("rubricaPuntosParcial"),
+                  incorrecta: numero("rubricaPuntosIncorrecta")
+              },
+              palabrasMinimas: numero("rubricaPalabrasMinimas"),
+              criterios: {
+                  desarrollo: document.getElementById("rubricaCriterioDesarrollo")?.checked === true,
+                  justificacion: document.getElementById("rubricaCriterioJustificacion")?.checked === true,
+                  evidencia: document.getElementById("rubricaCriterioEvidencia")?.checked === true,
+                  consecuencia: document.getElementById("rubricaCriterioConsecuencia")?.checked === true
+              }
+          });
+      }
+
+      function validarRubricaSocratica(rubrica) {
+          const p = rubrica.puntos;
+          if (!(p.completa > 0)) return "El puntaje de respuesta completa debe ser mayor que cero.";
+          if (!(p.completa >= p.incompleta && p.incompleta >= p.parcial && p.parcial >= p.incorrecta)) {
+              return "Los puntajes deben respetar este orden: completa ≥ incompleta ≥ parcial ≥ incorrecta.";
+          }
+          if (!Object.values(rubrica.criterios).some(Boolean)) {
+              return "Activá al menos un criterio de evaluación.";
+          }
+          return "";
+      }
+
+      async function guardarRubricaSocraticaProfesor(boton = null) {
+          const estado = document.getElementById("estadoRubricaSocraticaProfesor");
+          const rubrica = leerFormularioRubricaSocratica();
+          const error = validarRubricaSocratica(rubrica);
+          if (error) {
+              if (estado) {
+                  estado.className = "is-error";
+                  estado.textContent = error;
+              }
+              return;
+          }
+          const contenido = boton?.innerHTML || "";
+          if (boton) {
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+          }
+          if (estado) {
+              estado.className = "";
+              estado.textContent = "Guardando configuración...";
+          }
+          try {
+              const guardada = await window.guardarRubricaSocraticaFirebase?.(rubrica);
+              if (guardada === false) throw new Error("Firebase rechazó la actualización.");
+              aplicarRubricaSocratica({
+                  ...rubrica,
+                  actualizadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || "docente",
+                  actualizadaEn: new Date().toISOString()
+              });
+              localStorage.setItem("rubrica_socratica_docente", JSON.stringify(rubricaSocraticaActual));
+              if (estado) {
+                  estado.className = "is-success";
+                  estado.textContent = "Rúbrica guardada y sincronizada.";
+              }
+              renderInformeGrupalSocratico();
+          } catch (e) {
+              if (estado) {
+                  estado.className = "is-error";
+                  estado.textContent = `No se pudo guardar: ${e.message}`;
+              }
+          } finally {
+              if (boton) {
+                  boton.disabled = false;
+                  boton.innerHTML = contenido;
+              }
+          }
+      }
+
+      function restaurarRubricaSocraticaProfesor() {
+          aplicarRubricaSocratica(RUBRICA_SOCRATICA_PREDETERMINADA);
+          const estado = document.getElementById("estadoRubricaSocraticaProfesor");
+          if (estado) {
+              estado.className = "";
+              estado.textContent = "Valores predeterminados cargados. Presioná Guardar rúbrica para sincronizarlos.";
+          }
+      }
+
+      function prepararFiltroInformeSocratico() {
+          const selector = document.getElementById("filtroInformeSocraticoModulo");
+          if (!selector || selector.dataset.ready === "true") return;
+          selector.insertAdjacentHTML("beforeend", seccionesData.map(sec =>
+              `<option value="${escapeHtml(sec.id)}">${escapeHtml(sec.title)}</option>`
+          ).join(""));
+          selector.dataset.ready = "true";
+      }
+
+      function obtenerConteoInformeSocratico(estudiante, sectionId = "") {
+          const historial = estudiante?.historialResultados || {};
+          if (sectionId) return obtenerConteoNivelesAnalista(historial[sectionId]?.analista);
+          return resumirNivelesAnalistaEstudiante(historial);
+      }
+
+      function renderInformeGrupalSocratico() {
+          const contenedor = document.getElementById("informeGrupalSocratico");
+          if (!contenedor) return;
+          prepararFiltroInformeSocratico();
+          const sectionId = document.getElementById("filtroInformeSocraticoModulo")?.value || "";
+          const orden = document.getElementById("ordenInformeSocratico")?.value || "nombre";
+          const filas = estudiantesProfesor
+              .filter(d => d?.estadoCuenta !== "rechazado")
+              .map(d => {
+                  const conteo = obtenerConteoInformeSocratico(d, sectionId);
+                  const total = Object.values(conteo).reduce((suma, valor) => suma + Number(valor || 0), 0);
+                  return {
+                      nombre: d.estudiante?.nombre || d.nombreGoogle || d.email || "Sin nombre",
+                      curso: [d.estudiante?.curso, d.estudiante?.division, d.estudiante?.turno].filter(Boolean).join(" · "),
+                      conteo,
+                      total,
+                      revision: conteo.parcial + conteo.incorrecta
+                  };
+              })
+              .filter(fila => fila.total > 0);
+          filas.sort((a, b) => {
+              if (orden === "completas") return b.conteo.completa - a.conteo.completa || a.nombre.localeCompare(b.nombre);
+              if (orden === "revision") return b.revision - a.revision || a.nombre.localeCompare(b.nombre);
+              return a.nombre.localeCompare(b.nombre);
+          });
+          const total = filas.reduce((acumulado, fila) => {
+              Object.keys(acumulado).forEach(nivel => acumulado[nivel] += fila.conteo[nivel]);
+              return acumulado;
+          }, { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 });
+          const totalRespuestas = Object.values(total).reduce((suma, valor) => suma + valor, 0);
+          const porcentaje = nivel => totalRespuestas ? Math.round(total[nivel] * 100 / totalRespuestas) : 0;
+          contenedor.innerHTML = `
+              <div class="teacher-group-report-summary">
+                  <div class="is-completa"><small>Completas</small><strong>${total.completa}</strong><span>${porcentaje("completa")}%</span></div>
+                  <div class="is-incompleta"><small>Incompletas</small><strong>${total.incompleta}</strong><span>${porcentaje("incompleta")}%</span></div>
+                  <div class="is-parcial"><small>Parciales</small><strong>${total.parcial}</strong><span>${porcentaje("parcial")}%</span></div>
+                  <div class="is-incorrecta"><small>Incorrectas</small><strong>${total.incorrecta}</strong><span>${porcentaje("incorrecta")}%</span></div>
+              </div>
+              ${filas.length ? `<div class="teacher-group-report-table"><table>
+                  <thead><tr><th>Estudiante</th><th>Grupo</th><th>Completas</th><th>Incompletas</th><th>Parciales</th><th>Incorrectas</th><th>Total</th></tr></thead>
+                  <tbody>${filas.map(fila => `<tr>
+                      <td><strong>${escapeHtml(fila.nombre)}</strong></td>
+                      <td>${escapeHtml(fila.curso || "Sin grupo")}</td>
+                      <td class="is-completa">${fila.conteo.completa}</td>
+                      <td class="is-incompleta">${fila.conteo.incompleta}</td>
+                      <td class="is-parcial">${fila.conteo.parcial}</td>
+                      <td class="is-incorrecta">${fila.conteo.incorrecta}</td>
+                      <td>${fila.total}</td>
+                  </tr>`).join("")}</tbody>
+              </table></div>` : `<p class="teacher-group-report-empty">Todavía no hay respuestas entregadas para el alcance seleccionado.</p>`}`;
+      }
+
       function abrirPanelProfesor() {
           document.getElementById('panelProfesorModal').classList.add('active');
           actualizarBotonPausaCronometros();
@@ -5845,6 +6147,9 @@
           if (controlSonido) controlSonido.checked = sonidoSolicitudesActivo;
           renderDocentesAutorizados();
           renderBandejaSolicitudesPendientes();
+          completarFormularioRubricaSocratica();
+          prepararFiltroInformeSocratico();
+          renderInformeGrupalSocratico();
           iniciarPanelProfesorTiempoReal();
       }
       function cerrarPanelProfesor() {
@@ -6673,14 +6978,33 @@
           const correctas = Array.isArray(p?.correctas)
               ? p.correctas
               : opciones.map((op,i)=>(op?.correcta === true || op?.c === true) ? i : null).filter(i=>i !== null);
-          const esCorrecta = JSON.stringify([...seleccionadas].sort((a,b)=>a-b)) === JSON.stringify([...correctas].sort((a,b)=>a-b));
+          const esAbierta = p?.formato === "abierta" || (p?.tipo === "SOCRÁTICA" && Boolean(p?.respuestaTexto));
+          const esCorrecta = esAbierta
+              ? p?.nivel === "completa"
+              : JSON.stringify([...seleccionadas].sort((a,b)=>a-b)) === JSON.stringify([...correctas].sort((a,b)=>a-b));
+          const nivel = p?.nivel || (esCorrecta ? "completa" : "incorrecta");
+          const etiquetaNivel = p?.etiquetaNivel || (esCorrecta ? "Correcta completa" : "Incorrecta");
+          const colorNivel = nivel === "completa" ? "#6ee7b7" :
+              nivel === "incompleta" ? "#7dd3fc" :
+              nivel === "parcial" ? "#fde68a" : "#fca5a5";
+          const criteriosCumplidos = Array.isArray(p?.criteriosCumplidos) ? p.criteriosCumplidos : [];
+          const criteriosFaltantes = Array.isArray(p?.criteriosFaltantes) ? p.criteriosFaltantes : [];
           return `<div class="teacher-question">
               <strong>${indice + 1}. ${escapeHtml(p?.pregunta || 'Pregunta sin texto')}</strong>
               <div style="color:var(--text-muted);font-size:.75rem;margin-top:.25rem;">
                   ${escapeHtml(p?.categoria || p?.tipo || 'ANÁLISIS')} ·
-                  <strong style="color:${esCorrecta ? '#6ee7b7' : '#fca5a5'}">${esCorrecta ? 'Respuesta correcta' : 'Respuesta incorrecta'}</strong>
+                  <strong style="color:${colorNivel}">${escapeHtml(etiquetaNivel)} · ${Number(p?.puntos || 0).toFixed(2)}/1,00</strong>
               </div>
-              ${opciones.map((op,j)=>{
+              ${esAbierta ? `
+                  <div class="teacher-socratic-response">
+                      <small>Respuesta del estudiante</small>
+                      <p>${escapeHtml(p?.respuestaTexto || 'Sin respuesta escrita')}</p>
+                  </div>
+                  <div class="teacher-socratic-criteria">
+                      <div><strong>Criterios cumplidos:</strong> ${criteriosCumplidos.length ? escapeHtml(criteriosCumplidos.join(", ")) : "ninguno registrado"}</div>
+                      <div><strong>Criterios a fortalecer:</strong> ${criteriosFaltantes.length ? escapeHtml(criteriosFaltantes.join(", ")) : "ninguno"}</div>
+                  </div>
+              ` : opciones.map((op,j)=>{
                   const seleccionada=seleccionadas.includes(j);
                   const correcta=correctas.includes(j);
                   const clases=['teacher-answer',seleccionada?'selected':'',correcta?'correct':(seleccionada?'wrong':'')].filter(Boolean).join(' ');
@@ -6690,7 +7014,6 @@
                       ${marcas ? `<small style="color:var(--text-muted)"> — ${marcas}</small>` : ''}
                   </span>`;
               }).join('')}
-              ${p?.respuestaTexto ? `<div style="margin-top:.5rem"><strong>Respuesta escrita:</strong> ${escapeHtml(p.respuestaTexto)}</div>` : ''}
           </div>`;
       }
 
@@ -7033,6 +7356,39 @@
           </div>`;
       }
 
+      function obtenerConteoNivelesAnalista(analista) {
+          const conteo = { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 };
+          if (!analista) return conteo;
+          if (analista.conteoNiveles && typeof analista.conteoNiveles === "object") {
+              Object.keys(conteo).forEach(nivel => {
+                  conteo[nivel] = Number(analista.conteoNiveles[nivel] || 0);
+              });
+              return conteo;
+          }
+          (Array.isArray(analista.preguntas) ? analista.preguntas : []).forEach(pregunta => {
+              const nivel = String(pregunta?.nivel || "");
+              if (Object.prototype.hasOwnProperty.call(conteo, nivel)) {
+                  conteo[nivel]++;
+                  return;
+              }
+              const seleccionadas = Array.isArray(pregunta?.seleccionadas) ? [...pregunta.seleccionadas].sort((a,b)=>a-b) : [];
+              const correctas = Array.isArray(pregunta?.correctas) ? [...pregunta.correctas].sort((a,b)=>a-b) : [];
+              const completa = JSON.stringify(seleccionadas) === JSON.stringify(correctas);
+              conteo[completa ? "completa" : "incorrecta"]++;
+          });
+          return conteo;
+      }
+
+      function resumirNivelesAnalistaEstudiante(historial) {
+          return Object.values(historial || {}).reduce((total, resultado) => {
+              const conteo = obtenerConteoNivelesAnalista(resultado?.analista);
+              Object.keys(total).forEach(nivel => {
+                  total[nivel] += Number(conteo[nivel] || 0);
+              });
+              return total;
+          }, { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 });
+      }
+
       function renderAnalistaViabilidadExcelenciaProfesor(analista) {
           if (!analista || !Array.isArray(analista.preguntas) || !analista.preguntas.length) {
               return `<div class="teacher-analyst-empty">
@@ -7043,19 +7399,27 @@
           const porcentaje = Number.isFinite(Number(analista.porcentaje))
               ? `${Number(analista.porcentaje)}%`
               : 'Pendiente';
+          const conteo = obtenerConteoNivelesAnalista(analista);
+          const puntos = normalizarRubricaSocratica(analista.rubrica || rubricaSocraticaActual).puntos;
           return `<section class="teacher-analyst-review">
               <div class="teacher-analyst-review-header">
                   <div>
                       <h4><i class="fa-solid fa-user-check"></i> Analista de Viabilidad y Excelencia</h4>
-                      <p>Preguntas respondidas por el estudiante, opciones seleccionadas y respuestas esperadas.</p>
+                      <p>Respuestas técnicas y explicaciones socráticas, con el nivel alcanzado y las evidencias consideradas.</p>
                   </div>
                   <div class="teacher-analyst-review-score">
                       <strong>${escapeHtml(analista.viabilidad || 'Pendiente')}</strong>
                       <span>Viabilidad</span>
                       <strong>${escapeHtml(analista.excelencia || 'Pendiente')}</strong>
                       <span>Excelencia</span>
-                      <small>${Number(analista.correctas || 0)}/${Number(analista.total || analista.preguntas.length)} correctas · ${porcentaje}</small>
+                      <small>${Number(analista.correctas || 0)}/${Number(analista.total || analista.preguntas.length)} completas · ${porcentaje}</small>
                   </div>
+              </div>
+              <div class="teacher-analyst-levels" aria-label="Desglose de respuestas">
+                  <div class="is-completa"><small>Completas</small><strong>${conteo.completa}</strong><span>${puntos.completa.toFixed(2)} puntos</span></div>
+                  <div class="is-incompleta"><small>Incompletas</small><strong>${conteo.incompleta}</strong><span>${puntos.incompleta.toFixed(2)} puntos</span></div>
+                  <div class="is-parcial"><small>Parciales</small><strong>${conteo.parcial}</strong><span>${puntos.parcial.toFixed(2)} puntos</span></div>
+                  <div class="is-incorrecta"><small>Incorrectas</small><strong>${conteo.incorrecta}</strong><span>${puntos.incorrecta.toFixed(2)} puntos</span></div>
               </div>
               <div class="teacher-analyst-review-list">
                   ${analista.preguntas.map((pregunta, indice) => renderPreguntaProfesor(pregunta, indice)).join('')}
@@ -7135,6 +7499,7 @@
           const notaFinalEditable = notaDefinitiva !== '—' ? notaDefinitiva : notaCalculada;
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
           const resumenConsultasIA = resumirConsultasIAEstudiante(d);
+          const resumenNivelesAnalista = resumirNivelesAnalistaEstudiante(historial);
           const eventos = Array.isArray(d.eventosSalidasPestana)
               ? d.eventosSalidasPestana
               : (Array.isArray(d.eventosSalidasPestana) ? d.eventosSalidasPestana : []);
@@ -7388,6 +7753,10 @@
                   <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Nota calculada</small><strong>${notaCalculada === '—' ? 'Pendiente' : `${notaCalculada}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === '—' ? 'Pendiente de confirmación' : `${notaDefinitiva}/10`}</strong></div>
+                  <div class="teacher-detail-stat teacher-level-completa"><small>Respuestas completas</small><strong>${resumenNivelesAnalista.completa}</strong></div>
+                  <div class="teacher-detail-stat teacher-level-incompleta"><small>Correctas incompletas</small><strong>${resumenNivelesAnalista.incompleta}</strong></div>
+                  <div class="teacher-detail-stat teacher-level-parcial"><small>Respuestas parciales</small><strong>${resumenNivelesAnalista.parcial}</strong></div>
+                  <div class="teacher-detail-stat teacher-level-incorrecta"><small>Respuestas incorrectas</small><strong>${resumenNivelesAnalista.incorrecta}</strong></div>
                   <div class="teacher-detail-stat"><small>Estado de cuenta</small><strong style="color:${colorCuentaDetalle}">${estadoCuentaDetalle}</strong></div>
                   <div class="teacher-detail-stat"><small>Salidas de pestaña</small><strong>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</strong></div>
                   <div class="teacher-detail-stat"><small>Desbloqueos</small><strong>${cantidadDesbloqueos}</strong></div>
@@ -8245,6 +8614,7 @@
           renderBandejaSolicitudesPendientes();
           detectarDesconexionesProfesor();
           window.setTimeout(() => window.actualizarResumenJitsiProfesor?.(), 0);
+          window.setTimeout(() => renderInformeGrupalSocratico(), 0);
           const q = (document.getElementById('filtroProfesor').value || '').toLowerCase().trim();
           const emailFiltro = (document.getElementById('filtroEmailProfesor')?.value || '').toLowerCase().trim();
           const curso = document.getElementById('filtroCursoProfesor').value;
@@ -8759,9 +9129,13 @@
               const correctaTexto = correctas.length
                   ? correctas.map(posicion => `${String.fromCharCode(65 + posicion)}) ${opciones[posicion]?.texto || opciones[posicion]?.t || 'Opción'}`).join(' | ')
                   : 'No definida';
+              const esAbierta = pregunta.formato === "abierta" || Boolean(pregunta.respuestaTexto);
+              const detalleRespuesta = esAbierta
+                  ? `Respuesta del estudiante: ${pregunta.respuestaTexto || "Sin respuesta escrita"}\nCriterios cumplidos: ${(pregunta.criteriosCumplidos || []).join(", ") || "ninguno"}\nCriterios a fortalecer: ${(pregunta.criteriosFaltantes || []).join(", ") || "ninguno"}`
+                  : `Respuesta del estudiante: ${seleccionTexto}\nRespuesta correcta esperada: ${correctaTexto}`;
               y = agregarTextoPDFProfesor(
                   doc,
-                  `${indice + 1}. ${pregunta.pregunta || 'Pregunta sin texto'} · ${pregunta.categoria || pregunta.tipo || 'ANÁLISIS'} · ${esCorrecta ? 'Respuesta correcta' : 'Respuesta incorrecta'}\nRespuesta del estudiante: ${seleccionTexto}\nRespuesta correcta esperada: ${correctaTexto}`,
+                  `${indice + 1}. ${pregunta.pregunta || 'Pregunta sin texto'} · ${pregunta.categoria || pregunta.tipo || 'ANÁLISIS'} · ${pregunta.etiquetaNivel || (esCorrecta ? 'Correcta completa' : 'Incorrecta')} · ${Number(pregunta.puntos || 0).toFixed(2)}/1,00\n${detalleRespuesta}`,
                   y,
                   { altoLinea: 3.8 }
               );

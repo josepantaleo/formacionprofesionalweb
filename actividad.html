@@ -15,14 +15,14 @@
       href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="actividad-base.css?v=20260911-1" />
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260910-3" />
+    <link rel="stylesheet" href="actividad-base.css?v=20260911-2" />
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260911-3" />
     <!-- Librería jsPDF para generación de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- Librería pdf-lib para cifrar y proteger el PDF generado -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
-    <script type="module" src="actividad-firebase.js?v=20260910-3"></script>
+<script type="module" src="actividad-firebase.js?v=20260911-3"></script>
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -214,6 +214,48 @@
         <div id="estadoClaseProfesor" style="margin-top:1rem;padding:.75rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06);color:#bae6fd;font-size:.85rem;">
           <i class="fa-solid fa-circle-info"></i> Usá “Iniciar clase” para habilitar las actividades de todos los alumnos conectados.
         </div>
+        <details class="teacher-rubric-settings">
+          <summary><i class="fa-solid fa-list-check"></i> Configuración de la rúbrica socrática</summary>
+          <div class="teacher-rubric-settings-body">
+            <p>Definí los puntajes y las evidencias exigidas. Los cambios se aplican a las respuestas entregadas después de guardar.</p>
+            <div class="teacher-rubric-score-grid">
+              <label>Completa<input id="rubricaPuntosCompleta" type="number" min="0" max="1" step="0.05"></label>
+              <label>Correcta incompleta<input id="rubricaPuntosIncompleta" type="number" min="0" max="1" step="0.05"></label>
+              <label>Parcial<input id="rubricaPuntosParcial" type="number" min="0" max="1" step="0.05"></label>
+              <label>Incorrecta<input id="rubricaPuntosIncorrecta" type="number" min="0" max="1" step="0.05"></label>
+              <label>Palabras mínimas<input id="rubricaPalabrasMinimas" type="number" min="6" max="100" step="1"></label>
+            </div>
+            <div class="teacher-rubric-criteria-grid">
+              <label><input id="rubricaCriterioDesarrollo" type="checkbox"> <span><strong>Desarrollo suficiente</strong><small>Exige alcanzar la cantidad mínima de palabras.</small></span></label>
+              <label><input id="rubricaCriterioJustificacion" type="checkbox"> <span><strong>Justificación causal</strong><small>Busca relaciones como “porque”, “permite”, “evita” o “provoca”.</small></span></label>
+              <label><input id="rubricaCriterioEvidencia" type="checkbox"> <span><strong>Evidencia concreta</strong><small>Exige referencias al código, sus identificadores o un caso de prueba.</small></span></label>
+              <label><input id="rubricaCriterioConsecuencia" type="checkbox"> <span><strong>Consecuencia o mejora</strong><small>Busca límites, riesgos, cambios, comprobaciones o mejoras.</small></span></label>
+            </div>
+            <div class="teacher-rubric-actions">
+              <button class="btn btn-primary" type="button" onclick="guardarRubricaSocraticaProfesor(this)"><i class="fa-solid fa-floppy-disk"></i> Guardar rúbrica</button>
+              <button class="btn btn-secondary" type="button" onclick="restaurarRubricaSocraticaProfesor()"><i class="fa-solid fa-arrow-rotate-left"></i> Restaurar valores</button>
+              <span id="estadoRubricaSocraticaProfesor" role="status"></span>
+            </div>
+          </div>
+        </details>
+        <details class="teacher-group-report" open>
+          <summary><i class="fa-solid fa-chart-column"></i> Informe grupal de respuestas</summary>
+          <div class="teacher-group-report-controls">
+            <label>Actividad
+              <select id="filtroInformeSocraticoModulo" onchange="renderInformeGrupalSocratico()">
+                <option value="">Todas las actividades</option>
+              </select>
+            </label>
+            <label>Orden
+              <select id="ordenInformeSocratico" onchange="renderInformeGrupalSocratico()">
+                <option value="nombre">Nombre</option>
+                <option value="completas">Más completas</option>
+                <option value="revision">Más respuestas a revisar</option>
+              </select>
+            </label>
+          </div>
+          <div id="informeGrupalSocratico"></div>
+        </details>
         <div id="alertaNuevaSolicitud" class="new-request-alert" role="alert" aria-live="assertive">
           <div><i class="fa-solid fa-bell"></i> <strong id="textoAlertaNuevaSolicitud">Nueva solicitud de estudiante.</strong></div>
           <button class="btn btn-secondary" type="button" onclick="ocultarAlertaNuevaSolicitud()" aria-label="Cerrar alerta"><i class="fa-solid fa-xmark"></i></button>
@@ -884,7 +926,7 @@
       </button>
     </div>
 
-    <script src="actividad-app.js?v=20260911-1"></script>
+    <script src="actividad-app.js?v=20260911-3"></script>
     <script src="actividad-cooperacion.js?v=20260910-1"></script>
     <script src="mejoras-seguimiento.js?v=20260910-4"></script>
   </body>
