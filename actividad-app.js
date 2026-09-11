@@ -4705,23 +4705,63 @@
                         "🟢 Comparación entre ambos códigos"}
                       <br>Puede haber <strong>más de una respuesta correcta</strong>.
                   </div>
-                  ${p.opciones.map((op,j) => `
-                      <label class="analyst-option">
-                          <input type="checkbox"
-                                 name="analyst-${sectionId}-${i}"
-                                 value="${j}">
-                          ${String.fromCharCode(65+j)}) ${escaparTextoAnalista(op.t)}
-                      </label>
-                  `).join("")}
-              </div>
-          `).join("");
+                   ${p.opciones.map((op,j) => `
+                       <label class="analyst-option">
+                           <input type="checkbox"
+                                  name="analyst-${sectionId}-${i}"
+                                  value="${j}">
+                           ${String.fromCharCode(65+j)}) ${escaparTextoAnalista(op.t)}
+                       </label>
+                   `).join("")}
+                   <div class="analyst-question-feedback"
+                        id="analyst-feedback-${sectionId}-${i}"
+                        aria-live="polite"></div>
+               </div>
+           `).join("");
 
           result.innerHTML = "";
           box.classList.add("active");
-          document.getElementById(`analyst-submit-${sectionId}`).disabled = false;
-      }
+           document.getElementById(`analyst-submit-${sectionId}`).disabled = false;
+       }
 
-      function resaltarRespuestasAnalista(sectionId) {
+       function calificarRespuestaAnalista(marcadas, reales) {
+           const aciertos = marcadas.filter(x => reales.includes(x)).length;
+           const errores = marcadas.filter(x => !reales.includes(x)).length;
+           const faltantes = reales.filter(x => !marcadas.includes(x)).length;
+
+           if (aciertos === reales.length && errores === 0) {
+               return {
+                   nivel: "completa",
+                   etiqueta: "Correcta completa",
+                   puntos: 1,
+                   detalle: "Identificaste todas las opciones correctas sin agregar afirmaciones incorrectas."
+               };
+           }
+           if (aciertos > 0 && errores === 0) {
+               return {
+                   nivel: "incompleta",
+                   etiqueta: "Correcta incompleta",
+                   puntos: 0.7,
+                   detalle: `Tu razonamiento es correcto, pero faltó reconocer ${faltantes} opción${faltantes === 1 ? "" : "es"} válida${faltantes === 1 ? "" : "s"}.`
+               };
+           }
+           if (aciertos > 0) {
+               return {
+                   nivel: "parcial",
+                   etiqueta: "Parcial con errores",
+                   puntos: 0.3,
+                   detalle: `Reconociste ${aciertos} opción${aciertos === 1 ? "" : "es"} válida${aciertos === 1 ? "" : "s"}, pero también elegiste ${errores} incorrecta${errores === 1 ? "" : "s"}.`
+               };
+           }
+           return {
+               nivel: "incorrecta",
+               etiqueta: "Incorrecta",
+               puntos: 0,
+               detalle: "Las opciones elegidas no aportan evidencia correcta para esta pregunta."
+           };
+       }
+
+       function resaltarRespuestasAnalista(sectionId) {
           const preguntas = (window.analistaActual && window.analistaActual[sectionId]) || [];
           preguntas.forEach((p, i) => {
               const inputs = document.querySelectorAll(`input[name="analyst-${sectionId}-${i}"]`);
@@ -4738,14 +4778,21 @@
           });
       }
 
-      function evaluarAnalista(sectionId) {
-          const preguntas = (window.analistaActual && window.analistaActual[sectionId]) || [];
-          let correctas = 0;
-          let respondidas = 0;
-          let maxPuntos = preguntas.length;
-          let puntosObtenidos = 0;
+       function evaluarAnalista(sectionId) {
+           const preguntas = (window.analistaActual && window.analistaActual[sectionId]) || [];
+           let correctas = 0;
+           let respondidas = 0;
+           let maxPuntos = preguntas.length;
+           let puntosObtenidos = 0;
+           const resultadosPreguntas = [];
+           const conteoNiveles = {
+               completa: 0,
+               incompleta: 0,
+               parcial: 0,
+               incorrecta: 0
+           };
 
-          preguntas.forEach((p,i) => {
+           preguntas.forEach((p,i) => {
               const marcadas = [...document.querySelectorAll(`input[name="analyst-${sectionId}-${i}"]:checked`)]
                   .map(x => Number(x.value)).sort((a,b)=>a-b);
 
@@ -4756,25 +4803,30 @@
                   .filter(x=>x !== null)
                   .sort((a,b)=>a-b);
 
-              if (JSON.stringify(marcadas) === JSON.stringify(reales)) {
-                  correctas++;
-              }
-              const aciertos = marcadas.filter(x => reales.includes(x)).length;
-              const errores = marcadas.filter(x => !reales.includes(x)).length;
-              const puntajePregunta = reales.length
-                  ? Math.max(0, Math.min(1, (aciertos - errores) / reales.length))
-                  : 0;
-              puntosObtenidos += puntajePregunta;
-          });
+               const resultadoPregunta = calificarRespuestaAnalista(marcadas, reales);
+               resultadosPreguntas.push(resultadoPregunta);
+               conteoNiveles[resultadoPregunta.nivel]++;
+               if (resultadoPregunta.nivel === "completa") correctas++;
+               puntosObtenidos += resultadoPregunta.puntos;
+           });
 
           const result = document.getElementById(`analyst-result-${sectionId}`);
 
-          if (respondidas < preguntas.length) {
-              result.innerHTML = `⚠️ Debes responder todas las preguntas. Recuerda que algunas pueden tener 2 o más respuestas correctas.`;
-              return;
-          }
+           if (respondidas < preguntas.length) {
+               result.innerHTML = `⚠️ Debes responder todas las preguntas. Recuerda que algunas pueden tener 2 o más respuestas correctas.`;
+               return;
+           }
 
-          const porcentaje = Math.round((puntosObtenidos / maxPuntos) * 100);
+           resultadosPreguntas.forEach((resultadoPregunta, i) => {
+               const feedbackPregunta = document.getElementById(`analyst-feedback-${sectionId}-${i}`);
+               if (!feedbackPregunta) return;
+               feedbackPregunta.className = `analyst-question-feedback is-${resultadoPregunta.nivel}`;
+               feedbackPregunta.innerHTML =
+                   `<strong>${resultadoPregunta.etiqueta}: ${resultadoPregunta.puntos.toFixed(2)} / 1,00</strong>` +
+                   `<span>${escaparTextoAnalista(resultadoPregunta.detalle)}</span>`;
+           });
+
+           const porcentaje = Math.round((puntosObtenidos / maxPuntos) * 100);
           const notaPreguntas = Number((porcentaje / 10).toFixed(1));
           const viabilidad = porcentaje >= 80 ? "ALTA" : porcentaje >= 60 ? "MEDIA" : "BAJA";
           const excelencia = porcentaje === 100 ? "EXCELENTE" :
@@ -4796,11 +4848,12 @@
                       ? "La calificación automática del módulo se limitó a 6 porque la salida no demuestra el comportamiento esperado."
                       : "";
 
-          result.innerHTML =
-              `<strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>` +
-              `Código: <strong>${notaCodigo}/10</strong> (70%).<br>` +
-              `Preguntas: <strong>${notaPreguntas}/10</strong> (30%) — ${correctas}/${maxPuntos} respuestas perfectas; las selecciones parcialmente correctas recibieron puntaje proporcional y las incorrectas descontaron.<br>` +
-              `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
+           result.innerHTML =
+               `<strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>` +
+               `Código: <strong>${notaCodigo}/10</strong> (70%).<br>` +
+               `Preguntas: <strong>${notaPreguntas}/10</strong> (30%).<br>` +
+               `<strong>Desglose:</strong> ${conteoNiveles.completa} completas (1,00), ${conteoNiveles.incompleta} correctas incompletas (0,70), ${conteoNiveles.parcial} parciales con errores (0,30) y ${conteoNiveles.incorrecta} incorrectas (0,00).<br>` +
+               `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
               `Excelencia: <strong>${excelencia}</strong>.<br>` +
               `Las preguntas mezclaron evidencias de tu código, de la solución IA, de la comparación entre ambos y situaciones de razonamiento socrático.` +
               (limiteFinal ? `<br><strong>${escaparTextoAnalista(limiteFinal)}</strong>` : "");
@@ -4816,8 +4869,15 @@
               correctas,
               total: maxPuntos,
               porcentaje,
-              puntosObtenidos: Number(puntosObtenidos.toFixed(2)),
-              viabilidad,
+               puntosObtenidos: Number(puntosObtenidos.toFixed(2)),
+               rubrica: {
+                   completa: 1,
+                   incompleta: 0.7,
+                   parcial: 0.3,
+                   incorrecta: 0
+               },
+               conteoNiveles,
+               viabilidad,
               excelencia,
               preguntas: preguntas.map((p, i) => ({
                   tipo: p.tipo,
@@ -4827,10 +4887,13 @@
                       texto: x.t || "",
                       correcta: !!x.c
                   })),
-                  seleccionadas: [...document.querySelectorAll(`input[name="analyst-${sectionId}-${i}"]:checked`)]
-                      .map(x => Number(x.value)),
-                  correctas: p.opciones.map((x,j)=>x.c?j:null).filter(x=>x!==null)
-              }))
+                   seleccionadas: [...document.querySelectorAll(`input[name="analyst-${sectionId}-${i}"]:checked`)]
+                       .map(x => Number(x.value)),
+                   correctas: p.opciones.map((x,j)=>x.c?j:null).filter(x=>x!==null),
+                   nivel: resultadosPreguntas[i]?.nivel || "incorrecta",
+                   etiquetaNivel: resultadosPreguntas[i]?.etiqueta || "Incorrecta",
+                   puntos: resultadosPreguntas[i]?.puntos || 0
+               }))
           };
           actividadesFinalizadas[sectionId] = true;
           setLocalStorage(`finalized_${sectionId}`, 'true');
