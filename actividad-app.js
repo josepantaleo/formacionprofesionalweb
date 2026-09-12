@@ -6176,10 +6176,45 @@
           selector.dataset.ready = "true";
       }
 
-      function obtenerConteoInformeSocratico(estudiante, sectionId = "") {
+      function obtenerActividadesSocraticasValidas(estudiante, sectionId = "") {
           const historial = estudiante?.historialResultados || {};
-          if (sectionId) return obtenerConteoNivelesAnalista(historial[sectionId]?.analista);
-          return resumirNivelesAnalistaEstudiante(historial);
+          const finalizadas = estudiante?.finalizadas || {};
+          const idsValidos = new Set(seccionesData.map(sec => sec.id));
+          const ids = sectionId ? [sectionId] : seccionesData.map(sec => sec.id);
+          return ids.reduce((actividades, id) => {
+              if (!idsValidos.has(id) || finalizadas[id] !== true) return actividades;
+              const resultado = historial[id];
+              const analista = resultado?.analista;
+              const conteo = obtenerConteoNivelesAnalista(analista);
+              const respuestas = Object.values(conteo).reduce(
+                  (suma, valor) => suma + Number(valor || 0),
+                  0
+              );
+              if (!analista || respuestas <= 0) return actividades;
+              actividades.push({ id, resultado, analista, conteo, respuestas });
+              return actividades;
+          }, []);
+      }
+
+      function obtenerConteoInformeSocratico(estudiante, sectionId = "") {
+          return obtenerActividadesSocraticasValidas(estudiante, sectionId).reduce((total, actividad) => {
+              Object.keys(total).forEach(nivel => {
+                  total[nivel] += Number(actividad.conteo[nivel] || 0);
+              });
+              return total;
+          }, { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 });
+      }
+
+      function contarRegistrosSocraticosExcluidos(estudiante, sectionId = "") {
+          const historial = estudiante?.historialResultados || {};
+          const finalizadas = estudiante?.finalizadas || {};
+          const idsValidos = new Set(seccionesData.map(sec => sec.id));
+          const ids = sectionId ? [sectionId] : Object.keys(historial);
+          return ids.filter(id => {
+              const conteo = obtenerConteoNivelesAnalista(historial[id]?.analista);
+              const respuestas = Object.values(conteo).reduce((suma, valor) => suma + Number(valor || 0), 0);
+              return respuestas > 0 && (!idsValidos.has(id) || finalizadas[id] !== true);
+          }).length;
       }
 
       function obtenerFiltrosGrupoInformeSocratico() {
@@ -6219,7 +6254,13 @@
           const estudiantesAlcance = obtenerEstudiantesFiltradosInformeSocratico();
           const filas = estudiantesAlcance
               .map(d => {
-                  const conteo = obtenerConteoInformeSocratico(d, sectionId);
+                  const actividades = obtenerActividadesSocraticasValidas(d, sectionId);
+                  const conteo = actividades.reduce((acumulado, actividad) => {
+                      Object.keys(acumulado).forEach(nivel => {
+                          acumulado[nivel] += Number(actividad.conteo[nivel] || 0);
+                      });
+                      return acumulado;
+                  }, { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 });
                   const total = Object.values(conteo).reduce((suma, valor) => suma + Number(valor || 0), 0);
                   return {
                       nombre: d.estudiante?.nombre || d.nombreGoogle || d.email || "Sin nombre",
@@ -6230,6 +6271,7 @@
                       curso: [d.estudiante?.curso, d.estudiante?.division, d.estudiante?.turno].filter(Boolean).join(" · "),
                       conteo,
                       total,
+                      desafiosEvaluados: actividades.length,
                       revision: conteo.parcial + conteo.incorrecta
                   };
               })
@@ -6244,6 +6286,14 @@
               return acumulado;
           }, { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 });
           const totalRespuestas = Object.values(total).reduce((suma, valor) => suma + valor, 0);
+          const totalDesafiosEvaluados = filas.reduce(
+              (suma, fila) => suma + Number(fila.desafiosEvaluados || 0),
+              0
+          );
+          const registrosExcluidos = estudiantesAlcance.reduce(
+              (suma, estudiante) => suma + contarRegistrosSocraticosExcluidos(estudiante, sectionId),
+              0
+          );
           const porcentaje = nivel => totalRespuestas ? Math.round(total[nivel] * 100 / totalRespuestas) : 0;
           const actividad = sectionId
               ? seccionesData.find(sec => sec.id === sectionId)?.title || sectionId
@@ -6252,6 +6302,8 @@
               filas,
               total,
               totalRespuestas,
+              totalDesafiosEvaluados,
+              registrosExcluidos,
               porcentaje,
               sectionId,
               actividad,
@@ -6280,14 +6332,12 @@
               const { filas, total, porcentaje } = datos;
               const evolucion = obtenerEvolucionInformeGrupalSocratico();
               const alertas = detectarAlertasEvolucionSocratica(evolucion, datos.estudiantesAlcance);
-              const estudiantesConHistorial = datos.estudiantesAlcance.filter(estudiante =>
-                  Object.keys(estudiante?.historialResultados || {}).length > 0
-              ).length;
+              const estudiantesConHistorial = datos.filas.length;
               contenedor.innerHTML = `
               <div class="teacher-report-scope"><i class="fa-solid fa-filter"></i> Alcance: <strong>${escapeHtml(datos.alcance)}</strong> · ${datos.estudiantesAlcance.length} estudiante${datos.estudiantesAlcance.length === 1 ? "" : "s"}</div>
               <div class="teacher-report-diagnostic ${datos.totalRespuestas ? "is-ok" : "is-warning"}">
                   <i class="fa-solid ${datos.totalRespuestas ? "fa-chart-line" : "fa-circle-info"}"></i>
-                  <span><strong>Datos del informe:</strong> ${estudiantesConHistorial} estudiante${estudiantesConHistorial === 1 ? "" : "s"} con historial y ${datos.totalRespuestas} respuesta${datos.totalRespuestas === 1 ? "" : "s"} socrática${datos.totalRespuestas === 1 ? "" : "s"}. ${datos.totalRespuestas ? "Los gráficos se calcularon con estos registros." : "Cambiá los filtros o esperá entregas del Analista de Viabilidad y Excelencia."}</span>
+                  <span><strong>Datos verificados:</strong> ${estudiantesConHistorial} estudiante${estudiantesConHistorial === 1 ? "" : "s"}, ${datos.totalDesafiosEvaluados} desafío${datos.totalDesafiosEvaluados === 1 ? "" : "s"} finalizado${datos.totalDesafiosEvaluados === 1 ? "" : "s"} con evaluación y ${datos.totalRespuestas} respuesta${datos.totalRespuestas === 1 ? "" : "s"} socrática${datos.totalRespuestas === 1 ? "" : "s"}. Los niveles cuentan respuestas, no desafíos.${datos.registrosExcluidos ? ` Se excluyeron ${datos.registrosExcluidos} registro${datos.registrosExcluidos === 1 ? "" : "s"} histórico${datos.registrosExcluidos === 1 ? "" : "s"} no finalizado${datos.registrosExcluidos === 1 ? "" : "s"} o ajeno${datos.registrosExcluidos === 1 ? "" : "s"} al curso actual.` : ""} ${datos.totalRespuestas ? "Tablas, gráficos y exportaciones usan este mismo conjunto." : "Cambiá los filtros o esperá entregas finalizadas del Analista de Viabilidad y Excelencia."}</span>
               </div>
               <div class="teacher-group-report-summary">
                   <div class="is-completa"><small>Completas</small><strong>${total.completa}</strong><span>${porcentaje("completa")}%</span></div>
@@ -6301,10 +6351,11 @@
               ${componenteSeguro("Tabla de evolución", () => renderTablaEvolucionPanelSocratico(evolucion, alertas))}
               ${componenteSeguro("Comparación de grupos", () => renderComparacionGruposSocratico(datos))}
               ${filas.length ? `<div class="teacher-group-report-table"><table>
-                  <thead><tr><th>Estudiante</th><th>Grupo</th><th>Completas</th><th>Incompletas</th><th>Parciales</th><th>Incorrectas</th><th>Total</th></tr></thead>
+                  <thead><tr><th>Estudiante</th><th>Grupo</th><th>Desafíos evaluados</th><th>Completas</th><th>Incompletas</th><th>Parciales</th><th>Incorrectas</th><th>Total respuestas</th></tr></thead>
                   <tbody>${filas.map(fila => `<tr>
                       <td><strong>${escapeHtml(fila.nombre)}</strong></td>
                       <td>${escapeHtml(fila.curso || "Sin grupo")}</td>
+                      <td>${fila.desafiosEvaluados}</td>
                       <td class="is-completa">${fila.conteo.completa}</td>
                       <td class="is-incompleta">${fila.conteo.incompleta}</td>
                       <td class="is-parcial">${fila.conteo.parcial}</td>
@@ -6340,10 +6391,8 @@
               { ...item, cumplido: 0, faltante: 0 }
           ]));
           datos.estudiantesAlcance.forEach(estudiante => {
-              const historial = estudiante?.historialResultados || {};
-              const ids = datos.sectionId ? [datos.sectionId] : Object.keys(historial);
-              ids.forEach(sectionId => {
-                  const preguntas = historial[sectionId]?.analista?.preguntas || [];
+              obtenerActividadesSocraticasValidas(estudiante, datos.sectionId).forEach(actividad => {
+                  const preguntas = actividad.analista?.preguntas || [];
                   preguntas.forEach(pregunta => {
                       const cumplidos = Array.isArray(pregunta?.criteriosCumplidos)
                           ? pregunta.criteriosCumplidos
@@ -6464,7 +6513,7 @@
       function obtenerCriteriosFaltantesActividad(estudiantes, sectionId) {
           const frecuencias = {};
           estudiantes.forEach(estudiante => {
-              const preguntas = estudiante?.historialResultados?.[sectionId]?.analista?.preguntas || [];
+              const preguntas = obtenerActividadesSocraticasValidas(estudiante, sectionId)[0]?.analista?.preguntas || [];
               preguntas.forEach(pregunta => {
                   (Array.isArray(pregunta?.criteriosFaltantes) ? pregunta.criteriosFaltantes : []).forEach(criterio => {
                       const clave = String(criterio || "").trim();
@@ -6550,10 +6599,11 @@
           return `<details class="teacher-evolution-data" open>
               <summary><i class="fa-solid fa-table-list"></i> Porcentajes exactos por actividad</summary>
               <div class="teacher-group-report-table"><table>
-                  <thead><tr><th>N.º</th><th>Actividad</th><th>Respuestas</th><th>Completas</th><th>Incompletas</th><th>Parciales</th><th>Incorrectas</th><th>Riesgo</th><th>Cambio</th></tr></thead>
+                  <thead><tr><th>N.º</th><th>Actividad</th><th>Desafíos</th><th>Respuestas</th><th>Completas</th><th>Incompletas</th><th>Parciales</th><th>Incorrectas</th><th>Riesgo</th><th>Cambio</th></tr></thead>
                   <tbody>${evolucion.map((item, indice) => `<tr class="${indicesAlerta.has(item.indice) ? "is-risk-row" : ""}">
                       <td>${item.indice}</td>
                       <td><strong>${escapeHtml(item.titulo)}</strong>${indicesAlerta.has(item.indice) ? ' <span class="teacher-risk-badge">Refuerzo</span>' : ""}</td>
+                      <td>${item.desafiosEvaluados}</td>
                       <td>${item.respuestas}</td>
                       <td class="is-completa">${porcentajeExactoPanel(item.porcentajes.completa)}</td>
                       <td class="is-incompleta">${porcentajeExactoPanel(item.porcentajes.incompleta)}</td>
@@ -6588,11 +6638,14 @@
                   grupos.set(clave, {
                       nombre: clave,
                       estudiantes: 0,
+                      desafiosEvaluados: 0,
                       conteo: { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 }
                   });
               }
               const grupo = grupos.get(clave);
               grupo.estudiantes++;
+              const actividades = obtenerActividadesSocraticasValidas(estudiante, datos.sectionId);
+              grupo.desafiosEvaluados += actividades.length;
               const conteo = obtenerConteoInformeSocratico(estudiante, datos.sectionId);
               Object.keys(grupo.conteo).forEach(nivel => grupo.conteo[nivel] += Number(conteo[nivel] || 0));
           });
@@ -6611,7 +6664,7 @@
           return `<details class="teacher-group-comparison" open>
               <summary><i class="fa-solid fa-people-group"></i> Comparación por ${escapeHtml(etiquetaAgrupacion)}</summary>
               <div class="teacher-comparison-list">${filas.map(grupo => `<article>
-                  <div class="teacher-comparison-heading"><strong>${escapeHtml(grupo.nombre)}</strong><span>${grupo.estudiantes} estudiante${grupo.estudiantes === 1 ? "" : "s"} · ${grupo.total} respuestas</span></div>
+                  <div class="teacher-comparison-heading"><strong>${escapeHtml(grupo.nombre)}</strong><span>${grupo.estudiantes} estudiante${grupo.estudiantes === 1 ? "" : "s"} · ${grupo.desafiosEvaluados} desafío${grupo.desafiosEvaluados === 1 ? "" : "s"} · ${grupo.total} respuestas</span></div>
                   <div class="teacher-comparison-bar" aria-label="${escapeHtml(`Distribución de ${grupo.nombre}`)}">
                       ${SERIES_GRAFICO_SOCRATICO.map(serie => `<span class="is-${serie.nivel}" style="width:${grupo.porcentajes[serie.nivel]}%" title="${serie.etiqueta}: ${porcentajeExactoPanel(grupo.porcentajes[serie.nivel])}"></span>`).join("")}
                   </div>
@@ -6878,8 +6931,9 @@
           }
           const encabezados = [
               "Estudiante", "Email", "Curso", "División", "Turno",
+              "Desafíos evaluados",
               "Respuestas completas", "Correctas incompletas",
-              "Respuestas parciales", "Respuestas incorrectas", "Total"
+              "Respuestas parciales", "Respuestas incorrectas", "Total respuestas"
           ];
           const filas = datos.filas.map(fila => [
               fila.nombre,
@@ -6887,6 +6941,7 @@
               fila.cursoNombre,
               fila.division,
               fila.turno,
+              fila.desafiosEvaluados,
               fila.conteo.completa,
               fila.conteo.incompleta,
               fila.conteo.parcial,
@@ -6895,6 +6950,7 @@
           ]);
           filas.push([
               "TOTAL DEL GRUPO", "", "", "", "",
+              datos.totalDesafiosEvaluados,
               datos.total.completa,
               datos.total.incompleta,
               datos.total.parcial,
@@ -6906,6 +6962,8 @@
               ["Actividad", datos.actividad],
               ["Alcance", datos.alcance],
               ["Estudiantes incluidos", datos.estudiantesAlcance.length],
+              ["Criterio de inclusión", "Solo desafíos finalizados con respuestas socráticas evaluadas"],
+              ["Registros históricos excluidos", datos.registrosExcluidos],
               ["Generado", new Date().toLocaleString("es-AR")],
               []
           ];
@@ -6919,8 +6977,12 @@
       function obtenerEvolucionInformeGrupalSocratico() {
           const estudiantes = obtenerEstudiantesFiltradosInformeSocratico();
           return seccionesData.map((sec, indice) => {
+              let desafiosEvaluados = 0;
               const total = estudiantes.reduce((acumulado, estudiante) => {
-                  const conteo = obtenerConteoInformeSocratico(estudiante, sec.id);
+                  const actividades = obtenerActividadesSocraticasValidas(estudiante, sec.id);
+                  if (actividades.length) desafiosEvaluados += actividades.length;
+                  const conteo = actividades[0]?.conteo ||
+                      { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 };
                   Object.keys(acumulado).forEach(nivel => {
                       acumulado[nivel] += Number(conteo[nivel] || 0);
                   });
@@ -6931,6 +6993,7 @@
                   indice: indice + 1,
                   titulo: sec.title || `Actividad ${indice + 1}`,
                   total,
+                  desafiosEvaluados,
                   respuestas,
                   porcentajes: Object.fromEntries(
                       Object.entries(total).map(([nivel, valor]) => [
@@ -7044,15 +7107,16 @@
       function dibujarTablaEvolucionInformePDF(doc, evolucion) {
           const columnas = [
               { titulo: "N.º", x: 10, ancho: 10 },
-              { titulo: "Actividad", x: 21, ancho: 82 },
-              { titulo: "Resp.", x: 106, ancho: 16 },
-              { titulo: "Completas", x: 125, ancho: 22 },
-              { titulo: "Incompletas", x: 150, ancho: 24 },
-              { titulo: "Parciales", x: 177, ancho: 21 },
-              { titulo: "Incorrectas", x: 201, ancho: 23 },
-              { titulo: "Riesgo", x: 228, ancho: 20 },
-              { titulo: "Cambio", x: 252, ancho: 20 },
-              { titulo: "Estado", x: 275, ancho: 13 }
+              { titulo: "Actividad", x: 21, ancho: 70 },
+              { titulo: "Des.", x: 94, ancho: 13 },
+              { titulo: "Resp.", x: 109, ancho: 14 },
+              { titulo: "Completas", x: 126, ancho: 21 },
+              { titulo: "Incompletas", x: 150, ancho: 23 },
+              { titulo: "Parciales", x: 176, ancho: 20 },
+              { titulo: "Incorrectas", x: 199, ancho: 23 },
+              { titulo: "Riesgo", x: 225, ancho: 19 },
+              { titulo: "Cambio", x: 247, ancho: 19 },
+              { titulo: "Estado", x: 269, ancho: 18 }
           ];
           const porcentajeExacto = valor =>
               `${Number(valor || 0).toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
@@ -7090,18 +7154,19 @@
               doc.setFontSize(7.5);
               doc.text(String(item.indice), columnas[0].x, y);
               doc.text(tituloLineas, columnas[1].x, y);
-              doc.text(String(item.respuestas), columnas[2].x, y);
-              doc.text(porcentajeExacto(item.porcentajes.completa), columnas[3].x, y);
-              doc.text(porcentajeExacto(item.porcentajes.incompleta), columnas[4].x, y);
-              doc.text(porcentajeExacto(item.porcentajes.parcial), columnas[5].x, y);
-              doc.text(porcentajeExacto(item.porcentajes.incorrecta), columnas[6].x, y);
-              doc.text(porcentajeExacto(item.riesgo), columnas[7].x, y);
+              doc.text(String(item.desafiosEvaluados), columnas[2].x, y);
+              doc.text(String(item.respuestas), columnas[3].x, y);
+              doc.text(porcentajeExacto(item.porcentajes.completa), columnas[4].x, y);
+              doc.text(porcentajeExacto(item.porcentajes.incompleta), columnas[5].x, y);
+              doc.text(porcentajeExacto(item.porcentajes.parcial), columnas[6].x, y);
+              doc.text(porcentajeExacto(item.porcentajes.incorrecta), columnas[7].x, y);
+              doc.text(porcentajeExacto(item.riesgo), columnas[8].x, y);
               doc.text(
                   indice === 0 ? "-" : `${item.aumentoRiesgo > 0 ? "+" : ""}${porcentajeExacto(item.aumentoRiesgo)}`,
-                  columnas[8].x,
+                  columnas[9].x,
                   y
               );
-              doc.text(item.esAlerta ? "Refuerzo" : "-", columnas[9].x, y);
+              doc.text(item.esAlerta ? "Refuerzo" : "-", columnas[10].x, y);
               y += altoFila;
           });
       }
@@ -7125,13 +7190,14 @@
               item.esAlerta = indicesAlerta.has(item.indice);
           });
           const columnas = [
-              { titulo: "Estudiante", x: 12, ancho: 60 },
-              { titulo: "Grupo", x: 74, ancho: 58 },
-              { titulo: "Completas", x: 136, ancho: 24 },
-              { titulo: "Incompletas", x: 164, ancho: 26 },
-              { titulo: "Parciales", x: 194, ancho: 22 },
-              { titulo: "Incorrectas", x: 220, ancho: 24 },
-              { titulo: "Total", x: 251, ancho: 18 }
+              { titulo: "Estudiante", x: 12, ancho: 52 },
+              { titulo: "Grupo", x: 67, ancho: 47 },
+              { titulo: "Desafíos", x: 117, ancho: 18 },
+              { titulo: "Completas", x: 139, ancho: 22 },
+              { titulo: "Incompletas", x: 165, ancho: 24 },
+              { titulo: "Parciales", x: 193, ancho: 21 },
+              { titulo: "Incorrectas", x: 218, ancho: 23 },
+              { titulo: "Respuestas", x: 249, ancho: 22 }
           ];
           const dibujarEncabezado = (encabezadoY = 14) => {
               doc.setFillColor(15, 23, 42);
@@ -7151,7 +7217,7 @@
           doc.text(`Alcance: ${datos.alcance}`, 12, 27);
           doc.text(`Generado: ${new Date().toLocaleString("es-AR")} · Estudiantes incluidos: ${datos.estudiantesAlcance.length} · Con respuestas: ${datos.filas.length}`, 12, 33);
           doc.text(
-              `Totales: completas ${datos.total.completa} · incompletas ${datos.total.incompleta} · parciales ${datos.total.parcial} · incorrectas ${datos.total.incorrecta}`,
+              `Base verificada: ${datos.totalDesafiosEvaluados} desafíos finalizados · ${datos.totalRespuestas} respuestas · ${datos.registrosExcluidos} registros históricos excluidos`,
               12,
               38
           );
@@ -7167,7 +7233,7 @@
           doc.setFontSize(7);
           doc.setTextColor(100, 116, 139);
           doc.text(
-              "La distribución corresponde al filtro seleccionado. La evolución compara todas las actividades que tienen respuestas.",
+              "Los niveles cuentan respuestas socráticas. Solo se incluyen desafíos finalizados del curso actual; tablas y gráficos usan la misma base.",
               12,
               122
           );
@@ -7207,11 +7273,12 @@
               doc.setFontSize(8);
               doc.text(doc.splitTextToSize(fila.nombre, columnas[0].ancho), columnas[0].x, y);
               doc.text(doc.splitTextToSize(fila.curso || "Sin grupo", columnas[1].ancho), columnas[1].x, y);
-              doc.text(String(fila.conteo.completa), columnas[2].x, y);
-              doc.text(String(fila.conteo.incompleta), columnas[3].x, y);
-              doc.text(String(fila.conteo.parcial), columnas[4].x, y);
-              doc.text(String(fila.conteo.incorrecta), columnas[5].x, y);
-              doc.text(String(fila.total), columnas[6].x, y);
+              doc.text(String(fila.desafiosEvaluados), columnas[2].x, y);
+              doc.text(String(fila.conteo.completa), columnas[3].x, y);
+              doc.text(String(fila.conteo.incompleta), columnas[4].x, y);
+              doc.text(String(fila.conteo.parcial), columnas[5].x, y);
+              doc.text(String(fila.conteo.incorrecta), columnas[6].x, y);
+              doc.text(String(fila.total), columnas[7].x, y);
               y += altoFila;
           });
           if (y + 10 > 198) {
@@ -7222,11 +7289,12 @@
           doc.line(8, y - 3, 289, y - 3);
           doc.setFont("helvetica", "bold");
           doc.text("TOTAL DEL GRUPO", columnas[0].x, y + 2);
-          doc.text(String(datos.total.completa), columnas[2].x, y + 2);
-          doc.text(String(datos.total.incompleta), columnas[3].x, y + 2);
-          doc.text(String(datos.total.parcial), columnas[4].x, y + 2);
-          doc.text(String(datos.total.incorrecta), columnas[5].x, y + 2);
-          doc.text(String(datos.totalRespuestas), columnas[6].x, y + 2);
+          doc.text(String(datos.totalDesafiosEvaluados), columnas[2].x, y + 2);
+          doc.text(String(datos.total.completa), columnas[3].x, y + 2);
+          doc.text(String(datos.total.incompleta), columnas[4].x, y + 2);
+          doc.text(String(datos.total.parcial), columnas[5].x, y + 2);
+          doc.text(String(datos.total.incorrecta), columnas[6].x, y + 2);
+          doc.text(String(datos.totalRespuestas), columnas[7].x, y + 2);
           guardarPDFProfesor(doc, `Informe_socratico_${datos.actividad}`);
       }
 
@@ -7357,7 +7425,8 @@
       function calcularProgresoEstudiante(d) {
           const finalizadas = d.finalizadas || {};
           const total = seccionesData.length || 1;
-          return Math.round((Object.values(finalizadas).filter(Boolean).length / total) * 100);
+          const completadasValidas = seccionesData.filter(sec => finalizadas[sec.id] === true).length;
+          return Math.round((completadasValidas / total) * 100);
       }
       function obtenerNotaDesafioEstudiante(d, sectionId, resultado = null) {
           const ajuste = d?.notasDesafiosDocente?.[sectionId];
@@ -8590,7 +8659,10 @@
           const notaFinalEditable = notaDefinitiva !== '—' ? notaDefinitiva : notaCalculada;
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
           const resumenConsultasIA = resumirConsultasIAEstudiante(d);
-          const resumenNivelesAnalista = resumirNivelesAnalistaEstudiante(historial);
+          const actividadesSocraticasValidas = obtenerActividadesSocraticasValidas(d);
+          const resumenNivelesAnalista = obtenerConteoInformeSocratico(d);
+          const respuestasSocraticasValidas = Object.values(resumenNivelesAnalista)
+              .reduce((suma, valor) => suma + Number(valor || 0), 0);
           const eventos = Array.isArray(d.eventosSalidasPestana)
               ? d.eventosSalidasPestana
               : (Array.isArray(d.eventosSalidasPestana) ? d.eventosSalidasPestana : []);
@@ -8841,6 +8913,8 @@
                   <div class="teacher-detail-stat"><small>Curso y división</small><strong>${escapeHtml(`${e.curso || '—'} ${e.division || ''}`)}</strong></div>
                   <div class="teacher-detail-stat"><small>Turno</small><strong>${escapeHtml(e.turno || '—')}</strong></div>
                   <div class="teacher-detail-stat"><small>Progreso</small><strong>${progreso}%</strong></div>
+                  <div class="teacher-detail-stat"><small>Desafíos con evaluación socrática</small><strong>${actividadesSocraticasValidas.length}</strong></div>
+                  <div class="teacher-detail-stat"><small>Total de respuestas socráticas</small><strong>${respuestasSocraticasValidas}</strong></div>
                   <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Nota calculada</small><strong>${notaCalculada === '—' ? 'Pendiente' : `${notaCalculada}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === '—' ? 'Pendiente de confirmación' : `${notaDefinitiva}/10`}</strong></div>
