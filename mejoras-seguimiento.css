@@ -3887,6 +3887,265 @@ body.teacher-light-mode .teacher-filter-group h4{
 .teacher-chart-legend .is-incompleta::before{background:#0ea5e9}
 .teacher-chart-legend .is-parcial::before{background:#f59e0b}
 .teacher-chart-legend .is-incorrecta::before{background:#ef4444}
+.teacher-grade-analysis{
+  margin-bottom:.85rem;
+  padding:.75rem;
+  border:1px solid rgba(14,165,233,.3);
+  border-radius:6px;
+  background:rgba(14,165,233,.055);
+}
+.teacher-grade-analysis>header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:.8rem;
+  margin-bottom:.7rem;
+}
+.teacher-grade-analysis>header>div{
+  display:flex;
+  align-items:center;
+  gap:.4rem;
+}
+.teacher-grade-analysis>header small{
+  max-width:620px;
+  color:var(--text-muted);
+  font-size:.68rem;
+  line-height:1.4;
+  text-align:right;
+}
+.teacher-grade-summary{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:.55rem;
+  margin-bottom:.65rem;
+}
+.teacher-grade-summary>div{
+  display:grid;
+  gap:.15rem;
+  padding:.6rem;
+  border:1px solid rgba(148,163,184,.22);
+  border-radius:6px;
+  background:rgba(15,23,42,.3);
+}
+.teacher-grade-summary small,
+.teacher-grade-summary span{
+  color:var(--text-muted);
+  font-size:.65rem;
+}
+.teacher-grade-summary strong{
+  color:#e0f2fe;
+  font-size:1.2rem;
+}
+.teacher-grade-charts{
+  display:grid;
+  grid-template-columns:minmax(320px,.8fr) minmax(480px,1.4fr);
+  gap:.7rem;
+}
+.teacher-grade-legend{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:.3rem .65rem;
+  color:var(--text-muted);
+  font-size:.63rem;
+}
+.teacher-grade-legend span::before{
+  content:"";
+  display:inline-block;
+  width:8px;
+  height:8px;
+  margin-right:.25rem;
+}
+.teacher-grade-legend .is-academic::before{background:#0ea5e9}
+.teacher-grade-legend .is-calculated::before{background:#f59e0b}
+.teacher-grade-legend .is-final::before{background:#22c55e}
+.teacher-grade-distribution{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(55px,1fr));
+  gap:.55rem;
+  min-height:190px;
+  align-items:end;
+}
+.teacher-grade-distribution-group{
+  display:grid;
+  grid-template-rows:140px auto auto;
+  gap:.2rem;
+  min-width:0;
+  text-align:center;
+}
+.teacher-grade-distribution-bars{
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  gap:5px;
+  min-height:140px;
+  border-bottom:1px solid rgba(148,163,184,.4);
+  background:repeating-linear-gradient(to top,transparent 0,transparent 33px,rgba(148,163,184,.12) 34px);
+}
+.teacher-grade-distribution-bars span{
+  width:30%;
+  min-height:2px;
+}
+.teacher-grade-distribution-bars .is-academic{background:#0ea5e9}
+.teacher-grade-distribution-bars .is-final{background:#22c55e}
+.teacher-grade-distribution-group strong{font-size:.72rem}
+.teacher-grade-distribution-group small{
+  color:var(--text-muted);
+  font-size:.62rem;
+}
+.teacher-grade-student-list{
+  display:grid;
+  gap:.45rem;
+  max-height:290px;
+  overflow:auto;
+  padding-right:.25rem;
+}
+.teacher-grade-student{
+  display:grid;
+  grid-template-columns:minmax(135px,.7fr) minmax(220px,1.4fr) 125px;
+  gap:.55rem;
+  align-items:center;
+}
+.teacher-grade-student>div:first-child{
+  display:grid;
+  min-width:0;
+}
+.teacher-grade-student>div:first-child strong{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:.7rem;
+}
+.teacher-grade-student>div:first-child small{
+  color:var(--text-muted);
+  font-size:.6rem;
+}
+.teacher-grade-track-set{
+  display:grid;
+  gap:3px;
+  min-width:0;
+}
+.teacher-grade-track-set span{
+  display:block;
+  min-height:5px;
+  max-width:100%;
+  border-radius:2px;
+}
+.teacher-grade-track-set .is-academic{background:#0ea5e9}
+.teacher-grade-track-set .is-calculated{background:#f59e0b}
+.teacher-grade-track-set .is-final{background:#22c55e}
+.teacher-grade-values{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:.25rem;
+  color:var(--text-muted);
+  font-size:.63rem;
+  text-align:center;
+}
+.teacher-grade-charts-secondary{
+  margin-top:.7rem;
+}
+.teacher-grade-svg-chart{
+  min-width:0;
+}
+.teacher-grade-svg-chart svg{
+  display:block;
+  width:100%;
+  min-height:220px;
+  overflow:visible;
+}
+.teacher-grade-svg-chart>small{
+  display:block;
+  margin-top:.25rem;
+  color:var(--text-muted);
+  font-size:.63rem;
+}
+.teacher-grade-chart-grid line{
+  stroke:rgba(148,163,184,.2);
+  stroke-width:1;
+}
+.teacher-grade-chart-grid text,
+.teacher-grade-chart-labels text{
+  fill:var(--text-muted);
+  font-size:18px;
+}
+.teacher-grade-evolution-line{
+  fill:none;
+  stroke:#0ea5e9;
+  stroke-width:5;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.teacher-grade-evolution-point{
+  fill:#0ea5e9;
+  stroke:#e0f2fe;
+  stroke-width:3;
+}
+.teacher-grade-scatter-point{
+  stroke:rgba(255,255,255,.9);
+  stroke-width:3;
+}
+.teacher-grade-scatter-point.is-pending{fill:#0ea5e9}
+.teacher-grade-scatter-point.is-confirmed{fill:#22c55e}
+.teacher-grade-reference-line{
+  stroke:#f59e0b;
+  stroke-width:3;
+  stroke-dasharray:10 7;
+}
+.teacher-grade-followup{
+  margin-top:.7rem;
+  border:1px solid rgba(148,163,184,.24);
+  border-radius:6px;
+  background:rgba(15,23,42,.2);
+}
+.teacher-grade-followup summary{
+  padding:.65rem .75rem;
+  cursor:pointer;
+  font-size:.75rem;
+  font-weight:700;
+}
+.teacher-grade-followup summary i{
+  margin-right:.35rem;
+  color:#38bdf8;
+}
+.teacher-grade-followup .teacher-group-report-table{
+  margin:0 .65rem .65rem;
+}
+.teacher-group-report-table tr.is-grade-pending{
+  background:rgba(245,158,11,.06);
+}
+.teacher-grade-status{
+  display:inline-flex;
+  align-items:center;
+  min-height:22px;
+  padding:.2rem .4rem;
+  border:1px solid transparent;
+  border-radius:4px;
+  font-size:.62rem;
+  font-weight:700;
+  white-space:nowrap;
+}
+.teacher-grade-status.is-pending{
+  border-color:rgba(245,158,11,.4);
+  background:rgba(245,158,11,.12);
+  color:#fcd34d;
+}
+.teacher-grade-status.is-confirmed{
+  border-color:rgba(34,197,94,.4);
+  background:rgba(34,197,94,.12);
+  color:#86efac;
+}
+@media(max-width:980px){
+  .teacher-grade-charts{grid-template-columns:minmax(0,1fr)}
+  .teacher-grade-student{grid-template-columns:minmax(120px,.7fr) minmax(180px,1.4fr) 110px}
+}
+@media(max-width:620px){
+  .teacher-grade-analysis>header{display:grid}
+  .teacher-grade-analysis>header small{text-align:left}
+  .teacher-grade-summary{grid-template-columns:minmax(0,1fr)}
+  .teacher-grade-student{grid-template-columns:minmax(0,1fr)}
+  .teacher-grade-values{max-width:180px}
+}
 .teacher-evolution-chart svg{
   display:block;
   width:100%;

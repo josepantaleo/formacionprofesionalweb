@@ -6272,6 +6272,9 @@
                       conteo,
                       total,
                       desafiosEvaluados: actividades.length,
+                      promedioAcademico: calcularNotaEstudiante(d),
+                      notaCalculada: calcularNotaProvisionalEstudiante(d),
+                      notaFinal: calcularNotaDefinitivaEstudiante(d),
                       revision: conteo.parcial + conteo.incorrecta
                   };
               })
@@ -6346,6 +6349,7 @@
                   <div class="is-incorrecta"><small>Incorrectas</small><strong>${total.incorrecta}</strong><span>${porcentaje("incorrecta")}%</span></div>
               </div>
               ${componenteSeguro("Gráficos de distribución y evolución", () => renderGraficosInformeGrupalSocratico(datos, evolucion))}
+              ${componenteSeguro("Gráficos de notas", () => renderGraficosNotasProfesor(datos.estudiantesAlcance))}
               ${componenteSeguro("Análisis por criterio", () => renderAnalisisCriteriosSocraticos(datos))}
               ${componenteSeguro("Alertas de evolución", () => renderAlertasEvolucionSocratica(alertas))}
               ${componenteSeguro("Tabla de evolución", () => renderTablaEvolucionPanelSocratico(evolucion, alertas))}
@@ -6501,6 +6505,241 @@
                   </div>` : `<p class="teacher-group-report-empty">Aún no hay actividades respondidas para mostrar evolución.</p>`}
               </section>
           </div>`;
+      }
+
+      const INTERVALOS_NOTAS_PROFESOR = [
+          { etiqueta: "0–3,9", minimo: 0, maximo: 4, color: "#ef4444" },
+          { etiqueta: "4–5,9", minimo: 4, maximo: 6, color: "#f59e0b" },
+          { etiqueta: "6–7,9", minimo: 6, maximo: 8, color: "#0ea5e9" },
+          { etiqueta: "8–10", minimo: 8, maximo: 10.01, color: "#22c55e" }
+      ];
+
+      function obtenerDatosGraficosNotasProfesor(estudiantes) {
+          const filas = estudiantes.map(estudiante => {
+              const academicaTexto = calcularNotaEstudiante(estudiante);
+              const calculadaTexto = calcularNotaProvisionalEstudiante(estudiante);
+              const finalTexto = calcularNotaDefinitivaEstudiante(estudiante);
+              return {
+                  nombre: estudiante.estudiante?.nombre || estudiante.nombreGoogle || estudiante.email || "Sin nombre",
+                  grupo: [
+                      estudiante.estudiante?.curso,
+                      estudiante.estudiante?.division,
+                      estudiante.estudiante?.turno
+                  ].filter(Boolean).join(" · "),
+                  academica: academicaTexto === "—" ? null : Number(academicaTexto),
+                  calculada: calculadaTexto === "—" ? null : Number(calculadaTexto),
+                  final: finalTexto === "—" ? null : Number(finalTexto),
+                  progreso: calcularProgresoEstudiante(estudiante),
+                  desafiosConNota: obtenerNotasDesafiosFinalizadosEstudiante(estudiante).length,
+                  desafiosFinalizados: seccionesData.filter(sec => estudiante?.finalizadas?.[sec.id] === true).length
+              };
+          }).filter(fila => fila.academica !== null || fila.final !== null)
+            .sort((a, b) => a.nombre.localeCompare(b.nombre));
+          const promedio = clave => {
+              const valores = filas.map(fila => fila[clave]).filter(Number.isFinite);
+              return valores.length ? valores.reduce((suma, valor) => suma + valor, 0) / valores.length : null;
+          };
+          const distribuir = clave => INTERVALOS_NOTAS_PROFESOR.map(intervalo => ({
+              ...intervalo,
+              cantidad: filas.filter(fila =>
+                  Number.isFinite(fila[clave]) &&
+                  fila[clave] >= intervalo.minimo &&
+                  fila[clave] < intervalo.maximo
+                  ).length
+          }));
+          const evolucion = seccionesData.map((sec, indice) => {
+              const valores = estudiantes.reduce((notas, estudiante) => {
+                  if (estudiante?.finalizadas?.[sec.id] !== true) return notas;
+                  const nota = obtenerNotaDesafioEstudiante(
+                      estudiante,
+                      sec.id,
+                      estudiante?.historialResultados?.[sec.id] || {}
+                  );
+                  if (Number.isFinite(nota)) notas.push(nota);
+                  return notas;
+              }, []);
+              return {
+                  indice: indice + 1,
+                  id: sec.id,
+                  titulo: sec.title || `Actividad ${indice + 1}`,
+                  estudiantes: valores.length,
+                  promedio: valores.length
+                      ? Number((valores.reduce((suma, valor) => suma + valor, 0) / valores.length).toFixed(2))
+                      : null,
+                  minima: valores.length ? Math.min(...valores) : null,
+                  maxima: valores.length ? Math.max(...valores) : null
+              };
+          }).filter(item => item.promedio !== null);
+          return {
+              filas,
+              promedioAcademico: promedio("academica"),
+              promedioCalculado: promedio("calculada"),
+              promedioFinal: promedio("final"),
+              conPromedio: filas.filter(fila => Number.isFinite(fila.academica)).length,
+              conFinal: filas.filter(fila => Number.isFinite(fila.final)).length,
+              distribucionAcademica: distribuir("academica"),
+              distribucionFinal: distribuir("final"),
+              evolucion
+          };
+      }
+
+      function formatearNotaGrafico(valor) {
+          return Number.isFinite(valor) ? Number(valor).toLocaleString("es-AR", {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1
+          }) : "Pendiente";
+      }
+
+      function renderGraficosNotasProfesor(estudiantes) {
+          const datos = obtenerDatosGraficosNotasProfesor(estudiantes);
+          if (!datos.filas.length) return "";
+          const maximoDistribucion = Math.max(
+              1,
+              ...datos.distribucionAcademica.map(item => item.cantidad),
+              ...datos.distribucionFinal.map(item => item.cantidad)
+          );
+          const distribucion = datos.distribucionAcademica.map((intervalo, indice) => {
+              const finales = datos.distribucionFinal[indice];
+              return `<div class="teacher-grade-distribution-group">
+                  <div class="teacher-grade-distribution-bars">
+                      <span class="is-academic" style="height:${intervalo.cantidad * 100 / maximoDistribucion}%" title="Promedio académico ${intervalo.etiqueta}: ${intervalo.cantidad}"></span>
+                      <span class="is-final" style="height:${finales.cantidad * 100 / maximoDistribucion}%" title="Nota final ${intervalo.etiqueta}: ${finales.cantidad}"></span>
+                  </div>
+                  <strong>${intervalo.etiqueta}</strong>
+                  <small>${intervalo.cantidad} actual · ${finales.cantidad} final</small>
+              </div>`;
+          }).join("");
+          const anchoGrafico = 1000;
+          const altoGrafico = 250;
+          const margenX = 54;
+          const margenY = 24;
+          const anchoUtil = anchoGrafico - margenX * 2;
+          const altoUtil = altoGrafico - margenY * 2 - 20;
+          const pasoEvolucion = datos.evolucion.length > 1
+              ? anchoUtil / (datos.evolucion.length - 1)
+              : 0;
+          const puntosEvolucion = datos.evolucion.map((item, indice) => {
+              const x = datos.evolucion.length > 1
+                  ? margenX + indice * pasoEvolucion
+                  : anchoGrafico / 2;
+              const y = margenY + altoUtil - altoUtil * item.promedio / 10;
+              return { ...item, x, y };
+          });
+          const lineaEvolucion = puntosEvolucion
+              .map(punto => `${punto.x.toFixed(1)},${punto.y.toFixed(1)}`)
+              .join(" ");
+          const ejesNotas = [0, 2, 4, 6, 8, 10].map(valor => {
+              const y = margenY + altoUtil - altoUtil * valor / 10;
+              return `<line x1="${margenX}" y1="${y}" x2="${anchoGrafico - margenX}" y2="${y}"></line>
+                  <text x="${margenX - 9}" y="${y + 4}" text-anchor="end">${valor}</text>`;
+          }).join("");
+          const circulosEvolucion = puntosEvolucion.map(punto =>
+              `<circle class="teacher-grade-evolution-point" cx="${punto.x.toFixed(1)}" cy="${punto.y.toFixed(1)}" r="6">
+                  <title>${escapeHtml(`${punto.indice}. ${punto.titulo}: promedio ${formatearNotaGrafico(punto.promedio)}, ${punto.estudiantes} estudiantes, mínimo ${formatearNotaGrafico(punto.minima)}, máximo ${formatearNotaGrafico(punto.maxima)}`)}</title>
+              </circle>`
+          ).join("");
+          const etiquetasEvolucion = puntosEvolucion.map(punto =>
+              `<text x="${punto.x.toFixed(1)}" y="${altoGrafico - 7}" text-anchor="middle">${punto.indice}</text>`
+          ).join("");
+          const puntosRendimiento = datos.filas.filter(fila => Number.isFinite(fila.academica)).map(fila => {
+              const x = margenX + anchoUtil * fila.progreso / 100;
+              const y = margenY + altoUtil - altoUtil * fila.academica / 10;
+              const clase = fila.final === null ? "is-pending" : "is-confirmed";
+              return `<circle class="teacher-grade-scatter-point ${clase}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="6">
+                  <title>${escapeHtml(`${fila.nombre}: avance ${fila.progreso}%, promedio ${formatearNotaGrafico(fila.academica)}, final ${formatearNotaGrafico(fila.final)}`)}</title>
+              </circle>`;
+          }).join("");
+          const ejesAvance = [0, 25, 50, 75, 100].map(valor => {
+              const x = margenX + anchoUtil * valor / 100;
+              return `<line x1="${x}" y1="${margenY}" x2="${x}" y2="${margenY + altoUtil}"></line>
+                  <text x="${x}" y="${altoGrafico - 7}" text-anchor="middle">${valor}%</text>`;
+          }).join("");
+          const filasSeguimiento = [...datos.filas].sort((a, b) => {
+              if ((a.final === null) !== (b.final === null)) return a.final === null ? -1 : 1;
+              return (a.academica ?? 99) - (b.academica ?? 99) || a.nombre.localeCompare(b.nombre);
+          });
+          return `<section class="teacher-grade-analysis">
+              <header>
+                  <div><i class="fa-solid fa-chart-column"></i><strong>Notas obtenidas hasta el momento y nota final</strong></div>
+                  <small>Solo considera notas de desafíos válidos finalizados. La nota final aparece únicamente cuando fue confirmada por el docente.</small>
+              </header>
+              <div class="teacher-grade-summary">
+                  <div><small>Promedio académico grupal</small><strong>${formatearNotaGrafico(datos.promedioAcademico)}</strong><span>${datos.conPromedio} estudiantes</span></div>
+                  <div><small>Promedio calculado grupal</small><strong>${formatearNotaGrafico(datos.promedioCalculado)}</strong><span>Incluye penalizaciones configuradas</span></div>
+                  <div><small>Promedio final confirmado</small><strong>${formatearNotaGrafico(datos.promedioFinal)}</strong><span>${datos.conFinal} de ${datos.filas.length} confirmadas</span></div>
+              </div>
+              <div class="teacher-grade-charts">
+                  <article class="teacher-chart-panel">
+                      <header><div><strong>Distribución por intervalos</strong><small>Promedio actual frente a nota final confirmada</small></div>
+                          <div class="teacher-grade-legend"><span class="is-academic">Promedio actual</span><span class="is-final">Nota final</span></div>
+                      </header>
+                      <div class="teacher-grade-distribution">${distribucion}</div>
+                  </article>
+                  <article class="teacher-chart-panel">
+                      <header><div><strong>Comparación por estudiante</strong><small>Escala de 0 a 10</small></div>
+                          <div class="teacher-grade-legend"><span class="is-academic">Académica</span><span class="is-calculated">Calculada</span><span class="is-final">Final</span></div>
+                      </header>
+                      <div class="teacher-grade-student-list">${datos.filas.map(fila => `<div class="teacher-grade-student">
+                          <div><strong>${escapeHtml(fila.nombre)}</strong><small>${fila.desafiosConNota} desafío${fila.desafiosConNota === 1 ? "" : "s"} con nota</small></div>
+                          <div class="teacher-grade-track-set">
+                              <span class="is-academic" style="width:${Number(fila.academica || 0) * 10}%" title="Promedio académico: ${formatearNotaGrafico(fila.academica)}"></span>
+                              <span class="is-calculated" style="width:${Number(fila.calculada || 0) * 10}%" title="Nota calculada: ${formatearNotaGrafico(fila.calculada)}"></span>
+                              <span class="is-final" style="width:${Number(fila.final || 0) * 10}%" title="Nota final: ${formatearNotaGrafico(fila.final)}"></span>
+                          </div>
+                          <div class="teacher-grade-values"><span>${formatearNotaGrafico(fila.academica)}</span><span>${formatearNotaGrafico(fila.calculada)}</span><span>${formatearNotaGrafico(fila.final)}</span></div>
+                      </div>`).join("")}</div>
+                  </article>
+              </div>
+              <div class="teacher-grade-charts teacher-grade-charts-secondary">
+                  <article class="teacher-chart-panel">
+                      <header><div><strong>Evolución del promedio por actividad</strong><small>Promedio exacto sobre desafíos finalizados con nota</small></div></header>
+                      ${datos.evolucion.length ? `<div class="teacher-grade-svg-chart">
+                          <svg viewBox="0 0 ${anchoGrafico} ${altoGrafico}" role="img" aria-label="Evolución del promedio de notas por actividad">
+                              <g class="teacher-grade-chart-grid">${ejesNotas}</g>
+                              <polyline class="teacher-grade-evolution-line" points="${lineaEvolucion}"></polyline>
+                              <g>${circulosEvolucion}</g>
+                              <g class="teacher-grade-chart-labels">${etiquetasEvolucion}</g>
+                          </svg>
+                          <small>Eje horizontal: actividad. Posá el cursor sobre un punto para ver promedio, muestra, mínimo y máximo.</small>
+                      </div>` : `<p class="teacher-group-report-empty">No hay notas por actividad para mostrar la evolución.</p>`}
+                  </article>
+                  <article class="teacher-chart-panel">
+                      <header><div><strong>Avance y rendimiento</strong><small>Cada punto representa un estudiante</small></div>
+                          <div class="teacher-grade-legend"><span class="is-academic">Final pendiente</span><span class="is-final">Final confirmada</span></div>
+                      </header>
+                      <div class="teacher-grade-svg-chart">
+                          <svg viewBox="0 0 ${anchoGrafico} ${altoGrafico}" role="img" aria-label="Relación entre avance y promedio académico">
+                              <g class="teacher-grade-chart-grid">${ejesNotas}${ejesAvance}</g>
+                              <line class="teacher-grade-reference-line" x1="${margenX}" y1="${margenY + altoUtil * .4}" x2="${anchoGrafico - margenX}" y2="${margenY + altoUtil * .4}"></line>
+                              <g>${puntosRendimiento}</g>
+                          </svg>
+                          <small>Eje X: porcentaje de desafíos finalizados. Eje Y: promedio académico. La línea señala nota 6.</small>
+                      </div>
+                  </article>
+              </div>
+              <details class="teacher-grade-followup" open>
+                  <summary><i class="fa-solid fa-table-list"></i> Tabla de seguimiento de calificaciones</summary>
+                  <div class="teacher-group-report-table"><table>
+                      <thead><tr><th>Estudiante</th><th>Grupo</th><th>Avance</th><th>Desafíos con nota</th><th>Promedio</th><th>Calculada</th><th>Final</th><th>Diferencia final</th><th>Estado</th></tr></thead>
+                      <tbody>${filasSeguimiento.map(fila => {
+                          const diferencia = Number.isFinite(fila.final) && Number.isFinite(fila.calculada)
+                              ? Number((fila.final - fila.calculada).toFixed(1))
+                              : null;
+                          return `<tr class="${fila.final === null ? "is-grade-pending" : ""}">
+                              <td><strong>${escapeHtml(fila.nombre)}</strong></td>
+                              <td>${escapeHtml(fila.grupo || "Sin grupo")}</td>
+                              <td>${fila.progreso}%</td>
+                              <td>${fila.desafiosConNota}/${fila.desafiosFinalizados}</td>
+                              <td>${formatearNotaGrafico(fila.academica)}</td>
+                              <td>${formatearNotaGrafico(fila.calculada)}</td>
+                              <td>${formatearNotaGrafico(fila.final)}</td>
+                              <td>${diferencia === null ? "—" : `${diferencia > 0 ? "+" : ""}${formatearNotaGrafico(diferencia)}`}</td>
+                              <td><span class="teacher-grade-status ${fila.final === null ? "is-pending" : "is-confirmed"}">${fila.final === null ? "Final pendiente" : "Confirmada"}</span></td>
+                          </tr>`;
+                      }).join("")}</tbody>
+                  </table></div>
+              </details>
+          </section>`;
       }
 
       function porcentajeExactoPanel(valor) {
@@ -6933,7 +7172,8 @@
               "Estudiante", "Email", "Curso", "División", "Turno",
               "Desafíos evaluados",
               "Respuestas completas", "Correctas incompletas",
-              "Respuestas parciales", "Respuestas incorrectas", "Total respuestas"
+              "Respuestas parciales", "Respuestas incorrectas", "Total respuestas",
+              "Promedio académico", "Nota calculada", "Nota final confirmada"
           ];
           const filas = datos.filas.map(fila => [
               fila.nombre,
@@ -6946,7 +7186,10 @@
               fila.conteo.incompleta,
               fila.conteo.parcial,
               fila.conteo.incorrecta,
-              fila.total
+              fila.total,
+              fila.promedioAcademico,
+              fila.notaCalculada,
+              fila.notaFinal
           ]);
           filas.push([
               "TOTAL DEL GRUPO", "", "", "", "",
@@ -6955,7 +7198,8 @@
               datos.total.incompleta,
               datos.total.parcial,
               datos.total.incorrecta,
-              datos.totalRespuestas
+              datos.totalRespuestas,
+              "", "", ""
           ]);
           const metadatos = [
               ["Informe grupal de respuestas socráticas"],
@@ -7104,6 +7348,229 @@
           doc.text("Eje X: número de actividad según el orden del curso.", x, y + alto + 2);
       }
 
+      function dibujarGraficosNotasInformePDF(doc, estudiantes, alcance) {
+          const datos = obtenerDatosGraficosNotasProfesor(estudiantes);
+          if (!datos.filas.length) return;
+          doc.addPage("a4", "landscape");
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(14);
+          doc.setTextColor(15, 23, 42);
+          doc.text("Notas obtenidas hasta el momento y nota final", 12, 13);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(8);
+          doc.text(`Alcance: ${alcance}`, 12, 19);
+          doc.text(
+              `Promedio académico grupal: ${formatearNotaGrafico(datos.promedioAcademico)} · Promedio calculado: ${formatearNotaGrafico(datos.promedioCalculado)} · Promedio final confirmado: ${formatearNotaGrafico(datos.promedioFinal)}`,
+              12,
+              25
+          );
+          doc.text(
+              `${datos.conPromedio} estudiantes con promedio · ${datos.conFinal} con nota final confirmada. Solo se consideran desafíos válidos finalizados.`,
+              12,
+              30
+          );
+
+          const inicioX = 24;
+          const baseY = 112;
+          const altoGrafico = 68;
+          const anchoGrupo = 55;
+          const maximo = Math.max(
+              1,
+              ...datos.distribucionAcademica.map(item => item.cantidad),
+              ...datos.distribucionFinal.map(item => item.cantidad)
+          );
+          doc.setDrawColor(148, 163, 184);
+          doc.line(inicioX - 5, baseY, inicioX + anchoGrupo * 4 - 5, baseY);
+          datos.distribucionAcademica.forEach((intervalo, indice) => {
+              const final = datos.distribucionFinal[indice];
+              const x = inicioX + indice * anchoGrupo;
+              const altoAcademica = altoGrafico * intervalo.cantidad / maximo;
+              const altoFinal = altoGrafico * final.cantidad / maximo;
+              doc.setFillColor(14, 165, 233);
+              doc.rect(x, baseY - altoAcademica, 15, altoAcademica, "F");
+              doc.setFillColor(34, 197, 94);
+              doc.rect(x + 18, baseY - altoFinal, 15, altoFinal, "F");
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(8);
+              doc.setTextColor(15, 23, 42);
+              doc.text(String(intervalo.cantidad), x + 7.5, baseY - altoAcademica - 2, { align: "center" });
+              doc.text(String(final.cantidad), x + 25.5, baseY - altoFinal - 2, { align: "center" });
+              doc.setFont("helvetica", "normal");
+              doc.text(intervalo.etiqueta, x + 16.5, baseY + 6, { align: "center" });
+          });
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10);
+          doc.text("Distribución por intervalos", 18, 39);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7);
+          doc.setFillColor(14, 165, 233);
+          doc.rect(18, 44, 4, 4, "F");
+          doc.text("Promedio académico actual", 24, 47);
+          doc.setFillColor(34, 197, 94);
+          doc.rect(68, 44, 4, 4, "F");
+          doc.text("Nota final confirmada", 74, 47);
+
+          const tablaX = 183;
+          doc.setFillColor(15, 23, 42);
+          doc.rect(tablaX, 38, 102, 9, "F");
+          doc.setTextColor(255, 255, 255);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(7.5);
+          doc.text("Estudiante", tablaX + 3, 44);
+          doc.text("Acad.", tablaX + 59, 44);
+          doc.text("Calc.", tablaX + 73, 44);
+          doc.text("Final", tablaX + 87, 44);
+          let y = 53;
+          datos.filas.slice(0, 20).forEach((fila, indice) => {
+              if (indice % 2 === 1) {
+                  doc.setFillColor(241, 245, 249);
+                  doc.rect(tablaX, y - 4, 102, 7, "F");
+              }
+              doc.setTextColor(15, 23, 42);
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(7);
+              doc.text(doc.splitTextToSize(fila.nombre, 53)[0], tablaX + 3, y);
+              doc.text(formatearNotaGrafico(fila.academica), tablaX + 60, y);
+              doc.text(formatearNotaGrafico(fila.calculada), tablaX + 74, y);
+              doc.text(formatearNotaGrafico(fila.final), tablaX + 88, y);
+              y += 7;
+          });
+          if (datos.filas.length > 20) {
+              doc.setFontSize(7);
+              doc.setTextColor(100, 116, 139);
+              doc.text(`Se muestran 20 de ${datos.filas.length} estudiantes; el detalle completo figura en las páginas siguientes.`, tablaX, 198);
+          }
+
+          if (datos.evolucion.length) {
+              doc.addPage("a4", "landscape");
+              doc.setTextColor(15, 23, 42);
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(13);
+              doc.text("Evolución de notas por actividad", 12, 13);
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(7.5);
+              doc.text("El promedio se calcula solo con estudiantes que finalizaron la actividad y tienen una nota válida.", 12, 19);
+              const graficoX = 18;
+              const graficoY = 31;
+              const graficoAncho = 155;
+              const graficoAlto = 78;
+              [0, 2, 4, 6, 8, 10].forEach(valor => {
+                  const puntoY = graficoY + graficoAlto - graficoAlto * valor / 10;
+                  doc.setDrawColor(226, 232, 240);
+                  doc.line(graficoX, puntoY, graficoX + graficoAncho, puntoY);
+                  doc.setTextColor(100, 116, 139);
+                  doc.text(String(valor), graficoX - 3, puntoY + 1, { align: "right" });
+              });
+              const paso = datos.evolucion.length > 1
+                  ? graficoAncho / (datos.evolucion.length - 1)
+                  : 0;
+              let anterior = null;
+              datos.evolucion.forEach((item, indice) => {
+                  const puntoX = datos.evolucion.length > 1
+                      ? graficoX + indice * paso
+                      : graficoX + graficoAncho / 2;
+                  const puntoY = graficoY + graficoAlto - graficoAlto * item.promedio / 10;
+                  doc.setDrawColor(14, 165, 233);
+                  doc.setFillColor(14, 165, 233);
+                  doc.setLineWidth(.7);
+                  if (anterior) doc.line(anterior.x, anterior.y, puntoX, puntoY);
+                  doc.circle(puntoX, puntoY, 1.4, "F");
+                  doc.setTextColor(71, 85, 105);
+                  doc.setFontSize(6.5);
+                  doc.text(String(item.indice), puntoX, graficoY + graficoAlto + 6, { align: "center" });
+                  anterior = { x: puntoX, y: puntoY };
+              });
+              doc.setLineWidth(.2);
+
+              const tablaEvolucionX = 183;
+              doc.setFillColor(15, 23, 42);
+              doc.rect(tablaEvolucionX, 27, 102, 9, "F");
+              doc.setTextColor(255, 255, 255);
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(7);
+              doc.text("Act.", tablaEvolucionX + 3, 33);
+              doc.text("Prom.", tablaEvolucionX + 17, 33);
+              doc.text("Mín.", tablaEvolucionX + 35, 33);
+              doc.text("Máx.", tablaEvolucionX + 50, 33);
+              doc.text("Estudiantes", tablaEvolucionX + 67, 33);
+              let yEvolucion = 42;
+              datos.evolucion.slice(0, 20).forEach((item, indice) => {
+                  if (indice % 2 === 1) {
+                      doc.setFillColor(241, 245, 249);
+                      doc.rect(tablaEvolucionX, yEvolucion - 4, 102, 7, "F");
+                  }
+                  doc.setTextColor(15, 23, 42);
+                  doc.setFont("helvetica", "normal");
+                  doc.text(String(item.indice), tablaEvolucionX + 3, yEvolucion);
+                  doc.text(formatearNotaGrafico(item.promedio), tablaEvolucionX + 17, yEvolucion);
+                  doc.text(formatearNotaGrafico(item.minima), tablaEvolucionX + 35, yEvolucion);
+                  doc.text(formatearNotaGrafico(item.maxima), tablaEvolucionX + 50, yEvolucion);
+                  doc.text(String(item.estudiantes), tablaEvolucionX + 74, yEvolucion);
+                  yEvolucion += 7;
+              });
+          }
+
+          const columnasSeguimiento = [
+              { titulo: "Estudiante", x: 10, ancho: 66 },
+              { titulo: "Grupo", x: 79, ancho: 48 },
+              { titulo: "Avance", x: 130, ancho: 18 },
+              { titulo: "Con nota", x: 151, ancho: 18 },
+              { titulo: "Prom.", x: 172, ancho: 18 },
+              { titulo: "Calc.", x: 193, ancho: 18 },
+              { titulo: "Final", x: 214, ancho: 18 },
+              { titulo: "Diferencia", x: 235, ancho: 22 },
+              { titulo: "Estado", x: 260, ancho: 27 }
+          ];
+          const dibujarEncabezadoSeguimiento = () => {
+              doc.setFillColor(15, 23, 42);
+              doc.rect(8, 18, 281, 9, "F");
+              doc.setTextColor(255, 255, 255);
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(7.2);
+              columnasSeguimiento.forEach(columna => doc.text(columna.titulo, columna.x, 24));
+          };
+          doc.addPage("a4", "landscape");
+          doc.setTextColor(15, 23, 42);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(12);
+          doc.text("Seguimiento exacto de calificaciones", 12, 10);
+          dibujarEncabezadoSeguimiento();
+          let ySeguimiento = 34;
+          [...datos.filas].sort((a, b) => {
+              if ((a.final === null) !== (b.final === null)) return a.final === null ? -1 : 1;
+              return a.nombre.localeCompare(b.nombre);
+          }).forEach((fila, indice) => {
+              if (ySeguimiento > 196) {
+                  doc.addPage("a4", "landscape");
+                  doc.setFont("helvetica", "bold");
+                  doc.setFontSize(12);
+                  doc.text("Seguimiento exacto de calificaciones (continuación)", 12, 10);
+                  dibujarEncabezadoSeguimiento();
+                  ySeguimiento = 34;
+              }
+              if (indice % 2 === 1) {
+                  doc.setFillColor(241, 245, 249);
+                  doc.rect(8, ySeguimiento - 4, 281, 7, "F");
+              }
+              const diferencia = Number.isFinite(fila.final) && Number.isFinite(fila.calculada)
+                  ? Number((fila.final - fila.calculada).toFixed(1))
+                  : null;
+              doc.setTextColor(15, 23, 42);
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(7);
+              doc.text(doc.splitTextToSize(fila.nombre, columnasSeguimiento[0].ancho)[0], columnasSeguimiento[0].x, ySeguimiento);
+              doc.text(doc.splitTextToSize(fila.grupo || "Sin grupo", columnasSeguimiento[1].ancho)[0], columnasSeguimiento[1].x, ySeguimiento);
+              doc.text(`${fila.progreso}%`, columnasSeguimiento[2].x, ySeguimiento);
+              doc.text(`${fila.desafiosConNota}/${fila.desafiosFinalizados}`, columnasSeguimiento[3].x, ySeguimiento);
+              doc.text(formatearNotaGrafico(fila.academica), columnasSeguimiento[4].x, ySeguimiento);
+              doc.text(formatearNotaGrafico(fila.calculada), columnasSeguimiento[5].x, ySeguimiento);
+              doc.text(formatearNotaGrafico(fila.final), columnasSeguimiento[6].x, ySeguimiento);
+              doc.text(diferencia === null ? "-" : `${diferencia > 0 ? "+" : ""}${formatearNotaGrafico(diferencia)}`, columnasSeguimiento[7].x, ySeguimiento);
+              doc.text(fila.final === null ? "Pendiente" : "Confirmada", columnasSeguimiento[8].x, ySeguimiento);
+              ySeguimiento += 7;
+          });
+      }
+
       function dibujarTablaEvolucionInformePDF(doc, evolucion) {
           const columnas = [
               { titulo: "N.º", x: 10, ancho: 10 },
@@ -7248,6 +7715,7 @@
           }
 
           if (evolucion.length) dibujarTablaEvolucionInformePDF(doc, evolucion);
+          dibujarGraficosNotasInformePDF(doc, datos.estudiantesAlcance, datos.alcance);
           doc.addPage("a4", "landscape");
           doc.setFont("helvetica", "bold");
           doc.setFontSize(12);
@@ -7438,15 +7906,18 @@
           const notaAutomatica = Number(registro.notaFinal ?? registro.notaIA);
           return Number.isFinite(notaAutomatica) ? Math.max(0, Math.min(10, notaAutomatica)) : null;
       }
+      function obtenerNotasDesafiosFinalizadosEstudiante(d) {
+          const historial = d?.historialResultados || {};
+          const finalizadas = d?.finalizadas || {};
+          return seccionesData.reduce((notas, sec) => {
+              if (finalizadas[sec.id] !== true) return notas;
+              const nota = obtenerNotaDesafioEstudiante(d, sec.id, historial[sec.id] || {});
+              if (Number.isFinite(nota)) notas.push({ id: sec.id, titulo: sec.title, nota });
+              return notas;
+          }, []);
+      }
       function calcularNotaEstudiante(d) {
-          const h = d.historialResultados || {};
-          const idsConNota = [...new Set([
-              ...Object.keys(h),
-              ...Object.keys(d.notasDesafiosDocente || {})
-          ])];
-          const notas = idsConNota
-              .map(sectionId => obtenerNotaDesafioEstudiante(d, sectionId, h[sectionId] || {}))
-              .filter(n => Number.isFinite(n));
+          const notas = obtenerNotasDesafiosFinalizadosEstudiante(d).map(item => item.nota);
           if (!notas.length) return '—';
           return (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1);
       }
@@ -7473,7 +7944,8 @@
               return {
                   id: sec.id,
                   titulo: sec.title,
-                  nota: Number.isFinite(valor) ? valor : null
+                  finalizada: d?.finalizadas?.[sec.id] === true,
+                  nota: d?.finalizadas?.[sec.id] === true && Number.isFinite(valor) ? valor : null
               };
           });
           const evaluadas = actividades.filter(x => x.nota !== null);
