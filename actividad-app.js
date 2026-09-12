@@ -2398,6 +2398,18 @@
           document.addEventListener('copy', bloquearPortapapelesEstudiante);
           document.addEventListener('cut', bloquearPortapapelesEstudiante);
           document.addEventListener('paste', bloquearPortapapelesEstudiante);
+          const bloquearArrastreEstudiante = e => {
+              const editor = e.target?.closest?.('.code-editor[id^="editor-"], .codemirror-host');
+              const textarea = editor?.matches?.('.code-editor')
+                  ? editor
+                  : editor?.querySelector?.('.code-editor[id^="editor-"]');
+              if (!textarea || document.body.classList.contains('teacher-authorized')) return;
+              e.preventDefault();
+              if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
+          };
+          document.addEventListener('dragstart', bloquearArrastreEstudiante);
+          document.addEventListener('dragover', bloquearArrastreEstudiante);
+          document.addEventListener('drop', bloquearArrastreEstudiante);
 
           // Atajo del profesor para panel general (Ctrl + Shift + U)
           window.addEventListener('keydown', function(e) {
@@ -5380,6 +5392,26 @@
                                   evento.preventDefault();
                                   estadoHerramientas.textContent = "Cortar deshabilitado para estudiantes.";
                                   return true;
+                              },
+                              dragstart: evento => {
+                                  if (!restringirPortapapeles()) return false;
+                                  evento.preventDefault();
+                                  if (evento.dataTransfer) evento.dataTransfer.dropEffect = "none";
+                                  estadoHerramientas.textContent = "Arrastrar código está deshabilitado para estudiantes.";
+                                  return true;
+                              },
+                              dragover: evento => {
+                                  if (!restringirPortapapeles()) return false;
+                                  evento.preventDefault();
+                                  if (evento.dataTransfer) evento.dataTransfer.dropEffect = "none";
+                                  return true;
+                              },
+                              drop: evento => {
+                                  if (!restringirPortapapeles()) return false;
+                                  evento.preventDefault();
+                                  if (evento.dataTransfer) evento.dataTransfer.dropEffect = "none";
+                                  estadoHerramientas.textContent = "Soltar código está deshabilitado para estudiantes.";
+                                  return true;
                               }
                           }),
                           EditorView.updateListener.of(update => {
@@ -5606,6 +5638,9 @@
               editor.addEventListener('copy', bloquear);
               editor.addEventListener('cut', bloquear);
               editor.addEventListener('contextmenu', bloquear);
+              editor.addEventListener('dragstart', bloquear);
+              editor.addEventListener('dragover', bloquear);
+              editor.addEventListener('drop', bloquear);
           });
       }
 
