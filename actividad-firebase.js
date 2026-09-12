@@ -1345,7 +1345,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
                edicionCooperativaPausada: !aceptada,
                estadoConsentimiento: aceptada ? "aceptado" : "rechazado",
                respondidoEn: serverTimestamp(),
-               respondidoPor: user.displayName || user.email || user.uid,
+               respondidoPor: user.email || user.displayName || user.uid,
                motivoRechazo: aceptada ? "" : String(motivo || "").trim().slice(0, 300),
                actualizadoEn: serverTimestamp(),
                actualizadoPor: user.email || user.uid
@@ -2061,7 +2061,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             edicionCooperativaPausada: !aceptada,
             estadoConsentimiento: aceptada ? "aceptado" : "rechazado",
             respondidoEn: serverTimestamp(),
-            respondidoPor: user.displayName || user.email || user.uid,
+            respondidoPor: user.email || user.displayName || user.uid,
             motivoRechazo: aceptada ? "" : String(motivo || "").trim().slice(0, 300),
             actualizadoEn: serverTimestamp(),
             actualizadoPor: user.email || user.uid
@@ -2117,7 +2117,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         document.addEventListener("visibilitychange", revisarVisibilidad);
         window.addEventListener("focus", revisarVisibilidad);
         const detenerSnapshot = onSnapshot(
-          query(referencia, orderBy("creadoEn", "desc"), limit(60)),
+          query(referencia, orderBy("creadoMs", "desc"), limit(60)),
           snapshot => {
             const mensajes = snapshot.docs.map(item => {
               const datos = item.data();

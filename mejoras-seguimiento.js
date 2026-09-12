@@ -1312,13 +1312,13 @@ if(historialOriginal)abrirHistorialPestanas=async function(indice){
 };
 window.addEventListener("estado-inicio-clase",e=>setTimeout(()=>{cargarFormulario(e.detail?.configuracionSeguimiento||window.configuracionSeguimientoActual||{});if(document.getElementById("panelProfesorModal")?.classList.contains("active"))renderPanelProfesor()},0));
 window.addEventListener("profesor-data",()=>setTimeout(()=>{mejorarTabla();if(document.getElementById("mensajeriaDocenteModal")?.classList.contains("active"))renderHistorialMensajesDocente()},0));
-window.addEventListener("firebase-auth-changed",()=>setTimeout(()=>{cargarResumenSeguimientoEstudiante();iniciarAlertasChatCooperativoEstudiante();iniciarConsentimientosCooperacionEstudiante()},900));
-window.addEventListener("estado-cuenta-estudiante",()=>setTimeout(()=>{iniciarAlertasChatCooperativoEstudiante();iniciarConsentimientosCooperacionEstudiante()},700));
-window.addEventListener("seccion-estudiante-cambiada",()=>setTimeout(iniciarAlertasChatCooperativoEstudiante,100));
+window.addEventListener("firebase-auth-changed",()=>setTimeout(()=>{cargarResumenSeguimientoEstudiante();iniciarAlertasChatCooperativoEstudiante();iniciarConsentimientosCooperacionEstudiante()},80));
+window.addEventListener("estado-cuenta-estudiante",()=>setTimeout(()=>{iniciarAlertasChatCooperativoEstudiante();iniciarConsentimientosCooperacionEstudiante()},80));
+window.addEventListener("seccion-estudiante-cambiada",()=>setTimeout(iniciarAlertasChatCooperativoEstudiante,40));
 document.addEventListener("keydown",evento=>{
  const actual=evento.target.closest?.(".teacher-workspace-tab");if(!actual||!["ArrowLeft","ArrowRight","Home","End"].includes(evento.key))return;const botones=[...document.querySelectorAll(".teacher-workspace-tab")],indice=botones.indexOf(actual);let siguiente=indice;if(evento.key==="ArrowRight")siguiente=(indice+1)%botones.length;if(evento.key==="ArrowLeft")siguiente=(indice-1+botones.length)%botones.length;if(evento.key==="Home")siguiente=0;if(evento.key==="End")siguiente=botones.length-1;evento.preventDefault();botones[siguiente]?.focus();activarPestanaDocente(botones[siguiente]?.dataset.teacherTab);
 });
-iniciarViewportMovil();asegurarTemaAplicacion();asegurarPaneles();asegurarResumenSeguimientoEstudiante();setTimeout(cargarResumenSeguimientoEstudiante,1800);setTimeout(()=>{iniciarAlertasChatCooperativoEstudiante();iniciarConsentimientosCooperacionEstudiante()},2200);
+iniciarViewportMovil();asegurarTemaAplicacion();asegurarPaneles();asegurarResumenSeguimientoEstudiante();setTimeout(cargarResumenSeguimientoEstudiante,1800);setTimeout(()=>{iniciarAlertasChatCooperativoEstudiante();iniciarConsentimientosCooperacionEstudiante()},250);
 const intervalosMejoras=[
  setInterval(()=>{if(!document.hidden)mejorarTabla()},10000),
  setInterval(()=>{if(!document.hidden)cargarResumenSeguimientoEstudiante()},60000)

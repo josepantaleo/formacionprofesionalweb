@@ -910,6 +910,9 @@ service cloud.firestore {
              'objetivoCooperacion',
              'solicitadoPor',
              'solicitudEn',
+             'respondidoEn',
+             'respondidoPor',
+             'motivoRechazo',
              'respuestaEstudianteEn'
           ]) &&
           request.resource.data.uid == uid &&
@@ -937,7 +940,19 @@ service cloud.firestore {
            request.resource.data.get('solicitadoPor', '') is string &&
            request.resource.data.get('solicitadoPor', '').size() <= 254 &&
            request.resource.data.get('solicitudEn', request.time) is timestamp &&
-           request.resource.data.get('respuestaEstudianteEn', request.time) is timestamp;
+           (
+             request.resource.data.get('respondidoEn', null) == null ||
+             request.resource.data.get('respondidoEn', null) is timestamp
+           ) &&
+           request.resource.data.get('respondidoPor', '') is string &&
+           request.resource.data.get('respondidoPor', '').size() <= 254 &&
+           request.resource.data.get('motivoRechazo', '') is string &&
+           request.resource.data.get('motivoRechazo', '').size() <= 300 &&
+           (
+             !request.resource.data.keys().hasAny(['respuestaEstudianteEn']) ||
+             request.resource.data.get('respuestaEstudianteEn', null) == null ||
+             request.resource.data.get('respuestaEstudianteEn', null) is timestamp
+           );
       }
 
       allow get, list: if ownsDocument(uid) || isTeacher();
@@ -961,7 +976,6 @@ service cloud.firestore {
               (
                 resource.data.get('estadoConsentimiento', 'sin_solicitud') in [
                   'sin_solicitud',
-                  'pendiente',
                   'rechazado',
                   'finalizado'
                 ] &&
@@ -973,12 +987,18 @@ service cloud.firestore {
                   'estadoConsentimiento',
                   'objetivoCooperacion',
                   'solicitadoPor',
-                  'solicitudEn'
+                  'solicitudEn',
+                  'respondidoEn',
+                  'respondidoPor',
+                  'motivoRechazo'
                 ]) &&
-                request.resource.data.estadoConsentimiento == 'aceptado' &&
-                request.resource.data.modoCooperacionActiva == true &&
-                request.resource.data.edicionCooperativaPausada == false &&
-                request.resource.data.objetivoCooperacion.size() > 0
+                request.resource.data.estadoConsentimiento == 'pendiente' &&
+                request.resource.data.modoCooperacionActiva == false &&
+                request.resource.data.edicionCooperativaPausada == true &&
+                request.resource.data.objetivoCooperacion.size() > 0 &&
+                request.resource.data.respondidoEn == null &&
+                request.resource.data.respondidoPor == '' &&
+                request.resource.data.motivoRechazo == ''
               ) ||
               (
                 resource.data.get('estadoConsentimiento', 'sin_solicitud') == 'aceptado' &&
@@ -1002,6 +1022,33 @@ service cloud.firestore {
                   'estadoConsentimiento'
                 ])
               )
+            )
+          ) ||
+          (
+            isActiveStudent(uid) &&
+            resource.data.get('estadoConsentimiento', 'sin_solicitud') == 'pendiente' &&
+            request.resource.data.get('actualizadoPor', '') == authenticatedEmail() &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'actualizadoEn',
+              'actualizadoPor',
+              'modoCooperacionActiva',
+              'edicionCooperativaPausada',
+              'estadoConsentimiento',
+              'respondidoEn',
+              'respondidoPor',
+              'motivoRechazo'
+            ]) &&
+            request.resource.data.estadoConsentimiento in ['aceptado', 'rechazado'] &&
+            request.resource.data.respondidoEn == request.time &&
+            request.resource.data.respondidoPor == authenticatedEmail() &&
+            (
+              request.resource.data.estadoConsentimiento == 'aceptado'
+                ? request.resource.data.modoCooperacionActiva == true &&
+                  request.resource.data.edicionCooperativaPausada == false &&
+                  request.resource.data.motivoRechazo == ''
+                : request.resource.data.modoCooperacionActiva == false &&
+                  request.resource.data.edicionCooperativaPausada == true &&
+                  request.resource.data.motivoRechazo is string
             )
           ) ||
           (
