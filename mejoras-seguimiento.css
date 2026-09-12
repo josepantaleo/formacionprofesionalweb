@@ -3557,6 +3557,130 @@ body.teacher-light-mode .teacher-filter-group h4{
 .teacher-group-report-table .is-parcial{color:#fde68a}
 .teacher-group-report-summary .is-incorrecta strong,
 .teacher-group-report-table .is-incorrecta{color:#fca5a5}
+.teacher-group-charts{
+  display:grid;
+  grid-template-columns:minmax(300px,.75fr) minmax(480px,1.5fr);
+  gap:.7rem;
+  margin-bottom:.85rem;
+}
+.teacher-chart-panel{
+  min-width:0;
+  padding:.7rem;
+  border:1px solid rgba(148,163,184,.25);
+  border-radius:6px;
+  background:rgba(15,23,42,.28);
+}
+.teacher-chart-panel>header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:.5rem;
+  margin-bottom:.55rem;
+}
+.teacher-chart-panel>header strong,
+.teacher-chart-panel>header small{
+  display:block;
+}
+.teacher-chart-panel>header small,
+.teacher-evolution-chart>small{
+  color:var(--text-muted);
+  font-size:.68rem;
+}
+.teacher-distribution-chart{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(54px,1fr));
+  gap:.5rem;
+  min-height:190px;
+  align-items:end;
+}
+.teacher-distribution-column{
+  display:grid;
+  grid-template-rows:auto 130px auto auto;
+  gap:.2rem;
+  min-width:0;
+  text-align:center;
+}
+.teacher-distribution-column strong{
+  font-size:.75rem;
+}
+.teacher-distribution-column>div{
+  display:flex;
+  align-items:flex-end;
+  min-height:130px;
+  border-bottom:1px solid rgba(148,163,184,.4);
+  background:repeating-linear-gradient(to top,transparent 0,transparent 31px,rgba(148,163,184,.12) 32px);
+}
+.teacher-distribution-column>div span{
+  display:block;
+  width:70%;
+  min-height:2px;
+  margin:0 auto;
+  transition:height .25s ease;
+}
+.teacher-distribution-column small{
+  overflow-wrap:anywhere;
+  color:var(--text-muted);
+  font-size:.65rem;
+}
+.teacher-distribution-column em{
+  color:var(--text-muted);
+  font-size:.65rem;
+  font-style:normal;
+}
+.teacher-distribution-column.is-completa>div span{background:#22c55e}
+.teacher-distribution-column.is-incompleta>div span{background:#0ea5e9}
+.teacher-distribution-column.is-parcial>div span{background:#f59e0b}
+.teacher-distribution-column.is-incorrecta>div span{background:#ef4444}
+.teacher-chart-legend{
+  display:flex;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  gap:.3rem .65rem;
+  font-size:.65rem;
+}
+.teacher-chart-legend span::before{
+  content:"";
+  display:inline-block;
+  width:8px;
+  height:8px;
+  margin-right:.25rem;
+}
+.teacher-chart-legend .is-completa::before{background:#22c55e}
+.teacher-chart-legend .is-incompleta::before{background:#0ea5e9}
+.teacher-chart-legend .is-parcial::before{background:#f59e0b}
+.teacher-chart-legend .is-incorrecta::before{background:#ef4444}
+.teacher-evolution-chart svg{
+  display:block;
+  width:100%;
+  height:210px;
+  overflow:visible;
+}
+.teacher-evolution-chart .chart-grid line{
+  stroke:rgba(148,163,184,.24);
+  stroke-width:1;
+}
+.teacher-evolution-chart text{
+  fill:var(--text-muted);
+  font-size:18px;
+}
+.teacher-evolution-chart .chart-line{
+  fill:none;
+  stroke-width:4;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.teacher-evolution-chart .chart-point{
+  stroke:var(--surface);
+  stroke-width:2;
+}
+.teacher-evolution-chart .chart-line.is-completa{stroke:#22c55e}
+.teacher-evolution-chart .chart-line.is-incompleta{stroke:#0ea5e9}
+.teacher-evolution-chart .chart-line.is-parcial{stroke:#f59e0b}
+.teacher-evolution-chart .chart-line.is-incorrecta{stroke:#ef4444}
+.teacher-evolution-chart .chart-point.is-completa{fill:#22c55e}
+.teacher-evolution-chart .chart-point.is-incompleta{fill:#0ea5e9}
+.teacher-evolution-chart .chart-point.is-parcial{fill:#f59e0b}
+.teacher-evolution-chart .chart-point.is-incorrecta{fill:#ef4444}
 .teacher-group-report-table{
   overflow:auto;
   max-height:360px;
@@ -3602,7 +3726,8 @@ body.teacher-light-mode .teacher-socratic-response,
 body.teacher-light-mode .teacher-rubric-settings,
 body.teacher-light-mode .teacher-group-report,
 body.teacher-light-mode .teacher-rubric-criteria-grid>label,
-body.teacher-light-mode .teacher-group-report-summary>div{
+body.teacher-light-mode .teacher-group-report-summary>div,
+body.teacher-light-mode .teacher-chart-panel{
   background:#fff;
   border-color:#cbd5e1;
 }
@@ -3643,6 +3768,14 @@ body.teacher-light-mode .teacher-analyst-review h4{
   }
   .teacher-group-report-actions .btn{
     flex:1;
+  }
+  .teacher-group-charts{
+    grid-template-columns:1fr;
+  }
+}
+@media(max-width:900px){
+  .teacher-group-charts{
+    grid-template-columns:1fr;
   }
 }
 .teacher-detail-empty i{

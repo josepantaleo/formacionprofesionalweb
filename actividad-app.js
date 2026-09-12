@@ -6129,7 +6129,9 @@
       function renderInformeGrupalSocratico() {
           const contenedor = document.getElementById("informeGrupalSocratico");
           if (!contenedor) return;
-          const { filas, total, porcentaje } = obtenerDatosInformeGrupalSocratico();
+          const datos = obtenerDatosInformeGrupalSocratico();
+          const { filas, total, porcentaje } = datos;
+          const evolucion = obtenerEvolucionInformeGrupalSocratico();
           contenedor.innerHTML = `
               <div class="teacher-group-report-summary">
                   <div class="is-completa"><small>Completas</small><strong>${total.completa}</strong><span>${porcentaje("completa")}%</span></div>
@@ -6137,6 +6139,7 @@
                   <div class="is-parcial"><small>Parciales</small><strong>${total.parcial}</strong><span>${porcentaje("parcial")}%</span></div>
                   <div class="is-incorrecta"><small>Incorrectas</small><strong>${total.incorrecta}</strong><span>${porcentaje("incorrecta")}%</span></div>
               </div>
+              ${renderGraficosInformeGrupalSocratico(datos, evolucion)}
               ${filas.length ? `<div class="teacher-group-report-table"><table>
                   <thead><tr><th>Estudiante</th><th>Grupo</th><th>Completas</th><th>Incompletas</th><th>Parciales</th><th>Incorrectas</th><th>Total</th></tr></thead>
                   <tbody>${filas.map(fila => `<tr>
@@ -6149,6 +6152,69 @@
                       <td>${fila.total}</td>
                   </tr>`).join("")}</tbody>
               </table></div>` : `<p class="teacher-group-report-empty">Todavía no hay respuestas entregadas para el alcance seleccionado.</p>`}`;
+      }
+
+      function renderGraficosInformeGrupalSocratico(datos, evolucion) {
+          const barras = SERIES_GRAFICO_SOCRATICO.map(serie => {
+              const cantidad = Number(datos.total[serie.nivel] || 0);
+              const porcentaje = datos.totalRespuestas ? cantidad * 100 / datos.totalRespuestas : 0;
+              return `<div class="teacher-distribution-column is-${serie.nivel}" title="${serie.etiqueta}: ${cantidad} respuestas, ${porcentaje.toFixed(1)}%">
+                  <strong>${porcentaje.toFixed(1)}%</strong>
+                  <div><span style="height:${Math.max(0, Math.min(100, porcentaje))}%"></span></div>
+                  <small>${serie.etiqueta}</small>
+                  <em>${cantidad}</em>
+              </div>`;
+          }).join("");
+          const ancho = 1000;
+          const alto = 240;
+          const margenX = 48;
+          const margenY = 24;
+          const anchoUtil = ancho - margenX * 2;
+          const altoUtil = alto - margenY * 2 - 24;
+          const paso = evolucion.length > 1 ? anchoUtil / (evolucion.length - 1) : 0;
+          const lineas = SERIES_GRAFICO_SOCRATICO.map(serie => {
+              const puntos = evolucion.map((item, indice) => {
+                  const x = evolucion.length > 1 ? margenX + indice * paso : ancho / 2;
+                  const y = margenY + altoUtil - altoUtil * Number(item.porcentajes[serie.nivel] || 0) / 100;
+                  return { x, y, item, valor: Number(item.porcentajes[serie.nivel] || 0) };
+              });
+              const polyline = puntos.map(punto => `${punto.x.toFixed(1)},${punto.y.toFixed(1)}`).join(" ");
+              return `<polyline class="chart-line is-${serie.nivel}" points="${polyline}"></polyline>` +
+                  puntos.map(punto => `<circle class="chart-point is-${serie.nivel}" cx="${punto.x.toFixed(1)}" cy="${punto.y.toFixed(1)}" r="5">
+                      <title>${escapeHtml(`${punto.item.indice}. ${punto.item.titulo}: ${punto.valor.toFixed(1)}% ${serie.etiqueta.toLowerCase()}`)}</title>
+                  </circle>`).join("");
+          }).join("");
+          const ejes = [0, 25, 50, 75, 100].map(valor => {
+              const y = margenY + altoUtil - altoUtil * valor / 100;
+              return `<line x1="${margenX}" y1="${y}" x2="${ancho - margenX}" y2="${y}"></line>
+                  <text x="${margenX - 8}" y="${y + 4}" text-anchor="end">${valor}%</text>`;
+          }).join("");
+          const etiquetas = evolucion.map((item, indice) => {
+              const x = evolucion.length > 1 ? margenX + indice * paso : ancho / 2;
+              return `<text x="${x}" y="${alto - 8}" text-anchor="middle"><title>${escapeHtml(item.titulo)}</title>${item.indice}</text>`;
+          }).join("");
+          return `<div class="teacher-group-charts">
+              <section class="teacher-chart-panel">
+                  <header><div><strong>Distribución</strong><small>${escapeHtml(datos.actividad)}</small></div></header>
+                  <div class="teacher-distribution-chart">${barras}</div>
+              </section>
+              <section class="teacher-chart-panel">
+                  <header>
+                      <div><strong>Evolución por actividad</strong><small>Porcentaje de cada nivel</small></div>
+                      <div class="teacher-chart-legend">${SERIES_GRAFICO_SOCRATICO.map(serie =>
+                          `<span class="is-${serie.nivel}">${serie.etiqueta}</span>`
+                      ).join("")}</div>
+                  </header>
+                  ${evolucion.length ? `<div class="teacher-evolution-chart">
+                      <svg viewBox="0 0 ${ancho} ${alto}" role="img" aria-label="Evolución porcentual de respuestas por actividad">
+                          <g class="chart-grid">${ejes}</g>
+                          <g class="chart-series">${lineas}</g>
+                          <g class="chart-labels">${etiquetas}</g>
+                      </svg>
+                      <small>Eje horizontal: número de actividad. Posá el cursor sobre un punto para consultar su valor exacto.</small>
+                  </div>` : `<p class="teacher-group-report-empty">Aún no hay actividades respondidas para mostrar evolución.</p>`}
+              </section>
+          </div>`;
       }
 
       function escaparCampoCSV(valor) {
@@ -6336,6 +6402,61 @@
           doc.text("Eje X: número de actividad según el orden del curso.", x, y + alto + 2);
       }
 
+      function dibujarTablaEvolucionInformePDF(doc, evolucion) {
+          const columnas = [
+              { titulo: "N.º", x: 12, ancho: 12 },
+              { titulo: "Actividad", x: 25, ancho: 115 },
+              { titulo: "Respuestas", x: 143, ancho: 24 },
+              { titulo: "Completas", x: 171, ancho: 25 },
+              { titulo: "Incompletas", x: 201, ancho: 27 },
+              { titulo: "Parciales", x: 234, ancho: 22 },
+              { titulo: "Incorrectas", x: 261, ancho: 25 }
+          ];
+          const porcentajeExacto = valor =>
+              `${Number(valor || 0).toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+          const dibujarEncabezado = () => {
+              doc.setFillColor(15, 23, 42);
+              doc.rect(8, 18, 281, 9, "F");
+              doc.setTextColor(255, 255, 255);
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(7.5);
+              columnas.forEach(columna => doc.text(columna.titulo, columna.x, 24));
+              doc.setTextColor(15, 23, 42);
+          };
+          doc.addPage("a4", "landscape");
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(12);
+          doc.text("Tabla de evolución por actividad", 12, 10);
+          dibujarEncabezado();
+          let y = 34;
+          evolucion.forEach((item, indice) => {
+              const tituloLineas = doc.splitTextToSize(item.titulo, columnas[1].ancho);
+              const altoFila = Math.max(7, tituloLineas.length * 4);
+              if (y + altoFila > 198) {
+                  doc.addPage("a4", "landscape");
+                  doc.setFont("helvetica", "bold");
+                  doc.setFontSize(12);
+                  doc.text("Tabla de evolución por actividad (continuación)", 12, 10);
+                  dibujarEncabezado();
+                  y = 34;
+              }
+              if (indice % 2 === 1) {
+                  doc.setFillColor(241, 245, 249);
+                  doc.rect(8, y - 4, 281, altoFila, "F");
+              }
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(7.5);
+              doc.text(String(item.indice), columnas[0].x, y);
+              doc.text(tituloLineas, columnas[1].x, y);
+              doc.text(String(item.respuestas), columnas[2].x, y);
+              doc.text(porcentajeExacto(item.porcentajes.completa), columnas[3].x, y);
+              doc.text(porcentajeExacto(item.porcentajes.incompleta), columnas[4].x, y);
+              doc.text(porcentajeExacto(item.porcentajes.parcial), columnas[5].x, y);
+              doc.text(porcentajeExacto(item.porcentajes.incorrecta), columnas[6].x, y);
+              y += altoFila;
+          });
+      }
+
       function exportarInformeGrupalSocraticoPDF() {
           if (!window.jspdf?.jsPDF) {
               alert("No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.");
@@ -6396,6 +6517,7 @@
               116
           );
 
+          if (evolucion.length) dibujarTablaEvolucionInformePDF(doc, evolucion);
           doc.addPage("a4", "landscape");
           doc.setFont("helvetica", "bold");
           doc.setFontSize(12);
