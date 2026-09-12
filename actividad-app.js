@@ -2574,11 +2574,15 @@
                                   </div>
 
                                   <div class="editor-container">
-                                      <div class="editor-header">
-                                          <span><i class="fa-solid fa-file-code"></i> Editor JavaScript</span>
-                                          <span title="Editor profesional con resaltado, autocompletado y números de línea">CodeMirror 6 · JavaScript</span>
-                                      </div>
-                                      <label class="sr-only" for="editor-${sec.id}">Código para ${sec.title}</label>
+                                  <div class="editor-header">
+                                      <span><i class="fa-solid fa-file-code"></i> Editor JavaScript</span>
+                                      <span title="Editor profesional con resaltado, autocompletado y números de línea">CodeMirror 6 · JavaScript</span>
+                                  </div>
+                                  <div class="student-editor-restriction-notice" role="note">
+                                      <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+                                      <span>Copiar, pegar y arrastrar código están deshabilitados.</span>
+                                  </div>
+                                  <label class="sr-only" for="editor-${sec.id}">Código para ${sec.title}</label>
                                       <textarea id="editor-${sec.id}" class="code-editor" aria-label="Código para ${sec.title}" spellcheck="false" autocapitalize="off" autocomplete="off" ${isFinalized ? 'disabled' : ''}>${savedCode}</textarea>
                                   </div>
 
