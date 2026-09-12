@@ -1323,12 +1323,30 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
              if (modoCooperacionActual.consentimiento === "aceptado" && modoCooperacionActual.activa) return false;
              const descripcion = String(objetivo || "Acompañamiento docente sobre la actividad actual").trim().slice(0, 500);
              await setDoc(metaRef, {
-               modoCooperacionActiva: true,
-               edicionCooperativaPausada: false,
-               estadoConsentimiento: "aceptado",
+               modoCooperacionActiva: false,
+               edicionCooperativaPausada: true,
+               estadoConsentimiento: "pendiente",
                objetivoCooperacion: descripcion,
                solicitadoPor: user.displayName || user.email || "Docente",
                solicitudEn: serverTimestamp(),
+               respondidoEn: null,
+               respondidoPor: "",
+               motivoRechazo: "",
+               actualizadoEn: serverTimestamp(),
+               actualizadoPor: user.email || user.uid
+             }, { merge: true });
+             return true;
+           },
+           async responderCooperacion(aceptar, motivo = "") {
+             if (rol !== "estudiante" || user.uid !== uid) return false;
+             const aceptada = aceptar === true;
+             await setDoc(metaRef, {
+               modoCooperacionActiva: aceptada,
+               edicionCooperativaPausada: !aceptada,
+               estadoConsentimiento: aceptada ? "aceptado" : "rechazado",
+               respondidoEn: serverTimestamp(),
+               respondidoPor: user.displayName || user.email || user.uid,
+               motivoRechazo: aceptada ? "" : String(motivo || "").trim().slice(0, 300),
                actualizadoEn: serverTimestamp(),
                actualizadoPor: user.email || user.uid
              }, { merge: true });
@@ -1926,6 +1944,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
       window.iniciarEditorCRDTDocente = async function({ uid, sectionId, codigoInicial, textarea, estado }) {
         const sesion = await iniciarSesionCodigoCRDT({ uid, sectionId, codigoInicial, rol: "docente" });
         vincularTextareaCodigoCRDT(textarea, sesion, sectionId, estado);
+        const chatEmbebido = textarea?.parentElement?.querySelector?.(".collaboration-chat");
+        if (chatEmbebido) chatEmbebido.hidden = true;
         return sesion;
       };
 
@@ -1961,6 +1981,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             rol: "estudiante"
           });
           vincularTextareaCodigoCRDT(textarea, sesion, sec.id, estado);
+          const chatEmbebido = textarea?.parentElement?.querySelector?.(".collaboration-chat");
+          if (chatEmbebido) chatEmbebido.hidden = true;
           window.__sesionCRDTEstudianteActiva = { uid: user.uid, sectionId: sec.id, textarea, sesion };
         } catch (error) {
           console.error(`No se pudo iniciar CRDT en ${sec.id}:`, error);
@@ -1985,6 +2007,75 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
         return { user: window.firebaseCurrentUser, database: db, rol: "estudiante" };
       }
+
+      window.escucharModoCooperacionFirebase = function(uid, sectionId, alActualizar, opciones = {}) {
+        const { user, database, rol } = contextoChatColaborativoFirebase(opciones.rol);
+        if (!user || !database || !uid || !sectionId || typeof alActualizar !== "function") {
+          const error = new Error("No hay una sesion Firebase valida para consultar la cooperacion.");
+          error.code = "cooperation/session-unavailable";
+          if (typeof alActualizar === "function") alActualizar(null, error);
+          return null;
+        }
+        if (rol === "estudiante" && user.uid !== uid) {
+          const error = new Error("La cuenta del estudiante no coincide con la solicitud.");
+          error.code = "cooperation/student-uid-mismatch";
+          alActualizar(null, error);
+          return null;
+        }
+        const referencia = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId);
+        return onSnapshot(
+          referencia,
+          snapshot => {
+            const datos = snapshot.exists() ? snapshot.data() : {};
+            alActualizar({
+              activa: datos.modoCooperacionActiva === true,
+              pausada: datos.edicionCooperativaPausada === true,
+              consentimiento: ["pendiente", "aceptado", "rechazado", "finalizado"].includes(datos.estadoConsentimiento)
+                ? datos.estadoConsentimiento
+                : "sin_solicitud",
+              objetivo: String(datos.objetivoCooperacion || ""),
+              solicitadoPor: String(datos.solicitadoPor || ""),
+              solicitudEn: datos.solicitudEn || null,
+              respondidoEn: datos.respondidoEn || null
+            }, null);
+          },
+          error => alActualizar(null, error)
+        );
+      };
+
+      window.responderCooperacionFirebase = async function({
+        uid,
+        sectionId,
+        aceptar,
+        motivo = ""
+      } = {}) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db || !uid || !sectionId || user.uid !== uid) return false;
+        try {
+          const referencia = doc(db, "estudiantes", uid, "colaboracionCodigo", sectionId);
+          const snapshot = await getDoc(referencia);
+          if (!snapshot.exists() || snapshot.data()?.estadoConsentimiento !== "pendiente") return false;
+          const aceptada = aceptar === true;
+          await setDoc(referencia, {
+            modoCooperacionActiva: aceptada,
+            edicionCooperativaPausada: !aceptada,
+            estadoConsentimiento: aceptada ? "aceptado" : "rechazado",
+            respondidoEn: serverTimestamp(),
+            respondidoPor: user.displayName || user.email || user.uid,
+            motivoRechazo: aceptada ? "" : String(motivo || "").trim().slice(0, 300),
+            actualizadoEn: serverTimestamp(),
+            actualizadoPor: user.email || user.uid
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("No se pudo responder la solicitud de cooperacion:", error);
+          window.ultimoErrorCooperacion = {
+            code: error?.code || "",
+            message: await describirErrorDecisionCooperacion(error, user)
+          };
+          return false;
+        }
+      };
 
       window.escucharChatColaborativoFirebase = function(uid, sectionId, alActualizar, opciones = {}) {
         const { user, database, rol } = contextoChatColaborativoFirebase(opciones.rol);

@@ -497,6 +497,8 @@ let detenerAlertasChatEstudiante=[];
 const ultimoMensajeDocentePorSeccion=new Map();
 let mensajesPopupCooperativoPendientes=[];
 const mensajesPopupCooperativoRegistrados=new Set();
+let detenerConsentimientosCooperacion=[];
+const consentimientosCooperacionPendientes=new Map();
 function uidSesionColaborativa(rolActual){
  return rolActual==="docente"
   ? (window.firebaseTeacherUser?.uid||window.firebaseCurrentUser?.uid||"")
@@ -644,6 +646,81 @@ function detenerAlertasChatCooperativoEstudiante(limpiarPendientes=true){
  const popup=document.getElementById("popupMensajeCooperativoEstudiante");
  if(popup){popup.classList.remove("active");popup.hidden=true}
 }
+function asegurarConsentimientoCooperacionEstudiante(){
+ let panel=document.getElementById("consentimientoCooperacionEstudiante");
+ if(panel)return panel;
+ panel=document.createElement("aside");
+ panel.id="consentimientoCooperacionEstudiante";
+ panel.className="cooperation-consent-global";
+ panel.hidden=true;
+ panel.setAttribute("role","dialog");
+ panel.setAttribute("aria-modal","false");
+ panel.setAttribute("aria-labelledby","consentimientoCooperacionTitulo");
+ panel.innerHTML=`<div class="cooperation-consent-global-icon"><i class="fa-solid fa-people-arrows"></i></div><div class="cooperation-consent-global-content"><small>Solicitud del docente</small><h3 id="consentimientoCooperacionTitulo">Cooperación en vivo</h3><p class="cooperation-consent-global-objective"></p><span class="cooperation-consent-global-section"></span><div class="cooperation-consent-global-actions"><button class="btn btn-success" data-cooperation-response="accept" type="button"><i class="fa-solid fa-check"></i> Aceptar cooperación</button><button class="btn btn-secondary" data-cooperation-response="reject" type="button"><i class="fa-solid fa-xmark"></i> Rechazar</button></div></div>`;
+ document.body.appendChild(panel);
+ panel.querySelectorAll("[data-cooperation-response]").forEach(boton=>boton.addEventListener("click",async()=>{
+  const sectionId=panel.dataset.sectionId,aceptar=boton.dataset.cooperationResponse==="accept";
+  if(!sectionId||!window.firebaseCurrentUser?.uid)return;
+  panel.querySelectorAll("button").forEach(item=>item.disabled=true);
+  const ok=await window.responderCooperacionFirebase?.({uid:window.firebaseCurrentUser.uid,sectionId,aceptar});
+  panel.querySelectorAll("button").forEach(item=>item.disabled=false);
+  if(!ok){
+   alert(window.ultimoErrorCooperacion?.message||"No se pudo registrar la respuesta. Revisá la conexión e intentá nuevamente.");
+   return;
+  }
+  consentimientosCooperacionPendientes.delete(sectionId);
+  renderConsentimientoCooperacionEstudiante();
+  if(aceptar){
+   document.getElementById(sectionId)?.scrollIntoView?.({block:"start",behavior:prefiereMovimientoReducido()?"auto":"smooth"});
+   window.setTimeout(()=>window.iniciarColaboracionCRDTEstudiante?.(),0);
+  }
+ }));
+ return panel;
+}
+function renderConsentimientoCooperacionEstudiante(){
+ const panel=asegurarConsentimientoCooperacionEstudiante();
+ const pendiente=[...consentimientosCooperacionPendientes.entries()][0];
+ if(!pendiente){
+  panel.classList.remove("active");
+  window.setTimeout(()=>{if(!consentimientosCooperacionPendientes.size)panel.hidden=true},180);
+  return;
+ }
+ const [sectionId,modo]=pendiente,seccion=(typeof seccionesData!=="undefined"?seccionesData:[]).find(item=>item.id===sectionId);
+ panel.dataset.sectionId=sectionId;
+ panel.querySelector(".cooperation-consent-global-objective").textContent=modo.objetivo||"El docente solicita trabajar en vivo sobre esta actividad.";
+ panel.querySelector(".cooperation-consent-global-section").textContent=`${modo.solicitadoPor||"Docente"} · ${seccion?.title||sectionId}`;
+ panel.hidden=false;
+ requestAnimationFrame(()=>panel.classList.add("active"));
+}
+function detenerConsentimientosCooperacionEstudiante(){
+ detenerConsentimientosCooperacion.forEach(detener=>{try{detener?.()}catch(error){}});
+ detenerConsentimientosCooperacion=[];
+ consentimientosCooperacionPendientes.clear();
+ const panel=document.getElementById("consentimientoCooperacionEstudiante");
+ if(panel){panel.classList.remove("active");panel.hidden=true}
+ window.__firmaConsentimientosCooperacion="";
+}
+function iniciarConsentimientosCooperacionEstudiante(){
+ const user=window.firebaseCurrentUser,secciones=(typeof seccionesData!=="undefined"?seccionesData:[]).map(item=>item.id).filter(Boolean);
+ if(!user||esSesionDocenteActual()||typeof window.escucharModoCooperacionFirebase!=="function"||!secciones.length){
+  detenerConsentimientosCooperacionEstudiante();
+  return;
+ }
+ const firma=`${user.uid}:${secciones.join(",")}`;
+ if(window.__firmaConsentimientosCooperacion===firma&&detenerConsentimientosCooperacion.length===secciones.length)return;
+ detenerConsentimientosCooperacionEstudiante();
+ window.__firmaConsentimientosCooperacion=firma;
+ asegurarConsentimientoCooperacionEstudiante();
+ secciones.forEach(sectionId=>{
+  const detener=window.escucharModoCooperacionFirebase(user.uid,sectionId,(modo,error)=>{
+   if(error)return;
+   if(modo?.consentimiento==="pendiente")consentimientosCooperacionPendientes.set(sectionId,modo);
+   else consentimientosCooperacionPendientes.delete(sectionId);
+   renderConsentimientoCooperacionEstudiante();
+  },{rol:"estudiante"});
+  if(typeof detener==="function")detenerConsentimientosCooperacion.push(detener);
+ });
+}
 function iniciarAlertasChatCooperativoEstudiante(){
  const user=window.firebaseCurrentUser;
  if(!user||esSesionDocenteActual()||typeof window.escucharChatColaborativoFirebase!=="function"){
@@ -651,10 +728,7 @@ function iniciarAlertasChatCooperativoEstudiante(){
   window.__uidPopupCooperativo="";
   return;
  }
- const seccionActiva=document.querySelector(".section-card.active")?.id;
- const secciones=seccionActiva
-  ? [seccionActiva]
-  : [(typeof seccionesData!=="undefined"?seccionesData:[])[0]?.id].filter(Boolean);
+ const secciones=(typeof seccionesData!=="undefined"?seccionesData:[]).map(item=>item.id).filter(Boolean);
  if(!secciones.length){
   clearTimeout(window.__reintentoPopupCooperativo);
   window.__reintentoPopupCooperativo=setTimeout(iniciarAlertasChatCooperativoEstudiante,1600);
@@ -674,6 +748,8 @@ function iniciarAlertasChatCooperativoEstudiante(){
    const ultimo=recibidos.at(-1)||null;
    if(!ultimoMensajeDocentePorSeccion.has(sectionId)){
     ultimoMensajeDocentePorSeccion.set(sectionId,ultimo?.id||"");
+    const ultimoNoLeido=[...recibidos].reverse().find(item=>!item.leidoEstudianteEn);
+    if(ultimoNoLeido)mostrarPopupMensajeCooperativoEstudiante(ultimoNoLeido,sectionId);
     return;
    }
    const anterior=ultimoMensajeDocentePorSeccion.get(sectionId);
@@ -736,8 +812,8 @@ function renderPresenciaEditorColaborativo(modal,participantes=[]){
  const escribiendo=activos.filter(item=>item.escribiendo===true&&item.autorUid!==uidDocente);
  actualizarEstadoCursoCooperativo(modal,consentimiento==="aceptado"?(pausada?"paused":modal.__crdtSession?"active":"waiting"):consentimiento==="finalizado"||consentimiento==="rechazado"?"closed":"waiting");
  aviso.className=`teacher-collab-presence${pausada?" is-paused":escribiendo.length?" is-typing":""}`;
- if(consentimiento==="pendiente"){aviso.innerHTML='<i class="fa-solid fa-arrows-rotate fa-spin"></i><span>Activando la cooperación…</span>';return;}
- if(consentimiento==="rechazado"){aviso.innerHTML='<i class="fa-solid fa-arrows-rotate"></i><span>La cooperación puede iniciarse nuevamente desde el panel docente.</span>';return;}
+ if(consentimiento==="pendiente"){aviso.innerHTML='<i class="fa-solid fa-clock"></i><span>Solicitud enviada. Esperando la decisión del estudiante.</span>';return;}
+ if(consentimiento==="rechazado"){aviso.innerHTML='<i class="fa-solid fa-circle-xmark"></i><span>El estudiante rechazó la solicitud. Podés enviar una nueva.</span>';return;}
  if(consentimiento==="finalizado"){aviso.innerHTML='<i class="fa-solid fa-circle-stop"></i><span>La cooperación fue finalizada.</span>';return;}
  if(pausada){aviso.innerHTML='<i class="fa-solid fa-pause"></i><span>Edición cooperativa pausada por el docente.</span>';return;}
  if(escribiendo.length){
@@ -770,7 +846,7 @@ function actualizarPausaEditorColaborativo(modal,modo={}){
  if(editor){const bloqueado=!aceptada||pausada;editor.disabled=bloqueado;editor.__setCodeMirrorDisabled?.(bloqueado);}
  const estado=modal.querySelector("#editorColaborativoEstado");
  if(estado){
-  estado.textContent=pendiente?"Activando cooperación":aceptada?(pausada?"Cooperación activa · edición pausada":"Cooperación activa · edición compartida habilitada"):modo.consentimiento==="rechazado"?"Cooperación disponible para reiniciar":modo.consentimiento==="finalizado"?"Cooperación finalizada":"Preparando cooperación";
+  estado.textContent=pendiente?"Solicitud enviada · esperando aceptación":aceptada?(pausada?"Cooperación activa · edición pausada":"Cooperación activa · edición compartida habilitada"):modo.consentimiento==="rechazado"?"El estudiante rechazó la solicitud":modo.consentimiento==="finalizado"?"Cooperación finalizada":"Preparando cooperación";
  }
  renderPresenciaEditorColaborativo(modal,modal.__participantesColaborativos||[]);
 }
@@ -925,7 +1001,7 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
   estado.textContent="Conectando al documento colaborativo...";
   modal.__crdtSession=await window.iniciarEditorCRDTDocente?.({uid:d.uid,sectionId,codigoInicial:codigo,textarea:editor,estado});
    if(!modal.__crdtSession)throw new Error("crdt-session-not-created");
-   actualizarEstadoCursoCooperativo(modal,"active");
+   actualizarEstadoCursoCooperativo(modal,"waiting");
    editor.__syncCodeMirror?.(editor.value);
    modal.__quitarPresenciaColaborativa=modal.__crdtSession.onPresence?.(participantes=>{modal.__participantesColaborativos=participantes;editor.__renderRemoteCursors?.(participantes);renderPresenciaEditorColaborativo(modal,participantes);})||null;
    modal.__quitarModoCooperacion=modal.__crdtSession.onModoCooperacion?.(modo=>actualizarPausaEditorColaborativo(modal,modo))||null;
@@ -934,7 +1010,7 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
    if(!(modoActual.consentimiento==="aceptado"&&modoActual.activa===true)){
     const objetivo=`Acompañamiento docente en ${sec?.title||sectionId}: revisar el razonamiento, probar el código y acordar el siguiente paso.`;
     await modal.__crdtSession.solicitarCooperacion?.(objetivo);
-    salida.textContent="Cooperación activada directamente.";
+    salida.textContent="Solicitud enviada. Esperando aceptación del estudiante.";
    }else{
     salida.textContent="Sincronización automática activa";
    }
@@ -1236,16 +1312,16 @@ if(historialOriginal)abrirHistorialPestanas=async function(indice){
 };
 window.addEventListener("estado-inicio-clase",e=>setTimeout(()=>{cargarFormulario(e.detail?.configuracionSeguimiento||window.configuracionSeguimientoActual||{});if(document.getElementById("panelProfesorModal")?.classList.contains("active"))renderPanelProfesor()},0));
 window.addEventListener("profesor-data",()=>setTimeout(()=>{mejorarTabla();if(document.getElementById("mensajeriaDocenteModal")?.classList.contains("active"))renderHistorialMensajesDocente()},0));
-window.addEventListener("firebase-auth-changed",()=>setTimeout(()=>{cargarResumenSeguimientoEstudiante();iniciarAlertasChatCooperativoEstudiante()},900));
-window.addEventListener("estado-cuenta-estudiante",()=>setTimeout(iniciarAlertasChatCooperativoEstudiante,700));
+window.addEventListener("firebase-auth-changed",()=>setTimeout(()=>{cargarResumenSeguimientoEstudiante();iniciarAlertasChatCooperativoEstudiante();iniciarConsentimientosCooperacionEstudiante()},900));
+window.addEventListener("estado-cuenta-estudiante",()=>setTimeout(()=>{iniciarAlertasChatCooperativoEstudiante();iniciarConsentimientosCooperacionEstudiante()},700));
 window.addEventListener("seccion-estudiante-cambiada",()=>setTimeout(iniciarAlertasChatCooperativoEstudiante,100));
 document.addEventListener("keydown",evento=>{
  const actual=evento.target.closest?.(".teacher-workspace-tab");if(!actual||!["ArrowLeft","ArrowRight","Home","End"].includes(evento.key))return;const botones=[...document.querySelectorAll(".teacher-workspace-tab")],indice=botones.indexOf(actual);let siguiente=indice;if(evento.key==="ArrowRight")siguiente=(indice+1)%botones.length;if(evento.key==="ArrowLeft")siguiente=(indice-1+botones.length)%botones.length;if(evento.key==="Home")siguiente=0;if(evento.key==="End")siguiente=botones.length-1;evento.preventDefault();botones[siguiente]?.focus();activarPestanaDocente(botones[siguiente]?.dataset.teacherTab);
 });
-iniciarViewportMovil();asegurarTemaAplicacion();asegurarPaneles();asegurarResumenSeguimientoEstudiante();setTimeout(cargarResumenSeguimientoEstudiante,1800);setTimeout(iniciarAlertasChatCooperativoEstudiante,2200);
+iniciarViewportMovil();asegurarTemaAplicacion();asegurarPaneles();asegurarResumenSeguimientoEstudiante();setTimeout(cargarResumenSeguimientoEstudiante,1800);setTimeout(()=>{iniciarAlertasChatCooperativoEstudiante();iniciarConsentimientosCooperacionEstudiante()},2200);
 const intervalosMejoras=[
  setInterval(()=>{if(!document.hidden)mejorarTabla()},10000),
  setInterval(()=>{if(!document.hidden)cargarResumenSeguimientoEstudiante()},60000)
 ];
-window.addEventListener("pagehide",()=>intervalosMejoras.forEach(clearInterval),{once:true});
+window.addEventListener("pagehide",()=>{intervalosMejoras.forEach(clearInterval);detenerAlertasChatCooperativoEstudiante(false);detenerConsentimientosCooperacionEstudiante()},{once:true});
 })();
