@@ -838,6 +838,7 @@
       let historialResultados = {};
       let notasDesafiosDocente = {};
       let actividadesFinalizadas = {};
+      let estadosRecomendacionesInforme = {};
       let contadorPrevisualizaciones = {};
       let ayudasComprension = {};
       let totalSalidasPestana = 0;
@@ -919,6 +920,7 @@
               ? event.detail
               : {};
           actualizarNotasDocenteVisiblesEstudiante();
+          renderInformeVisualEstudiante();
       });
 
       // Control de Cronómetros por Módulo (40 minutos = 2400 segundos)
@@ -1833,6 +1835,7 @@
               chatIA: JSON.parse(JSON.stringify(historialChatIA || {})),
               ayudasComprension: JSON.parse(JSON.stringify(ayudasComprension || {})),
               contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
+              estadosRecomendacionesInforme: JSON.parse(JSON.stringify(estadosRecomendacionesInforme || {})),
               seccionActiva: seccionActivaActual,
               versionCodigo: VERSION_CODIGO_SUBIDO,
               versionApp: '8.0-desafios-externos-editables-ia'
@@ -2044,6 +2047,10 @@
           }
           actividadesFinalizadas = datos.finalizadas || {};
           contadorPrevisualizaciones = datos.contadorPrevisualizaciones || {};
+          estadosRecomendacionesInforme = datos.estadosRecomendacionesInforme &&
+              typeof datos.estadosRecomendacionesInforme === 'object'
+              ? datos.estadosRecomendacionesInforme
+              : {};
           tiemposRestantes = datos.tiemposRestantes || {};
           pantallaBloqueada = datos.pantallaBloqueada === true;
           pantallaBloqueadaEn = String(datos.pantallaBloqueadaEn || "");
@@ -3446,11 +3453,12 @@
       }
 
       function actualizarProgreso() {
-          const finalizadasCount = Object.keys(actividadesFinalizadas).length;
+          const finalizadasCount = seccionesData.filter(sec => actividadesFinalizadas[sec.id] === true).length;
           const porcentaje = Math.round((finalizadasCount / seccionesData.length) * 100);
           document.getElementById('progressBar').style.width = `${porcentaje}%`;
           document.getElementById('progressBarContainer')?.setAttribute('aria-valuenow', String(porcentaje));
           document.getElementById('progressText').innerText = `Progreso: ${porcentaje}% (${finalizadasCount}/${seccionesData.length} finalizadas)`;
+          renderInformeVisualEstudiante();
       }
 
       async function ejecutarCodigoAislado(code) {
@@ -11200,6 +11208,291 @@
           guardarPDFProfesor(doc, `Informe_completo_${curso}_division_${division}_turno_${turno}`);
       }
 
+      function generarRecomendacionesInformeEstudiante(actividades, promedio, progreso) {
+          const finalizadas = actividades.filter(item => item.finalizada);
+          const evaluadas = finalizadas.filter(item => Number.isFinite(item.nota));
+          const recomendaciones = [];
+          const agregar = (prioridad, titulo, evidencia, accion) => {
+              if (recomendaciones.some(item => item.titulo === titulo)) return;
+              recomendaciones.push({ prioridad, titulo, evidencia, accion });
+          };
+          [...evaluadas].sort((a, b) => a.nota - b.nota).filter(item => item.nota < 7).slice(0, 2).forEach(item => {
+              agregar(
+                  item.nota < 6 ? "alta" : "media",
+                  `Reforzar ${item.titulo}`,
+                  `Nota vigente: ${item.nota.toFixed(1)}/10.`,
+                  item.teoria
+                      ? `Repasá “${item.teoria}” y volvé a resolver “${item.ejercicio || item.titulo}” explicando cada decisión y probando al menos dos casos.`
+                      : "Revisá la solución, explicá cada decisión y comprobala con al menos dos casos de prueba."
+              );
+          });
+          const totalSocratico = finalizadas.reduce((total, item) => {
+              Object.keys(total).forEach(nivel => {
+                  total[nivel] += Number(item.conteoSocratico?.[nivel] || 0);
+              });
+              return total;
+          }, { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 });
+          const respuestas = Object.values(totalSocratico).reduce((suma, valor) => suma + valor, 0);
+          const riesgoSocratico = respuestas
+              ? (totalSocratico.parcial + totalSocratico.incorrecta) * 100 / respuestas
+              : 0;
+          if (respuestas && riesgoSocratico >= 25) {
+              agregar(
+                  riesgoSocratico >= 45 ? "alta" : "media",
+                  "Fortalecer las explicaciones socráticas",
+                  `${totalSocratico.parcial + totalSocratico.incorrecta} de ${respuestas} respuestas fueron parciales o incorrectas (${riesgoSocratico.toFixed(1)}%).`,
+                  "Respondé con la estructura: decisión tomada, por qué funciona, evidencia concreta del código o prueba y qué ocurriría en un caso límite."
+              );
+          }
+          const criterios = {};
+          finalizadas.forEach(item => {
+              (item.analista?.preguntas || []).forEach(pregunta => {
+                  const faltantes = Array.isArray(pregunta?.criteriosFaltantes)
+                      ? pregunta.criteriosFaltantes
+                      : (pregunta?.criteriosFaltantes ? [pregunta.criteriosFaltantes] : []);
+                  faltantes.forEach(criterio => {
+                      const clave = String(criterio || "").trim().toLowerCase();
+                      if (clave) criterios[clave] = Number(criterios[clave] || 0) + 1;
+                  });
+              });
+          });
+          const criterioPrincipal = Object.entries(criterios).sort((a, b) => b[1] - a[1])[0];
+          const accionesCriterio = {
+              "desarrollo suficiente": "Escribí respuestas de al menos tres ideas conectadas: qué hiciste, cómo funciona y cómo lo comprobaste.",
+              "justificación causal": "Usá conectores como “porque”, “permite”, “evita” y “por lo tanto” para relacionar código y resultado.",
+              "evidencia del código o de una prueba": "Citá una variable, condición, función o resultado de prueba concreto en cada explicación.",
+              "consecuencia, límite o mejora": "Incluí un caso límite, una posible falla o una mejora y explicá cómo la verificarías."
+          };
+          if (criterioPrincipal) {
+              agregar(
+                  criterioPrincipal[1] >= 3 ? "alta" : "media",
+                  `Practicar: ${criterioPrincipal[0]}`,
+                  `Este criterio faltó en ${criterioPrincipal[1]} respuesta${criterioPrincipal[1] === 1 ? "" : "s"}.`,
+                  accionesCriterio[criterioPrincipal[0]] ||
+                      "Revisá las devoluciones del analista y agregá evidencia concreta para sostener cada respuesta."
+              );
+          }
+          if (evaluadas.length >= 4) {
+              const recientes = evaluadas.slice(-2).map(item => item.nota);
+              const anteriores = evaluadas.slice(-4, -2).map(item => item.nota);
+              const promedioReciente = recientes.reduce((suma, valor) => suma + valor, 0) / recientes.length;
+              const promedioAnterior = anteriores.reduce((suma, valor) => suma + valor, 0) / anteriores.length;
+              if (promedioReciente <= promedioAnterior - .5) {
+                  agregar(
+                      "alta",
+                      "Recuperar la tendencia de las últimas actividades",
+                      `El promedio de las dos últimas actividades (${promedioReciente.toFixed(1)}) bajó respecto de las dos anteriores (${promedioAnterior.toFixed(1)}).`,
+                      "Compará los errores de las dos últimas entregas, corregí uno por vez y volvé a ejecutar las pruebas."
+                  );
+              } else if (promedioReciente >= promedioAnterior + .5) {
+                  agregar(
+                      "fortaleza",
+                      "Mantener la mejora reciente",
+                      `El promedio reciente subió de ${promedioAnterior.toFixed(1)} a ${promedioReciente.toFixed(1)}.`,
+                      "Conservá la estrategia utilizada y registrá qué prueba o explicación te ayudó a mejorar."
+                  );
+              }
+          }
+          const proxima = actividades.find(item => !item.finalizada);
+          if (proxima) {
+              agregar(
+                  progreso < 50 ? "media" : "siguiente",
+                  `Preparar el próximo desafío: ${proxima.titulo}`,
+                  `Avance actual: ${progreso}% del trayecto.`,
+                  proxima.teoria
+                      ? `Leé primero “${proxima.teoria}”, identificá los conceptos nuevos y escribí dos ejemplos breves antes de resolver el desafío.`
+                      : "Revisá la consigna, identificá entradas, proceso y salida, y planificá dos casos de prueba."
+              );
+          }
+          if (Number.isFinite(promedio) && promedio >= 8 && riesgoSocratico < 20) {
+              agregar(
+                  "fortaleza",
+                  "Profundizar con un desafío de extensión",
+                  `Promedio ${promedio.toFixed(1)}/10 y ${riesgoSocratico.toFixed(1)}% de respuestas parciales o incorrectas.`,
+                  "Creá una variante del último ejercicio que agregue validaciones, casos límite y una explicación de las decisiones técnicas."
+              );
+          }
+          if (!recomendaciones.length) {
+              agregar(
+                  "siguiente",
+                  "Continuar con práctica guiada",
+                  "Todavía no hay suficientes actividades finalizadas para detectar un patrón estable.",
+                  "Completá el próximo desafío y explicá la solución con un ejemplo y un caso límite."
+              );
+          }
+          const orden = { alta: 0, media: 1, siguiente: 2, fortaleza: 3 };
+          return recomendaciones.sort((a, b) => orden[a.prioridad] - orden[b.prioridad]).slice(0, 6);
+      }
+
+      function obtenerActividadesInformeEstudianteActual() {
+          return seccionesData.map((sec, indice) => {
+              const detalleNota = obtenerNotaVigenteModuloEstudiante(sec.id);
+              const finalizada = actividadesFinalizadas[sec.id] === true;
+              const analista = finalizada ? historialResultados[sec.id]?.analista : null;
+              const conteoSocratico = obtenerConteoNivelesAnalista(analista);
+              return {
+                  indice: indice + 1,
+                  id: sec.id,
+                  titulo: sec.title,
+                  teoria: sec.theory || "",
+                  ejercicio: sec.exerciseTitle || "",
+                  finalizada,
+                  nota: finalizada ? detalleNota.nota : null,
+                  notaAutomatica: detalleNota.notaAutomatica,
+                  corregida: detalleNota.corregida,
+                  ajuste: detalleNota.ajuste,
+                  analista,
+                  conteoSocratico,
+                  respuestasSocraticas: Object.values(conteoSocratico)
+                      .reduce((suma, valor) => suma + Number(valor || 0), 0)
+              };
+          });
+      }
+
+      function idRecomendacionInformeEstudiante(recomendacion) {
+          const base = `${recomendacion.titulo}|${recomendacion.accion}`
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .toLowerCase();
+          let hash = 2166136261;
+          for (let i = 0; i < base.length; i += 1) {
+              hash ^= base.charCodeAt(i);
+              hash = Math.imul(hash, 16777619);
+          }
+          return `rec-${(hash >>> 0).toString(36)}`;
+      }
+
+      function obtenerSeguimientoRecomendacionesEstudiante() {
+          const actividades = obtenerActividadesInformeEstudianteActual();
+          const evaluadas = actividades.filter(item => Number.isFinite(item.nota));
+          const promedio = evaluadas.length
+              ? evaluadas.reduce((suma, item) => suma + item.nota, 0) / evaluadas.length
+              : null;
+          const finalizadas = actividades.filter(item => item.finalizada).length;
+          const progreso = actividades.length ? Math.round(finalizadas * 100 / actividades.length) : 0;
+          const recomendaciones = generarRecomendacionesInformeEstudiante(actividades, promedio, progreso)
+              .map(recomendacion => {
+                  const id = idRecomendacionInformeEstudiante(recomendacion);
+                  const seguimiento = estadosRecomendacionesInforme[id] || {};
+                  return {
+                      ...recomendacion,
+                      id,
+                      estado: ["pendiente", "en_progreso", "completada"].includes(seguimiento.estado)
+                          ? seguimiento.estado
+                          : "pendiente",
+                      actualizadoEn: seguimiento.actualizadoEn || null
+                  };
+              });
+          return { actividades, evaluadas, promedio, finalizadas, progreso, recomendaciones };
+      }
+
+      function etiquetaEstadoRecomendacion(estado) {
+          return {
+              pendiente: "Pendiente",
+              en_progreso: "En progreso",
+              completada: "Completada"
+          }[estado] || "Pendiente";
+      }
+
+      async function actualizarEstadoRecomendacionEstudiante(id, estado, control = null) {
+          if (!["pendiente", "en_progreso", "completada"].includes(estado)) return;
+          const seguimiento = obtenerSeguimientoRecomendacionesEstudiante();
+          const recomendacion = seguimiento.recomendaciones.find(item => item.id === id);
+          if (!recomendacion) return;
+          estadosRecomendacionesInforme = {
+              ...estadosRecomendacionesInforme,
+              [id]: {
+                  estado,
+                  titulo: recomendacion.titulo,
+                  actualizadoEn: new Date().toISOString()
+              }
+          };
+          if (control) {
+              control.disabled = true;
+              control.closest(".student-recommendation-card")?.setAttribute("data-status", estado);
+          }
+          programarGuardadoFirebase();
+          const guardado = await guardarAhoraFirebase();
+          if (control) control.disabled = false;
+          renderInformeVisualEstudiante();
+          if (!guardado) {
+              const aviso = document.getElementById("estadoInformeVisualEstudiante");
+              if (aviso) {
+                  aviso.className = "student-report-save-status is-error";
+                  aviso.textContent = "El estado cambió en pantalla, pero no pudo sincronizarse con Firebase.";
+              }
+          }
+      }
+
+      function renderInformeVisualEstudiante() {
+          const contenedor = document.getElementById("informeVisualEstudianteContenido");
+          if (!contenedor || !cuentaEstudianteActiva) return;
+          const datos = obtenerSeguimientoRecomendacionesEstudiante();
+          const totalRespuestas = datos.actividades.reduce(
+              (suma, item) => suma + Number(item.respuestasSocraticas || 0),
+              0
+          );
+          const colores = actividad => {
+              if (!actividad.finalizada) return "is-pending";
+              if (!Number.isFinite(actividad.nota)) return "is-ungraded";
+              if (actividad.nota < 4) return "is-critical";
+              if (actividad.nota < 6) return "is-warning";
+              if (actividad.nota < 8) return "is-good";
+              return "is-excellent";
+          };
+          const completadas = datos.recomendaciones.filter(item => item.estado === "completada").length;
+          const enProgreso = datos.recomendaciones.filter(item => item.estado === "en_progreso").length;
+          contenedor.innerHTML = `
+              <div class="student-report-summary">
+                  <div><small>Avance</small><strong>${datos.progreso}%</strong><span>${datos.finalizadas}/${datos.actividades.length} desafíos</span></div>
+                  <div><small>Promedio actual</small><strong>${formatearNotaGrafico(datos.promedio)}</strong><span>${datos.evaluadas.length} desafíos con nota</span></div>
+                  <div><small>Respuestas socráticas</small><strong>${totalRespuestas}</strong><span>Solo desafíos finalizados</span></div>
+                  <div><small>Plan personal</small><strong>${completadas}/${datos.recomendaciones.length}</strong><span>${enProgreso} en progreso</span></div>
+              </div>
+              <section class="student-heatmap-section">
+                  <header><div><i class="fa-solid fa-grip"></i><strong>Mapa de calor de notas</strong></div>
+                      <div class="student-heatmap-legend">
+                          <span class="is-pending">Pendiente</span><span class="is-ungraded">Sin nota</span>
+                          <span class="is-critical">0–3,9</span><span class="is-warning">4–5,9</span>
+                          <span class="is-good">6–7,9</span><span class="is-excellent">8–10</span>
+                      </div>
+                  </header>
+                  <div class="student-heatmap-grid">${datos.actividades.map(actividad => {
+                      const riesgo = Number(actividad.conteoSocratico.parcial || 0) +
+                          Number(actividad.conteoSocratico.incorrecta || 0);
+                      return `<article class="student-heatmap-cell ${colores(actividad)}" title="${escapeHtml(`${actividad.titulo}: ${actividad.finalizada ? (Number.isFinite(actividad.nota) ? `${actividad.nota.toFixed(1)}/10` : "sin nota") : "pendiente"} · ${actividad.respuestasSocraticas} respuestas · ${riesgo} a reforzar`)}">
+                          <span>${actividad.indice}</span>
+                          <strong>${Number.isFinite(actividad.nota) ? actividad.nota.toFixed(1) : (actividad.finalizada ? "—" : "P")}</strong>
+                          <small>${escapeHtml(actividad.titulo.replace(/^\d+\.\s*/, ""))}</small>
+                      </article>`;
+                  }).join("")}</div>
+              </section>
+              <section class="student-recommendations-section">
+                  <header><div><i class="fa-solid fa-list-check"></i><strong>Mis recomendaciones personalizadas</strong></div>
+                      <small>Marcá cada acción según tu avance. Los cambios se guardan en Firebase.</small>
+                  </header>
+                  <div class="student-recommendations-list">${datos.recomendaciones.map(item => `
+                      <article class="student-recommendation-card is-${item.prioridad}" data-status="${item.estado}">
+                          <div class="student-recommendation-heading">
+                              <span>${escapeHtml(item.prioridad === "fortaleza" ? "Fortaleza" : `Prioridad ${item.prioridad}`)}</span>
+                              <label>
+                                  <span>Estado</span>
+                                  <select onchange="actualizarEstadoRecomendacionEstudiante('${item.id}',this.value,this)">
+                                      <option value="pendiente" ${item.estado === "pendiente" ? "selected" : ""}>Pendiente</option>
+                                      <option value="en_progreso" ${item.estado === "en_progreso" ? "selected" : ""}>En progreso</option>
+                                      <option value="completada" ${item.estado === "completada" ? "selected" : ""}>Completada</option>
+                                  </select>
+                              </label>
+                          </div>
+                          <h3>${escapeHtml(item.titulo)}</h3>
+                          <p><strong>Evidencia:</strong> ${escapeHtml(item.evidencia)}</p>
+                          <p><strong>Acción:</strong> ${escapeHtml(item.accion)}</p>
+                          <small>${item.actualizadoEn ? `Actualizada: ${escapeHtml(new Date(item.actualizadoEn).toLocaleString("es-AR"))}` : "Todavía no actualizaste esta recomendación."}</small>
+                      </article>`).join("")}</div>
+                  <p id="estadoInformeVisualEstudiante" class="student-report-save-status">Estados sincronizados con tu progreso.</p>
+              </section>`;
+      }
+
       async function exportarResultadosPDF() {
           if (!window.jspdf?.jsPDF) {
               alert('No se pudo cargar el generador de PDF. Verificá la conexión a Internet e intentá nuevamente.');
@@ -11227,25 +11520,7 @@
                   yPos = 20;
               }
           };
-          const actividadesInformeEstudiante = seccionesData.map((sec, indice) => {
-              const detalleNota = obtenerNotaVigenteModuloEstudiante(sec.id);
-              const finalizada = actividadesFinalizadas[sec.id] === true;
-              const analista = finalizada ? historialResultados[sec.id]?.analista : null;
-              const conteoSocratico = obtenerConteoNivelesAnalista(analista);
-              return {
-                  indice: indice + 1,
-                  id: sec.id,
-                  titulo: sec.title,
-                  finalizada,
-                  nota: finalizada ? detalleNota.nota : null,
-                  notaAutomatica: detalleNota.notaAutomatica,
-                  corregida: detalleNota.corregida,
-                  ajuste: detalleNota.ajuste,
-                  conteoSocratico,
-                  respuestasSocraticas: Object.values(conteoSocratico)
-                      .reduce((suma, valor) => suma + Number(valor || 0), 0)
-              };
-          });
+          const actividadesInformeEstudiante = obtenerActividadesInformeEstudianteActual();
           const actividadesEvaluadasPDF = actividadesInformeEstudiante.filter(x => x.nota !== null);
           const notasFinales = actividadesEvaluadasPDF.map(x => x.nota);
           const sumaNotasFinales = notasFinales.reduce((a,b)=>a+b,0);
@@ -11281,6 +11556,17 @@
           }, { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 });
           const respuestasSocraticasPDF = Object.values(totalSocraticoPDF)
               .reduce((suma, valor) => suma + valor, 0);
+          const recomendacionesPDF = generarRecomendacionesInformeEstudiante(
+              actividadesInformeEstudiante,
+              promedioFinalNumero,
+              progresoPDF
+          ).map(recomendacion => {
+              const id = idRecomendacionInformeEstudiante(recomendacion);
+              return {
+                  ...recomendacion,
+                  estado: estadosRecomendacionesInforme[id]?.estado || "pendiente"
+              };
+          });
 
           doc.setFont("helvetica", "bold");
           doc.setFontSize(10);
@@ -11376,6 +11662,133 @@
           doc.setFontSize(6.5);
           doc.setTextColor(100, 116, 139);
           doc.text(`${respuestasSocraticasPDF} respuestas en desafíos finalizados`, 135, graficoRespuestasY + graficoRespuestasAlto + 6);
+
+          doc.addPage();
+          doc.setTextColor(15, 23, 42);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(13);
+          doc.text("Mapa de calor de notas por desafío", 14, 16);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7.5);
+          doc.text("Cada celda muestra la nota vigente del desafío. Las actividades pendientes no reciben una nota ni afectan el promedio.", 14, 22);
+          const leyendaMapa = [
+              { texto: "Pendiente", color: [203, 213, 225] },
+              { texto: "Sin nota", color: [148, 163, 184] },
+              { texto: "0–3,9", color: [239, 68, 68] },
+              { texto: "4–5,9", color: [245, 158, 11] },
+              { texto: "6–7,9", color: [14, 165, 233] },
+              { texto: "8–10", color: [34, 197, 94] }
+          ];
+          let xLeyenda = 14;
+          leyendaMapa.forEach(item => {
+              doc.setFillColor(...item.color);
+              doc.roundedRect(xLeyenda, 27, 5, 5, 1, 1, "F");
+              doc.setTextColor(71, 85, 105);
+              doc.setFontSize(6.5);
+              doc.text(item.texto, xLeyenda + 7, 31);
+              xLeyenda += 29;
+          });
+          const columnasMapa = 4;
+          const anchoCelda = 43;
+          const altoCelda = 28;
+          const separacionX = 3;
+          const separacionY = 5;
+          actividadesInformeEstudiante.forEach((actividad, indice) => {
+              const columna = indice % columnasMapa;
+              const fila = Math.floor(indice / columnasMapa);
+              const x = 14 + columna * (anchoCelda + separacionX);
+              const y = 39 + fila * (altoCelda + separacionY);
+              let color = [203, 213, 225];
+              let textoNota = "Pendiente";
+              let textoOscuro = true;
+              if (actividad.finalizada && actividad.nota === null) {
+                  color = [148, 163, 184];
+                  textoNota = "Sin nota";
+                  textoOscuro = false;
+              } else if (Number.isFinite(actividad.nota)) {
+                  textoNota = `${actividad.nota.toFixed(1)}/10`;
+                  textoOscuro = false;
+                  if (actividad.nota < 4) color = [239, 68, 68];
+                  else if (actividad.nota < 6) color = [245, 158, 11];
+                  else if (actividad.nota < 8) color = [14, 165, 233];
+                  else color = [34, 197, 94];
+              }
+              doc.setFillColor(...color);
+              doc.roundedRect(x, y, anchoCelda, altoCelda, 2, 2, "F");
+              doc.setTextColor(...(textoOscuro ? [30, 41, 59] : [255, 255, 255]));
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(7.5);
+              doc.text(`${actividad.indice}. ${textoNota}`, x + 3, y + 6);
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(6.2);
+              const tituloCelda = doc.splitTextToSize(actividad.titulo, anchoCelda - 6).slice(0, 2);
+              doc.text(tituloCelda, x + 3, y + 12);
+              if (actividad.finalizada && actividad.respuestasSocraticas) {
+                  const riesgo = actividad.conteoSocratico.parcial + actividad.conteoSocratico.incorrecta;
+                  doc.setFontSize(5.7);
+                  doc.text(`${actividad.respuestasSocraticas} respuestas · ${riesgo} a reforzar`, x + 3, y + 25);
+              }
+          });
+
+          doc.addPage();
+          doc.setTextColor(15, 23, 42);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(13);
+          doc.text("Recomendaciones personalizadas", 14, 16);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7.5);
+          doc.text("Las recomendaciones se generan a partir de desafíos finalizados, notas vigentes y evidencias de las respuestas socráticas.", 14, 22);
+          let yRecomendacion = 32;
+          recomendacionesPDF.forEach((recomendacion, indice) => {
+              const coloresPrioridad = {
+                  alta: [239, 68, 68],
+                  media: [245, 158, 11],
+                  siguiente: [14, 165, 233],
+                  fortaleza: [34, 197, 94]
+              };
+              const color = coloresPrioridad[recomendacion.prioridad] || [100, 116, 139];
+              const evidencia = doc.splitTextToSize(`Evidencia: ${recomendacion.evidencia}`, 169);
+              const accion = doc.splitTextToSize(`Acción recomendada: ${recomendacion.accion}`, 169);
+              const seguimiento = doc.splitTextToSize(
+                  `Seguimiento del estudiante: ${etiquetaEstadoRecomendacion(recomendacion.estado)}.`,
+                  169
+              );
+              const altoBloque = Math.max(28, 17 + (evidencia.length + accion.length + seguimiento.length) * 3.7);
+              if (yRecomendacion + altoBloque > 282) {
+                  doc.addPage();
+                  doc.setTextColor(15, 23, 42);
+                  doc.setFont("helvetica", "bold");
+                  doc.setFontSize(12);
+                  doc.text("Recomendaciones personalizadas (continuación)", 14, 16);
+                  yRecomendacion = 27;
+              }
+              doc.setFillColor(248, 250, 252);
+              doc.setDrawColor(...color);
+              doc.roundedRect(14, yRecomendacion, 182, altoBloque - 3, 2, 2, "FD");
+              doc.setFillColor(...color);
+              doc.roundedRect(18, yRecomendacion + 4, 20, 6, 1, 1, "F");
+              doc.setTextColor(255, 255, 255);
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(6.5);
+              doc.text(recomendacion.prioridad.toUpperCase(), 28, yRecomendacion + 8.2, { align: "center" });
+              doc.setTextColor(15, 23, 42);
+              doc.setFontSize(9);
+              doc.text(`${indice + 1}. ${recomendacion.titulo}`, 42, yRecomendacion + 9);
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(7.2);
+              doc.setTextColor(71, 85, 105);
+              doc.text(evidencia, 18, yRecomendacion + 16);
+              doc.setTextColor(15, 23, 42);
+              doc.text(accion, 18, yRecomendacion + 16 + evidencia.length * 3.7 + 2);
+              doc.setFont("helvetica", "bold");
+              doc.setTextColor(...color);
+              doc.text(
+                  seguimiento,
+                  18,
+                  yRecomendacion + 16 + (evidencia.length + accion.length) * 3.7 + 4
+              );
+              yRecomendacion += altoBloque;
+          });
 
           doc.addPage();
           doc.setTextColor(15, 23, 42);

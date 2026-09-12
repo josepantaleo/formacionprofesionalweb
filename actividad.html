@@ -16,7 +16,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="actividad-base.css?v=20260911-2" />
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260912-11" />
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260912-15" />
     <!-- Librería jsPDF para generación de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- Librería pdf-lib para cifrar y proteger el PDF generado -->
@@ -967,12 +967,28 @@
       </div>
     </div>
 
+    <section id="informeVisualEstudiante" class="student-progress-report" aria-labelledby="informeVisualEstudianteTitulo">
+      <header class="student-progress-report-header">
+        <div>
+          <span class="student-progress-report-icon" aria-hidden="true"><i class="fa-solid fa-chart-line"></i></span>
+          <div>
+            <h2 id="informeVisualEstudianteTitulo">Mi progreso y recomendaciones</h2>
+            <p>Resultados de desafíos finalizados y acciones personales de mejora.</p>
+          </div>
+        </div>
+        <button class="btn btn-secondary" type="button" onclick="renderInformeVisualEstudiante()" title="Actualizar informe">
+          <i class="fa-solid fa-rotate"></i> Actualizar
+        </button>
+      </header>
+      <div id="informeVisualEstudianteContenido" aria-live="polite"></div>
+    </section>
+
     <!-- Barra Inferior Global para Exportar PDF -->
     <div class="export-bar">
       <div class="export-info">
         <i class="fa-solid fa-file-pdf" style="color: var(--primary)"></i>
         <span
-          >Incluye gráficos de avance y notas, tabla por desafío, código, tiempos, cambios de pestaña y resultados.
+          >Incluye mapa de calor, recomendaciones personalizadas, gráficos de avance y notas, tabla por desafío, código y resultados.
           La protección del archivo puede variar según el navegador.</span
         >
       </div>
@@ -981,7 +997,7 @@
       </button>
     </div>
 
-    <script src="actividad-app.js?v=20260912-12"></script>
+    <script src="actividad-app.js?v=20260912-15"></script>
     <script src="actividad-cooperacion.js?v=20260910-1"></script>
     <script src="mejoras-seguimiento.js?v=20260912-9"></script>
   </body>
