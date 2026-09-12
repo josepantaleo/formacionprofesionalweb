@@ -16,7 +16,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="actividad-base.css?v=20260911-2" />
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260912-2" />
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260912-3" />
     <!-- Librería jsPDF para generación de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- Librería pdf-lib para cifrar y proteger el PDF generado -->
@@ -251,6 +251,14 @@
                 <option value="nombre">Nombre</option>
                 <option value="completas">Más completas</option>
                 <option value="revision">Más respuestas a revisar</option>
+              </select>
+            </label>
+            <label>Comparar grupos por
+              <select id="agrupacionInformeSocratico" onchange="renderInformeGrupalSocratico()">
+                <option value="grupo">Curso, división y turno</option>
+                <option value="curso">Curso</option>
+                <option value="division">División</option>
+                <option value="turno">Turno</option>
               </select>
             </label>
             <div class="teacher-group-report-actions">
@@ -930,7 +938,7 @@
       </button>
     </div>
 
-    <script src="actividad-app.js?v=20260912-2"></script>
+    <script src="actividad-app.js?v=20260912-3"></script>
     <script src="actividad-cooperacion.js?v=20260910-1"></script>
     <script src="mejoras-seguimiento.js?v=20260910-4"></script>
   </body>

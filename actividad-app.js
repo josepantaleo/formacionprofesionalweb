@@ -6087,12 +6087,42 @@
           return resumirNivelesAnalistaEstudiante(historial);
       }
 
+      function obtenerFiltrosGrupoInformeSocratico() {
+          return {
+              curso: document.getElementById("filtroCursoProfesor")?.value || "",
+              division: document.getElementById("filtroDivisionProfesor")?.value || "",
+              turno: document.getElementById("filtroTurnoProfesor")?.value || ""
+          };
+      }
+
+      function obtenerEstudiantesFiltradosInformeSocratico() {
+          const filtros = obtenerFiltrosGrupoInformeSocratico();
+          return estudiantesProfesor.filter(d => {
+              if (d?.estadoCuenta === "rechazado") return false;
+              const estudiante = d.estudiante || {};
+              if (filtros.curso && estudiante.curso !== filtros.curso) return false;
+              if (filtros.division && estudiante.division !== filtros.division) return false;
+              if (filtros.turno && estudiante.turno !== filtros.turno) return false;
+              return true;
+          });
+      }
+
+      function describirAlcanceGrupoInformeSocratico() {
+          const filtros = obtenerFiltrosGrupoInformeSocratico();
+          const partes = [
+              filtros.curso ? `Curso ${filtros.curso}` : "",
+              filtros.division ? `División ${filtros.division}` : "",
+              filtros.turno ? `Turno ${filtros.turno}` : ""
+          ].filter(Boolean);
+          return partes.length ? partes.join(" · ") : "Todos los cursos, divisiones y turnos";
+      }
+
       function obtenerDatosInformeGrupalSocratico() {
           prepararFiltroInformeSocratico();
           const sectionId = document.getElementById("filtroInformeSocraticoModulo")?.value || "";
           const orden = document.getElementById("ordenInformeSocratico")?.value || "nombre";
-          const filas = estudiantesProfesor
-              .filter(d => d?.estadoCuenta !== "rechazado")
+          const estudiantesAlcance = obtenerEstudiantesFiltradosInformeSocratico();
+          const filas = estudiantesAlcance
               .map(d => {
                   const conteo = obtenerConteoInformeSocratico(d, sectionId);
                   const total = Object.values(conteo).reduce((suma, valor) => suma + Number(valor || 0), 0);
@@ -6123,7 +6153,17 @@
           const actividad = sectionId
               ? seccionesData.find(sec => sec.id === sectionId)?.title || sectionId
               : "Todas las actividades";
-          return { filas, total, totalRespuestas, porcentaje, sectionId, actividad, orden };
+          return {
+              filas,
+              total,
+              totalRespuestas,
+              porcentaje,
+              sectionId,
+              actividad,
+              orden,
+              alcance: describirAlcanceGrupoInformeSocratico(),
+              estudiantesAlcance
+          };
       }
 
       function renderInformeGrupalSocratico() {
@@ -6132,7 +6172,9 @@
           const datos = obtenerDatosInformeGrupalSocratico();
           const { filas, total, porcentaje } = datos;
           const evolucion = obtenerEvolucionInformeGrupalSocratico();
+          const alertas = detectarAlertasEvolucionSocratica(evolucion, datos.estudiantesAlcance);
           contenedor.innerHTML = `
+              <div class="teacher-report-scope"><i class="fa-solid fa-filter"></i> Alcance: <strong>${escapeHtml(datos.alcance)}</strong> · ${datos.estudiantesAlcance.length} estudiante${datos.estudiantesAlcance.length === 1 ? "" : "s"}</div>
               <div class="teacher-group-report-summary">
                   <div class="is-completa"><small>Completas</small><strong>${total.completa}</strong><span>${porcentaje("completa")}%</span></div>
                   <div class="is-incompleta"><small>Incompletas</small><strong>${total.incompleta}</strong><span>${porcentaje("incompleta")}%</span></div>
@@ -6140,6 +6182,9 @@
                   <div class="is-incorrecta"><small>Incorrectas</small><strong>${total.incorrecta}</strong><span>${porcentaje("incorrecta")}%</span></div>
               </div>
               ${renderGraficosInformeGrupalSocratico(datos, evolucion)}
+              ${renderAlertasEvolucionSocratica(alertas)}
+              ${renderTablaEvolucionPanelSocratico(evolucion, alertas)}
+              ${renderComparacionGruposSocratico(datos)}
               ${filas.length ? `<div class="teacher-group-report-table"><table>
                   <thead><tr><th>Estudiante</th><th>Grupo</th><th>Completas</th><th>Incompletas</th><th>Parciales</th><th>Incorrectas</th><th>Total</th></tr></thead>
                   <tbody>${filas.map(fila => `<tr>
@@ -6217,6 +6262,164 @@
           </div>`;
       }
 
+      function porcentajeExactoPanel(valor) {
+          return `${Number(valor || 0).toLocaleString("es-AR", {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 1
+          })}%`;
+      }
+
+      function obtenerCriteriosFaltantesActividad(estudiantes, sectionId) {
+          const frecuencias = {};
+          estudiantes.forEach(estudiante => {
+              const preguntas = estudiante?.historialResultados?.[sectionId]?.analista?.preguntas || [];
+              preguntas.forEach(pregunta => {
+                  (Array.isArray(pregunta?.criteriosFaltantes) ? pregunta.criteriosFaltantes : []).forEach(criterio => {
+                      const clave = String(criterio || "").trim();
+                      if (clave) frecuencias[clave] = Number(frecuencias[clave] || 0) + 1;
+                  });
+              });
+          });
+          return Object.entries(frecuencias).sort((a, b) => b[1] - a[1]);
+      }
+
+      function sugerirRefuerzoActividadSocratica(item, estudiantes) {
+          const sec = seccionesData[item.indice - 1] || {};
+          const criterioPrincipal = obtenerCriteriosFaltantesActividad(estudiantes, sec.id)[0]?.[0] || "";
+          const sugerenciasPorCriterio = {
+              "desarrollo suficiente": "Modelar respuestas breves con la estructura decisión, explicación, evidencia y consecuencia.",
+              "justificación causal": "Repasar relaciones de causa y efecto usando conectores como “porque”, “permite”, “evita” y “por lo tanto”.",
+              "evidencia del código o de una prueba": "Practicar cómo citar una variable, condición, función o caso de prueba concreto para sostener una afirmación.",
+              "consecuencia, límite o mejora": "Trabajar casos límite y pedir que anticipen qué cambia, qué puede fallar y cómo comprobar una mejora."
+          };
+          const sugerencias = [];
+          if (criterioPrincipal && sugerenciasPorCriterio[criterioPrincipal]) {
+              sugerencias.push(sugerenciasPorCriterio[criterioPrincipal]);
+          }
+          if (sec.theory) sugerencias.push(`Reforzar el contenido: ${String(sec.theory).slice(0, 180)}`);
+          if (sec.exerciseTitle) sugerencias.push(`Retomar “${sec.exerciseTitle}” con una entrada alternativa y una explicación paso a paso.`);
+          return sugerencias.slice(0, 3);
+      }
+
+      function detectarAlertasEvolucionSocratica(evolucion, estudiantes) {
+          const alertas = [];
+          evolucion.forEach((item, indice) => {
+              const riesgo = Number(item.porcentajes.parcial || 0) + Number(item.porcentajes.incorrecta || 0);
+              const anterior = indice > 0 ? evolucion[indice - 1] : null;
+              const riesgoAnterior = anterior
+                  ? Number(anterior.porcentajes.parcial || 0) + Number(anterior.porcentajes.incorrecta || 0)
+                  : null;
+              const aumento = riesgoAnterior === null ? 0 : Number((riesgo - riesgoAnterior).toFixed(1));
+              item.riesgo = Number(riesgo.toFixed(1));
+              item.aumentoRiesgo = aumento;
+              if (anterior && aumento >= 10 && riesgo >= 30) {
+                  alertas.push({
+                      ...item,
+                      actividadAnterior: anterior.titulo,
+                      riesgoAnterior: Number(riesgoAnterior.toFixed(1)),
+                      severidad: aumento >= 20 || riesgo >= 50 ? "alta" : "media",
+                      sugerencias: sugerirRefuerzoActividadSocratica(item, estudiantes)
+                  });
+              }
+          });
+          return alertas;
+      }
+
+      function renderAlertasEvolucionSocratica(alertas) {
+          if (!alertas.length) {
+              return `<div class="teacher-risk-status is-ok"><i class="fa-solid fa-circle-check"></i><span>No se detectaron aumentos relevantes de respuestas parciales o incorrectas entre actividades consecutivas.</span></div>`;
+          }
+          return `<section class="teacher-risk-alerts">
+              <header><div><i class="fa-solid fa-triangle-exclamation"></i><strong>Actividades que requieren refuerzo</strong></div><small>Aumento mínimo detectado: 10 puntos porcentuales.</small></header>
+              <div>${alertas.map(alerta => `<article class="teacher-risk-card is-${alerta.severidad}">
+                  <div class="teacher-risk-card-heading">
+                      <strong>${alerta.indice}. ${escapeHtml(alerta.titulo)}</strong>
+                      <span>Riesgo ${porcentajeExactoPanel(alerta.riesgo)} · +${porcentajeExactoPanel(alerta.aumentoRiesgo)}</span>
+                  </div>
+                  <p>Las respuestas parciales o incorrectas aumentaron desde ${porcentajeExactoPanel(alerta.riesgoAnterior)} en “${escapeHtml(alerta.actividadAnterior)}”.</p>
+                  <ul>${alerta.sugerencias.map(sugerencia => `<li>${escapeHtml(sugerencia)}</li>`).join("")}</ul>
+              </article>`).join("")}</div>
+          </section>`;
+      }
+
+      function renderTablaEvolucionPanelSocratico(evolucion, alertas) {
+          if (!evolucion.length) return "";
+          const indicesAlerta = new Set(alertas.map(alerta => alerta.indice));
+          return `<details class="teacher-evolution-data" open>
+              <summary><i class="fa-solid fa-table-list"></i> Porcentajes exactos por actividad</summary>
+              <div class="teacher-group-report-table"><table>
+                  <thead><tr><th>N.º</th><th>Actividad</th><th>Respuestas</th><th>Completas</th><th>Incompletas</th><th>Parciales</th><th>Incorrectas</th><th>Riesgo</th><th>Cambio</th></tr></thead>
+                  <tbody>${evolucion.map((item, indice) => `<tr class="${indicesAlerta.has(item.indice) ? "is-risk-row" : ""}">
+                      <td>${item.indice}</td>
+                      <td><strong>${escapeHtml(item.titulo)}</strong>${indicesAlerta.has(item.indice) ? ' <span class="teacher-risk-badge">Refuerzo</span>' : ""}</td>
+                      <td>${item.respuestas}</td>
+                      <td class="is-completa">${porcentajeExactoPanel(item.porcentajes.completa)}</td>
+                      <td class="is-incompleta">${porcentajeExactoPanel(item.porcentajes.incompleta)}</td>
+                      <td class="is-parcial">${porcentajeExactoPanel(item.porcentajes.parcial)}</td>
+                      <td class="is-incorrecta">${porcentajeExactoPanel(item.porcentajes.incorrecta)}</td>
+                      <td>${porcentajeExactoPanel(item.riesgo)}</td>
+                      <td>${indice === 0 ? "—" : `${item.aumentoRiesgo > 0 ? "+" : ""}${porcentajeExactoPanel(item.aumentoRiesgo)}`}</td>
+                  </tr>`).join("")}</tbody>
+              </table></div>
+          </details>`;
+      }
+
+      function renderComparacionGruposSocratico(datos) {
+          const agrupacion = document.getElementById("agrupacionInformeSocratico")?.value || "grupo";
+          const etiquetaAgrupacion = {
+              grupo: "curso, división y turno",
+              curso: "curso",
+              division: "división",
+              turno: "turno"
+          }[agrupacion] || "grupo";
+          const claveGrupo = estudiante => {
+              const e = estudiante.estudiante || {};
+              if (agrupacion === "curso") return e.curso || "Sin curso";
+              if (agrupacion === "division") return e.division || "Sin división";
+              if (agrupacion === "turno") return e.turno || "Sin turno";
+              return [e.curso || "Sin curso", e.division || "Sin división", e.turno || "Sin turno"].join(" · ");
+          };
+          const grupos = new Map();
+          datos.estudiantesAlcance.forEach(estudiante => {
+              const clave = claveGrupo(estudiante);
+              if (!grupos.has(clave)) {
+                  grupos.set(clave, {
+                      nombre: clave,
+                      estudiantes: 0,
+                      conteo: { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 }
+                  });
+              }
+              const grupo = grupos.get(clave);
+              grupo.estudiantes++;
+              const conteo = obtenerConteoInformeSocratico(estudiante, datos.sectionId);
+              Object.keys(grupo.conteo).forEach(nivel => grupo.conteo[nivel] += Number(conteo[nivel] || 0));
+          });
+          const filas = [...grupos.values()].map(grupo => {
+              const total = Object.values(grupo.conteo).reduce((suma, valor) => suma + valor, 0);
+              return {
+                  ...grupo,
+                  total,
+                  porcentajes: Object.fromEntries(Object.entries(grupo.conteo).map(([nivel, valor]) => [
+                      nivel,
+                      total ? valor * 100 / total : 0
+                  ]))
+              };
+          }).filter(grupo => grupo.total > 0).sort((a, b) => a.nombre.localeCompare(b.nombre));
+          if (!filas.length) return "";
+          return `<details class="teacher-group-comparison" open>
+              <summary><i class="fa-solid fa-people-group"></i> Comparación por ${escapeHtml(etiquetaAgrupacion)}</summary>
+              <div class="teacher-comparison-list">${filas.map(grupo => `<article>
+                  <div class="teacher-comparison-heading"><strong>${escapeHtml(grupo.nombre)}</strong><span>${grupo.estudiantes} estudiante${grupo.estudiantes === 1 ? "" : "s"} · ${grupo.total} respuestas</span></div>
+                  <div class="teacher-comparison-bar" aria-label="${escapeHtml(`Distribución de ${grupo.nombre}`)}">
+                      ${SERIES_GRAFICO_SOCRATICO.map(serie => `<span class="is-${serie.nivel}" style="width:${grupo.porcentajes[serie.nivel]}%" title="${serie.etiqueta}: ${porcentajeExactoPanel(grupo.porcentajes[serie.nivel])}"></span>`).join("")}
+                  </div>
+                  <div class="teacher-comparison-values">${SERIES_GRAFICO_SOCRATICO.map(serie =>
+                      `<span class="is-${serie.nivel}">${serie.etiqueta}: <strong>${porcentajeExactoPanel(grupo.porcentajes[serie.nivel])}</strong></span>`
+                  ).join("")}</div>
+              </article>`).join("")}</div>
+          </details>`;
+      }
+
       function escaparCampoCSV(valor) {
           const texto = String(valor ?? "").replace(/\r?\n/g, " ");
           return `"${texto.replace(/"/g, '""')}"`;
@@ -6267,6 +6470,8 @@
           const metadatos = [
               ["Informe grupal de respuestas socráticas"],
               ["Actividad", datos.actividad],
+              ["Alcance", datos.alcance],
+              ["Estudiantes incluidos", datos.estudiantesAlcance.length],
               ["Generado", new Date().toLocaleString("es-AR")],
               []
           ];
@@ -6278,7 +6483,7 @@
       }
 
       function obtenerEvolucionInformeGrupalSocratico() {
-          const estudiantes = estudiantesProfesor.filter(d => d?.estadoCuenta !== "rechazado");
+          const estudiantes = obtenerEstudiantesFiltradosInformeSocratico();
           return seccionesData.map((sec, indice) => {
               const total = estudiantes.reduce((acumulado, estudiante) => {
                   const conteo = obtenerConteoInformeSocratico(estudiante, sec.id);
@@ -6404,13 +6609,16 @@
 
       function dibujarTablaEvolucionInformePDF(doc, evolucion) {
           const columnas = [
-              { titulo: "N.º", x: 12, ancho: 12 },
-              { titulo: "Actividad", x: 25, ancho: 115 },
-              { titulo: "Respuestas", x: 143, ancho: 24 },
-              { titulo: "Completas", x: 171, ancho: 25 },
-              { titulo: "Incompletas", x: 201, ancho: 27 },
-              { titulo: "Parciales", x: 234, ancho: 22 },
-              { titulo: "Incorrectas", x: 261, ancho: 25 }
+              { titulo: "N.º", x: 10, ancho: 10 },
+              { titulo: "Actividad", x: 21, ancho: 82 },
+              { titulo: "Resp.", x: 106, ancho: 16 },
+              { titulo: "Completas", x: 125, ancho: 22 },
+              { titulo: "Incompletas", x: 150, ancho: 24 },
+              { titulo: "Parciales", x: 177, ancho: 21 },
+              { titulo: "Incorrectas", x: 201, ancho: 23 },
+              { titulo: "Riesgo", x: 228, ancho: 20 },
+              { titulo: "Cambio", x: 252, ancho: 20 },
+              { titulo: "Estado", x: 275, ancho: 13 }
           ];
           const porcentajeExacto = valor =>
               `${Number(valor || 0).toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
@@ -6453,6 +6661,13 @@
               doc.text(porcentajeExacto(item.porcentajes.incompleta), columnas[4].x, y);
               doc.text(porcentajeExacto(item.porcentajes.parcial), columnas[5].x, y);
               doc.text(porcentajeExacto(item.porcentajes.incorrecta), columnas[6].x, y);
+              doc.text(porcentajeExacto(item.riesgo), columnas[7].x, y);
+              doc.text(
+                  indice === 0 ? "-" : `${item.aumentoRiesgo > 0 ? "+" : ""}${porcentajeExacto(item.aumentoRiesgo)}`,
+                  columnas[8].x,
+                  y
+              );
+              doc.text(item.esAlerta ? "Refuerzo" : "-", columnas[9].x, y);
               y += altoFila;
           });
       }
@@ -6470,6 +6685,11 @@
           const { jsPDF } = window.jspdf;
           const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
           const evolucion = obtenerEvolucionInformeGrupalSocratico();
+          const alertas = detectarAlertasEvolucionSocratica(evolucion, datos.estudiantesAlcance);
+          const indicesAlerta = new Set(alertas.map(alerta => alerta.indice));
+          evolucion.forEach(item => {
+              item.esAlerta = indicesAlerta.has(item.indice);
+          });
           const columnas = [
               { titulo: "Estudiante", x: 12, ancho: 60 },
               { titulo: "Grupo", x: 74, ancho: 58 },
@@ -6494,19 +6714,20 @@
           doc.setFont("helvetica", "normal");
           doc.setFontSize(9);
           doc.text(`Actividad: ${datos.actividad}`, 12, 21);
-          doc.text(`Generado: ${new Date().toLocaleString("es-AR")} · Estudiantes con respuestas: ${datos.filas.length}`, 12, 27);
+          doc.text(`Alcance: ${datos.alcance}`, 12, 27);
+          doc.text(`Generado: ${new Date().toLocaleString("es-AR")} · Estudiantes incluidos: ${datos.estudiantesAlcance.length} · Con respuestas: ${datos.filas.length}`, 12, 33);
           doc.text(
               `Totales: completas ${datos.total.completa} · incompletas ${datos.total.incompleta} · parciales ${datos.total.parcial} · incorrectas ${datos.total.incorrecta}`,
               12,
-              32
+              38
           );
-          dibujarDistribucionInformePDF(doc, datos, 12, 43, 92, 58);
+          dibujarDistribucionInformePDF(doc, datos, 12, 49, 92, 58);
           if (evolucion.length) {
-              dibujarEvolucionInformePDF(doc, evolucion, 116, 43, 169, 58);
+              dibujarEvolucionInformePDF(doc, evolucion, 116, 49, 169, 58);
           } else {
               doc.setFont("helvetica", "normal");
               doc.setFontSize(9);
-              doc.text("No hay actividades respondidas para mostrar la evolución.", 116, 55);
+              doc.text("No hay actividades respondidas para mostrar la evolución.", 116, 61);
           }
           doc.setFont("helvetica", "normal");
           doc.setFontSize(7);
@@ -6514,8 +6735,17 @@
           doc.text(
               "La distribución corresponde al filtro seleccionado. La evolución compara todas las actividades que tienen respuestas.",
               12,
-              116
+              122
           );
+          if (alertas.length) {
+              doc.setFont("helvetica", "bold");
+              doc.setTextColor(185, 28, 28);
+              doc.text(
+                  `${alertas.length} actividad${alertas.length === 1 ? "" : "es"} marcada${alertas.length === 1 ? "" : "s"} para refuerzo por aumento de respuestas parciales o incorrectas.`,
+                  12,
+                  129
+              );
+          }
 
           if (evolucion.length) dibujarTablaEvolucionInformePDF(doc, evolucion);
           doc.addPage("a4", "landscape");
