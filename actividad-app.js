@@ -11227,16 +11227,26 @@
                   yPos = 20;
               }
           };
-          const actividadesEvaluadasPDF = seccionesData.map(sec => {
+          const actividadesInformeEstudiante = seccionesData.map((sec, indice) => {
               const detalleNota = obtenerNotaVigenteModuloEstudiante(sec.id);
+              const finalizada = actividadesFinalizadas[sec.id] === true;
+              const analista = finalizada ? historialResultados[sec.id]?.analista : null;
+              const conteoSocratico = obtenerConteoNivelesAnalista(analista);
               return {
+                  indice: indice + 1,
+                  id: sec.id,
                   titulo: sec.title,
-                  nota: detalleNota.nota,
+                  finalizada,
+                  nota: finalizada ? detalleNota.nota : null,
                   notaAutomatica: detalleNota.notaAutomatica,
                   corregida: detalleNota.corregida,
-                  ajuste: detalleNota.ajuste
+                  ajuste: detalleNota.ajuste,
+                  conteoSocratico,
+                  respuestasSocraticas: Object.values(conteoSocratico)
+                      .reduce((suma, valor) => suma + Number(valor || 0), 0)
               };
-          }).filter(x => x.nota !== null);
+          });
+          const actividadesEvaluadasPDF = actividadesInformeEstudiante.filter(x => x.nota !== null);
           const notasFinales = actividadesEvaluadasPDF.map(x => x.nota);
           const sumaNotasFinales = notasFinales.reduce((a,b)=>a+b,0);
           const promedioFinalNumero = notasFinales.length ? sumaNotasFinales / notasFinales.length : null;
@@ -11257,7 +11267,172 @@
           doc.text(`Promedio académico: ${promedioFinal}/10 | Nota calculada: ${notaCalculadaPDF}/10`, 14, yPos);
           yPos += 6;
           doc.text(`Nota definitiva: ${notaDefinitivaNumero !== null ? `${notaDefinitivaPDF}/10 (confirmada por docente)` : 'pendiente de confirmación docente'}`, 14, yPos);
-          yPos += 8;
+          yPos += 9;
+
+          const desafiosFinalizadosPDF = actividadesInformeEstudiante.filter(item => item.finalizada).length;
+          const progresoPDF = seccionesData.length
+              ? Math.round(desafiosFinalizadosPDF * 100 / seccionesData.length)
+              : 0;
+          const totalSocraticoPDF = actividadesInformeEstudiante.reduce((total, item) => {
+              Object.keys(total).forEach(nivel => {
+                  total[nivel] += Number(item.conteoSocratico[nivel] || 0);
+              });
+              return total;
+          }, { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 });
+          const respuestasSocraticasPDF = Object.values(totalSocraticoPDF)
+              .reduce((suma, valor) => suma + valor, 0);
+
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10);
+          doc.text("Avance del trayecto", 14, yPos);
+          yPos += 5;
+          doc.setFillColor(226, 232, 240);
+          doc.roundedRect(14, yPos, 182, 8, 2, 2, "F");
+          if (progresoPDF > 0) {
+              doc.setFillColor(14, 165, 233);
+              doc.roundedRect(14, yPos, 182 * progresoPDF / 100, 8, 2, 2, "F");
+          }
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(8);
+          doc.setTextColor(15, 23, 42);
+          doc.text(`${desafiosFinalizadosPDF}/${seccionesData.length} desafíos finalizados · ${progresoPDF}%`, 105, yPos + 5.7, { align: "center" });
+          yPos += 16;
+
+          const graficoNotasX = 18;
+          const graficoNotasY = yPos + 8;
+          const graficoNotasAncho = 108;
+          const graficoNotasAlto = 54;
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10);
+          doc.text("Evolución de notas", 14, yPos);
+          [0, 2, 4, 6, 8, 10].forEach(valor => {
+              const py = graficoNotasY + graficoNotasAlto - graficoNotasAlto * valor / 10;
+              doc.setDrawColor(226, 232, 240);
+              doc.line(graficoNotasX, py, graficoNotasX + graficoNotasAncho, py);
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(6);
+              doc.setTextColor(100, 116, 139);
+              doc.text(String(valor), graficoNotasX - 2, py + 1, { align: "right" });
+          });
+          const pasoNota = actividadesEvaluadasPDF.length > 1
+              ? graficoNotasAncho / (actividadesEvaluadasPDF.length - 1)
+              : 0;
+          let puntoNotaAnterior = null;
+          actividadesEvaluadasPDF.forEach((actividad, indice) => {
+              const px = actividadesEvaluadasPDF.length > 1
+                  ? graficoNotasX + indice * pasoNota
+                  : graficoNotasX + graficoNotasAncho / 2;
+              const py = graficoNotasY + graficoNotasAlto - graficoNotasAlto * actividad.nota / 10;
+              doc.setDrawColor(14, 165, 233);
+              doc.setFillColor(14, 165, 233);
+              doc.setLineWidth(.7);
+              if (puntoNotaAnterior) doc.line(puntoNotaAnterior.x, puntoNotaAnterior.y, px, py);
+              doc.circle(px, py, 1.4, "F");
+              doc.setTextColor(71, 85, 105);
+              doc.setFontSize(6);
+              doc.text(String(actividad.indice), px, graficoNotasY + graficoNotasAlto + 5, { align: "center" });
+              puntoNotaAnterior = { x: px, y: py };
+          });
+          doc.setLineWidth(.2);
+          if (!actividadesEvaluadasPDF.length) {
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(8);
+              doc.setTextColor(100, 116, 139);
+              doc.text("Todavía no hay desafíos finalizados con nota.", graficoNotasX + 8, graficoNotasY + 28);
+          }
+
+          const graficoRespuestasX = 139;
+          const graficoRespuestasY = graficoNotasY;
+          const graficoRespuestasAlto = graficoNotasAlto;
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(10);
+          doc.setTextColor(15, 23, 42);
+          doc.text("Respuestas socráticas", 135, yPos);
+          const seriesEstudiantePDF = [
+              { clave: "completa", etiqueta: "Completas", color: [34, 197, 94] },
+              { clave: "incompleta", etiqueta: "Incompletas", color: [14, 165, 233] },
+              { clave: "parcial", etiqueta: "Parciales", color: [245, 158, 11] },
+              { clave: "incorrecta", etiqueta: "Incorrectas", color: [239, 68, 68] }
+          ];
+          seriesEstudiantePDF.forEach((serie, indice) => {
+              const valor = Number(totalSocraticoPDF[serie.clave] || 0);
+              const porcentaje = respuestasSocraticasPDF ? valor * 100 / respuestasSocraticasPDF : 0;
+              const anchoBarra = 48 * porcentaje / 100;
+              const py = graficoRespuestasY + indice * 13;
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(6.8);
+              doc.setTextColor(71, 85, 105);
+              doc.text(serie.etiqueta, graficoRespuestasX, py + 4);
+              doc.setFillColor(226, 232, 240);
+              doc.rect(graficoRespuestasX, py + 6, 48, 4, "F");
+              if (anchoBarra > 0) {
+                  doc.setFillColor(...serie.color);
+                  doc.rect(graficoRespuestasX, py + 6, anchoBarra, 4, "F");
+              }
+              doc.setTextColor(15, 23, 42);
+              doc.text(`${valor} · ${porcentaje.toFixed(1)}%`, graficoRespuestasX + 50, py + 9);
+          });
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(6.5);
+          doc.setTextColor(100, 116, 139);
+          doc.text(`${respuestasSocraticasPDF} respuestas en desafíos finalizados`, 135, graficoRespuestasY + graficoRespuestasAlto + 6);
+
+          doc.addPage();
+          doc.setTextColor(15, 23, 42);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(13);
+          doc.text("Tabla de avance y resultados por desafío", 14, 16);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7.5);
+          doc.text("Las respuestas y notas corresponden únicamente a desafíos finalizados.", 14, 22);
+          const columnasEstudiante = [
+              { titulo: "N.º", x: 14 },
+              { titulo: "Desafío", x: 24 },
+              { titulo: "Estado", x: 91 },
+              { titulo: "Nota", x: 116 },
+              { titulo: "Comp.", x: 133 },
+              { titulo: "Incomp.", x: 149 },
+              { titulo: "Parc.", x: 167 },
+              { titulo: "Incorr.", x: 181 }
+          ];
+          doc.setFillColor(15, 23, 42);
+          doc.rect(12, 27, 186, 9, "F");
+          doc.setTextColor(255, 255, 255);
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(7);
+          columnasEstudiante.forEach(columna => doc.text(columna.titulo, columna.x, 33));
+          let yTablaEstudiante = 43;
+          actividadesInformeEstudiante.forEach((actividad, indice) => {
+              const titulo = doc.splitTextToSize(actividad.titulo, 63);
+              const altoFila = Math.max(8, titulo.length * 4);
+              if (yTablaEstudiante + altoFila > 282) {
+                  doc.addPage();
+                  doc.setFillColor(15, 23, 42);
+                  doc.rect(12, 18, 186, 9, "F");
+                  doc.setTextColor(255, 255, 255);
+                  columnasEstudiante.forEach(columna => doc.text(columna.titulo, columna.x, 24));
+                  yTablaEstudiante = 34;
+              }
+              if (indice % 2 === 1) {
+                  doc.setFillColor(241, 245, 249);
+                  doc.rect(12, yTablaEstudiante - 4, 186, altoFila, "F");
+              }
+              doc.setTextColor(15, 23, 42);
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(7);
+              doc.text(String(actividad.indice), columnasEstudiante[0].x, yTablaEstudiante);
+              doc.text(titulo, columnasEstudiante[1].x, yTablaEstudiante);
+              doc.text(actividad.finalizada ? "Finalizado" : "Pendiente", columnasEstudiante[2].x, yTablaEstudiante);
+              doc.text(actividad.nota === null ? "-" : actividad.nota.toFixed(1), columnasEstudiante[3].x, yTablaEstudiante);
+              doc.text(String(actividad.conteoSocratico.completa), columnasEstudiante[4].x, yTablaEstudiante);
+              doc.text(String(actividad.conteoSocratico.incompleta), columnasEstudiante[5].x, yTablaEstudiante);
+              doc.text(String(actividad.conteoSocratico.parcial), columnasEstudiante[6].x, yTablaEstudiante);
+              doc.text(String(actividad.conteoSocratico.incorrecta), columnasEstudiante[7].x, yTablaEstudiante);
+              yTablaEstudiante += altoFila;
+          });
+
+          doc.addPage();
+          yPos = 20;
 
           doc.setFont("helvetica", "bold");
           doc.setFontSize(12);
