@@ -6087,9 +6087,7 @@
           return resumirNivelesAnalistaEstudiante(historial);
       }
 
-      function renderInformeGrupalSocratico() {
-          const contenedor = document.getElementById("informeGrupalSocratico");
-          if (!contenedor) return;
+      function obtenerDatosInformeGrupalSocratico() {
           prepararFiltroInformeSocratico();
           const sectionId = document.getElementById("filtroInformeSocraticoModulo")?.value || "";
           const orden = document.getElementById("ordenInformeSocratico")?.value || "nombre";
@@ -6100,6 +6098,10 @@
                   const total = Object.values(conteo).reduce((suma, valor) => suma + Number(valor || 0), 0);
                   return {
                       nombre: d.estudiante?.nombre || d.nombreGoogle || d.email || "Sin nombre",
+                      email: d.email || "",
+                      cursoNombre: d.estudiante?.curso || "",
+                      division: d.estudiante?.division || "",
+                      turno: d.estudiante?.turno || "",
                       curso: [d.estudiante?.curso, d.estudiante?.division, d.estudiante?.turno].filter(Boolean).join(" · "),
                       conteo,
                       total,
@@ -6118,6 +6120,16 @@
           }, { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 });
           const totalRespuestas = Object.values(total).reduce((suma, valor) => suma + valor, 0);
           const porcentaje = nivel => totalRespuestas ? Math.round(total[nivel] * 100 / totalRespuestas) : 0;
+          const actividad = sectionId
+              ? seccionesData.find(sec => sec.id === sectionId)?.title || sectionId
+              : "Todas las actividades";
+          return { filas, total, totalRespuestas, porcentaje, sectionId, actividad, orden };
+      }
+
+      function renderInformeGrupalSocratico() {
+          const contenedor = document.getElementById("informeGrupalSocratico");
+          if (!contenedor) return;
+          const { filas, total, porcentaje } = obtenerDatosInformeGrupalSocratico();
           contenedor.innerHTML = `
               <div class="teacher-group-report-summary">
                   <div class="is-completa"><small>Completas</small><strong>${total.completa}</strong><span>${porcentaje("completa")}%</span></div>
@@ -6137,6 +6149,299 @@
                       <td>${fila.total}</td>
                   </tr>`).join("")}</tbody>
               </table></div>` : `<p class="teacher-group-report-empty">Todavía no hay respuestas entregadas para el alcance seleccionado.</p>`}`;
+      }
+
+      function escaparCampoCSV(valor) {
+          const texto = String(valor ?? "").replace(/\r?\n/g, " ");
+          return `"${texto.replace(/"/g, '""')}"`;
+      }
+
+      function descargarArchivoTexto(contenido, nombre, tipo) {
+          const blob = new Blob([contenido], { type: tipo });
+          const enlace = document.createElement("a");
+          enlace.href = URL.createObjectURL(blob);
+          enlace.download = nombre;
+          document.body.appendChild(enlace);
+          enlace.click();
+          enlace.remove();
+          setTimeout(() => URL.revokeObjectURL(enlace.href), 1000);
+      }
+
+      function exportarInformeGrupalSocraticoCSV() {
+          const datos = obtenerDatosInformeGrupalSocratico();
+          if (!datos.filas.length) {
+              alert("No hay respuestas para exportar con el alcance seleccionado.");
+              return;
+          }
+          const encabezados = [
+              "Estudiante", "Email", "Curso", "División", "Turno",
+              "Respuestas completas", "Correctas incompletas",
+              "Respuestas parciales", "Respuestas incorrectas", "Total"
+          ];
+          const filas = datos.filas.map(fila => [
+              fila.nombre,
+              fila.email,
+              fila.cursoNombre,
+              fila.division,
+              fila.turno,
+              fila.conteo.completa,
+              fila.conteo.incompleta,
+              fila.conteo.parcial,
+              fila.conteo.incorrecta,
+              fila.total
+          ]);
+          filas.push([
+              "TOTAL DEL GRUPO", "", "", "", "",
+              datos.total.completa,
+              datos.total.incompleta,
+              datos.total.parcial,
+              datos.total.incorrecta,
+              datos.totalRespuestas
+          ]);
+          const metadatos = [
+              ["Informe grupal de respuestas socráticas"],
+              ["Actividad", datos.actividad],
+              ["Generado", new Date().toLocaleString("es-AR")],
+              []
+          ];
+          const contenido = "\uFEFF" + [...metadatos, encabezados, ...filas]
+              .map(fila => fila.map(escaparCampoCSV).join(";"))
+              .join("\r\n");
+          const nombre = nombreArchivoPDFProfesor(`Informe_socratico_${datos.actividad}`) + ".csv";
+          descargarArchivoTexto(contenido, nombre, "text/csv;charset=utf-8");
+      }
+
+      function obtenerEvolucionInformeGrupalSocratico() {
+          const estudiantes = estudiantesProfesor.filter(d => d?.estadoCuenta !== "rechazado");
+          return seccionesData.map((sec, indice) => {
+              const total = estudiantes.reduce((acumulado, estudiante) => {
+                  const conteo = obtenerConteoInformeSocratico(estudiante, sec.id);
+                  Object.keys(acumulado).forEach(nivel => {
+                      acumulado[nivel] += Number(conteo[nivel] || 0);
+                  });
+                  return acumulado;
+              }, { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 });
+              const respuestas = Object.values(total).reduce((suma, valor) => suma + valor, 0);
+              return {
+                  indice: indice + 1,
+                  titulo: sec.title || `Actividad ${indice + 1}`,
+                  total,
+                  respuestas,
+                  porcentajes: Object.fromEntries(
+                      Object.entries(total).map(([nivel, valor]) => [
+                          nivel,
+                          respuestas ? Number((valor * 100 / respuestas).toFixed(1)) : 0
+                      ])
+                  )
+              };
+          }).filter(item => item.respuestas > 0);
+      }
+
+      const SERIES_GRAFICO_SOCRATICO = [
+          { nivel: "completa", etiqueta: "Completas", color: [34, 197, 94] },
+          { nivel: "incompleta", etiqueta: "Incompletas", color: [14, 165, 233] },
+          { nivel: "parcial", etiqueta: "Parciales", color: [245, 158, 11] },
+          { nivel: "incorrecta", etiqueta: "Incorrectas", color: [239, 68, 68] }
+      ];
+
+      function dibujarLeyendaGraficoSocraticoPDF(doc, x, y) {
+          let cursor = x;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7);
+          SERIES_GRAFICO_SOCRATICO.forEach(serie => {
+              doc.setFillColor(...serie.color);
+              doc.rect(cursor, y - 2.5, 4, 4, "F");
+              doc.setTextColor(30, 41, 59);
+              doc.text(serie.etiqueta, cursor + 5.5, y + 0.5);
+              cursor += 32;
+          });
+      }
+
+      function dibujarDistribucionInformePDF(doc, datos, x, y, ancho, alto) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(11);
+          doc.setTextColor(15, 23, 42);
+          doc.text("Distribución de respuestas", x, y);
+          const baseY = y + alto;
+          const graficoAlto = alto - 15;
+          const anchoBarra = Math.min(18, (ancho - 24) / 6);
+          const espacio = (ancho - anchoBarra * SERIES_GRAFICO_SOCRATICO.length) /
+              (SERIES_GRAFICO_SOCRATICO.length + 1);
+          doc.setDrawColor(203, 213, 225);
+          doc.line(x, baseY, x + ancho, baseY);
+          SERIES_GRAFICO_SOCRATICO.forEach((serie, indice) => {
+              const valor = Number(datos.total[serie.nivel] || 0);
+              const porcentaje = datos.totalRespuestas ? valor * 100 / datos.totalRespuestas : 0;
+              const altoBarra = graficoAlto * porcentaje / 100;
+              const barraX = x + espacio + indice * (anchoBarra + espacio);
+              doc.setFillColor(...serie.color);
+              doc.rect(barraX, baseY - altoBarra, anchoBarra, altoBarra, "F");
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(8);
+              doc.setTextColor(30, 41, 59);
+              doc.text(`${Math.round(porcentaje)}%`, barraX + anchoBarra / 2, baseY - altoBarra - 2, { align: "center" });
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(6.5);
+              doc.text(serie.etiqueta, barraX + anchoBarra / 2, baseY + 4.5, { align: "center" });
+              doc.text(`${valor} resp.`, barraX + anchoBarra / 2, baseY + 8, { align: "center" });
+          });
+      }
+
+      function dibujarEvolucionInformePDF(doc, evolucion, x, y, ancho, alto) {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(11);
+          doc.setTextColor(15, 23, 42);
+          doc.text("Evolución porcentual por actividad", x, y);
+          dibujarLeyendaGraficoSocraticoPDF(doc, x + ancho - 130, y);
+          const graficoX = x + 10;
+          const graficoY = y + 8;
+          const graficoAncho = ancho - 14;
+          const graficoAlto = alto - 20;
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(6.5);
+          [0, 25, 50, 75, 100].forEach(valor => {
+              const puntoY = graficoY + graficoAlto - graficoAlto * valor / 100;
+              doc.setDrawColor(226, 232, 240);
+              doc.line(graficoX, puntoY, graficoX + graficoAncho, puntoY);
+              doc.setTextColor(100, 116, 139);
+              doc.text(`${valor}%`, graficoX - 2, puntoY + 1, { align: "right" });
+          });
+          const separacion = evolucion.length > 1 ? graficoAncho / (evolucion.length - 1) : 0;
+          evolucion.forEach((item, indice) => {
+              const puntoX = evolucion.length > 1
+                  ? graficoX + indice * separacion
+                  : graficoX + graficoAncho / 2;
+              doc.setTextColor(71, 85, 105);
+              doc.text(String(item.indice), puntoX, graficoY + graficoAlto + 5, { align: "center" });
+          });
+          SERIES_GRAFICO_SOCRATICO.forEach(serie => {
+              doc.setDrawColor(...serie.color);
+              doc.setFillColor(...serie.color);
+              doc.setLineWidth(0.7);
+              let anterior = null;
+              evolucion.forEach((item, indice) => {
+                  const puntoX = evolucion.length > 1
+                      ? graficoX + indice * separacion
+                      : graficoX + graficoAncho / 2;
+                  const puntoY = graficoY + graficoAlto -
+                      graficoAlto * Number(item.porcentajes[serie.nivel] || 0) / 100;
+                  if (anterior) doc.line(anterior.x, anterior.y, puntoX, puntoY);
+                  doc.circle(puntoX, puntoY, 1.15, "F");
+                  anterior = { x: puntoX, y: puntoY };
+              });
+          });
+          doc.setLineWidth(0.2);
+          doc.setFontSize(6.2);
+          doc.setTextColor(71, 85, 105);
+          doc.text("Eje X: número de actividad según el orden del curso.", x, y + alto + 2);
+      }
+
+      function exportarInformeGrupalSocraticoPDF() {
+          if (!window.jspdf?.jsPDF) {
+              alert("No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.");
+              return;
+          }
+          const datos = obtenerDatosInformeGrupalSocratico();
+          if (!datos.filas.length) {
+              alert("No hay respuestas para exportar con el alcance seleccionado.");
+              return;
+          }
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+          const evolucion = obtenerEvolucionInformeGrupalSocratico();
+          const columnas = [
+              { titulo: "Estudiante", x: 12, ancho: 60 },
+              { titulo: "Grupo", x: 74, ancho: 58 },
+              { titulo: "Completas", x: 136, ancho: 24 },
+              { titulo: "Incompletas", x: 164, ancho: 26 },
+              { titulo: "Parciales", x: 194, ancho: 22 },
+              { titulo: "Incorrectas", x: 220, ancho: 24 },
+              { titulo: "Total", x: 251, ancho: 18 }
+          ];
+          const dibujarEncabezado = (encabezadoY = 14) => {
+              doc.setFillColor(15, 23, 42);
+              doc.rect(8, encabezadoY, 281, 9, "F");
+              doc.setTextColor(255, 255, 255);
+              doc.setFont("helvetica", "bold");
+              doc.setFontSize(8);
+              columnas.forEach(columna => doc.text(columna.titulo, columna.x, encabezadoY + 6));
+              doc.setTextColor(15, 23, 42);
+          };
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(16);
+          doc.text("Informe grupal de respuestas socráticas", 12, 14);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          doc.text(`Actividad: ${datos.actividad}`, 12, 21);
+          doc.text(`Generado: ${new Date().toLocaleString("es-AR")} · Estudiantes con respuestas: ${datos.filas.length}`, 12, 27);
+          doc.text(
+              `Totales: completas ${datos.total.completa} · incompletas ${datos.total.incompleta} · parciales ${datos.total.parcial} · incorrectas ${datos.total.incorrecta}`,
+              12,
+              32
+          );
+          dibujarDistribucionInformePDF(doc, datos, 12, 43, 92, 58);
+          if (evolucion.length) {
+              dibujarEvolucionInformePDF(doc, evolucion, 116, 43, 169, 58);
+          } else {
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(9);
+              doc.text("No hay actividades respondidas para mostrar la evolución.", 116, 55);
+          }
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7);
+          doc.setTextColor(100, 116, 139);
+          doc.text(
+              "La distribución corresponde al filtro seleccionado. La evolución compara todas las actividades que tienen respuestas.",
+              12,
+              116
+          );
+
+          doc.addPage("a4", "landscape");
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(12);
+          doc.setTextColor(15, 23, 42);
+          doc.text("Detalle por estudiante", 12, 10);
+          dibujarEncabezado(14);
+          let y = 29;
+          datos.filas.forEach((fila, indice) => {
+              const altoNombre = doc.splitTextToSize(fila.nombre, columnas[0].ancho).length;
+              const altoGrupo = doc.splitTextToSize(fila.curso || "Sin grupo", columnas[1].ancho).length;
+              const altoFila = Math.max(7, Math.max(altoNombre, altoGrupo) * 4);
+              if (y + altoFila > 198) {
+                  doc.addPage("a4", "landscape");
+                  doc.setFontSize(8);
+                  dibujarEncabezado(14);
+                  y = 29;
+              }
+              if (indice % 2 === 1) {
+                  doc.setFillColor(241, 245, 249);
+                  doc.rect(8, y - 4, 281, altoFila, "F");
+              }
+              doc.setFont("helvetica", "normal");
+              doc.setFontSize(8);
+              doc.text(doc.splitTextToSize(fila.nombre, columnas[0].ancho), columnas[0].x, y);
+              doc.text(doc.splitTextToSize(fila.curso || "Sin grupo", columnas[1].ancho), columnas[1].x, y);
+              doc.text(String(fila.conteo.completa), columnas[2].x, y);
+              doc.text(String(fila.conteo.incompleta), columnas[3].x, y);
+              doc.text(String(fila.conteo.parcial), columnas[4].x, y);
+              doc.text(String(fila.conteo.incorrecta), columnas[5].x, y);
+              doc.text(String(fila.total), columnas[6].x, y);
+              y += altoFila;
+          });
+          if (y + 10 > 198) {
+              doc.addPage("a4", "landscape");
+              y = 18;
+          }
+          doc.setDrawColor(100, 116, 139);
+          doc.line(8, y - 3, 289, y - 3);
+          doc.setFont("helvetica", "bold");
+          doc.text("TOTAL DEL GRUPO", columnas[0].x, y + 2);
+          doc.text(String(datos.total.completa), columnas[2].x, y + 2);
+          doc.text(String(datos.total.incompleta), columnas[3].x, y + 2);
+          doc.text(String(datos.total.parcial), columnas[4].x, y + 2);
+          doc.text(String(datos.total.incorrecta), columnas[5].x, y + 2);
+          doc.text(String(datos.totalRespuestas), columnas[6].x, y + 2);
+          guardarPDFProfesor(doc, `Informe_socratico_${datos.actividad}`);
       }
 
       function abrirPanelProfesor() {

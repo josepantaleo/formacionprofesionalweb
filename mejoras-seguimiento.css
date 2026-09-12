@@ -3516,9 +3516,16 @@ body.teacher-light-mode .teacher-filter-group h4{
 #estadoRubricaSocraticaProfesor.is-error{color:#fca5a5}
 .teacher-group-report-controls{
   display:grid;
-  grid-template-columns:repeat(2,minmax(180px,260px));
+  grid-template-columns:repeat(2,minmax(180px,260px)) minmax(240px,1fr);
   gap:.55rem;
+  align-items:end;
   margin:.7rem 0;
+}
+.teacher-group-report-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:.45rem;
+  flex-wrap:wrap;
 }
 .teacher-group-report-summary{
   display:grid;
@@ -3630,6 +3637,12 @@ body.teacher-light-mode .teacher-analyst-review h4{
   .teacher-group-report-controls,
   .teacher-group-report-summary{
     grid-template-columns:1fr;
+  }
+  .teacher-group-report-actions{
+    justify-content:stretch;
+  }
+  .teacher-group-report-actions .btn{
+    flex:1;
   }
 }
 .teacher-detail-empty i{

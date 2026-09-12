@@ -16,7 +16,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="actividad-base.css?v=20260911-2" />
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260911-3" />
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260911-4" />
     <!-- Librería jsPDF para generación de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- Librería pdf-lib para cifrar y proteger el PDF generado -->
@@ -253,6 +253,10 @@
                 <option value="revision">Más respuestas a revisar</option>
               </select>
             </label>
+            <div class="teacher-group-report-actions">
+              <button class="btn btn-success" type="button" onclick="exportarInformeGrupalSocraticoPDF()"><i class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
+              <button class="btn btn-secondary" type="button" onclick="exportarInformeGrupalSocraticoCSV()"><i class="fa-solid fa-file-csv"></i> Exportar CSV</button>
+            </div>
           </div>
           <div id="informeGrupalSocratico"></div>
         </details>
@@ -926,7 +930,7 @@
       </button>
     </div>
 
-    <script src="actividad-app.js?v=20260911-3"></script>
+    <script src="actividad-app.js?v=20260912-1"></script>
     <script src="actividad-cooperacion.js?v=20260910-1"></script>
     <script src="mejoras-seguimiento.js?v=20260910-4"></script>
   </body>
