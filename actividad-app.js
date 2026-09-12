@@ -6199,23 +6199,42 @@
       function renderInformeGrupalSocratico() {
           const contenedor = document.getElementById("informeGrupalSocratico");
           if (!contenedor) return;
-          const datos = obtenerDatosInformeGrupalSocratico();
-          const { filas, total, porcentaje } = datos;
-          const evolucion = obtenerEvolucionInformeGrupalSocratico();
-          const alertas = detectarAlertasEvolucionSocratica(evolucion, datos.estudiantesAlcance);
-          contenedor.innerHTML = `
+          const componenteSeguro = (nombre, renderizar) => {
+              try {
+                  return renderizar();
+              } catch (error) {
+                  console.error(`No se pudo renderizar ${nombre}:`, error);
+                  return `<div class="teacher-report-diagnostic is-warning">
+                      <i class="fa-solid fa-triangle-exclamation"></i>
+                      <span><strong>${escapeHtml(nombre)}</strong> no pudo mostrarse por un dato histórico incompatible. Los demás componentes continúan disponibles.</span>
+                  </div>`;
+              }
+          };
+          try {
+              const datos = obtenerDatosInformeGrupalSocratico();
+              const { filas, total, porcentaje } = datos;
+              const evolucion = obtenerEvolucionInformeGrupalSocratico();
+              const alertas = detectarAlertasEvolucionSocratica(evolucion, datos.estudiantesAlcance);
+              const estudiantesConHistorial = datos.estudiantesAlcance.filter(estudiante =>
+                  Object.keys(estudiante?.historialResultados || {}).length > 0
+              ).length;
+              contenedor.innerHTML = `
               <div class="teacher-report-scope"><i class="fa-solid fa-filter"></i> Alcance: <strong>${escapeHtml(datos.alcance)}</strong> · ${datos.estudiantesAlcance.length} estudiante${datos.estudiantesAlcance.length === 1 ? "" : "s"}</div>
+              <div class="teacher-report-diagnostic ${datos.totalRespuestas ? "is-ok" : "is-warning"}">
+                  <i class="fa-solid ${datos.totalRespuestas ? "fa-chart-line" : "fa-circle-info"}"></i>
+                  <span><strong>Datos del informe:</strong> ${estudiantesConHistorial} estudiante${estudiantesConHistorial === 1 ? "" : "s"} con historial y ${datos.totalRespuestas} respuesta${datos.totalRespuestas === 1 ? "" : "s"} socrática${datos.totalRespuestas === 1 ? "" : "s"}. ${datos.totalRespuestas ? "Los gráficos se calcularon con estos registros." : "Cambiá los filtros o esperá entregas del Analista de Viabilidad y Excelencia."}</span>
+              </div>
               <div class="teacher-group-report-summary">
                   <div class="is-completa"><small>Completas</small><strong>${total.completa}</strong><span>${porcentaje("completa")}%</span></div>
                   <div class="is-incompleta"><small>Incompletas</small><strong>${total.incompleta}</strong><span>${porcentaje("incompleta")}%</span></div>
                   <div class="is-parcial"><small>Parciales</small><strong>${total.parcial}</strong><span>${porcentaje("parcial")}%</span></div>
                   <div class="is-incorrecta"><small>Incorrectas</small><strong>${total.incorrecta}</strong><span>${porcentaje("incorrecta")}%</span></div>
               </div>
-              ${renderGraficosInformeGrupalSocratico(datos, evolucion)}
-              ${renderAnalisisCriteriosSocraticos(datos)}
-              ${renderAlertasEvolucionSocratica(alertas)}
-              ${renderTablaEvolucionPanelSocratico(evolucion, alertas)}
-              ${renderComparacionGruposSocratico(datos)}
+              ${componenteSeguro("Gráficos de distribución y evolución", () => renderGraficosInformeGrupalSocratico(datos, evolucion))}
+              ${componenteSeguro("Análisis por criterio", () => renderAnalisisCriteriosSocraticos(datos))}
+              ${componenteSeguro("Alertas de evolución", () => renderAlertasEvolucionSocratica(alertas))}
+              ${componenteSeguro("Tabla de evolución", () => renderTablaEvolucionPanelSocratico(evolucion, alertas))}
+              ${componenteSeguro("Comparación de grupos", () => renderComparacionGruposSocratico(datos))}
               ${filas.length ? `<div class="teacher-group-report-table"><table>
                   <thead><tr><th>Estudiante</th><th>Grupo</th><th>Completas</th><th>Incompletas</th><th>Parciales</th><th>Incorrectas</th><th>Total</th></tr></thead>
                   <tbody>${filas.map(fila => `<tr>
@@ -6228,8 +6247,19 @@
                       <td>${fila.total}</td>
                   </tr>`).join("")}</tbody>
               </table></div>` : `<p class="teacher-group-report-empty">Todavía no hay respuestas entregadas para el alcance seleccionado.</p>`}`;
-          prepararFormularioPlanRefuerzoSocratico();
-          renderPlanesRefuerzoSocratico();
+              componenteSeguro("Formulario de refuerzo", () => {
+                  prepararFormularioPlanRefuerzoSocratico();
+                  renderPlanesRefuerzoSocratico();
+                  return "";
+              });
+          } catch (error) {
+              console.error("No se pudo construir el informe grupal socrático:", error);
+              contenedor.innerHTML = `<div class="teacher-report-diagnostic is-error">
+                  <i class="fa-solid fa-circle-exclamation"></i>
+                  <span><strong>No se pudo construir el informe.</strong> ${escapeHtml(error?.message || "Error desconocido")}</span>
+                  <button class="btn btn-secondary" type="button" onclick="renderInformeGrupalSocratico()"><i class="fa-solid fa-rotate"></i> Reintentar</button>
+              </div>`;
+          }
       }
 
       const CRITERIOS_SOCRATICOS_INFORME = [
@@ -6250,11 +6280,17 @@
               ids.forEach(sectionId => {
                   const preguntas = historial[sectionId]?.analista?.preguntas || [];
                   preguntas.forEach(pregunta => {
-                      (pregunta?.criteriosCumplidos || []).forEach(criterio => {
+                      const cumplidos = Array.isArray(pregunta?.criteriosCumplidos)
+                          ? pregunta.criteriosCumplidos
+                          : (pregunta?.criteriosCumplidos ? [pregunta.criteriosCumplidos] : []);
+                      const faltantes = Array.isArray(pregunta?.criteriosFaltantes)
+                          ? pregunta.criteriosFaltantes
+                          : (pregunta?.criteriosFaltantes ? [pregunta.criteriosFaltantes] : []);
+                      cumplidos.forEach(criterio => {
                           const clave = String(criterio || "").trim().toLowerCase();
                           if (acumulado[clave]) acumulado[clave].cumplido++;
                       });
-                      (pregunta?.criteriosFaltantes || []).forEach(criterio => {
+                      faltantes.forEach(criterio => {
                           const clave = String(criterio || "").trim().toLowerCase();
                           if (acumulado[clave]) acumulado[clave].faltante++;
                       });
