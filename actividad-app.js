@@ -2390,8 +2390,14 @@
               setTimeout(() => guardarIdentificacionFirebase(), 300);
           }
 
-          document.addEventListener('copy', e => { if (e.target && e.target.closest && e.target.closest('.code-editor')) e.preventDefault(); });
-          document.addEventListener('cut', e => { if (e.target && e.target.closest && e.target.closest('.code-editor')) e.preventDefault(); });
+          const bloquearPortapapelesEstudiante = e => {
+              const editor = e.target?.closest?.('.code-editor[id^="editor-"]');
+              if (!editor || document.body.classList.contains('teacher-authorized')) return;
+              e.preventDefault();
+          };
+          document.addEventListener('copy', bloquearPortapapelesEstudiante);
+          document.addEventListener('cut', bloquearPortapapelesEstudiante);
+          document.addEventListener('paste', bloquearPortapapelesEstudiante);
 
           // Atajo del profesor para panel general (Ctrl + Shift + U)
           window.addEventListener('keydown', function(e) {
@@ -5268,6 +5274,9 @@
           host.appendChild(cursores);
 
           let sincronizando = false;
+          const restringirPortapapeles = () =>
+              textarea.matches('.code-editor[id^="editor-"]') &&
+              !document.body.classList.contains('teacher-authorized');
           let restaurandoHistorial = false;
           let ultimoGrupoHistorial = 0;
           const historialDeshacer = [];
@@ -5355,12 +5364,23 @@
                                   return false;
                               },
                               paste: evento => {
+                                  if (!restringirPortapapeles()) return false;
                                   evento.preventDefault();
-                                  alert("Pegado deshabilitado por seguridad.");
+                                  estadoHerramientas.textContent = "Pegado deshabilitado para estudiantes.";
                                   return true;
                               },
-                              copy: evento => { evento.preventDefault(); return true; },
-                              cut: evento => { evento.preventDefault(); return true; }
+                              copy: evento => {
+                                  if (!restringirPortapapeles()) return false;
+                                  evento.preventDefault();
+                                  estadoHerramientas.textContent = "Copiado deshabilitado para estudiantes.";
+                                  return true;
+                              },
+                              cut: evento => {
+                                  if (!restringirPortapapeles()) return false;
+                                  evento.preventDefault();
+                                  estadoHerramientas.textContent = "Cortar deshabilitado para estudiantes.";
+                                  return true;
+                              }
                           }),
                           EditorView.updateListener.of(update => {
                               if (update.docChanged && !sincronizando) {
@@ -5576,10 +5596,16 @@
 
       function bloquearCopiaYPegado() {
           document.querySelectorAll('.code-editor').forEach(editor => {
-              editor.addEventListener('paste', (e) => { e.preventDefault(); alert('⚠️ Pegado deshabilitado por seguridad.'); });
-              editor.addEventListener('copy', (e) => { e.preventDefault(); });
-              editor.addEventListener('cut', (e) => { e.preventDefault(); });
-              editor.addEventListener('contextmenu', (e) => { e.preventDefault(); });
+              if (editor.dataset.clipboardGuard === 'true') return;
+              editor.dataset.clipboardGuard = 'true';
+              const bloquear = e => {
+                  if (document.body.classList.contains('teacher-authorized')) return;
+                  e.preventDefault();
+              };
+              editor.addEventListener('paste', bloquear);
+              editor.addEventListener('copy', bloquear);
+              editor.addEventListener('cut', bloquear);
+              editor.addEventListener('contextmenu', bloquear);
           });
       }
 
