@@ -2679,6 +2679,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           const numero = Number(valor);
           return Number.isFinite(numero) ? Math.max(0, Math.min(1, numero)) : respaldo;
         };
+        const limitarNumero = (valor, respaldo, minimo = 0, maximo = 100) => {
+          const numero = Number(valor);
+          return Number.isFinite(numero) ? Math.max(minimo, Math.min(maximo, numero)) : respaldo;
+        };
         const normalizada = {
           puntos: {
             completa: limitarPunto(rubrica?.puntos?.completa, 1),
@@ -2693,6 +2697,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             evidencia: rubrica?.criterios?.evidencia !== false,
             consecuencia: rubrica?.criterios?.consecuencia !== false
           },
+          alertas: {
+            riesgoMinimo: limitarNumero(rubrica?.alertas?.riesgoMinimo, 30),
+            aumentoMinimo: limitarNumero(rubrica?.alertas?.aumentoMinimo, 10),
+            muestraMinima: limitarNumero(rubrica?.alertas?.muestraMinima, 5, 1, 500),
+            severidadAlta: limitarNumero(rubrica?.alertas?.severidadAlta, 50)
+          },
           actualizadaPor: user.email || user.displayName || user.uid,
           actualizadaEn: new Date().toISOString()
         };
@@ -2700,7 +2710,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             !(normalizada.puntos.completa >= normalizada.puntos.incompleta &&
               normalizada.puntos.incompleta >= normalizada.puntos.parcial &&
               normalizada.puntos.parcial >= normalizada.puntos.incorrecta) ||
-            !Object.values(normalizada.criterios).some(Boolean)) {
+            !Object.values(normalizada.criterios).some(Boolean) ||
+            normalizada.alertas.severidadAlta < normalizada.alertas.riesgoMinimo) {
           return false;
         }
         try {
@@ -2722,6 +2733,66 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           return true;
         } catch (error) {
           console.error("Error guardando la rúbrica socrática:", error);
+          return false;
+        }
+      };
+
+      window.guardarPlanRefuerzoFirebase = async function(uid, plan) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado) return false;
+        const { user, database } = contextoDocenteFirebase();
+        if (!user || !database || !uid || !plan?.id) return false;
+        try {
+          const referencia = doc(database, "estudiantes", uid);
+          const snapshot = await getDoc(referencia);
+          if (!snapshot.exists()) return false;
+          const anteriores = snapshot.data()?.planesRefuerzo || {};
+          const planes = Array.isArray(anteriores)
+            ? Object.fromEntries(anteriores.filter(Boolean).map(item => [item.id, item]))
+            : { ...anteriores };
+          const texto = valor => String(valor || "").trim();
+          const planSeguro = {
+            id: texto(plan.id).replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100),
+            contenido: texto(plan.contenido).slice(0, 180),
+            indicaciones: texto(plan.indicaciones).slice(0, 800),
+            actividadOrigenId: texto(plan.actividadOrigenId).slice(0, 100),
+            actividadOrigenTitulo: texto(plan.actividadOrigenTitulo).slice(0, 180),
+            actividadObjetivoId: texto(plan.actividadObjetivoId).slice(0, 100),
+            actividadObjetivoTitulo: texto(plan.actividadObjetivoTitulo).slice(0, 180),
+            fechaLimite: texto(plan.fechaLimite).slice(0, 20),
+            estado: ["asignado", "en_progreso", "completado"].includes(plan.estado) ? plan.estado : "asignado",
+            alcance: texto(plan.alcance).slice(0, 240),
+            lineaBase: plan.lineaBase || {},
+            medicionPosterior: plan.medicionPosterior || null,
+            creadoEn: plan.creadoEn || new Date().toISOString(),
+            creadoPor: texto(plan.creadoPor || user.email || user.displayName || user.uid).slice(0, 180),
+            completadoEn: plan.completadoEn || null,
+            actualizadoEn: new Date().toISOString(),
+            actualizadoPor: user.email || user.displayName || user.uid
+          };
+          planes[planSeguro.id] = planSeguro;
+          const claves = Object.keys(planes).sort((a, b) =>
+            String(planes[b]?.creadoEn || "").localeCompare(String(planes[a]?.creadoEn || ""))
+          );
+          const limitados = Object.fromEntries(claves.slice(0, 40).map(clave => [clave, planes[clave]]));
+          const mensaje = {
+            id: `mensaje-${planSeguro.id}`,
+            tipo: "refuerzo",
+            asunto: `Plan de refuerzo: ${planSeguro.contenido}`,
+            texto: `${planSeguro.indicaciones}\n\nActividad de comprobación: ${planSeguro.actividadObjetivoTitulo}${planSeguro.fechaLimite ? `\nFecha límite: ${planSeguro.fechaLimite}` : ""}`,
+            recibido: false,
+            leido: false,
+            creadoEn: new Date().toISOString(),
+            creadoPor: user.email || user.displayName || user.uid
+          };
+          await setDoc(referencia, {
+            planesRefuerzo: limitados,
+            mensajeDocenteActual: mensaje,
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error guardando plan de refuerzo:", error);
           return false;
         }
       };

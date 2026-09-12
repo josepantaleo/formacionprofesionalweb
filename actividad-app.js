@@ -957,6 +957,12 @@
               justificacion: true,
               evidencia: true,
               consecuencia: true
+          },
+          alertas: {
+              riesgoMinimo: 30,
+              aumentoMinimo: 10,
+              muestraMinima: 5,
+              severidadAlta: 50
           }
       };
       let rubricaSocraticaActual = JSON.parse(JSON.stringify(RUBRICA_SOCRATICA_PREDETERMINADA));
@@ -965,9 +971,14 @@
       function normalizarRubricaSocratica(valor = {}) {
           const puntosRecibidos = valor.puntos || {};
           const criteriosRecibidos = valor.criterios || {};
+          const alertasRecibidas = valor.alertas || {};
           const numero = (dato, respaldo) => {
               const convertido = Number(dato);
               return Number.isFinite(convertido) ? Math.max(0, Math.min(1, convertido)) : respaldo;
+          };
+          const numeroAlerta = (dato, respaldo, minimo = 0, maximo = 100) => {
+              const convertido = Number(dato);
+              return Number.isFinite(convertido) ? Math.max(minimo, Math.min(maximo, convertido)) : respaldo;
           };
           return {
               puntos: {
@@ -982,6 +993,12 @@
                   justificacion: criteriosRecibidos.justificacion !== false,
                   evidencia: criteriosRecibidos.evidencia !== false,
                   consecuencia: criteriosRecibidos.consecuencia !== false
+              },
+              alertas: {
+                  riesgoMinimo: numeroAlerta(alertasRecibidas.riesgoMinimo, 30),
+                  aumentoMinimo: numeroAlerta(alertasRecibidas.aumentoMinimo, 10),
+                  muestraMinima: numeroAlerta(alertasRecibidas.muestraMinima, 5, 1, 500),
+                  severidadAlta: numeroAlerta(alertasRecibidas.severidadAlta, 50)
               },
               actualizadaPor: String(valor.actualizadaPor || ""),
               actualizadaEn: valor.actualizadaEn || null
@@ -5983,6 +6000,10 @@
           asignarCheck("rubricaCriterioJustificacion", rubrica.criterios.justificacion);
           asignarCheck("rubricaCriterioEvidencia", rubrica.criterios.evidencia);
           asignarCheck("rubricaCriterioConsecuencia", rubrica.criterios.consecuencia);
+          asignarValor("rubricaAlertaRiesgoMinimo", rubrica.alertas.riesgoMinimo);
+          asignarValor("rubricaAlertaAumentoMinimo", rubrica.alertas.aumentoMinimo);
+          asignarValor("rubricaAlertaMuestraMinima", rubrica.alertas.muestraMinima);
+          asignarValor("rubricaAlertaSeveridadAlta", rubrica.alertas.severidadAlta);
       }
 
       function leerFormularioRubricaSocratica() {
@@ -6000,6 +6021,12 @@
                   justificacion: document.getElementById("rubricaCriterioJustificacion")?.checked === true,
                   evidencia: document.getElementById("rubricaCriterioEvidencia")?.checked === true,
                   consecuencia: document.getElementById("rubricaCriterioConsecuencia")?.checked === true
+              },
+              alertas: {
+                  riesgoMinimo: numero("rubricaAlertaRiesgoMinimo"),
+                  aumentoMinimo: numero("rubricaAlertaAumentoMinimo"),
+                  muestraMinima: numero("rubricaAlertaMuestraMinima"),
+                  severidadAlta: numero("rubricaAlertaSeveridadAlta")
               }
           });
       }
@@ -6012,6 +6039,9 @@
           }
           if (!Object.values(rubrica.criterios).some(Boolean)) {
               return "Activá al menos un criterio de evaluación.";
+          }
+          if (rubrica.alertas.severidadAlta < rubrica.alertas.riesgoMinimo) {
+              return "El umbral de severidad alta no puede ser menor que el riesgo mínimo.";
           }
           return "";
       }
@@ -6182,6 +6212,7 @@
                   <div class="is-incorrecta"><small>Incorrectas</small><strong>${total.incorrecta}</strong><span>${porcentaje("incorrecta")}%</span></div>
               </div>
               ${renderGraficosInformeGrupalSocratico(datos, evolucion)}
+              ${renderAnalisisCriteriosSocraticos(datos)}
               ${renderAlertasEvolucionSocratica(alertas)}
               ${renderTablaEvolucionPanelSocratico(evolucion, alertas)}
               ${renderComparacionGruposSocratico(datos)}
@@ -6197,6 +6228,66 @@
                       <td>${fila.total}</td>
                   </tr>`).join("")}</tbody>
               </table></div>` : `<p class="teacher-group-report-empty">Todavía no hay respuestas entregadas para el alcance seleccionado.</p>`}`;
+          prepararFormularioPlanRefuerzoSocratico();
+          renderPlanesRefuerzoSocratico();
+      }
+
+      const CRITERIOS_SOCRATICOS_INFORME = [
+          { clave: "desarrollo suficiente", etiqueta: "Desarrollo suficiente", icono: "fa-align-left" },
+          { clave: "justificación causal", etiqueta: "Justificación causal", icono: "fa-link" },
+          { clave: "evidencia del código o de una prueba", etiqueta: "Evidencia concreta", icono: "fa-code" },
+          { clave: "consecuencia, límite o mejora", etiqueta: "Consecuencia o mejora", icono: "fa-arrow-trend-up" }
+      ];
+
+      function obtenerAnalisisCriteriosSocraticos(datos) {
+          const acumulado = Object.fromEntries(CRITERIOS_SOCRATICOS_INFORME.map(item => [
+              item.clave,
+              { ...item, cumplido: 0, faltante: 0 }
+          ]));
+          datos.estudiantesAlcance.forEach(estudiante => {
+              const historial = estudiante?.historialResultados || {};
+              const ids = datos.sectionId ? [datos.sectionId] : Object.keys(historial);
+              ids.forEach(sectionId => {
+                  const preguntas = historial[sectionId]?.analista?.preguntas || [];
+                  preguntas.forEach(pregunta => {
+                      (pregunta?.criteriosCumplidos || []).forEach(criterio => {
+                          const clave = String(criterio || "").trim().toLowerCase();
+                          if (acumulado[clave]) acumulado[clave].cumplido++;
+                      });
+                      (pregunta?.criteriosFaltantes || []).forEach(criterio => {
+                          const clave = String(criterio || "").trim().toLowerCase();
+                          if (acumulado[clave]) acumulado[clave].faltante++;
+                      });
+                  });
+              });
+          });
+          return Object.values(acumulado).map(item => {
+              const evaluaciones = item.cumplido + item.faltante;
+              return {
+                  ...item,
+                  evaluaciones,
+                  porcentajeCumplido: evaluaciones ? item.cumplido * 100 / evaluaciones : 0,
+                  porcentajeFaltante: evaluaciones ? item.faltante * 100 / evaluaciones : 0
+              };
+          });
+      }
+
+      function renderAnalisisCriteriosSocraticos(datos) {
+          const criterios = obtenerAnalisisCriteriosSocraticos(datos);
+          const conDatos = criterios.filter(item => item.evaluaciones > 0);
+          if (!conDatos.length) return "";
+          const principal = [...conDatos].sort((a, b) => b.porcentajeFaltante - a.porcentajeFaltante)[0];
+          return `<section class="teacher-criteria-analysis">
+              <header>
+                  <div><i class="fa-solid fa-magnifying-glass-chart"></i><strong>Análisis por criterio de razonamiento</strong></div>
+                  <small>Principal aspecto a reforzar: <strong>${escapeHtml(principal.etiqueta)}</strong> (${porcentajeExactoPanel(principal.porcentajeFaltante)} pendiente).</small>
+              </header>
+              <div class="teacher-criteria-grid">${criterios.map(item => `<article class="${item.evaluaciones ? "" : "is-empty"}">
+                  <div class="teacher-criterion-heading"><span><i class="fa-solid ${item.icono}"></i>${escapeHtml(item.etiqueta)}</span><strong>${item.evaluaciones ? porcentajeExactoPanel(item.porcentajeCumplido) : "Sin datos"}</strong></div>
+                  <div class="teacher-criterion-bar"><span style="width:${item.porcentajeCumplido}%"></span></div>
+                  <small>${item.cumplido} cumplidos · ${item.faltante} a fortalecer · ${item.evaluaciones} evaluaciones</small>
+              </article>`).join("")}</div>
+          </section>`;
       }
 
       function renderGraficosInformeGrupalSocratico(datos, evolucion) {
@@ -6302,6 +6393,7 @@
       }
 
       function detectarAlertasEvolucionSocratica(evolucion, estudiantes) {
+          const configuracion = normalizarRubricaSocratica(rubricaSocraticaActual).alertas;
           const alertas = [];
           evolucion.forEach((item, indice) => {
               const riesgo = Number(item.porcentajes.parcial || 0) + Number(item.porcentajes.incorrecta || 0);
@@ -6312,12 +6404,20 @@
               const aumento = riesgoAnterior === null ? 0 : Number((riesgo - riesgoAnterior).toFixed(1));
               item.riesgo = Number(riesgo.toFixed(1));
               item.aumentoRiesgo = aumento;
-              if (anterior && aumento >= 10 && riesgo >= 30) {
+              item.muestraInsuficiente = item.respuestas < configuracion.muestraMinima;
+              if (
+                  anterior &&
+                  !item.muestraInsuficiente &&
+                  anterior.respuestas >= configuracion.muestraMinima &&
+                  aumento >= configuracion.aumentoMinimo &&
+                  riesgo >= configuracion.riesgoMinimo
+              ) {
                   alertas.push({
                       ...item,
                       actividadAnterior: anterior.titulo,
                       riesgoAnterior: Number(riesgoAnterior.toFixed(1)),
-                      severidad: aumento >= 20 || riesgo >= 50 ? "alta" : "media",
+                      severidad: riesgo >= configuracion.severidadAlta ||
+                          aumento >= Math.max(configuracion.aumentoMinimo * 2, 20) ? "alta" : "media",
                       sugerencias: sugerirRefuerzoActividadSocratica(item, estudiantes)
                   });
               }
@@ -6326,11 +6426,12 @@
       }
 
       function renderAlertasEvolucionSocratica(alertas) {
+          const configuracion = normalizarRubricaSocratica(rubricaSocraticaActual).alertas;
           if (!alertas.length) {
               return `<div class="teacher-risk-status is-ok"><i class="fa-solid fa-circle-check"></i><span>No se detectaron aumentos relevantes de respuestas parciales o incorrectas entre actividades consecutivas.</span></div>`;
           }
           return `<section class="teacher-risk-alerts">
-              <header><div><i class="fa-solid fa-triangle-exclamation"></i><strong>Actividades que requieren refuerzo</strong></div><small>Aumento mínimo detectado: 10 puntos porcentuales.</small></header>
+              <header><div><i class="fa-solid fa-triangle-exclamation"></i><strong>Actividades que requieren refuerzo</strong></div><small>Umbral: riesgo ${porcentajeExactoPanel(configuracion.riesgoMinimo)}, aumento ${porcentajeExactoPanel(configuracion.aumentoMinimo)} y ${configuracion.muestraMinima} respuestas.</small></header>
               <div>${alertas.map(alerta => `<article class="teacher-risk-card is-${alerta.severidad}">
                   <div class="teacher-risk-card-heading">
                       <strong>${alerta.indice}. ${escapeHtml(alerta.titulo)}</strong>
@@ -6418,6 +6519,238 @@
                   ).join("")}</div>
               </article>`).join("")}</div>
           </details>`;
+      }
+
+      function obtenerMetricaRiesgoEstudiante(estudiante, sectionId) {
+          const conteo = obtenerConteoInformeSocratico(estudiante, sectionId);
+          const total = Object.values(conteo).reduce((suma, valor) => suma + Number(valor || 0), 0);
+          const riesgo = total ? (Number(conteo.parcial || 0) + Number(conteo.incorrecta || 0)) * 100 / total : null;
+          return { conteo, total, riesgo: riesgo === null ? null : Number(riesgo.toFixed(1)) };
+      }
+
+      function prepararFormularioPlanRefuerzoSocratico() {
+          const origen = document.getElementById("refuerzoActividadOrigen");
+          const objetivo = document.getElementById("refuerzoActividadObjetivo");
+          if (!origen || !objetivo) return;
+          const opciones = seccionesData.map((sec, indice) =>
+              `<option value="${escapeHtml(sec.id)}">${indice + 1}. ${escapeHtml(sec.title)}</option>`
+          ).join("");
+          const valorOrigen = origen.value;
+          const valorObjetivo = objetivo.value;
+          if (origen.dataset.ready !== "true") {
+              origen.innerHTML = opciones;
+              objetivo.innerHTML = opciones;
+              origen.dataset.ready = "true";
+              objetivo.dataset.ready = "true";
+          }
+          const evolucion = obtenerEvolucionInformeGrupalSocratico();
+          const alertas = detectarAlertasEvolucionSocratica(evolucion, obtenerEstudiantesFiltradosInformeSocratico());
+          const idSugerido = alertas.at(-1)
+              ? seccionesData[alertas.at(-1).indice - 1]?.id
+              : document.getElementById("filtroInformeSocraticoModulo")?.value || seccionesData[0]?.id;
+          origen.value = valorOrigen || idSugerido || "";
+          const indiceOrigen = seccionesData.findIndex(sec => sec.id === origen.value);
+          objetivo.value = valorObjetivo ||
+              seccionesData[Math.min(seccionesData.length - 1, Math.max(0, indiceOrigen + 1))]?.id ||
+              origen.value;
+          const fecha = document.getElementById("refuerzoFechaLimite");
+          if (fecha && !fecha.value) {
+              const limite = new Date();
+              limite.setDate(limite.getDate() + 7);
+              fecha.value = limite.toISOString().slice(0, 10);
+          }
+          const contenido = document.getElementById("refuerzoContenido");
+          if (contenido && !contenido.value) {
+              const datos = obtenerDatosInformeGrupalSocratico();
+              const principal = obtenerAnalisisCriteriosSocraticos(datos)
+                  .filter(item => item.evaluaciones > 0)
+                  .sort((a, b) => b.porcentajeFaltante - a.porcentajeFaltante)[0];
+              if (principal) contenido.value = principal.etiqueta;
+          }
+      }
+
+      function obtenerPlanesRefuerzoEstudiante(estudiante) {
+          const planes = estudiante?.planesRefuerzo || {};
+          if (Array.isArray(planes)) return Object.fromEntries(planes.filter(Boolean).map(plan => [plan.id, plan]));
+          return planes && typeof planes === "object" ? planes : {};
+      }
+
+      async function asignarPlanRefuerzoSocratico(boton = null) {
+          const estado = document.getElementById("estadoPlanRefuerzoSocratico");
+          const origenId = document.getElementById("refuerzoActividadOrigen")?.value || "";
+          const objetivoId = document.getElementById("refuerzoActividadObjetivo")?.value || "";
+          const tipoDestinatarios = document.getElementById("refuerzoDestinatarios")?.value || "riesgo";
+          const contenido = document.getElementById("refuerzoContenido")?.value.trim() || "";
+          const indicaciones = document.getElementById("refuerzoIndicaciones")?.value.trim() || "";
+          const fechaLimite = document.getElementById("refuerzoFechaLimite")?.value || "";
+          if (!origenId || !objetivoId || !contenido || !indicaciones) {
+              if (estado) {
+                  estado.className = "is-error";
+                  estado.textContent = "Seleccioná las actividades y completá contenido e indicaciones.";
+              }
+              return;
+          }
+          const alcance = obtenerEstudiantesFiltradosInformeSocratico();
+          const destinatarios = alcance.filter(estudiante => {
+              if (tipoDestinatarios === "todos") return true;
+              const metrica = obtenerMetricaRiesgoEstudiante(estudiante, origenId);
+              return metrica.total > 0 && metrica.riesgo > 0;
+          });
+          if (!destinatarios.length) {
+              if (estado) {
+                  estado.className = "is-error";
+                  estado.textContent = "No hay estudiantes que cumplan el criterio de destinatarios.";
+              }
+              return;
+          }
+          const id = `refuerzo-${Date.now()}`;
+          const origen = seccionesData.find(sec => sec.id === origenId);
+          const objetivo = seccionesData.find(sec => sec.id === objetivoId);
+          const original = boton?.innerHTML || "";
+          if (boton) {
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Asignando...';
+          }
+          if (estado) {
+              estado.className = "";
+              estado.textContent = `Asignando a ${destinatarios.length} estudiante${destinatarios.length === 1 ? "" : "s"}...`;
+          }
+          let guardados = 0;
+          for (const estudiante of destinatarios) {
+              const lineaBase = obtenerMetricaRiesgoEstudiante(estudiante, origenId);
+              const plan = {
+                  id,
+                  contenido,
+                  indicaciones,
+                  actividadOrigenId: origenId,
+                  actividadOrigenTitulo: origen?.title || origenId,
+                  actividadObjetivoId: objetivoId,
+                  actividadObjetivoTitulo: objetivo?.title || objetivoId,
+                  fechaLimite,
+                  estado: "asignado",
+                  alcance: describirAlcanceGrupoInformeSocratico(),
+                  lineaBase: {
+                      riesgo: lineaBase.riesgo,
+                      respuestas: lineaBase.total,
+                      conteo: lineaBase.conteo
+                  },
+                  creadoEn: new Date().toISOString(),
+                  creadoPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || "docente"
+              };
+              const guardado = await window.guardarPlanRefuerzoFirebase?.(estudiante.uid, plan);
+              if (guardado) {
+                  estudiante.planesRefuerzo = { ...obtenerPlanesRefuerzoEstudiante(estudiante), [id]: plan };
+                  guardados++;
+              }
+          }
+          if (boton) {
+              boton.disabled = false;
+              boton.innerHTML = original;
+          }
+          if (estado) {
+              estado.className = guardados === destinatarios.length ? "is-success" : "is-error";
+              estado.textContent = `${guardados} de ${destinatarios.length} planes asignados.`;
+          }
+          renderPlanesRefuerzoSocratico();
+      }
+
+      function resumirPlanesRefuerzoSocratico() {
+          const grupos = new Map();
+          obtenerEstudiantesFiltradosInformeSocratico().forEach(estudiante => {
+              Object.values(obtenerPlanesRefuerzoEstudiante(estudiante)).forEach(plan => {
+                  if (!plan?.id) return;
+                  if (!grupos.has(plan.id)) grupos.set(plan.id, { plan, estudiantes: [] });
+                  const objetivo = obtenerMetricaRiesgoEstudiante(estudiante, plan.actividadObjetivoId);
+                  const base = Number(plan.lineaBase?.riesgo);
+                  const variacion = objetivo.riesgo === null || !Number.isFinite(base)
+                      ? null
+                      : Number((objetivo.riesgo - base).toFixed(1));
+                  grupos.get(plan.id).estudiantes.push({
+                      uid: estudiante.uid,
+                      nombre: estudiante.estudiante?.nombre || estudiante.nombreGoogle || estudiante.email || "Sin nombre",
+                      estado: plan.estado || "asignado",
+                      riesgoBase: Number.isFinite(base) ? base : null,
+                      riesgoActual: objetivo.riesgo,
+                      respuestasActuales: objetivo.total,
+                      variacion
+                  });
+              });
+          });
+          return [...grupos.values()].sort((a, b) =>
+              String(b.plan.creadoEn || "").localeCompare(String(a.plan.creadoEn || ""))
+          );
+      }
+
+      function renderPlanesRefuerzoSocratico() {
+          const contenedor = document.getElementById("listaPlanesRefuerzoSocratico");
+          if (!contenedor) return;
+          const grupos = resumirPlanesRefuerzoSocratico();
+          if (!grupos.length) {
+              contenedor.innerHTML = '<p class="teacher-group-report-empty">No hay planes de refuerzo asignados para el alcance actual.</p>';
+              return;
+          }
+          contenedor.innerHTML = `<div class="teacher-reinforcement-list">${grupos.map(grupo => {
+              const medidos = grupo.estudiantes.filter(item => item.riesgoActual !== null);
+              const mejoraron = medidos.filter(item => item.variacion < 0).length;
+              const estables = medidos.filter(item => item.variacion === 0).length;
+              const retrocedieron = medidos.filter(item => item.variacion > 0).length;
+              const completados = grupo.estudiantes.filter(item => item.estado === "completado").length;
+              return `<article>
+                  <header>
+                      <div><strong>${escapeHtml(grupo.plan.contenido)}</strong><small>${escapeHtml(grupo.plan.actividadOrigenTitulo)} → ${escapeHtml(grupo.plan.actividadObjetivoTitulo)}</small></div>
+                      <span>${completados}/${grupo.estudiantes.length} completados</span>
+                  </header>
+                  <p>${escapeHtml(grupo.plan.indicaciones)}</p>
+                  <div class="teacher-reinforcement-metrics">
+                      <span class="is-improved"><strong>${mejoraron}</strong> mejoraron</span>
+                      <span><strong>${estables}</strong> estables</span>
+                      <span class="is-worse"><strong>${retrocedieron}</strong> retrocedieron</span>
+                      <span><strong>${grupo.estudiantes.length - medidos.length}</strong> sin medición</span>
+                  </div>
+                  <div class="teacher-reinforcement-students">${grupo.estudiantes.map(item => `<span title="${item.riesgoActual === null ? "Aún no respondió la actividad de comprobación" : `Base ${porcentajeExactoPanel(item.riesgoBase)} · Actual ${porcentajeExactoPanel(item.riesgoActual)}`}">
+                      ${escapeHtml(item.nombre)} · ${item.riesgoActual === null ? "pendiente" : `${item.variacion > 0 ? "+" : ""}${porcentajeExactoPanel(item.variacion)}`}
+                  </span>`).join("")}</div>
+                  <footer>
+                      <small>Vence: ${escapeHtml(grupo.plan.fechaLimite || "sin fecha")} · ${escapeHtml(grupo.plan.alcance || "")}</small>
+                      <button class="btn btn-secondary" type="button" onclick="actualizarEstadoPlanRefuerzoSocratico('${escapeHtml(grupo.plan.id)}','completado',this)"><i class="fa-solid fa-check"></i> Marcar completado</button>
+                  </footer>
+              </article>`;
+          }).join("")}</div>`;
+      }
+
+      async function actualizarEstadoPlanRefuerzoSocratico(planId, estadoNuevo, boton = null) {
+          const destinatarios = obtenerEstudiantesFiltradosInformeSocratico().filter(estudiante =>
+              obtenerPlanesRefuerzoEstudiante(estudiante)[planId]
+          );
+          const original = boton?.innerHTML || "";
+          if (boton) {
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+          }
+          for (const estudiante of destinatarios) {
+              const plan = obtenerPlanesRefuerzoEstudiante(estudiante)[planId];
+              const medicion = obtenerMetricaRiesgoEstudiante(estudiante, plan.actividadObjetivoId);
+              const actualizado = {
+                  ...plan,
+                  estado: estadoNuevo,
+                  completadoEn: estadoNuevo === "completado" ? new Date().toISOString() : null,
+                  medicionPosterior: {
+                      riesgo: medicion.riesgo,
+                      respuestas: medicion.total,
+                      conteo: medicion.conteo,
+                      variacion: medicion.riesgo === null || plan.lineaBase?.riesgo === null
+                          ? null
+                          : Number((medicion.riesgo - Number(plan.lineaBase.riesgo)).toFixed(1))
+                  }
+              };
+              const guardado = await window.guardarPlanRefuerzoFirebase?.(estudiante.uid, actualizado);
+              if (guardado) estudiante.planesRefuerzo = { ...obtenerPlanesRefuerzoEstudiante(estudiante), [planId]: actualizado };
+          }
+          if (boton) {
+              boton.disabled = false;
+              boton.innerHTML = original;
+          }
+          renderPlanesRefuerzoSocratico();
       }
 
       function escaparCampoCSV(valor) {
