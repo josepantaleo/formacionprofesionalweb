@@ -880,6 +880,91 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
       };
 
+      window.registrarIntentosPortapapelesFirebase = async function(eventos = []) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db) return false;
+
+        const entradas = (Array.isArray(eventos) ? eventos : [eventos])
+          .filter(evento => ["copiar", "cortar", "pegar"].includes(evento?.accion))
+          .slice(0, 25);
+        if (!entradas.length) return false;
+
+        try {
+          const referencia = doc(db, "estudiantes", user.uid);
+          await runTransaction(db, async transaccion => {
+            const snapshot = await transaccion.get(referencia);
+            const anterior = snapshot.exists()
+              ? (snapshot.data().intentosPortapapeles || {})
+              : {};
+            const historialAnterior = Array.isArray(anterior.historial)
+              ? anterior.historial.filter(item => item && typeof item === "object").slice(-49)
+              : [];
+            const conteosAnteriores = anterior.conteos && typeof anterior.conteos === "object"
+              ? anterior.conteos
+              : {};
+            const conteos = {
+              copiar: Math.max(0, Number(conteosAnteriores.copiar) || 0),
+              cortar: Math.max(0, Number(conteosAnteriores.cortar) || 0),
+              pegar: Math.max(0, Number(conteosAnteriores.pegar) || 0)
+            };
+            const nuevosRegistros = entradas.map(evento => {
+              const ahora = Number(evento.fechaEpoch) || Date.now();
+              const registro = {
+                id: String(evento.id || `${ahora}-${Math.random().toString(36).slice(2, 9)}`).slice(0, 80),
+                accion: evento.accion,
+                seccionId: String(evento.seccionId || "").slice(0, 80),
+                seccionTitulo: String(evento.seccionTitulo || "").slice(0, 160),
+                metodo: String(evento.metodo || "evento").slice(0, 40),
+                eventoOrigen: String(evento.eventoOrigen || "").slice(0, 40),
+                tecla: String(evento.tecla || "").slice(0, 20),
+                modificadores: String(evento.modificadores || "").slice(0, 80),
+                seleccionCaracteres: Math.max(0, Number(evento.seleccionCaracteres) || 0),
+                visibilidad: String(evento.visibilidad || document.visibilityState || "visible").slice(0, 20),
+                conectado: evento.conectado !== false,
+                fechaISO: new Date(ahora).toISOString(),
+                fechaEpoch: ahora
+              };
+              conteos[registro.accion] += 1;
+              return registro;
+            });
+            const historial = [...historialAnterior, ...nuevosRegistros].slice(-50);
+            const total = conteos.copiar + conteos.cortar + conteos.pegar;
+            const ahora = Date.now();
+            const ultimosDosMinutos = historial.filter(item => ahora - Number(item.fechaEpoch || 0) <= 120000).length;
+            const riesgo = total >= 6 || ultimosDosMinutos >= 4
+              ? "alto"
+              : (total >= 3 || ultimosDosMinutos >= 2 ? "medio" : (total > 0 ? "bajo" : "sin-datos"));
+
+            transaccion.set(referencia, {
+              uid: user.uid,
+              email: user.email || "",
+              nombreGoogle: user.displayName || "",
+              intentosPortapapeles: {
+                total,
+                conteos,
+                riesgo,
+                intentosUltimosDosMinutos: ultimosDosMinutos,
+                ultimoIntento: nuevosRegistros[nuevosRegistros.length - 1],
+                historial
+              },
+              actualizadoEn: serverTimestamp()
+            }, { merge: true });
+          });
+          return true;
+        } catch (error) {
+          console.warn("No se pudo registrar el intento de portapapeles:", error);
+          window.ultimoErrorIntentoPortapapeles = {
+            code: error?.code || "",
+            message: error?.message || "Error desconocido"
+          };
+          return false;
+        }
+      };
+
+      window.registrarIntentoPortapapelesFirebase = async function(evento = {}) {
+        return window.registrarIntentosPortapapelesFirebase([evento]);
+      };
+
       // Señal liviana e independiente del progreso y del código completo.
       // Permite que el panel docente detecte al estudiante aunque no haya un guardado pendiente.
       window.actualizarControlEstudianteFirebase = async function(estado = {}) {
@@ -4137,38 +4222,45 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           clearInterval(window.__profesorRefreshInterval);
           window.__profesorRefreshInterval = null;
         }
-        let consultaEnCurso = false;
-        const cargarPanel = async () => {
-          if (consultaEnCurso) return;
-          consultaEnCurso = true;
-          try {
-            const [estudiantesSnap, controlesSnap] = await Promise.all([
-              getDocs(collection(database, "estudiantes")),
-              getDocs(collection(database, "controlEstudiantes"))
-            ]);
-            const controles = new Map(
-              controlesSnap.docs.map(item => [item.id, item.data()])
-            );
-            const estudiantes = estudiantesSnap.docs.map(item => ({
-              ...item.data(),
-              uid: item.data().uid || item.id,
-              __controlEstudiante: controles.get(item.id) || null
-            }));
-            window.dispatchEvent(new CustomEvent("profesor-data", { detail: estudiantes }));
-          } catch (error) {
-            window.dispatchEvent(new CustomEvent("profesor-data-error", { detail: error.message }));
-          } finally {
-            consultaEnCurso = false;
-          }
+        let estudiantesActuales = [];
+        let controlesActuales = new Map();
+        const emitirPanel = () => {
+          const estudiantes = estudiantesActuales.map(item => ({
+            ...item.datos,
+            uid: item.datos.uid || item.id,
+            __controlEstudiante: controlesActuales.get(item.id) || null
+          }));
+          window.dispatchEvent(new CustomEvent("profesor-data", { detail: estudiantes }));
         };
-        cargarPanel();
-        window.__profesorRefreshInterval = setInterval(() => {
-          if (document.getElementById("panelProfesorModal")?.classList.contains("active")) {
-            cargarPanel();
-          }
-        }, 30000);
+        const manejarError = error => {
+          window.dispatchEvent(new CustomEvent("profesor-data-error", {
+            detail: error?.message || "No se pudo actualizar el panel."
+          }));
+        };
+        const detenerEstudiantes = onSnapshot(
+          collection(database, "estudiantes"),
+          snapshot => {
+            estudiantesActuales = snapshot.docs.map(item => ({
+              id: item.id,
+              datos: item.data()
+            }));
+            emitirPanel();
+          },
+          manejarError
+        );
+        const detenerControles = onSnapshot(
+          collection(database, "controlEstudiantes"),
+          snapshot => {
+            controlesActuales = new Map(
+              snapshot.docs.map(item => [item.id, item.data()])
+            );
+            emitirPanel();
+          },
+          manejarError
+        );
         window.__profesorUnsubscribe = () => {
-          if (window.__profesorRefreshInterval) clearInterval(window.__profesorRefreshInterval);
+          detenerEstudiantes();
+          detenerControles();
           window.__profesorRefreshInterval = null;
         };
       };

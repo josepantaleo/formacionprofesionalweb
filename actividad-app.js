@@ -1699,7 +1699,7 @@
       window.addEventListener('profesor-data-error', e => { document.getElementById('estadoPanelProfesor').textContent = 'No se pudo consultar estudiantes: ' + e.detail; });
       window.addEventListener('load', () => {
         actualizarVisibilidadDocente();
-          ['filtroProfesor','filtroEmailProfesor','filtroCursoProfesor','filtroDivisionProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroBloqueoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','filtroNotaProfesor','filtroDescuentoProfesor','filtroActualizacionProfesor','ordenProfesor'].forEach(id => {
+          ['filtroProfesor','filtroEmailProfesor','filtroCursoProfesor','filtroDivisionProfesor','filtroTurnoProfesor','filtroEstadoProfesor','filtroBloqueoProfesor','filtroProgresoProfesor','filtroSalidasProfesor','filtroPortapapelesProfesor','filtroNotaProfesor','filtroDescuentoProfesor','filtroActualizacionProfesor','ordenProfesor'].forEach(id => {
               document.getElementById(id)?.addEventListener('input', renderPanelProfesor);
               document.getElementById(id)?.addEventListener('change', renderPanelProfesor);
           });
@@ -2397,26 +2397,7 @@
               setTimeout(() => guardarIdentificacionFirebase(), 300);
           }
 
-          const bloquearPortapapelesEstudiante = e => {
-              const editor = e.target?.closest?.('.code-editor[id^="editor-"]');
-              if (!editor || document.body.classList.contains('teacher-authorized')) return;
-              e.preventDefault();
-          };
-          document.addEventListener('copy', bloquearPortapapelesEstudiante);
-          document.addEventListener('cut', bloquearPortapapelesEstudiante);
-          document.addEventListener('paste', bloquearPortapapelesEstudiante);
-          const bloquearArrastreEstudiante = e => {
-              const editor = e.target?.closest?.('.code-editor[id^="editor-"], .codemirror-host');
-              const textarea = editor?.matches?.('.code-editor')
-                  ? editor
-                  : editor?.querySelector?.('.code-editor[id^="editor-"]');
-              if (!textarea || document.body.classList.contains('teacher-authorized')) return;
-              e.preventDefault();
-              if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
-          };
-          document.addEventListener('dragstart', bloquearArrastreEstudiante);
-          document.addEventListener('dragover', bloquearArrastreEstudiante);
-          document.addEventListener('drop', bloquearArrastreEstudiante);
+          bloquearCopiaYPegado();
 
           // Atajo del profesor para panel general (Ctrl + Shift + U)
           window.addEventListener('keydown', function(e) {
@@ -2587,7 +2568,7 @@
                                   </div>
                                   <div class="student-editor-restriction-notice" role="note">
                                       <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
-                                      <span>Copiar, pegar y arrastrar código están deshabilitados.</span>
+                                      <span>Copiar, cortar y pegar están deshabilitados para estudiantes. Cada intento queda registrado para revisión docente.</span>
                                   </div>
                                   <label class="sr-only" for="editor-${sec.id}">Código para ${sec.title}</label>
                                       <textarea id="editor-${sec.id}" class="code-editor" aria-label="Código para ${sec.title}" spellcheck="false" autocapitalize="off" autocomplete="off" ${isFinalized ? 'disabled' : ''}>${savedCode}</textarea>
@@ -5264,6 +5245,7 @@
 
           const host = document.createElement("div");
           host.className = "codemirror-host";
+          host.__sourceTextarea = textarea;
           textarea.parentNode.insertBefore(host, textarea);
           textarea.classList.add("codemirror-source-hidden");
 
@@ -5639,21 +5621,116 @@
       }
 
       function bloquearCopiaYPegado() {
-          document.querySelectorAll('.code-editor').forEach(editor => {
-              if (editor.dataset.clipboardGuard === 'true') return;
-              editor.dataset.clipboardGuard = 'true';
-              const bloquear = e => {
-                  if (document.body.classList.contains('teacher-authorized')) return;
-                  e.preventDefault();
-              };
-              editor.addEventListener('paste', bloquear);
-              editor.addEventListener('copy', bloquear);
-              editor.addEventListener('cut', bloquear);
-              editor.addEventListener('contextmenu', bloquear);
-              editor.addEventListener('dragstart', bloquear);
-              editor.addEventListener('dragover', bloquear);
-              editor.addEventListener('drop', bloquear);
+          if (document.documentElement.dataset.studentClipboardGuard === 'true') return;
+          document.documentElement.dataset.studentClipboardGuard = 'true';
+
+          const obtenerEditorEstudiante = objetivo => {
+              const elemento = objetivo instanceof Element ? objetivo : objetivo?.parentElement;
+              if (!elemento) return null;
+
+              const textarea = elemento.closest?.('.code-editor[id^="editor-"]');
+              if (textarea) return textarea;
+
+              const contenidoCodeMirror = elemento.closest?.('.cm-content');
+              const host = contenidoCodeMirror?.closest?.('.codemirror-host');
+              const fuente = host?.__sourceTextarea;
+              return fuente?.matches?.('.code-editor[id^="editor-"]') ? fuente : null;
+          };
+
+          const esEstudianteEnEditor = evento =>
+              !document.body.classList.contains('teacher-authorized') &&
+              Boolean(obtenerEditorEstudiante(evento.target));
+
+          const informarBloqueo = evento => {
+              const editor = obtenerEditorEstudiante(evento.target);
+              const estado = editor?.__codeMirrorHost?.querySelector?.('.cm-workbench-status');
+              if (estado) estado.textContent = 'Copiar, cortar y pegar están deshabilitados para estudiantes.';
+          };
+
+          const identificarAccion = evento => {
+              if (['copy', 'cut', 'paste'].includes(evento.type)) {
+                  return { copy: 'copiar', cut: 'cortar', paste: 'pegar' }[evento.type];
+              }
+              if (evento.type === 'beforeinput') {
+                  return {
+                      insertFromPaste: 'pegar',
+                      deleteByCut: 'cortar'
+                  }[evento.inputType] || '';
+              }
+              if (evento.type === 'keydown') {
+                  const tecla = String(evento.key || '').toLowerCase();
+                  if ((evento.ctrlKey || evento.metaKey) && ['c', 'x', 'v'].includes(tecla)) {
+                      return { c: 'copiar', x: 'cortar', v: 'pegar' }[tecla];
+                  }
+                  if (evento.shiftKey && tecla === 'insert') return 'pegar';
+              }
+              return '';
+          };
+
+          const colaIntentos = [];
+          let temporizadorEnvio = null;
+          const enviarColaIntentos = () => {
+              temporizadorEnvio = null;
+              if (!colaIntentos.length) return;
+              const lote = colaIntentos.splice(0, 25);
+              void window.registrarIntentosPortapapelesFirebase?.(lote);
+              if (colaIntentos.length) temporizadorEnvio = window.setTimeout(enviarColaIntentos, 1200);
+          };
+          const registrarIntento = evento => {
+              const accion = identificarAccion(evento);
+              if (!accion) return;
+              const editor = obtenerEditorEstudiante(evento.target);
+              const seccionId = String(editor?.id || '').replace('editor-', '');
+              const seccion = seccionesData.find(item => item.id === seccionId);
+              const modificadores = ['ctrl', 'meta', 'shift', 'alt'].filter(nombre => evento[`${nombre}Key`]).join('+');
+              colaIntentos.push({
+                  accion,
+                  seccionId,
+                  seccionTitulo: seccion?.title || seccionId,
+                  metodo: evento.type === 'keydown' ? 'atajo-teclado' : evento.type,
+                  eventoOrigen: evento.type === 'beforeinput' ? evento.inputType : evento.type,
+                  tecla: evento.key || '',
+                  modificadores,
+                  seleccionCaracteres: editor && typeof editor.selectionStart === 'number'
+                      ? Math.max(0, editor.selectionEnd - editor.selectionStart)
+                      : 0,
+                  visibilidad: document.visibilityState,
+                  conectado: navigator.onLine !== false,
+                  fechaEpoch: Date.now()
+              });
+              if (!temporizadorEnvio) temporizadorEnvio = window.setTimeout(enviarColaIntentos, 1200);
+          };
+
+          const bloquearEvento = evento => {
+              if (!esEstudianteEnEditor(evento)) return;
+              evento.preventDefault();
+              evento.stopImmediatePropagation();
+              if (evento.dataTransfer) evento.dataTransfer.dropEffect = 'none';
+              informarBloqueo(evento);
+              registrarIntento(evento);
+          };
+
+          ['copy', 'cut', 'paste', 'contextmenu', 'dragstart', 'dragover', 'drop'].forEach(tipo => {
+              document.addEventListener(tipo, bloquearEvento, true);
           });
+
+          document.addEventListener('beforeinput', evento => {
+              if (!['insertFromPaste', 'insertFromDrop', 'deleteByCut'].includes(evento.inputType)) return;
+              bloquearEvento(evento);
+          }, true);
+
+          document.addEventListener('keydown', evento => {
+              if (!esEstudianteEnEditor(evento)) return;
+              const tecla = String(evento.key || '').toLowerCase();
+              const atajoPortapapeles = (evento.ctrlKey || evento.metaKey) &&
+                  ['c', 'x', 'v'].includes(tecla);
+              const pegarConInsert = evento.shiftKey && tecla === 'insert';
+              if (atajoPortapapeles || pegarConInsert) bloquearEvento(evento);
+          }, true);
+          document.addEventListener('visibilitychange', () => {
+              if (document.visibilityState === 'hidden') enviarColaIntentos();
+          });
+          window.addEventListener('beforeunload', enviarColaIntentos);
       }
 
       // ==========================================
@@ -7874,6 +7951,7 @@
               filtroBloqueoProfesor: '',
               filtroProgresoProfesor: '',
               filtroSalidasProfesor: '',
+              filtroPortapapelesProfesor: '',
               filtroNotaProfesor: '',
               filtroDescuentoProfesor: '',
               filtroActualizacionProfesor: '',
@@ -10232,6 +10310,7 @@
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial de desbloqueos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDescuentos(${indice})"><i class="fa-solid fa-file-invoice-dollar"></i><span>Historial de descuentos</span></button>
             <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialPestanas(${indice})"><i class="fa-solid fa-window-restore"></i><span>Historial de pestañas</span></button>
+            <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();abrirHistorialPortapapeles(${indice})"><i class="fa-solid fa-clipboard-list"></i><span>Intentos de copiar y pegar</span></button>
             <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirMensajeriaDocente('${escapeHtml(d.uid)}')"><i class="fa-solid fa-message"></i><span>Enviar mensaje en pantalla</span></button>
             <button class="btn btn-success" onclick="cerrarAccionesEstudiante();abrirJitsiDocente(${indice})"><i class="fa-solid fa-video"></i><span>${jitsiDisponible ? 'Volver a la llamada Jitsi' : 'Iniciar llamada Jitsi'}</span></button>
             ${jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-video-slash"></i><span>Cancelar invitación / finalizar</span></button>` : ''}
@@ -10255,6 +10334,84 @@
           modal.classList.add('active');
           modal.querySelector('.student-actions-modal-box')?.focus({ preventScroll: true });
       }
+
+      function obtenerResumenPortapapeles(estudiante = {}) {
+          const datos = estudiante.intentosPortapapeles && typeof estudiante.intentosPortapapeles === 'object'
+              ? estudiante.intentosPortapapeles
+              : {};
+          const conteosBase = datos.conteos && typeof datos.conteos === 'object' ? datos.conteos : {};
+          const conteos = {
+              copiar: Math.max(0, Number(conteosBase.copiar) || 0),
+              cortar: Math.max(0, Number(conteosBase.cortar) || 0),
+              pegar: Math.max(0, Number(conteosBase.pegar) || 0)
+          };
+          const historial = Array.isArray(datos.historial)
+              ? datos.historial.filter(item => item && typeof item === 'object')
+              : [];
+          return {
+              total: Math.max(Number(datos.total) || 0, conteos.copiar + conteos.cortar + conteos.pegar),
+              conteos,
+              riesgo: ['alto', 'medio', 'bajo'].includes(datos.riesgo)
+                  ? datos.riesgo
+                  : (conteos.copiar + conteos.cortar + conteos.pegar >= 6 ? 'alto'
+                      : (conteos.copiar + conteos.cortar + conteos.pegar >= 3 ? 'medio'
+                          : (conteos.copiar + conteos.cortar + conteos.pegar > 0 ? 'bajo' : 'sin-datos'))),
+              intentosUltimosDosMinutos: Math.max(0, Number(datos.intentosUltimosDosMinutos) || 0),
+              historial,
+              ultimoIntento: datos.ultimoIntento || historial[historial.length - 1] || null
+          };
+      }
+
+      function abrirHistorialPortapapeles(indice) {
+          const estudiante = estudiantesProfesor[indice];
+          if (!estudiante) return;
+          const resumen = obtenerResumenPortapapeles(estudiante);
+          const nombre = estudiante.estudiante?.nombre || estudiante.nombreGoogle || estudiante.email || 'Estudiante';
+          let modal = document.getElementById('historialPortapapelesModal');
+          if (!modal) {
+              modal = document.createElement('div');
+              modal.id = 'historialPortapapelesModal';
+              modal.className = 'modal-overlay';
+              modal.setAttribute('role', 'dialog');
+              modal.setAttribute('aria-modal', 'true');
+              document.body.appendChild(modal);
+              modal.addEventListener('click', evento => {
+                  if (evento.target === modal) modal.classList.remove('active');
+              });
+          }
+          const filas = [...resumen.historial].reverse().map(item => {
+              const fecha = item.fechaISO
+                  ? new Date(item.fechaISO).toLocaleString('es-AR')
+                  : (item.fechaEpoch ? new Date(Number(item.fechaEpoch)).toLocaleString('es-AR') : 'Sin fecha');
+              return `<tr>
+                  <td><strong>${escapeHtml(String(item.accion || '').toUpperCase())}</strong></td>
+                  <td>${escapeHtml(item.seccionTitulo || item.seccionId || 'Sin actividad')}</td>
+                  <td>${escapeHtml(item.metodo || 'evento')}</td>
+                  <td>${escapeHtml(fecha)}</td>
+              </tr>`;
+          }).join('');
+          modal.innerHTML = `<div class="modal-box" style="max-width:900px;width:94vw;max-height:88vh;overflow:auto">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem">
+                  <div>
+                      <h3 style="margin:0"><i class="fa-solid fa-clipboard-list"></i> Intentos de copiar, cortar y pegar</h3>
+                      <p style="color:var(--text-muted);margin:.35rem 0 0">${escapeHtml(nombre)} · se conservan los últimos 50 intentos.</p>
+                  </div>
+                  <button class="btn btn-secondary" type="button" onclick="document.getElementById('historialPortapapelesModal').classList.remove('active')" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <div class="teacher-summary-grid" style="margin:1rem 0">
+                  <div class="teacher-summary-card"><small>Total</small><strong>${resumen.total}</strong></div>
+                  <div class="teacher-summary-card"><small>Copiar</small><strong>${resumen.conteos.copiar}</strong></div>
+                  <div class="teacher-summary-card"><small>Cortar</small><strong>${resumen.conteos.cortar}</strong></div>
+                  <div class="teacher-summary-card"><small>Pegar</small><strong>${resumen.conteos.pegar}</strong></div>
+              </div>
+              ${filas ? `<div style="overflow:auto"><table class="teacher-table" style="width:100%">
+                  <thead><tr><th>Acción</th><th>Actividad</th><th>Método</th><th>Fecha</th></tr></thead>
+                  <tbody>${filas}</tbody>
+              </table></div>` : '<p style="padding:1rem;border:1px solid var(--border);border-radius:6px">No hay intentos registrados para este estudiante.</p>'}
+          </div>`;
+          modal.classList.add('active');
+      }
+
       function renderPanelProfesor() {
           renderBandejaSolicitudesPendientes();
           detectarDesconexionesProfesor();
@@ -10270,6 +10427,7 @@
           const bloqueoFiltro = document.getElementById('filtroBloqueoProfesor')?.value || '';
           const progresoFiltro = document.getElementById('filtroProgresoProfesor')?.value || '';
           const salidasFiltro = document.getElementById('filtroSalidasProfesor')?.value || '';
+          const portapapelesFiltro = document.getElementById('filtroPortapapelesProfesor')?.value || '';
           const notaFiltro = document.getElementById('filtroNotaProfesor')?.value || '';
           const descuentoFiltro = document.getElementById('filtroDescuentoProfesor')?.value || '';
           const actualizacionFiltro = document.getElementById('filtroActualizacionProfesor')?.value || '';
@@ -10295,6 +10453,7 @@
               const pantallaBloqueada = d.pantallaBloqueada === true;
               const salidas = Number(d.salidasPestana ?? d.salidasPestana ?? 0);
               const tieneCambios = salidas > 0;
+              const resumenPortapapeles = obtenerResumenPortapapeles(d);
               const cumpleProgreso = !progresoFiltro || (
                   progresoFiltro === '0' ? progreso === 0 :
                   progresoFiltro === '100' ? progreso === 100 :
@@ -10306,6 +10465,14 @@
               const cumpleSalidas = !salidasFiltro || (
                   salidasFiltro === '0' ? salidas === 0 : salidas >= Number(salidasFiltro)
               );
+              const cumplePortapapeles = !portapapelesFiltro
+                  || (portapapelesFiltro === 'con-intentos' && resumenPortapapeles.total > 0)
+                  || (portapapelesFiltro === 'sin-intentos' && resumenPortapapeles.total === 0)
+                  || (['copiar','cortar','pegar'].includes(portapapelesFiltro)
+                      && resumenPortapapeles.conteos[portapapelesFiltro] > 0)
+                  || (portapapelesFiltro === 'riesgo-alto' && resumenPortapapeles.riesgo === 'alto')
+                  || (portapapelesFiltro === 'riesgo-medio' && resumenPortapapeles.riesgo === 'medio')
+                  || (portapapelesFiltro === 'riesgo-bajo' && resumenPortapapeles.riesgo === 'bajo');
               const cumpleNota = !notaFiltro
                   || (notaFiltro === 'sin-nota' && !Number.isFinite(nota))
                   || (notaFiltro !== 'sin-nota' && (() => {
@@ -10343,14 +10510,14 @@
               const cumpleBloqueo = !bloqueoFiltro
                 || (bloqueoFiltro === 'bloqueados' && pantallaBloqueada)
                 || (bloqueoFiltro === 'activos' && !pantallaBloqueada);
-              d.__panelMeta = { progreso, nota, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cuentaPendiente, cuentaRechazada, cronometroPausado, tieneCambios, salidas };
+              d.__panelMeta = { progreso, nota, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cuentaPendiente, cuentaRechazada, cronometroPausado, tieneCambios, salidas, intentosPortapapeles: resumenPortapapeles.total };
               return (!cuentaPendiente || estadoFiltro === 'solicitudes')
                   && (!q || nombre.includes(q) || email.includes(q))
                   && (!emailFiltro || email.includes(emailFiltro))
                   && (!curso || e.curso===curso)
                   && (!division || e.division===division)
                   && (!turno || e.turno===turno)
-              && cumpleEstado && cumpleBloqueo && cumpleProgreso && cumpleSalidas && cumpleNota && cumpleDescuento && cumpleActualizacion;
+              && cumpleEstado && cumpleBloqueo && cumpleProgreso && cumpleSalidas && cumplePortapapeles && cumpleNota && cumpleDescuento && cumpleActualizacion;
           }).sort((a,b) => {
               const am=a.__panelMeta||{}, bm=b.__panelMeta||{};
               const texto = (valorA, valorB, direccion='asc') => {
@@ -10372,6 +10539,7 @@
               if (campo === 'progreso') return numero(am.progreso, bm.progreso, direccion);
               if (campo === 'nota') return numero(am.nota, bm.nota, direccion);
               if (campo === 'salidas') return numero(am.salidas, bm.salidas, direccion);
+              if (campo === 'portapapeles') return numero(am.intentosPortapapeles, bm.intentosPortapapeles, direccion);
               if (campo === 'alertas') return Number(bm.alerta)-Number(am.alerta) || (bm.actualizado||0)-(am.actualizado||0);
               return numero(am.actualizado, bm.actualizado, direccion);
           });
@@ -10388,6 +10556,7 @@
           const conAlertas=rows.filter(d=>d.__panelMeta?.alerta).length;
           const bloqueados=rows.filter(d=>d.pantallaBloqueada===true).length;
           const desbloqueosTotales=rows.reduce((total,d)=>total+Number(d.cantidadDesbloqueos||0),0);
+          const intentosPortapapelesTotales=rows.reduce((total,d)=>total+obtenerResumenPortapapeles(d).total,0);
           const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='—').map(Number);
           const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'—';
           document.getElementById('resumenProfesor').innerHTML=[
@@ -10395,6 +10564,7 @@
               ['Solicitudes pendientes',solicitudesPendientes,'','fa-user-clock'],
               ['Bloqueados',bloqueados,'blocked','fa-lock'],
               ['Desbloqueos registrados',desbloqueosTotales,'','fa-unlock-keyhole'],
+              ['Intentos de portapapeles',intentosPortapapelesTotales,intentosPortapapelesTotales > 0 ? 'blocked' : '','fa-clipboard-list'],
               ['Conectados',conectados,'','fa-wifi'],
               ['Trabajando',trabajando,'','fa-laptop-code'],
               ['Con alertas',conAlertas,'','fa-triangle-exclamation'],
@@ -10406,6 +10576,13 @@
               const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
               const versionCodigo = String(d.versionCodigo || VERSION_CODIGO_SUBIDO);
               const resumenAyudasFila = resumirAyudasComprensionEstudiante(d);
+              const resumenPortapapelesFila = obtenerResumenPortapapeles(d);
+              const riesgoColor = resumenPortapapelesFila.riesgo === 'alto' ? '#fecaca' : (resumenPortapapelesFila.riesgo === 'medio' ? '#fde68a' : '#bfdbfe');
+              const portapapelesFilaHtml = resumenPortapapelesFila.total > 0
+                  ? `<div style="margin-top:.35rem;padding:.3rem .45rem;border-radius:5px;background:rgba(239,68,68,.14);color:${riesgoColor};font-size:.7rem;line-height:1.35" title="Copiar: ${resumenPortapapelesFila.conteos.copiar} · Cortar: ${resumenPortapapelesFila.conteos.cortar} · Pegar: ${resumenPortapapelesFila.conteos.pegar} · Últimos 2 min: ${resumenPortapapelesFila.intentosUltimosDosMinutos}">
+                      <i class="fa-solid fa-clipboard-list"></i> Portapapeles: <strong>${resumenPortapapelesFila.total}</strong> · Riesgo <strong>${escapeHtml(resumenPortapapelesFila.riesgo)}</strong>
+                    </div>`
+                  : '';
               const ayudasFilaHtml = (resumenAyudasFila.consultasPalabras || resumenAyudasFila.pasosVistos || resumenAyudasFila.verificacionesIntentadas)
                   ? `<div style="margin-top:.35rem;padding:.3rem .45rem;border-radius:5px;background:rgba(56,189,248,.11);color:#bae6fd;font-size:.7rem;line-height:1.35" title="Registro de ayudas de comprensión">
                       <i class="fa-solid fa-graduation-cap"></i>
@@ -10459,7 +10636,7 @@
               const estadoConexionAcciones = conectadoFila
                   ? `<span class="teacher-actions-online-label"><i class="fa-solid fa-circle"></i> ${escribiendoFila ? 'Programando' : 'En línea'}</span>`
                   : '';
-          return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn ${claseAcciones} btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="${tituloAcciones}"><i class="fa-solid fa-sliders"></i><span>Acciones</span>${estadoConexionAcciones}</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}<div class="code-version-badge" style="margin-top:.4rem;font-size:.68rem;padding:.25rem .45rem"><i class="fa-solid fa-code-branch"></i> Código v${escapeHtml(versionCodigo)}</div>${alertaHtml}${ayudasFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td></tr>`;
+          return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn ${claseAcciones} btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="${tituloAcciones}"><i class="fa-solid fa-sliders"></i><span>Acciones</span>${estadoConexionAcciones}</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}<div class="code-version-badge" style="margin-top:.4rem;font-size:.68rem;padding:.25rem .45rem"><i class="fa-solid fa-code-branch"></i> Código v${escapeHtml(versionCodigo)}</div>${alertaHtml}${ayudasFilaHtml}${portapapelesFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td></tr>`;
               }).join('') || '<tr><td colspan="12" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
