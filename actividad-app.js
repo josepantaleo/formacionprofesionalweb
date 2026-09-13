@@ -1,4 +1,23 @@
 // Estructura de Datos de las 19 Secciones con descripciones de desafíos ampliadas y detalladas
+      const VERSION_SCRIPT = (() => {
+          try {
+              const src = [...document.scripts].find(script => /actividad-app\.js(?:\?|$)/.test(script.src || ""));
+              const valor = src ? new URL(src.src, document.baseURI).searchParams.get("v") : "";
+              return valor || "local";
+          } catch (_) {
+              return "local";
+          }
+      })();
+      window.VERSION_SCRIPT = VERSION_SCRIPT;
+      function actualizarEtiquetasVersionScript() {
+          const texto = `Versión del script · v${VERSION_SCRIPT}`;
+          document.querySelectorAll("#versionCodigoEstudiante, #versionCodigoDocente").forEach(elemento => {
+              elemento.title = texto;
+              elemento.innerHTML = `<i class="fa-solid fa-code-branch"></i> ${texto}`;
+          });
+      }
+      actualizarEtiquetasVersionScript();
+
       const seccionesDataBase = [
           {
               id: "sec-1",
@@ -1838,6 +1857,7 @@
               estadosRecomendacionesInforme: JSON.parse(JSON.stringify(estadosRecomendacionesInforme || {})),
               seccionActiva: seccionActivaActual,
               versionCodigo: VERSION_CODIGO_SUBIDO,
+              versionScript: VERSION_SCRIPT,
               versionApp: '8.0-desafios-externos-editables-ia'
           };
       }
@@ -10574,7 +10594,7 @@
           renderResumenConsultasIAGeneral(rows);
           document.getElementById('tablaProfesorBody').innerHTML=rows.map(d=>{
               const e=d.estudiante||{}, p=calcularProgresoEstudiante(d), n=calcularNotaDefinitivaEstudiante(d);
-              const versionCodigo = String(d.versionCodigo || VERSION_CODIGO_SUBIDO);
+              const versionScript = String(d.versionScript || VERSION_SCRIPT || 'local');
               const resumenAyudasFila = resumirAyudasComprensionEstudiante(d);
               const resumenPortapapelesFila = obtenerResumenPortapapeles(d);
               const riesgoColor = resumenPortapapelesFila.riesgo === 'alto' ? '#fecaca' : (resumenPortapapelesFila.riesgo === 'medio' ? '#fde68a' : '#bfdbfe');
@@ -10636,7 +10656,7 @@
               const estadoConexionAcciones = conectadoFila
                   ? `<span class="teacher-actions-online-label"><i class="fa-solid fa-circle"></i> ${escribiendoFila ? 'Programando' : 'En línea'}</span>`
                   : '';
-          return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn ${claseAcciones} btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="${tituloAcciones}"><i class="fa-solid fa-sliders"></i><span>Acciones</span>${estadoConexionAcciones}</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}<div class="code-version-badge" style="margin-top:.4rem;font-size:.68rem;padding:.25rem .45rem"><i class="fa-solid fa-code-branch"></i> Código v${escapeHtml(versionCodigo)}</div>${alertaHtml}${ayudasFilaHtml}${portapapelesFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td></tr>`;
+          return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn ${claseAcciones} btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="${tituloAcciones}"><i class="fa-solid fa-sliders"></i><span>Acciones</span>${estadoConexionAcciones}</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}<div class="code-version-badge" style="margin-top:.4rem;font-size:.68rem;padding:.25rem .45rem"><i class="fa-solid fa-code-branch"></i> Script v${escapeHtml(versionScript)}</div>${alertaHtml}${ayudasFilaHtml}${portapapelesFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td></tr>`;
               }).join('') || '<tr><td colspan="12" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
