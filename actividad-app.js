@@ -5263,6 +5263,12 @@
           if (!textarea || textarea.__codeMirrorView) return textarea?.__codeMirrorView || null;
           const CM = window.CodeMirror6;
           if (!CM) return null;
+          if (!document.getElementById("cm-workbench-enhancements-style")) {
+              const style = document.createElement("style");
+              style.id = "cm-workbench-enhancements-style";
+              style.textContent = ".codemirror-host.cm-fullscreen{position:fixed!important;inset:0;z-index:9999;background:#0b1220;padding:12px;display:flex;flex-direction:column}.codemirror-host.cm-fullscreen .cm-editor{flex:1;min-height:0}.cm-workbench-lines,.cm-workbench-autosave{font-size:.72rem;opacity:.85;white-space:nowrap}.cm-workbench-autosave{color:#a7f3d0}";
+              document.head.appendChild(style);
+          }
           const {
               Compartment,
               Decoration,
@@ -5340,6 +5346,9 @@
               </select>
               <button type="button" data-cm-wrap title="Ajustar líneas largas" aria-label="Ajustar líneas largas" aria-pressed="false"><i class="fa-solid fa-align-left"></i></button>
               <span class="cm-workbench-position" aria-live="polite">Línea 1, columna 1</span>
+              <button type="button" data-cm-fullscreen title="Pantalla completa" aria-label="Pantalla completa" aria-pressed="false"><i class="fa-solid fa-expand"></i></button>
+              <span class="cm-workbench-lines" aria-live="polite">Líneas 1</span>
+              <span class="cm-workbench-autosave" aria-live="polite">Autoguardado activo</span>
               <span class="cm-workbench-status" aria-live="polite"></span>`;
           host.appendChild(barra);
 
@@ -5358,11 +5367,14 @@
           const ajusteLineas = new Compartment();
           const autoriasCodigo = new Compartment();
           const posicionCursor = barra.querySelector(".cm-workbench-position");
+          const contadorLineas = barra.querySelector(".cm-workbench-lines");
+          const estadoAutoguardado = barra.querySelector(".cm-workbench-autosave");
           const estadoHerramientas = barra.querySelector(".cm-workbench-status");
 
           const actualizarPosicion = estado => {
               const cabeza = estado.selection.main.head;
               const linea = estado.doc.lineAt(cabeza);
+              if (contadorLineas) contadorLineas.textContent = `Líneas ${estado.doc.lines}`;
               posicionCursor.textContent = `Línea ${linea.number}, columna ${cabeza - linea.from + 1}`;
           };
 
@@ -5407,6 +5419,54 @@
           };
 
           const atajos = keymap.of([
+              {
+                  key: "Mod-c",
+                  run: () => {
+                      if (!restringirPortapapeles()) return false;
+                      estadoHerramientas.textContent = "Copiado deshabilitado para estudiantes.";
+                      return true;
+                  }
+              },
+              {
+                  key: "Mod-x",
+                  run: () => {
+                      if (!restringirPortapapeles()) return false;
+                      estadoHerramientas.textContent = "Cortar deshabilitado para estudiantes.";
+                      return true;
+                  }
+              },
+              {
+                  key: "Mod-v",
+                  run: () => {
+                      if (!restringirPortapapeles()) return false;
+                      estadoHerramientas.textContent = "Pegado deshabilitado para estudiantes.";
+                      return true;
+                  }
+              },
+              {
+                  key: "Shift-Insert",
+                  run: () => {
+                      if (!restringirPortapapeles()) return false;
+                      estadoHerramientas.textContent = "Pegado deshabilitado para estudiantes.";
+                      return true;
+                  }
+              },
+              {
+                  key: "Ctrl-Insert",
+                  run: () => {
+                      if (!restringirPortapapeles()) return false;
+                      estadoHerramientas.textContent = "Copiado deshabilitado para estudiantes.";
+                      return true;
+                  }
+              },
+              {
+                  key: "Shift-Delete",
+                  run: () => {
+                      if (!restringirPortapapeles()) return false;
+                      estadoHerramientas.textContent = "Cortar deshabilitado para estudiantes.";
+                      return true;
+                  }
+              },
               { key: "Mod-z", run: deshacer },
               { key: "Mod-Shift-z", run: rehacer },
               { key: "Mod-y", run: rehacer },
@@ -5490,6 +5550,13 @@
                                   }
                                   textarea.value = update.state.doc.toString();
                                   textarea.dispatchEvent(new Event("input", { bubbles: true }));
+                                  if (estadoAutoguardado) {
+                                      estadoAutoguardado.textContent = "Cambios pendientes de guardado...";
+                                      clearTimeout(textarea.__cmAutosaveNoticeTimer);
+                                      textarea.__cmAutosaveNoticeTimer = setTimeout(() => {
+                                          estadoAutoguardado.textContent = "Autoguardado programado";
+                                      }, 2700);
+                                  }
                               }
                               if (update.selectionSet) {
                                   const seleccion = update.state.selection.main;
@@ -5644,6 +5711,16 @@
               const activo = evento.currentTarget.getAttribute("aria-pressed") !== "true";
               evento.currentTarget.setAttribute("aria-pressed", String(activo));
               view.dispatch({ effects: ajusteLineas.reconfigure(activo ? EditorView.lineWrapping : []) });
+              view.focus();
+          };
+          barra.querySelector("[data-cm-fullscreen]").onclick = evento => {
+              const activo = !host.classList.contains("cm-fullscreen");
+              host.classList.toggle("cm-fullscreen", activo);
+              evento.currentTarget.setAttribute("aria-pressed", String(activo));
+              evento.currentTarget.innerHTML = activo
+                  ? '<i class="fa-solid fa-compress"></i>'
+                  : '<i class="fa-solid fa-expand"></i>';
+              evento.currentTarget.title = activo ? "Salir de pantalla completa" : "Pantalla completa";
               view.focus();
           };
 
