@@ -1537,9 +1537,11 @@
               btnIngresoDocente.disabled = false;
           }
           document.querySelectorAll('.teacher-only').forEach(control => {
-              const visible = autorizado && (!control.classList.contains('teacher-session-only') || autorizacionTemporal);
+              const visible = autorizado && autorizacionTemporal;
               control.setAttribute('aria-hidden', visible ? 'false' : 'true');
               control.tabIndex = visible ? 0 : -1;
+              control.hidden = !visible;
+              control.style.display = visible ? '' : 'none';
           });
           if (!autorizado) {
               document.getElementById('passwordModal')?.classList.remove('active');
@@ -8161,7 +8163,17 @@
           guardarPDFProfesor(doc, `Informe_socratico_${datos.actividad}`);
       }
 
-      function abrirPanelProfesor() {
+      async function abrirPanelProfesor() {
+          const autorizado = Boolean(
+              document.body.classList.contains('teacher-authorized') &&
+              document.body.classList.contains('teacher-temporary') &&
+              window.firebaseTeacherUser
+          );
+          if (!autorizado) {
+              alert('Para abrir el Panel Profesor debés iniciar sesión con una cuenta docente autorizada.');
+              await ingresarComoDocente();
+              return;
+          }
           document.getElementById('panelProfesorModal').classList.add('active');
           actualizarBotonPausaCronometros();
           actualizarMantenimientoJitsiAdministrador();
@@ -11163,7 +11175,17 @@
       let desafioEditorActual=0;
       let desafiosEditorFirebase=[];
 
-      function abrirEditorDesafiosFirebase(){
+      async function abrirEditorDesafiosFirebase(){
+        const autorizado = Boolean(
+          document.body.classList.contains('teacher-authorized') &&
+          document.body.classList.contains('teacher-temporary') &&
+          window.firebaseTeacherUser
+        );
+        if (!autorizado) {
+          alert('Para abrir el Editor de desafíos debés iniciar sesión con una cuenta docente autorizada.');
+          await ingresarComoDocente();
+          return;
+        }
         document.getElementById('editorDesafiosFirebaseModal').classList.add('active');
         desafiosEditorFirebase=JSON.parse(JSON.stringify(seccionesData));
         desafioEditorActual=0;

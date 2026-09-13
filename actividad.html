@@ -15,8 +15,8 @@
       href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="actividad-base.css?v=20260913-23" />
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260913-23" />
+    <link rel="stylesheet" href="actividad-base.css?v=20260913-43" />
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260913-43" />
     <style>
       /* Ajustes visuales del panel docente y uso móvil. */
       .teacher-panel-box {
@@ -24,6 +24,14 @@
         max-height: calc(100vh - 1.5rem);
         overflow: hidden;
         padding: 0;
+      }
+      /* Las herramientas docentes no deben aparecer en la vista del estudiante. */
+      .teacher-only[aria-hidden="true"],
+      body:not(.teacher-authorized) .teacher-only {
+        display: none !important;
+      }
+      body.teacher-authorized.teacher-temporary .teacher-only[aria-hidden="false"] {
+        display: inline-flex !important;
       }
       .teacher-panel-header {
         position: sticky;
@@ -194,7 +202,7 @@
     <!-- Librería pdf-lib para cifrar y proteger el PDF generado -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
-<script type="module" src="actividad-firebase.js?v=20260913-39"></script>
+    <script type="module" src="actividad-firebase.js?v=20260913-43"></script>
   </head>
   <body onload="initApp()">
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -1182,9 +1190,9 @@
       </button>
     </div>
 
-<script src="actividad-app.js?v=20260913-39"></script>
-    <script src="actividad-cooperacion.js?v=20260913-2"></script>
-    <script src="mejoras-seguimiento.js?v=20260913-23"></script>
+    <script src="actividad-app.js?v=20260913-43"></script>
+    <script src="actividad-cooperacion.js?v=20260913-43"></script>
+    <script src="mejoras-seguimiento.js?v=20260913-43"></script>
   </body>
 </html>
 

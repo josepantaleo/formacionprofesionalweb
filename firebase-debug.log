@@ -1,0 +1,506 @@
+[debug] [2026-09-13T16:47:56.885Z] ----------------------------------------------------------------------
+[debug] [2026-09-13T16:47:56.894Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\firebase-tools\lib\bin\firebase.js emulators:exec --only firestore --project ipem146js node firestore-rules.test.cjs
+[debug] [2026-09-13T16:47:56.895Z] CLI Version:   14.17.0
+[debug] [2026-09-13T16:47:56.895Z] Platform:      win32
+[debug] [2026-09-13T16:47:56.896Z] Node Version:  v24.19.0
+[debug] [2026-09-13T16:47:56.896Z] Time:          Sun Sep 13 2026 13:47:56 GMT-0300 (hora estándar de Argentina)
+[debug] [2026-09-13T16:47:56.896Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-09-13T16:47:56.901Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-09-13T16:47:57.033Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] Failed to authenticate, have you run firebase login?
+[warn] !  emulators: You are not currently authenticated so some features may not work correctly. Please run firebase login to authenticate the CLI. 
+[warn] !  Could not find config (firebase.json) so using defaults. 
+[debug] [2026-09-13T16:47:57.338Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.344Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.346Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.349Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.350Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.351Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.352Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.353Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.354Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.359Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.360Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.361Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.362Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.363Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.364Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.366Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.368Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.369Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.369Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.370Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.371Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.372Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.377Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.378Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.379Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.380Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.381Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.383Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.443Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.444Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.445Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.449Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.452Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.453Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.453Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.459Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.460Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 
+[error] Error: An unexpected error has occurred.
+[debug] [2026-09-13T16:47:57.460Z] Error: EPIPE: broken pipe, write
+    at Socket._write (node:internal/net:75:18)
+    at writeOrBuffer (node:internal/streams/writable:570:12)
+    at _write (node:internal/streams/writable:499:10)
+    at Writable.write (node:internal/streams/writable:508:10)
+    at Console.log (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\lib\winston\transports\console.js:87:23)
+    at Console._write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\modern.js:103:17)
+    at doWrite (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:390:139)
+    at writeOrBuffer (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:381:5)
+    at Writable.write (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston-transport\node_modules\readable-stream\lib\_stream_writable.js:302:11)
+    at DerivedLogger.ondata (C:\Users\Estudiante\AppData\Local\npm-cache\_npx\f9d8a3ecface27c9\node_modules\winston\node_modules\readable-stream\lib\_stream_readable.js:629:20)
+[error] 

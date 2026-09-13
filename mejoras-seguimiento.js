@@ -704,25 +704,8 @@ function detenerConsentimientosCooperacionEstudiante(){
  window.__firmaConsentimientosCooperacion="";
 }
 function iniciarConsentimientosCooperacionEstudiante(){
- const user=window.firebaseCurrentUser,secciones=(typeof seccionesData!=="undefined"?seccionesData:[]).map(item=>item.id).filter(Boolean);
- if(!user||esSesionDocenteActual()||typeof window.escucharModoCooperacionFirebase!=="function"||!secciones.length){
-  detenerConsentimientosCooperacionEstudiante();
-  return;
- }
- const firma=`${user.uid}:${secciones.join(",")}`;
- if(window.__firmaConsentimientosCooperacion===firma&&detenerConsentimientosCooperacion.length===secciones.length)return;
+ // La cooperación se activa directamente por el docente y no requiere autorización adicional del estudiante.
  detenerConsentimientosCooperacionEstudiante();
- window.__firmaConsentimientosCooperacion=firma;
- asegurarConsentimientoCooperacionEstudiante();
- secciones.forEach(sectionId=>{
-  const detener=window.escucharModoCooperacionFirebase(user.uid,sectionId,(modo,error)=>{
-   if(error)return;
-   if(modo?.consentimiento==="pendiente")consentimientosCooperacionPendientes.set(sectionId,modo);
-   else consentimientosCooperacionPendientes.delete(sectionId);
-   renderConsentimientoCooperacionEstudiante();
-  },{rol:"estudiante"});
-  if(typeof detener==="function")detenerConsentimientosCooperacion.push(detener);
- });
 }
 function iniciarAlertasChatCooperativoEstudiante(){
  const user=window.firebaseCurrentUser;
@@ -750,14 +733,23 @@ function iniciarAlertasChatCooperativoEstudiante(){
    const recibidos=(Array.isArray(mensajes)?mensajes:[]).filter(item=>item?.rol==="docente"&&item.autorUid!==user.uid&&item.autorNombre!=="Sistema de llamada");
    const ultimo=recibidos.at(-1)||null;
    if(!ultimoMensajeDocentePorSeccion.has(sectionId)){
-    ultimoMensajeDocentePorSeccion.set(sectionId,ultimo?.id||"");
-    const ultimoNoLeido=[...recibidos].reverse().find(item=>!item.leidoEstudianteEn);
-    if(ultimoNoLeido)mostrarPopupMensajeCooperativoEstudiante(ultimoNoLeido,sectionId);
+    const claveVisto=`cooperation_last_seen_message_${user.uid}_${sectionId}`;
+    let ultimoVisto="";
+    try{ultimoVisto=sessionStorage.getItem(claveVisto)||localStorage.getItem(claveVisto)||"";}catch(error){}
+    const ultimoId=String(ultimo?.id||"");
+    ultimoMensajeDocentePorSeccion.set(sectionId,ultimoId||ultimoVisto);
+    if(ultimoId&&ultimoId!==ultimoVisto){
+      try{sessionStorage.setItem(claveVisto,ultimoId);}catch(error){}
+      try{localStorage.setItem(claveVisto,ultimoId);}catch(error){}
+    }
+    // La carga inicial sincroniza el estado, pero no reabre mensajes históricos.
     return;
    }
    const anterior=ultimoMensajeDocentePorSeccion.get(sectionId);
    if(!ultimo||!ultimo.id||ultimo.id===anterior)return;
    ultimoMensajeDocentePorSeccion.set(sectionId,ultimo.id);
+   const claveVisto=`cooperation_last_seen_message_${user.uid}_${sectionId}`;
+   try{sessionStorage.setItem(claveVisto,ultimo.id);localStorage.setItem(claveVisto,ultimo.id);}catch(error){}
    mostrarPopupMensajeCooperativoEstudiante(ultimo,sectionId);
     },{rol:"estudiante",marcarLeidos:false});
     if(typeof detener==="function")detenerAlertasChatEstudiante.push(detener);
@@ -965,7 +957,7 @@ function asegurarEditorColaborativoDocente(){
  modal.querySelector("#compartirSeleccionChat").onclick=()=>{const editor=modal.querySelector("#editorColaborativoCodigo"),campo=modal.querySelector("#chatColaborativoDocenteTexto"),rango=editor?.__getCodeMirrorSelection?.()||{inicio:editor?.selectionStart||0,fin:editor?.selectionEnd||0},seleccion=(editor?.__getCodeMirrorSelectedText?.()||editor?.value.slice(rango.inicio,rango.fin)||"").trim();if(!seleccion){alert("Seleccioná primero una parte del código.");return;}if(!campo)return;campo.value=`Te comparto esta parte del código:\n\n\`\`\`javascript\n${seleccion}\n\`\`\``;campo.focus();};
  modal.querySelector("#finalizarCooperacionDocente").onclick=async()=>{
   const boton=modal.querySelector("#finalizarCooperacionDocente"),estado=modal.querySelector("#chatColaborativoDocenteEstado");
-  const confirmacion=await mostrarConfirmacionDocente({tipo:"warning",icono:"fa-circle-stop",titulo:"Finalizar cooperación",mensaje:"Se cerrará la edición compartida de esta actividad.",detalles:["El estudiante podrá continuar trabajando individualmente.","El código y los mensajes se conservarán.","Una nueva cooperación requerirá otra solicitud y aceptación."],confirmarTexto:"Finalizar cooperación",confirmarIcono:"fa-circle-stop",confirmarClase:"btn-warning"});
+  const confirmacion=await mostrarConfirmacionDocente({tipo:"warning",icono:"fa-circle-stop",titulo:"Finalizar cooperación",mensaje:"Se cerrará la edición compartida de esta actividad.",detalles:["El estudiante podrá continuar trabajando individualmente.","El código y los mensajes se conservarán.","Podrás volver a activar la cooperación cuando sea necesario."],confirmarTexto:"Finalizar cooperación",confirmarIcono:"fa-circle-stop",confirmarClase:"btn-warning"});
   if(!confirmacion?.confirmado)return;
   boton.disabled=true;estado.textContent="Finalizando cooperación...";
   const ok=await modal.__crdtSession?.finalizarCooperacion?.();
@@ -1013,7 +1005,7 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
    if(!(modoActual.consentimiento==="aceptado"&&modoActual.activa===true)){
     const objetivo=`Acompañamiento docente en ${sec?.title||sectionId}: revisar el razonamiento, probar el código y acordar el siguiente paso.`;
     await modal.__crdtSession.solicitarCooperacion?.(objetivo);
-    salida.textContent="Solicitud enviada. Esperando aceptación del estudiante.";
+    salida.textContent="Cooperación activada. Sincronización automática disponible.";
    }else{
     salida.textContent="Sincronización automática activa";
    }

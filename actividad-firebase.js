@@ -1592,18 +1592,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
              return { ...modoCooperacionActual };
            },
            async solicitarCooperacion(objetivo = "") {
-             if (rol !== "docente") return false;
-             if (modoCooperacionActual.consentimiento === "aceptado" && modoCooperacionActual.activa) return false;
-             const descripcion = String(objetivo || "Acompañamiento docente sobre la actividad actual").trim().slice(0, 500);
-             await setDoc(metaRef, {
-               modoCooperacionActiva: false,
-               edicionCooperativaPausada: true,
-               estadoConsentimiento: "pendiente",
+            if (rol !== "docente") return false;
+            const descripcion = String(objetivo || "Acompañamiento docente sobre la actividad actual").trim().slice(0, 500);
+            await setDoc(metaRef, {
+              modoCooperacionActiva: true,
+              edicionCooperativaPausada: false,
+              estadoConsentimiento: "aceptado",
                objetivoCooperacion: descripcion,
                solicitadoPor: user.displayName || user.email || "Docente",
                solicitudEn: serverTimestamp(),
-               respondidoEn: null,
-               respondidoPor: "",
+              respondidoEn: serverTimestamp(),
+              respondidoPor: user.email || user.uid,
                motivoRechazo: "",
                actualizadoEn: serverTimestamp(),
                actualizadoPor: user.email || user.uid

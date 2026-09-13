@@ -134,6 +134,7 @@ service cloud.firestore {
         'seguimientoExtension',
         'jitsiParticipacion',
         'versionScript',
+        'intentosPortapapeles',
         'presenciaEnLinea',
         'presenciaActualizadaEn',
         'presenciaActualizadaEnCliente',
@@ -266,6 +267,56 @@ service cloud.firestore {
           (
             request.resource.data.presenciaActualizadaEnCliente is number &&
             request.resource.data.presenciaActualizadaEnCliente > 0
+          )
+        ) &&
+        (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['intentosPortapapeles']) ||
+          (
+            request.resource.data.intentosPortapapeles is map &&
+            request.resource.data.intentosPortapapeles.keys().hasAll([
+              'total',
+              'conteos',
+              'riesgo',
+              'intentosUltimosDosMinutos',
+              'versionScript',
+              'ultimoIntento',
+              'historial'
+            ]) &&
+            request.resource.data.intentosPortapapeles.keys().hasOnly([
+              'total',
+              'conteos',
+              'riesgo',
+              'intentosUltimosDosMinutos',
+              'versionScript',
+              'ultimoIntento',
+              'historial'
+            ]) &&
+            request.resource.data.intentosPortapapeles.total is number &&
+            request.resource.data.intentosPortapapeles.total >= 0 &&
+            request.resource.data.intentosPortapapeles.total <= 100000 &&
+            request.resource.data.intentosPortapapeles.conteos is map &&
+            request.resource.data.intentosPortapapeles.conteos.keys().hasOnly([
+              'copiar',
+              'cortar',
+              'pegar'
+            ]) &&
+            request.resource.data.intentosPortapapeles.conteos.copiar is number &&
+            request.resource.data.intentosPortapapeles.conteos.cortar is number &&
+            request.resource.data.intentosPortapapeles.conteos.pegar is number &&
+            request.resource.data.intentosPortapapeles.riesgo in [
+              'sin-datos',
+              'bajo',
+              'medio',
+              'alto'
+            ] &&
+            request.resource.data.intentosPortapapeles.intentosUltimosDosMinutos is number &&
+            request.resource.data.intentosPortapapeles.intentosUltimosDosMinutos >= 0 &&
+            request.resource.data.intentosPortapapeles.intentosUltimosDosMinutos <= 1000 &&
+            request.resource.data.intentosPortapapeles.versionScript is string &&
+            request.resource.data.intentosPortapapeles.versionScript.size() <= 80 &&
+            request.resource.data.intentosPortapapeles.ultimoIntento is map &&
+            request.resource.data.intentosPortapapeles.historial is list &&
+            request.resource.data.intentosPortapapeles.historial.size() <= 50
           )
         ) &&
         (
@@ -1121,6 +1172,34 @@ service cloud.firestore {
           (
             isTeacher() &&
             (
+              (
+                resource.data.get('estadoConsentimiento', 'sin_solicitud') in [
+                  'sin_solicitud',
+                  'rechazado',
+                  'finalizado'
+                ] &&
+                request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                  'actualizadoEn',
+                  'actualizadoPor',
+                  'modoCooperacionActiva',
+                  'edicionCooperativaPausada',
+                  'estadoConsentimiento',
+                  'objetivoCooperacion',
+                  'solicitadoPor',
+                  'solicitudEn',
+                  'respondidoEn',
+                  'respondidoPor',
+                  'motivoRechazo'
+                ]) &&
+                request.resource.data.estadoConsentimiento == 'aceptado' &&
+                request.resource.data.modoCooperacionActiva == true &&
+                request.resource.data.edicionCooperativaPausada == false &&
+                request.resource.data.objetivoCooperacion is string &&
+                request.resource.data.objetivoCooperacion.size() > 0 &&
+                request.resource.data.respondidoEn == request.time &&
+                request.resource.data.respondidoPor == authenticatedEmail() &&
+                request.resource.data.motivoRechazo == ''
+              ) ||
               (
                 resource.data.get('estadoConsentimiento', 'sin_solicitud') in [
                   'sin_solicitud',
