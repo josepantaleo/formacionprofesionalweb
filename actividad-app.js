@@ -2098,11 +2098,25 @@
           if (datos.seccionActiva && seccionesData.some(s => s.id === datos.seccionActiva)) seccionActivaActual = datos.seccionActiva;
       }
 
-      function solicitarDatosNuevoEstudiante() {
+      function solicitarDatosNuevoEstudiante(esNuevoRegistro = true, datosExistentes = null) {
         return new Promise((resolve) => {
           const modal=document.createElement('div'); modal.className='modal-overlay'; modal.style.display='flex';
+          const textoRegistro = esNuevoRegistro
+              ? "Primera vez con este correo. Completá tus datos para comenzar."
+              : "Este correo ya está registrado. Completá los datos faltantes para continuar.";
           modal.innerHTML=`<div class="modal-box" style="max-width:520px;width:92%;"><h3>👨‍🎓 Datos del estudiante</h3><p>Primera vez con este correo. Completá tus datos para comenzar.</p><div class="input-group"><label>Nombre y Apellido</label><input id="nuevoNombre" type="text" required></div><div class="input-group"><label>Curso</label><select id="nuevoCurso" required><option value="">Seleccionar curso</option><option>1° Año</option><option>2° Año</option><option>3° Año</option><option>4° Año</option><option>5° Año</option><option>6° Año</option><option>7° Año</option></select></div><div class="input-group"><label>División</label><select id="nuevoDivision" required><option value="">Seleccionar división</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option></select></div><div class="input-group"><label>Turno</label><select id="nuevoTurno" required><option value="">Seleccionar turno</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select></div><div id="nuevoError" role="alert" style="display:none;color:#fca5a5">Seleccioná obligatoriamente curso, división y turno.</div><div class="modal-actions"><button class="btn btn-primary" id="confirmarNuevo" type="button">Comenzar actividad</button></div></div>`;
-          document.body.appendChild(modal); const n=modal.querySelector('#nuevoNombre'); n.value=window.firebaseCurrentUser?.displayName||''; n.focus();
+          const descripcionRegistro = modal.querySelector(".modal-box > p");
+          if (descripcionRegistro) descripcionRegistro.textContent = textoRegistro;
+          document.body.appendChild(modal);
+          const perfilExistente = datosExistentes?.estudiante || {};
+          const n=modal.querySelector('#nuevoNombre');
+          n.value=perfilExistente.nombre || datosExistentes?.nombreGoogle || window.firebaseCurrentUser?.displayName || '';
+          modal.querySelector('#nuevoCurso').value = perfilExistente.curso || '';
+          modal.querySelector('#nuevoDivision').value = String(perfilExistente.division || '').toUpperCase();
+          modal.querySelector('#nuevoTurno').value = perfilExistente.turno || '';
+          const primerCampoVacio = [n, modal.querySelector('#nuevoCurso'), modal.querySelector('#nuevoDivision'), modal.querySelector('#nuevoTurno')]
+              .find(campo => !String(campo?.value || '').trim());
+          (primerCampoVacio || n).focus();
           modal.querySelector('#confirmarNuevo').onclick=async()=>{const nombre=n.value.trim(),curso=modal.querySelector('#nuevoCurso').value.trim(),division=modal.querySelector('#nuevoDivision').value.trim().toUpperCase(),turno=modal.querySelector('#nuevoTurno').value;if(!nombre||!curso||!division||!turno){const error=modal.querySelector('#nuevoError');error.textContent='Seleccioná obligatoriamente curso, división y turno.';error.style.display='block';const primerFaltante=!nombre?n:!curso?modal.querySelector('#nuevoCurso'):!division?modal.querySelector('#nuevoDivision'):modal.querySelector('#nuevoTurno');primerFaltante.focus();return;}modal.querySelector('#nuevoError').style.display='none';document.getElementById('studentName').value=nombre;document.getElementById('studentCourse').value=curso;document.getElementById('studentDivision').value=division;document.getElementById('studentTurno').value=turno;setLocalStorage('app_student_name',nombre);setLocalStorage('app_student_course',curso);setLocalStorage('app_student_division',division);setLocalStorage('app_student_turno',turno);const guardado=await guardarIdentificacionFirebase();if(!guardado){const diagnostico=diagnosticarErrorRegistroEstudiante();const error=modal.querySelector('#nuevoError');error.innerHTML=`<strong>${escapeHtml(diagnostico.titulo)}</strong><br>${escapeHtml(diagnostico.detalle)}<br><small>${escapeHtml(diagnostico.accion)}</small>`;error.style.display='block';return;}modal.remove();resolve();};
         });
       }
@@ -2428,7 +2442,8 @@
               datosFirebase.estudiante.nombre && datosFirebase.estudiante.curso &&
               datosFirebase.estudiante.division && datosFirebase.estudiante.turno);
           if (!registroCompleto) {
-              await solicitarDatosNuevoEstudiante();
+              const esNuevoRegistro = !(datosFirebase?.uid && datosFirebase?.email);
+              await solicitarDatosNuevoEstudiante(esNuevoRegistro, datosFirebase);
               window.escucharReinicioSalidasFirebase?.();
               bloquearCuentaPorAprobacion('pendiente');
               return;
