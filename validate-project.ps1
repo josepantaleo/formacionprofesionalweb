@@ -7,6 +7,7 @@ $scripts = @(
   "actividad-firebase.js",
   "actividad-pdf-loader.js",
   "actividad-utils.js",
+  "actividad-network-status.js",
   "actividad-cooperacion.js",
   "mejoras-seguimiento.js"
 )
