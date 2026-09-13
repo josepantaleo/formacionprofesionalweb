@@ -7947,6 +7947,8 @@
           const valores = [
               control.activoEn,
               control.activoEnCliente,
+              estudiante?.presenciaActualizadaEn,
+              estudiante?.presenciaActualizadaEnCliente,
               estudiante?.activoEn,
               estudiante?.actualizadoEn
           ];

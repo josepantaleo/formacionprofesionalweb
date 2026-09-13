@@ -994,6 +994,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             // Respaldo inmediato mientras serverTimestamp termina de resolverse.
             activoEnCliente: Date.now()
           });
+          await setDoc(doc(db, "estudiantes", user.uid), {
+            presenciaEnLinea: true,
+            presenciaActualizadaEn: serverTimestamp(),
+            presenciaActualizadaEnCliente: Date.now(),
+            versionScript: VERSION_SCRIPT
+          }, { merge: true });
           return true;
         } catch (error) {
           console.warn("No se pudo actualizar la señal de conexión del estudiante:", error);
