@@ -5293,8 +5293,10 @@
               const tecla = String(evento.key || "").toLowerCase();
               const atajo = evento.type === "keydown" &&
                   (((evento.ctrlKey || evento.metaKey) && ["c", "x", "v"].includes(tecla)) ||
-                   (evento.shiftKey && tecla === "insert"));
-              const portapapeles = ["copy", "cut", "paste", "contextmenu", "drop"].includes(evento.type);
+                   (evento.shiftKey && tecla === "insert") ||
+                   (evento.ctrlKey && tecla === "insert") ||
+                   (evento.shiftKey && tecla === "delete"));
+              const portapapeles = ["copy", "cut", "paste", "contextmenu", "drop", "dragover", "dragstart"].includes(evento.type);
               if (!atajo && !portapapeles) return;
               evento.preventDefault();
               evento.stopImmediatePropagation();
