@@ -1100,7 +1100,17 @@
           intervaloConexionEstudiante = setInterval(() => enviarLatidoConexionEstudiante(), 25000);
       }
 
-      window.addEventListener('firebase-auth-changed', iniciarLatidoConexionEstudiante);
+      window.addEventListener('firebase-auth-changed', usuario => {
+          if (!usuario) {
+              if (intervaloConexionEstudiante) clearInterval(intervaloConexionEstudiante);
+              intervaloConexionEstudiante = null;
+              return;
+          }
+          // Marca la presencia apenas Firebase confirma el inicio de sesión.
+          iniciarLatidoConexionEstudiante();
+          // Reintento breve por si Firestore todavía estaba inicializando.
+          setTimeout(() => enviarLatidoConexionEstudiante(true), 1200);
+      });
       // Recupera la sesión ya resuelta aunque el evento de autenticación haya
       // ocurrido antes de registrar este listener.
       if (window.firebaseCurrentUser) {
