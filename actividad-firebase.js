@@ -990,7 +990,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             escribiendo: estado.escribiendo === true,
             versionCodigo: VERSION_CODIGO_SUBIDO,
             versionScript: VERSION_SCRIPT,
-            activoEn: serverTimestamp()
+            activoEn: serverTimestamp(),
+            // Respaldo inmediato mientras serverTimestamp termina de resolverse.
+            activoEnCliente: Date.now()
           });
           return true;
         } catch (error) {

@@ -1101,6 +1101,15 @@
       }
 
       window.addEventListener('firebase-auth-changed', iniciarLatidoConexionEstudiante);
+      // Recupera la sesión ya resuelta aunque el evento de autenticación haya
+      // ocurrido antes de registrar este listener.
+      if (window.firebaseCurrentUser) {
+          iniciarLatidoConexionEstudiante();
+      } else if (window.firebaseAuthReady?.then) {
+          window.firebaseAuthReady.then(usuario => {
+              if (usuario) iniciarLatidoConexionEstudiante();
+          }).catch(() => {});
+      }
       window.addEventListener('online', () => enviarLatidoConexionEstudiante(true));
       window.addEventListener('focus', () => enviarLatidoConexionEstudiante(true));
       document.addEventListener('visibilitychange', () => {
@@ -7924,10 +7933,23 @@
       let avisoDesconexionProfesorTimeout = null;
 
       function obtenerMarcaConexionProfesor(estudiante) {
-          const valor = estudiante?.__controlEstudiante?.activoEn || estudiante?.actualizadoEn;
-          return valor?.toDate
-              ? valor.toDate().getTime()
-              : (valor?.seconds ? Number(valor.seconds) * 1000 : new Date(valor || 0).getTime());
+          const control = estudiante?.__controlEstudiante || {};
+          const valores = [
+              control.activoEn,
+              control.activoEnCliente,
+              estudiante?.activoEn,
+              estudiante?.actualizadoEn
+          ];
+          for (const valor of valores) {
+              if (!valor) continue;
+              const milisegundos = valor?.toDate
+                  ? valor.toDate().getTime()
+                  : (Number.isFinite(Number(valor?.seconds))
+                      ? Number(valor.seconds) * 1000
+                      : (typeof valor === 'number' ? valor : Date.parse(valor)));
+              if (Number.isFinite(milisegundos) && milisegundos > 0) return milisegundos;
+          }
+          return 0;
       }
 
       function estudianteEnLineaProfesor(estudiante) {
