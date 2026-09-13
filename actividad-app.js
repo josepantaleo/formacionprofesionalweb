@@ -1100,7 +1100,8 @@
           intervaloConexionEstudiante = setInterval(() => enviarLatidoConexionEstudiante(), 25000);
       }
 
-      window.addEventListener('firebase-auth-changed', usuario => {
+      window.addEventListener('firebase-auth-changed', evento => {
+          const usuario = evento.detail;
           if (!usuario) {
               if (intervaloConexionEstudiante) clearInterval(intervaloConexionEstudiante);
               intervaloConexionEstudiante = null;
@@ -2344,12 +2345,17 @@
               datosFirebase?.estadoCuenta
           );
           window.ultimoDocumentoEstudianteFirebase = datosFirebase || null;
+          const perfilFirebaseCompleto = !!(datosFirebase?.estudiante &&
+              datosFirebase.estudiante.nombre &&
+              datosFirebase.estudiante.curso &&
+              datosFirebase.estudiante.division &&
+              datosFirebase.estudiante.turno);
           if (datosFirebase?.estadoCuenta === 'inactivo') {
               bloquearCuentaEstudiante(datosFirebase.bajaMotivo || '');
               return;
           }
           estadoCuentaEstudiante = datosFirebase
-              ? (datosFirebase.estadoCuenta || 'activo')
+              ? (datosFirebase.estadoCuenta || 'pendiente')
               : 'pendiente';
           const estadoLocalAnterior = getLocalStorage('app_account_state') || '';
           if (estadoCuentaEstudiante === 'activo' &&
@@ -2360,7 +2366,7 @@
               });
               return;
           }
-          if (estadoCuentaEstudiante === 'pendiente' && datosFirebase?.estudiante) {
+          if (estadoCuentaEstudiante === 'pendiente' && perfilFirebaseCompleto) {
               window.escucharReinicioSalidasFirebase?.();
               bloquearCuentaPorAprobacion('pendiente');
               return;
@@ -2438,15 +2444,20 @@
 
           // Primer ingreso: el documento de Firebase es la fuente de verdad.
           // Si no existe o le faltan datos obligatorios, se solicita el registro completo.
-          const registroCompleto = !!(datosFirebase && datosFirebase.estudiante &&
-              datosFirebase.estudiante.nombre && datosFirebase.estudiante.curso &&
-              datosFirebase.estudiante.division && datosFirebase.estudiante.turno);
+          const registroCompleto = perfilFirebaseCompleto;
           if (!registroCompleto) {
-              const esNuevoRegistro = !(datosFirebase?.uid && datosFirebase?.email);
+              // La existencia del documento, no la presencia de todos sus campos,
+              // determina si el correo ya fue utilizado anteriormente.
+              const esNuevoRegistro = !datosFirebase;
               await solicitarDatosNuevoEstudiante(esNuevoRegistro, datosFirebase);
-              window.escucharReinicioSalidasFirebase?.();
-              bloquearCuentaPorAprobacion('pendiente');
-              return;
+              if (estadoCuentaEstudiante !== 'activo') {
+                  window.escucharReinicioSalidasFirebase?.();
+                  bloquearCuentaPorAprobacion(estadoCuentaEstudiante);
+                  return;
+              }
+              // Una cuenta activa con perfil incompleto continúa normalmente
+              // después de guardar los datos que faltaban.
+              setTimeout(() => guardarIdentificacionFirebase(), 300);
           } else {
               setTimeout(() => guardarIdentificacionFirebase(), 300);
           }

@@ -981,6 +981,19 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
       window.actualizarControlEstudianteFirebase = async function(estado = {}) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!user || !db) return false;
+        let documentoEstudianteListo =
+          window.__uidPresenciaEstudianteListo === user.uid;
+        if (!documentoEstudianteListo) {
+          try {
+            const snapEstudiante = await getDoc(doc(db, "estudiantes", user.uid));
+            documentoEstudianteListo = Boolean(
+              snapEstudiante.exists() && snapEstudiante.data().estadoCuenta
+            );
+            if (documentoEstudianteListo) {
+              window.__uidPresenciaEstudianteListo = user.uid;
+            }
+          } catch (_) {}
+        }
         try {
           await setDoc(doc(db, "controlEstudiantes", user.uid), {
             uid: user.uid,
@@ -994,12 +1007,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             // Respaldo inmediato mientras serverTimestamp termina de resolverse.
             activoEnCliente: Date.now()
           });
-          await setDoc(doc(db, "estudiantes", user.uid), {
-            presenciaEnLinea: true,
-            presenciaActualizadaEn: serverTimestamp(),
-            presenciaActualizadaEnCliente: Date.now(),
-            versionScript: VERSION_SCRIPT
-          }, { merge: true });
+          if (documentoEstudianteListo) {
+            await setDoc(doc(db, "estudiantes", user.uid), {
+              presenciaEnLinea: true,
+              presenciaActualizadaEn: serverTimestamp(),
+              presenciaActualizadaEnCliente: Date.now(),
+              versionScript: VERSION_SCRIPT
+            }, { merge: true });
+          }
           return true;
         } catch (error) {
           console.warn("No se pudo actualizar la señal de conexión del estudiante:", error);
