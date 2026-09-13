@@ -8,6 +8,7 @@ $scripts = @(
   "actividad-pdf-loader.js",
   "actividad-utils.js",
   "actividad-network-status.js",
+  "codemirror-bundle.js",
   "actividad-cooperacion.js",
   "mejoras-seguimiento.js"
 )
