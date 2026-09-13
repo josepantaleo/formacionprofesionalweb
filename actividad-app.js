@@ -2385,9 +2385,19 @@
           const warning = document.getElementById('firebaseConfigWarning');
           const localFileNotice = document.getElementById('localFileNotice');
           if (window.location.protocol === 'file:' && localFileNotice) localFileNotice.style.display = 'block';
-          if (!window.firebaseConfigured) {
+          if (window.firebaseConfigured === false) {
               if (warning) warning.style.display = 'block';
-              document.getElementById('firebaseAuthMessage').innerText = 'Primero configura Firebase en este archivo. Luego podrás ingresar con Google y guardar el avance en la nube.';
+              document.getElementById('firebaseAuthMessage').innerText = 'La configuración de Firebase está incompleta. Revisá los valores REEMPLAZAR_ en actividad-firebase.js.';
+              return;
+          }
+          if (typeof window.firebaseConfigured === 'undefined') {
+              if (warning) {
+                  warning.style.display = 'block';
+                  warning.textContent = window.location.protocol === 'file:'
+                      ? 'Firebase no se pudo cargar porque la página está abierta como archivo local. Usá http:// o https://.'
+                      : 'No se pudo cargar actividad-firebase.js. Verificá que el archivo exista y que la versión coincida con actividad.html.';
+              }
+              document.getElementById('firebaseAuthMessage').innerText = 'El módulo de Firebase no se cargó. No es un problema de credenciales: revisá la ruta del archivo, la consola del navegador y abrí la página mediante http:// o https://.';
               return;
           }
 
