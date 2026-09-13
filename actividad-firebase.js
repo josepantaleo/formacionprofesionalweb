@@ -1020,6 +1020,44 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         return window.registrarIntentosPortapapelesFirebase([evento]);
       };
 
+      function mostrarAlertaMensajeRecibido(mensaje = {}, rolReceptor = "") {
+        if (!mensaje || mensaje.propio) return;
+        const autor = String(mensaje.autorNombre || (rolReceptor === "docente" ? "Estudiante" : "Docente"));
+        const texto = String(mensaje.texto || "").trim();
+        let aviso = document.getElementById("mensajeRecibidoToast");
+        if (!aviso) {
+          aviso = document.createElement("div");
+          aviso.id = "mensajeRecibidoToast";
+          aviso.setAttribute("role", "status");
+          aviso.setAttribute("aria-live", "polite");
+          Object.assign(aviso.style, {
+            position: "fixed",
+            right: "1rem",
+            bottom: "1rem",
+            zIndex: "100000",
+            maxWidth: "min( min(92vw, 380px), 380px )",
+            padding: ".8rem 1rem",
+            borderRadius: "10px",
+            border: "1px solid rgba(125,211,252,.45)",
+            background: "rgba(15,23,42,.97)",
+            color: "#e0f2fe",
+            boxShadow: "0 14px 36px rgba(0,0,0,.35)",
+            font: "600 .88rem/1.35 system-ui, sans-serif",
+            cursor: "pointer"
+          });
+          document.body.appendChild(aviso);
+        }
+        aviso.innerHTML = `<strong style="display:block;color:#7dd3fc">Nuevo mensaje de ${String(autor).replace(/[<>&"]/g, "")}</strong><span>${texto.replace(/[<>&"]/g, "").slice(0, 220)}</span>`;
+        aviso.hidden = false;
+        clearTimeout(aviso.__timer);
+        aviso.__timer = setTimeout(() => { aviso.hidden = true; }, 6500);
+        aviso.onclick = () => { aviso.hidden = true; };
+        if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+          try { new Notification(`Nuevo mensaje de ${autor}`, { body: texto.slice(0, 160), tag: `mensaje-${mensaje.id || Date.now()}` }); } catch (_) {}
+        }
+      }
+      window.mostrarAlertaMensajeRecibido = mostrarAlertaMensajeRecibido;
+
       // Señal liviana e independiente del progreso y del código completo.
       // Permite que el panel docente detecte al estudiante aunque no haya un guardado pendiente.
       window.actualizarControlEstudianteFirebase = async function(estado = {}) {
@@ -2001,7 +2039,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           if (mensajesInicializados && !visible) {
             cantidadNoLeidos += nuevosRemotos.length;
           }
-          if (nuevosRemotos.length) reproducirSonidoMensaje();
+          if (nuevosRemotos.length) {
+            reproducirSonidoMensaje();
+            mostrarAlertaMensajeRecibido(nuevosRemotos[nuevosRemotos.length - 1], sesion.rol);
+          }
           mensajesActuales = mensajes;
           mensajesConocidos = new Set(mensajes.map(mensaje => mensaje.id));
           mensajesInicializados = true;
