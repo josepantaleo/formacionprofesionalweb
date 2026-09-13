@@ -1105,7 +1105,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         try {
           const controlRef = doc(db, "controlEstudiantes", user.uid);
           const sesionRef = doc(db, "controlEstudiantes", user.uid, "sesiones", SESION_ESTUDIANTE_ID);
-          const sesionRef = doc(db, "controlEstudiantes", user.uid, "sesiones", SESION_ESTUDIANTE_ID);
           if (Date.now() - ultimaComprobacionSesiones > 60000) {
             const controlAnterior = await getDoc(controlRef).catch(() => null);
             const datosAnteriores = controlAnterior?.exists?.() ? controlAnterior.data() : {};
