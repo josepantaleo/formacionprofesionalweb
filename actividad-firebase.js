@@ -944,14 +944,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
 
         try {
           const referencia = doc(db, "estudiantes", user.uid);
+          const auditoriaRef = collection(db, "estudiantes", user.uid, "auditoriaPortapapeles");
           await runTransaction(db, async transaccion => {
             const snapshot = await transaccion.get(referencia);
             const anterior = snapshot.exists()
               ? (snapshot.data().intentosPortapapeles || {})
               : {};
-            const historialAnterior = Array.isArray(anterior.historial)
-              ? anterior.historial.filter(item => item && typeof item === "object").slice(-49)
-              : [];
             const conteosAnteriores = anterior.conteos && typeof anterior.conteos === "object"
               ? anterior.conteos
               : {};
@@ -981,10 +979,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               conteos[registro.accion] += 1;
               return registro;
             });
-            const historial = [...historialAnterior, ...nuevosRegistros].slice(-50);
             const total = conteos.copiar + conteos.cortar + conteos.pegar;
             const ahora = Date.now();
-            const ultimosDosMinutos = historial.filter(item => ahora - Number(item.fechaEpoch || 0) <= 120000).length;
+            const ultimosDosMinutos = nuevosRegistros.filter(item => ahora - Number(item.fechaEpoch || 0) <= 120000).length
+              + Math.max(0, Number(anterior.intentosUltimosDosMinutos) || 0);
             const riesgo = total >= 6 || ultimosDosMinutos >= 4
               ? "alto"
               : (total >= 3 || ultimosDosMinutos >= 2 ? "medio" : (total > 0 ? "bajo" : "sin-datos"));
@@ -999,11 +997,19 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
                 riesgo,
                 intentosUltimosDosMinutos: ultimosDosMinutos,
                 versionScript: String(nuevosRegistros[nuevosRegistros.length - 1]?.versionScript || VERSION_SCRIPT),
-                ultimoIntento: nuevosRegistros[nuevosRegistros.length - 1],
-                historial
+                ultimoIntento: nuevosRegistros[nuevosRegistros.length - 1]
               },
               actualizadoEn: serverTimestamp()
             }, { merge: true });
+            nuevosRegistros.forEach(registro => {
+              const auditoria = doc(auditoriaRef, registro.id);
+              transaccion.set(auditoria, {
+                ...registro,
+                uid: user.uid,
+                email: user.email || "",
+                registradoEn: serverTimestamp()
+              }, { merge: false });
+            });
           });
           return true;
         } catch (error) {
@@ -1018,6 +1024,19 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
 
       window.registrarIntentoPortapapelesFirebase = async function(evento = {}) {
         return window.registrarIntentosPortapapelesFirebase([evento]);
+      };
+
+      window.cargarHistorialPortapapelesFirebase = async function(uid, limite = 100) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado || !uid || !db) return [];
+        try {
+          const referencia = collection(db, "estudiantes", uid, "auditoriaPortapapeles");
+          const snapshot = await getDocs(query(referencia, orderBy("fechaEpoch", "desc"), limit(Math.min(200, Math.max(1, Number(limite) || 100)))));
+          return snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+        } catch (error) {
+          console.warn("No se pudo cargar la auditoría de portapapeles:", error);
+          return [];
+        }
       };
 
       function mostrarAlertaMensajeRecibido(mensaje = {}, rolReceptor = "") {
@@ -1078,6 +1097,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
         try {
           const controlRef = doc(db, "controlEstudiantes", user.uid);
+          const sesionRef = doc(db, "controlEstudiantes", user.uid, "sesiones", SESION_ESTUDIANTE_ID);
+          const sesionRef = doc(db, "controlEstudiantes", user.uid, "sesiones", SESION_ESTUDIANTE_ID);
           if (Date.now() - ultimaComprobacionSesiones > 60000) {
             const controlAnterior = await getDoc(controlRef).catch(() => null);
             const datosAnteriores = controlAnterior?.exists?.() ? controlAnterior.data() : {};
@@ -1092,6 +1113,22 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             ultimaComprobacionSesiones = Date.now();
           }
           const otraSesionReciente = otraSesionRecienteCache;
+          const estadoConexionActual = document.visibilityState === "hidden" ? "segundo_plano" : "en_linea";
+          const latidoCliente = Date.now();
+          await setDoc(sesionRef, {
+            uid: user.uid,
+            email: user.email || "",
+            nombre: user.displayName || "",
+            sesionId: SESION_ESTUDIANTE_ID,
+            seccionActiva: String(estado.seccionActiva || "").slice(0, 100),
+            visibilidad: document.visibilityState || "visible",
+            estadoConexion: estadoConexionActual,
+            versionCodigo: VERSION_CODIGO_SUBIDO,
+            versionScript: VERSION_SCRIPT,
+            iniciadoEnCliente: SESION_INICIADA_EN_CLIENTE,
+            ultimoLatidoCliente: latidoCliente,
+            ultimoLatido: serverTimestamp()
+          }, { merge: true });
           await setDoc(controlRef, {
             uid: user.uid,
             email: user.email || "",
@@ -1101,7 +1138,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             sesionId: SESION_ESTUDIANTE_ID,
             sesionIniciadaEnCliente: SESION_INICIADA_EN_CLIENTE,
             visibilidad: document.visibilityState || "visible",
-            estadoConexion: document.visibilityState === "hidden" ? "segundo_plano" : "en_linea",
+            estadoConexion: estadoConexionActual,
             motivoDesconexion: "",
             sesionesDuplicadas: otraSesionReciente,
             otraSesionId: otraSesionIdCache,
@@ -1109,7 +1146,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             versionScript: VERSION_SCRIPT,
             activoEn: serverTimestamp(),
             // Respaldo inmediato mientras serverTimestamp termina de resolverse.
-            activoEnCliente: Date.now()
+            activoEnCliente: latidoCliente
           });
           if (documentoEstudianteListo) {
             await setDoc(doc(db, "estudiantes", user.uid), {
@@ -1123,7 +1160,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           emitirDiagnosticoPresencia({
             perfilEncontrado: documentoEstudianteListo,
             presenciaEnviada: true,
-            estadoConexion: document.visibilityState === "hidden" ? "segundo_plano" : "en_linea",
+            estadoConexion: estadoConexionActual,
             sesionesDuplicadas: otraSesionReciente,
             ultimoLatido: Date.now()
           });
@@ -1194,6 +1231,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               activoEnCliente: Date.now()
             }, { merge: true });
           });
+          await setDoc(sesionRef, {
+            estadoConexion: "desconectado",
+            visibilidad: document.visibilityState || "hidden",
+            ultimoLatido: serverTimestamp(),
+            ultimoLatidoCliente: Date.now(),
+            cerradoEn: serverTimestamp()
+          }, { merge: true });
           await window.registrarEventoAccesoFirebase?.("cierre_sesion");
           return true;
         } catch (_) {

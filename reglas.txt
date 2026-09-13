@@ -544,6 +544,58 @@ service cloud.firestore {
           .data.get('estadoCuenta', 'pendiente') in ['activo', 'pendiente'] &&
         validStudentConnectionControl();
       allow delete: if ownsDocument(uid) || isTeacher();
+
+      match /sesiones/{sesionId} {
+        allow get, list: if ownsDocument(uid) || isTeacher();
+        allow create, update: if ownsDocument(uid) &&
+          request.resource.data.keys().hasAll([
+            'uid',
+            'email',
+            'sesionId',
+            'visibilidad',
+            'estadoConexion',
+            'versionCodigo',
+            'versionScript',
+            'iniciadoEnCliente',
+            'ultimoLatidoCliente',
+            'ultimoLatido'
+          ]) &&
+          request.resource.data.keys().hasOnly([
+            'uid',
+            'email',
+            'nombre',
+            'sesionId',
+            'seccionActiva',
+            'visibilidad',
+            'estadoConexion',
+            'versionCodigo',
+            'versionScript',
+            'iniciadoEnCliente',
+            'ultimoLatidoCliente',
+            'ultimoLatido',
+            'cerradoEn'
+          ]) &&
+          request.resource.data.uid == uid &&
+          request.resource.data.sesionId == sesionId &&
+          request.resource.data.email == authenticatedEmail() &&
+          request.resource.data.visibilidad in ['visible', 'hidden', 'prerender'] &&
+          request.resource.data.estadoConexion in [
+            'en_linea',
+            'trabajando',
+            'segundo_plano',
+            'inestable',
+            'sin_conexion',
+            'desconectado'
+          ] &&
+          request.resource.data.versionCodigo is string &&
+          request.resource.data.versionCodigo.size() <= 20 &&
+          request.resource.data.versionScript is string &&
+          request.resource.data.versionScript.size() <= 80 &&
+          request.resource.data.iniciadoEnCliente is number &&
+          request.resource.data.ultimoLatidoCliente is number &&
+          request.resource.data.ultimoLatido == request.time;
+        allow delete: if ownsDocument(uid) || isTeacher();
+      }
     }
 
     match /estudiantes/{uid}/historialAccesos/{eventoId} {
@@ -596,6 +648,55 @@ service cloud.firestore {
         request.resource.data.registradoEn == request.time;
       allow update: if false;
       allow delete: if isTeacher();
+    }
+
+    match /estudiantes/{uid}/auditoriaPortapapeles/{eventoId} {
+      allow get, list: if isTeacher();
+      allow create: if ownsDocument(uid) &&
+        request.resource.data.keys().hasAll([
+          'id',
+          'uid',
+          'email',
+          'accion',
+          'seccionId',
+          'versionScript',
+          'fechaEpoch',
+          'fechaISO',
+          'registradoEn'
+        ]) &&
+        request.resource.data.keys().hasOnly([
+          'id',
+          'uid',
+          'email',
+          'accion',
+          'seccionId',
+          'seccionTitulo',
+          'metodo',
+          'eventoOrigen',
+          'tecla',
+          'modificadores',
+          'seleccionCaracteres',
+          'visibilidad',
+          'conectado',
+          'versionScript',
+          'fechaISO',
+          'fechaEpoch',
+          'registradoEn'
+        ]) &&
+        request.resource.data.id == eventoId &&
+        request.resource.data.uid == uid &&
+        request.resource.data.email == authenticatedEmail() &&
+        request.resource.data.accion in ['copiar', 'cortar', 'pegar'] &&
+        request.resource.data.seccionId is string &&
+        request.resource.data.seccionId.size() <= 80 &&
+        request.resource.data.versionScript is string &&
+        request.resource.data.versionScript.size() <= 80 &&
+        request.resource.data.fechaEpoch is number &&
+        request.resource.data.fechaEpoch > 0 &&
+        request.resource.data.fechaISO is string &&
+        request.resource.data.fechaISO.size() <= 40 &&
+        request.resource.data.registradoEn == request.time;
+      allow update, delete: if false;
     }
 
     match /estudiantes/{uid} {

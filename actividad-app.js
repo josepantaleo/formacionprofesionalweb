@@ -9,6 +9,9 @@
           }
       })();
       window.VERSION_SCRIPT = VERSION_SCRIPT;
+      const escapeHtml = window.appUtils?.escapeHtml || (value => String(value ?? "").replace(/[&<>'"]/g, char => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
+      }[char])));
       function portapapelesDocentePermitido() {
           const body = document.body;
           return Boolean(
@@ -10739,10 +10742,12 @@
           };
       }
 
-      function abrirHistorialPortapapeles(indice) {
+      async function abrirHistorialPortapapeles(indice) {
           const estudiante = estudiantesProfesor[indice];
           if (!estudiante) return;
           const resumen = obtenerResumenPortapapeles(estudiante);
+          const historialRemoto = await window.cargarHistorialPortapapelesFirebase?.(estudiante.uid, 100);
+          if (Array.isArray(historialRemoto) && historialRemoto.length) resumen.historial = historialRemoto;
           const nombre = estudiante.estudiante?.nombre || estudiante.nombreGoogle || estudiante.email || 'Estudiante';
           let modal = document.getElementById('historialPortapapelesModal');
           if (!modal) {
@@ -11116,7 +11121,6 @@
               actualizarNavegacionDetalleEstudianteProfesor();
           }
       }
-      function escapeHtml(v){return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
       async function eliminarEstudianteProfesor(estudiante) {
           if (!estudiante?.uid) {
               alert('No se pudo identificar al estudiante.');
@@ -11367,7 +11371,8 @@
           return y;
       }
 
-      function exportarDetalleEstudianteProfesorPDF() {
+      async function exportarDetalleEstudianteProfesorPDF() {
+          try { await asegurarLibreriasPdf(); } catch (_) { alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.'); return; }
           if (!window.jspdf?.jsPDF) {
               alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.');
               return;
@@ -11457,6 +11462,7 @@
       }
 
       async function exportarCursoProfesorPDF() {
+          try { await asegurarLibreriasPdf(); } catch (_) { alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.'); return; }
           if (!window.jspdf?.jsPDF) {
               alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.');
               return;
@@ -12073,6 +12079,7 @@
       }
 
       async function exportarResultadosPDF() {
+          try { await asegurarLibreriasPdf(true); } catch (_) { alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.'); return; }
           if (!window.jspdf?.jsPDF) {
               alert('No se pudo cargar el generador de PDF. Verificá la conexión a Internet e intentá nuevamente.');
               return;

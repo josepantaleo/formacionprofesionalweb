@@ -807,8 +807,8 @@ function renderPresenciaEditorColaborativo(modal,participantes=[]){
  const escribiendo=activos.filter(item=>item.escribiendo===true&&item.autorUid!==uidDocente);
  actualizarEstadoCursoCooperativo(modal,consentimiento==="aceptado"?(pausada?"paused":modal.__crdtSession?"active":"waiting"):consentimiento==="finalizado"||consentimiento==="rechazado"?"closed":"waiting");
  aviso.className=`teacher-collab-presence${pausada?" is-paused":escribiendo.length?" is-typing":""}`;
- if(consentimiento==="pendiente"){aviso.innerHTML='<i class="fa-solid fa-clock"></i><span>Solicitud enviada. Esperando la decisión del estudiante.</span>';return;}
- if(consentimiento==="rechazado"){aviso.innerHTML='<i class="fa-solid fa-circle-xmark"></i><span>El estudiante rechazó la solicitud. Podés enviar una nueva.</span>';return;}
+ if(consentimiento==="pendiente"){aviso.innerHTML='<i class="fa-solid fa-arrows-rotate"></i><span>Preparando la cooperación.</span>';return;}
+ if(consentimiento==="rechazado"){aviso.innerHTML='<i class="fa-solid fa-circle-xmark"></i><span>La cooperación no está activa.</span>';return;}
  if(consentimiento==="finalizado"){aviso.innerHTML='<i class="fa-solid fa-circle-stop"></i><span>La cooperación fue finalizada.</span>';return;}
  if(pausada){aviso.innerHTML='<i class="fa-solid fa-pause"></i><span>Edición cooperativa pausada por el docente.</span>';return;}
  if(escribiendo.length){

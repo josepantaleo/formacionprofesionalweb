@@ -15,9 +15,50 @@
       href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="actividad-base.css?v=20260913-44" />
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260913-44" />
+    <link rel="stylesheet" href="actividad-base.css?v=20260913-49" />
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260913-49" />
     <style>
+      .skip-link {
+        position: fixed;
+        left: .75rem;
+        top: .75rem;
+        z-index: 100001;
+        transform: translateY(-180%);
+        padding: .6rem .85rem;
+        border-radius: 6px;
+        background: #f8fafc;
+        color: #0f172a;
+        font-weight: 700;
+        box-shadow: 0 8px 24px rgba(0,0,0,.3);
+        transition: transform .15s ease;
+      }
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+      :where(button, a, input, select, textarea, [tabindex]):focus-visible {
+        outline: 3px solid #38bdf8;
+        outline-offset: 2px;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: .01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: .01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+      @media (max-width: 600px) {
+        .mensaje-recibido-toast,
+        #mensajeRecibidoToast {
+          right: .6rem !important;
+          left: .6rem !important;
+          bottom: max(.6rem, env(safe-area-inset-bottom)) !important;
+          max-width: none !important;
+        }
+        .btn, button {
+          min-height: 42px;
+        }
+      }
       /* Ajustes visuales del panel docente y uso móvil. */
       .teacher-panel-box {
         width: min(1480px, calc(100vw - 1.5rem));
@@ -197,14 +238,11 @@
         }
       }
     </style>
-    <!-- Librería jsPDF para generación de PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- Librería pdf-lib para cifrar y proteger el PDF generado -->
-    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
-    <script type="module" src="actividad-firebase.js?v=20260913-44"></script>
+    <script type="module" src="actividad-firebase.js?v=20260913-49"></script>
   </head>
   <body onload="initApp()">
+    <a class="skip-link" href="#contenidoPrincipal">Saltar al contenido principal</a>
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
       <div class="firebase-auth-card">
         <div style="font-size:3rem; margin-bottom:.5rem;">🔐</div>
@@ -251,7 +289,7 @@
     </aside>
 
     <!-- Contenido Principal -->
-    <main>
+    <main id="contenidoPrincipal" tabindex="-1">
       <header class="top-header">
         <div class="header-title">
           <h1 id="currentTitle">Cargando Módulo...</h1>
@@ -1190,9 +1228,11 @@
       </button>
     </div>
 
-    <script src="actividad-app.js?v=20260913-44"></script>
-    <script src="actividad-cooperacion.js?v=20260913-44"></script>
-    <script src="mejoras-seguimiento.js?v=20260913-44"></script>
+    <script src="actividad-utils.js?v=20260913-49"></script>
+    <script src="actividad-pdf-loader.js?v=20260913-49"></script>
+    <script src="actividad-app.js?v=20260913-49"></script>
+    <script src="actividad-cooperacion.js?v=20260913-49"></script>
+    <script src="mejoras-seguimiento.js?v=20260913-49"></script>
   </body>
 </html>
 
