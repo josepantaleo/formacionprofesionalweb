@@ -5269,6 +5269,33 @@
           textarea.parentNode.insertBefore(host, textarea);
           textarea.classList.add("codemirror-source-hidden");
 
+          const bloquearPortapapelesDirecto = evento => {
+              if (document.body.classList.contains("teacher-authorized")) return;
+              const tecla = String(evento.key || "").toLowerCase();
+              const atajo = evento.type === "keydown" &&
+                  (((evento.ctrlKey || evento.metaKey) && ["c", "x", "v"].includes(tecla)) ||
+                   (evento.shiftKey && tecla === "insert"));
+              const portapapeles = ["copy", "cut", "paste", "contextmenu", "drop"].includes(evento.type);
+              if (!atajo && !portapapeles) return;
+              evento.preventDefault();
+              evento.stopImmediatePropagation();
+              if (evento.dataTransfer) evento.dataTransfer.dropEffect = "none";
+              const estado = host.querySelector(".cm-workbench-status");
+              if (estado) estado.textContent = "Copiar, cortar y pegar están deshabilitados para estudiantes.";
+          };
+          ["copy", "cut", "paste", "contextmenu", "drop", "keydown"].forEach(tipo => {
+              host.addEventListener(tipo, bloquearPortapapelesDirecto, true);
+              textarea.addEventListener(tipo, bloquearPortapapelesDirecto, true);
+          });
+          host.addEventListener("beforeinput", evento => {
+              if (document.body.classList.contains("teacher-authorized")) return;
+              if (!["insertFromPaste", "insertFromDrop", "deleteByCut"].includes(evento.inputType)) return;
+              evento.preventDefault();
+              evento.stopImmediatePropagation();
+              const estado = host.querySelector(".cm-workbench-status");
+              if (estado) estado.textContent = "Copiar, cortar y pegar están deshabilitados para estudiantes.";
+          }, true);
+
           const barra = document.createElement("div");
           barra.className = "cm-workbench-toolbar";
           barra.setAttribute("role", "toolbar");
