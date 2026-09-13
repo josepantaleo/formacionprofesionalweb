@@ -5418,7 +5418,60 @@
               return true;
           };
 
+          const alternarComentarioLinea = () => {
+              const seleccion = view.state.selection.main;
+              const primera = view.state.doc.lineAt(seleccion.from);
+              const ultima = view.state.doc.lineAt(seleccion.to);
+              const lineas = [];
+              for (let numero = primera.number; numero <= ultima.number; numero += 1) {
+                  lineas.push(view.state.doc.line(numero));
+              }
+              const noVacias = lineas.filter(linea => linea.text.trim());
+              const todasComentadas = noVacias.length > 0 &&
+                  noVacias.every(linea => /^\s*\/\//.test(linea.text));
+              const cambios = lineas.map(linea => {
+                  if (!linea.text.trim()) return null;
+                  const texto = todasComentadas
+                      ? linea.text.replace(/^(\s*)\/\/ ?/, "$1")
+                      : linea.text.replace(/^(\s*)/, "$1// ");
+                  return { from: linea.from, to: linea.to, insert: texto };
+              }).filter(Boolean);
+              if (cambios.length) view.dispatch({ changes: cambios });
+              estadoHerramientas.textContent = todasComentadas ? "Comentarios quitados." : "Líneas comentadas.";
+              return true;
+          };
+
+          const irALinea = () => {
+              const actual = view.state.doc.lineAt(view.state.selection.main.head).number;
+              const valor = prompt(`Ir a línea (1-${view.state.doc.lines}):`, String(actual));
+              if (valor === null) return true;
+              const numero = Math.max(1, Math.min(view.state.doc.lines, Number.parseInt(valor, 10) || actual));
+              const linea = view.state.doc.line(numero);
+              view.dispatch({ selection: { anchor: linea.from }, scrollIntoView: true });
+              view.focus();
+              estadoHerramientas.textContent = `Línea ${numero}.`;
+              return true;
+          };
+
+          const ajustarFuente = delta => {
+              const tamanos = [".8rem", ".9rem", "1rem", "1.1rem"];
+              let nivel = Number.parseInt(host.dataset.cmFontLevel || "1", 10);
+              nivel = Math.max(0, Math.min(tamanos.length - 1, nivel + delta));
+              host.dataset.cmFontLevel = String(nivel);
+              host.style.setProperty("--cm-font-size", tamanos[nivel]);
+              const selector = barra.querySelector("[data-cm-font]");
+              if (selector) selector.value = tamanos[nivel];
+              estadoHerramientas.textContent = `Tamaño de fuente: ${tamanos[nivel]}.`;
+              return true;
+          };
+
           const atajos = keymap.of([
+              { key: "Mod-/", run: alternarComentarioLinea },
+              { key: "Mod-l", run: irALinea },
+              { key: "Mod-=", run: () => ajustarFuente(1) },
+              { key: "Mod-+", run: () => ajustarFuente(1) },
+              { key: "Mod--", run: () => ajustarFuente(-1) },
+              { key: "Mod-0", run: () => { host.dataset.cmFontLevel = "1"; return ajustarFuente(0); } },
               {
                   key: "Mod-c",
                   run: () => {
@@ -5706,7 +5759,12 @@
           barra.querySelector("[data-cm-undo]").onclick = deshacer;
           barra.querySelector("[data-cm-redo]").onclick = rehacer;
           barra.querySelector("[data-cm-complete]").onclick = () => { view.focus(); startCompletion(view); };
-          barra.querySelector("[data-cm-font]").onchange = evento => host.style.setProperty("--cm-font-size", evento.target.value);
+          barra.querySelector("[data-cm-font]").onchange = evento => {
+              const tamanos = [".8rem", ".9rem", "1rem", "1.1rem"];
+              host.dataset.cmFontLevel = String(Math.max(0, tamanos.indexOf(evento.target.value)));
+              host.style.setProperty("--cm-font-size", evento.target.value);
+              estadoHerramientas.textContent = `Tamaño de fuente: ${evento.target.value}.`;
+          };
           barra.querySelector("[data-cm-wrap]").onclick = evento => {
               const activo = evento.currentTarget.getAttribute("aria-pressed") !== "true";
               evento.currentTarget.setAttribute("aria-pressed", String(activo));
