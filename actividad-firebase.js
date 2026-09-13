@@ -201,6 +201,28 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
       window.firebaseConfigured = firebaseConfigured;
       window.firebaseCurrentUser = null;
       window.firebaseTeacherUser = null;
+      const SESION_ESTUDIANTE_ID = sessionStorage.getItem("app_student_session_id") ||
+        (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      sessionStorage.setItem("app_student_session_id", SESION_ESTUDIANTE_ID);
+      const SESION_INICIADA_EN_CLIENTE = Date.now();
+      let fallosPresenciaConsecutivos = 0;
+      let ultimaComprobacionSesiones = 0;
+      let otraSesionRecienteCache = false;
+      let otraSesionIdCache = "";
+
+      function emitirDiagnosticoPresencia(detalle = {}) {
+        const diagnostico = {
+            sesionId: SESION_ESTUDIANTE_ID,
+            autenticado: Boolean(window.firebaseCurrentUser),
+            conectadoInternet: navigator.onLine !== false,
+            fallosConsecutivos: fallosPresenciaConsecutivos,
+            ...detalle
+        };
+        window.ultimoDiagnosticoPresencia = diagnostico;
+        window.dispatchEvent(new CustomEvent("diagnostico-presencia-estudiante", {
+          detail: diagnostico
+        }));
+      }
 
       function correoNormalizado(user) {
         return String(user?.email || "").trim().toLowerCase();
@@ -808,6 +830,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
 
       window.cerrarSesionGoogle = async function() {
         const sesionesActivas = [];
+        if (auth?.currentUser) {
+          await window.marcarDesconexionEstudianteFirebase?.("cierre_sesion");
+        }
         if (auth?.currentUser) sesionesActivas.push(signOut(auth));
         if (teacherAuth?.currentUser) sesionesActivas.push(signOut(teacherAuth));
         try {
@@ -841,7 +866,26 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         if (!user || !db) return null;
         const ref = doc(db, "estudiantes", user.uid);
         const snap = await getDoc(ref);
-        return snap.exists() ? snap.data() : null;
+        if (!snap.exists()) return null;
+        const datos = snap.data();
+        const recuperacion = {};
+        if (!datos.uid) recuperacion.uid = user.uid;
+        if (!datos.email) recuperacion.email = user.email || "";
+        if (!datos.estadoCuenta) recuperacion.estadoCuenta = "pendiente";
+        if (datos.emailVerificado !== (user.emailVerified === true)) {
+          recuperacion.emailVerificado = user.emailVerified === true;
+        }
+        if (!datos.nombreGoogle && user.displayName) recuperacion.nombreGoogle = user.displayName;
+        if (!datos.fotoGoogle && user.photoURL) recuperacion.fotoGoogle = user.photoURL;
+        if (Object.keys(recuperacion).length) {
+          try {
+            await setDoc(ref, { ...recuperacion, actualizadoEn: serverTimestamp() }, { merge: true });
+            Object.assign(datos, recuperacion);
+          } catch (error) {
+            console.warn("No se pudo recuperar automáticamente el perfil antiguo:", error);
+          }
+        }
+        return datos;
       };
 
       window.guardarProgresoFirebase = async function(payload) {
@@ -995,12 +1039,34 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           } catch (_) {}
         }
         try {
-          await setDoc(doc(db, "controlEstudiantes", user.uid), {
+          const controlRef = doc(db, "controlEstudiantes", user.uid);
+          if (Date.now() - ultimaComprobacionSesiones > 60000) {
+            const controlAnterior = await getDoc(controlRef).catch(() => null);
+            const datosAnteriores = controlAnterior?.exists?.() ? controlAnterior.data() : {};
+            otraSesionRecienteCache = Boolean(
+              datosAnteriores.sesionId &&
+              datosAnteriores.sesionId !== SESION_ESTUDIANTE_ID &&
+              Date.now() - Number(datosAnteriores.activoEnCliente || 0) < 120000
+            );
+            otraSesionIdCache = otraSesionRecienteCache
+              ? String(datosAnteriores.sesionId).slice(0, 100)
+              : "";
+            ultimaComprobacionSesiones = Date.now();
+          }
+          const otraSesionReciente = otraSesionRecienteCache;
+          await setDoc(controlRef, {
             uid: user.uid,
             email: user.email || "",
             nombre: user.displayName || "",
             seccionActiva: String(estado.seccionActiva || "").slice(0, 100),
             escribiendo: estado.escribiendo === true,
+            sesionId: SESION_ESTUDIANTE_ID,
+            sesionIniciadaEnCliente: SESION_INICIADA_EN_CLIENTE,
+            visibilidad: document.visibilityState || "visible",
+            estadoConexion: document.visibilityState === "hidden" ? "segundo_plano" : "en_linea",
+            motivoDesconexion: "",
+            sesionesDuplicadas: otraSesionReciente,
+            otraSesionId: otraSesionIdCache,
             versionCodigo: VERSION_CODIGO_SUBIDO,
             versionScript: VERSION_SCRIPT,
             activoEn: serverTimestamp(),
@@ -1015,11 +1081,98 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               versionScript: VERSION_SCRIPT
             }, { merge: true });
           }
+          fallosPresenciaConsecutivos = 0;
+          emitirDiagnosticoPresencia({
+            perfilEncontrado: documentoEstudianteListo,
+            presenciaEnviada: true,
+            estadoConexion: document.visibilityState === "hidden" ? "segundo_plano" : "en_linea",
+            sesionesDuplicadas: otraSesionReciente,
+            ultimoLatido: Date.now()
+          });
+          if (!window.__accesoInicioRegistradoUid && documentoEstudianteListo) {
+            window.__accesoInicioRegistradoUid = user.uid;
+            window.registrarEventoAccesoFirebase?.("inicio_sesion", {
+              sesionesDuplicadas: otraSesionReciente
+            });
+          }
           return true;
         } catch (error) {
+          fallosPresenciaConsecutivos += 1;
+          emitirDiagnosticoPresencia({
+            perfilEncontrado: documentoEstudianteListo,
+            presenciaEnviada: false,
+            estadoConexion: navigator.onLine === false ? "sin_conexion" : "inestable",
+            error: error?.code || error?.message || "Error de presencia",
+            ultimoLatido: Date.now()
+          });
           console.warn("No se pudo actualizar la señal de conexión del estudiante:", error);
           return false;
         }
+      };
+
+      window.registrarEventoAccesoFirebase = async function(tipo, detalle = {}) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db || !["inicio_sesion", "cierre_sesion"].includes(tipo)) return false;
+        try {
+          const eventoRef = doc(collection(db, "estudiantes", user.uid, "historialAccesos"));
+          await setDoc(eventoRef, {
+            tipo,
+            uid: user.uid,
+            email: user.email || "",
+            sesionId: SESION_ESTUDIANTE_ID,
+            versionScript: VERSION_SCRIPT,
+            visibilidad: document.visibilityState || "visible",
+            navegador: String(navigator.userAgentData?.brands?.[0]?.brand || navigator.userAgent || "").slice(0, 160),
+            sesionesDuplicadas: detalle.sesionesDuplicadas === true,
+            duracionSesionSegundos: tipo === "cierre_sesion"
+              ? Math.max(0, Math.round((Date.now() - SESION_INICIADA_EN_CLIENTE) / 1000))
+              : 0,
+            fechaCliente: Date.now(),
+            registradoEn: serverTimestamp()
+          });
+          return true;
+        } catch (error) {
+          console.warn("No se pudo registrar el evento de acceso:", error);
+          return false;
+        }
+      };
+
+      window.marcarDesconexionEstudianteFirebase = async function(motivo = "cierre") {
+        const user = window.firebaseCurrentUser || auth?.currentUser;
+        if (!user || !db) return false;
+        try {
+          const controlRef = doc(db, "controlEstudiantes", user.uid);
+          await runTransaction(db, async transaction => {
+            const snapshot = await transaction.get(controlRef);
+            if (!snapshot.exists() || snapshot.data().sesionId !== SESION_ESTUDIANTE_ID) return;
+            transaction.set(controlRef, {
+              estadoConexion: "desconectado",
+              motivoDesconexion: String(motivo).slice(0, 40),
+              escribiendo: false,
+              visibilidad: document.visibilityState || "hidden",
+              sesionesDuplicadas: false,
+              otraSesionId: "",
+              activoEn: serverTimestamp(),
+              activoEnCliente: Date.now()
+            }, { merge: true });
+          });
+          await window.registrarEventoAccesoFirebase?.("cierre_sesion");
+          return true;
+        } catch (_) {
+          return false;
+        }
+      };
+
+      window.cargarHistorialAccesosProfesorFirebase = async function(uid) {
+        const autorizado = await window.autorizarDocenteFirebase?.();
+        if (!autorizado || !uid) return [];
+        const { database } = contextoDocenteFirebase();
+        if (!database) return [];
+        const snapshot = await getDocs(collection(database, "estudiantes", uid, "historialAccesos"));
+        return snapshot.docs
+          .map(item => ({ id: item.id, ...item.data() }))
+          .sort((a, b) => Number(b.fechaCliente || 0) - Number(a.fechaCliente || 0))
+          .slice(0, 50);
       };
 
       window.cargarEstudianteProfesorFirebase = async function(uid) {

@@ -1052,6 +1052,7 @@
       let ultimaActividadConexionEstudiante = 0;
       let ultimoEnvioConexionEstudiante = 0;
       let intervaloConexionEstudiante = null;
+      let temporizadorDesconexionSegundoPlano = null;
       let claseHabilitada = false;
       let cuentaEstudianteActiva = false;
 
@@ -1124,7 +1125,18 @@
       window.addEventListener('online', () => enviarLatidoConexionEstudiante(true));
       window.addEventListener('focus', () => enviarLatidoConexionEstudiante(true));
       document.addEventListener('visibilitychange', () => {
-          if (document.visibilityState === 'visible') enviarLatidoConexionEstudiante(true);
+          clearTimeout(temporizadorDesconexionSegundoPlano);
+          if (document.visibilityState === 'visible') {
+              enviarLatidoConexionEstudiante(true);
+          } else {
+              enviarLatidoConexionEstudiante(true);
+              temporizadorDesconexionSegundoPlano = setTimeout(() => {
+                  window.marcarDesconexionEstudianteFirebase?.("segundo_plano_prolongado");
+              }, 90000);
+          }
+      });
+      window.addEventListener('pagehide', () => {
+          window.marcarDesconexionEstudianteFirebase?.("pagina_cerrada");
       });
       let estadoCuentaEstudiante = 'pendiente';
       let registroFirebaseExistente = false;
@@ -1791,7 +1803,11 @@
                   if (estadoCuentaEstudiante === 'pendiente') payload.solicitudAprobacionEn = new Date().toISOString();
               }
               const ok = await window.guardarProgresoFirebase(payload);
-              if (ok) registroFirebaseExistente = true;
+              if (ok) {
+                  registroFirebaseExistente = true;
+                  window.__uidPresenciaEstudianteListo = window.firebaseCurrentUser?.uid || "";
+                  enviarLatidoConexionEstudiante(true);
+              }
               if (ok) mostrarEstadoFirebase('online', 'Datos del estudiante guardados en Firebase');
               return ok;
           } catch (e) {
@@ -1799,6 +1815,51 @@
               return false;
           }
       }
+
+      function asegurarDiagnosticoPresenciaEstudiante() {
+          let diagnostico = document.getElementById("diagnosticoPresenciaEstudiante");
+          if (diagnostico) return diagnostico;
+          const referencia = document.getElementById("firebaseSaveStatus");
+          if (!referencia) return null;
+          diagnostico = document.createElement("span");
+          diagnostico.id = "diagnosticoPresenciaEstudiante";
+          diagnostico.className = "firebase-status";
+          diagnostico.style.marginLeft = ".5rem";
+          diagnostico.textContent = "Presencia: verificando...";
+          referencia.insertAdjacentElement("afterend", diagnostico);
+          return diagnostico;
+      }
+
+      window.addEventListener("diagnostico-presencia-estudiante", evento => {
+          const datos = evento.detail || {};
+          const diagnostico = asegurarDiagnosticoPresenciaEstudiante();
+          if (!diagnostico) return;
+          const hora = datos.ultimoLatido
+              ? new Date(datos.ultimoLatido).toLocaleTimeString("es-AR")
+              : "sin señal";
+          const estado = datos.presenciaEnviada
+              ? (datos.estadoConexion === "segundo_plano" ? "Segundo plano" : "En línea")
+              : (datos.estadoConexion === "sin_conexion" ? "Sin Internet" : "Conexión inestable");
+          diagnostico.className = `firebase-status ${datos.presenciaEnviada ? "online" : "offline"}`;
+          diagnostico.textContent = `Presencia: ${estado} · ${hora}`;
+          diagnostico.title = [
+              `Sesión: ${String(datos.sesionId || "").slice(0, 8) || "sin identificar"}`,
+              `Perfil: ${datos.perfilEncontrado ? "encontrado" : "pendiente"}`,
+              `Fallos consecutivos: ${Number(datos.fallosConsecutivos || 0)}`,
+              datos.error ? `Error: ${datos.error}` : "",
+              datos.sesionesDuplicadas ? "Hay otra sesión reciente con esta cuenta." : ""
+          ].filter(Boolean).join("\n");
+          if (datos.sesionesDuplicadas) {
+              diagnostico.textContent += " · Otra sesión activa";
+          }
+      });
+      window.addEventListener("load", () => {
+          if (window.ultimoDiagnosticoPresencia) {
+              window.dispatchEvent(new CustomEvent("diagnostico-presencia-estudiante", {
+                  detail: window.ultimoDiagnosticoPresencia
+              }));
+          }
+      });
 
       function diagnosticarErrorRegistroEstudiante() {
           const error = window.ultimoErrorGuardadoFirebase || {};
@@ -8129,8 +8190,23 @@
 
       function estudianteEnLineaProfesor(estudiante) {
           const actualizado = obtenerMarcaConexionProfesor(estudiante);
-          return Number.isFinite(actualizado) && actualizado > 0 &&
+          const estado = estudiante?.__controlEstudiante?.estadoConexion;
+          return estado !== "desconectado" &&
+              Number.isFinite(actualizado) && actualizado > 0 &&
               Date.now() - actualizado < LIMITE_CONEXION_PROFESOR_MS;
+      }
+
+      function obtenerEstadoConexionProfesor(estudiante) {
+          const control = estudiante?.__controlEstudiante || {};
+          const actualizado = obtenerMarcaConexionProfesor(estudiante);
+          const reciente = actualizado > 0 &&
+              Date.now() - actualizado < LIMITE_CONEXION_PROFESOR_MS;
+          if (control.estadoConexion === "desconectado" || !reciente) return "desconectado";
+          if (control.estadoConexion === "sin_conexion") return "sin_conexion";
+          if (control.estadoConexion === "inestable" || Number(control.fallosConsecutivos || 0) >= 2) return "inestable";
+          if (control.visibilidad === "hidden" || control.estadoConexion === "segundo_plano") return "segundo_plano";
+          if (control.escribiendo === true) return "trabajando";
+          return "en_linea";
       }
 
       function mostrarAvisoDesconexionProfesor(estudiante) {
@@ -9887,6 +9963,10 @@
                       </div>
                   </div>
               </details>
+              <details style="margin:1rem 0">
+                  <summary><i class="fa-solid fa-clock-rotate-left"></i> Historial de accesos</summary>
+                  <div id="historialAccesosProfesor" style="padding:.75rem;color:var(--text-muted)">Cargando accesos...</div>
+              </details>
               <div style="display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;margin:1rem 0 .7rem;">
                   <h3 style="margin:0;color:var(--primary)">Actividades</h3>
               </div>
@@ -9897,6 +9977,27 @@
               </div>
               <div id="listaDesafiosDetalleProfesor">${actividadesHtml}</div>`;
           document.getElementById('detalleEstudianteProfesorModal').classList.add('active');
+          window.cargarHistorialAccesosProfesorFirebase?.(d.uid).then(accesos => {
+              const contenedor = document.getElementById("historialAccesosProfesor");
+              if (!contenedor) return;
+              contenedor.innerHTML = accesos.length
+                  ? accesos.map(acceso => {
+                      const fechaAcceso = acceso.registradoEn?.toDate
+                          ? acceso.registradoEn.toDate()
+                          : new Date(Number(acceso.fechaCliente || 0));
+                      return `<div style="padding:.45rem 0;border-bottom:1px solid rgba(148,163,184,.18)">
+                          <strong>${acceso.tipo === "inicio_sesion" ? "Inicio de sesión" : "Cierre de sesión"}</strong>
+                          · ${escapeHtml(fechaAcceso.toLocaleString("es-AR"))}
+                          · Script v${escapeHtml(acceso.versionScript || "sin informar")}
+                          ${Number(acceso.duracionSesionSegundos || 0) > 0 ? ` · Duración ${Math.round(Number(acceso.duracionSesionSegundos) / 60)} min` : ""}
+                          ${acceso.sesionesDuplicadas ? " · Sesión simultánea detectada" : ""}
+                      </div>`;
+                  }).join("")
+                  : "No hay accesos registrados todavía.";
+          }).catch(() => {
+              const contenedor = document.getElementById("historialAccesosProfesor");
+              if (contenedor) contenedor.textContent = "No se pudo consultar el historial de accesos.";
+          });
           actualizarNavegacionDetalleEstudianteProfesor();
           filtrarDesafiosDetalleProfesor();
       }
@@ -10687,8 +10788,9 @@
               const descuento = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
               const alerta = obtenerAlertaConsultasIA(d);
               const actualizado = obtenerMarcaConexionProfesor(d);
-              const conectado = actualizado > 0 && Date.now() - actualizado < LIMITE_CONEXION_PROFESOR_MS;
-              const trabajando = conectado && (d.__controlEstudiante?.escribiendo === true || progreso < 100);
+              const estadoConexion = obtenerEstadoConexionProfesor(d);
+              const conectado = !["desconectado", "sin_conexion"].includes(estadoConexion);
+              const trabajando = estadoConexion === "trabajando";
               const finalizado = progreso >= 100;
               const cuentaInactiva = d.estadoCuenta === 'inactivo';
               const cuentaPendiente = d.estadoCuenta === 'pendiente';
@@ -10755,7 +10857,7 @@
               const cumpleBloqueo = !bloqueoFiltro
                 || (bloqueoFiltro === 'bloqueados' && pantallaBloqueada)
                 || (bloqueoFiltro === 'activos' && !pantallaBloqueada);
-              d.__panelMeta = { progreso, nota, alerta: alerta.activa, actualizado, conectado, cuentaInactiva, cuentaPendiente, cuentaRechazada, cronometroPausado, tieneCambios, salidas, intentosPortapapeles: resumenPortapapeles.total };
+              d.__panelMeta = { progreso, nota, alerta: alerta.activa, actualizado, conectado, estadoConexion, cuentaInactiva, cuentaPendiente, cuentaRechazada, cronometroPausado, tieneCambios, salidas, intentosPortapapeles: resumenPortapapeles.total };
               return (!cuentaPendiente || estadoFiltro === 'solicitudes')
                   && (!q || nombre.includes(q) || email.includes(q))
                   && (!emailFiltro || email.includes(emailFiltro))
@@ -10876,11 +10978,19 @@
               const salidasHtml = `<span class="teacher-tab-badge ${salidasClase}" title="${salidasTitulo}"><i class="fa-solid ${salidasIcono}"></i> ${cantidadSalidas}</span>`;
               const conectadoFila = d.__panelMeta?.conectado === true;
               const escribiendoFila = conectadoFila && d.__controlEstudiante?.escribiendo === true;
+              const estadoConexionFila = d.__panelMeta?.estadoConexion || "desconectado";
+              const etiquetasConexion = {
+                  trabajando: ["Programando", "fa-keyboard"],
+                  en_linea: ["En línea", "fa-circle"],
+                  segundo_plano: ["Segundo plano", "fa-window-minimize"],
+                  inestable: ["Conexión inestable", "fa-triangle-exclamation"],
+                  sin_conexion: ["Sin Internet", "fa-wifi"],
+                  desconectado: ["Desconectado", "fa-circle-xmark"]
+              };
+              const etiquetaConexion = etiquetasConexion[estadoConexionFila] || etiquetasConexion.desconectado;
               const claseAcciones = conectadoFila ? 'btn-success teacher-actions-online' : 'btn-secondary';
-              const tituloAcciones = escribiendoFila ? 'Estudiante programando ahora. Abrir acciones' : (conectadoFila ? 'Estudiante en línea. Abrir acciones' : 'Estudiante sin actividad reciente. Abrir acciones');
-              const estadoConexionAcciones = conectadoFila
-                  ? `<span class="teacher-actions-online-label"><i class="fa-solid fa-circle"></i> ${escribiendoFila ? 'Programando' : 'En línea'}</span>`
-                  : '';
+              const tituloAcciones = `${etiquetaConexion[0]}. Abrir acciones`;
+              const estadoConexionAcciones = `<span class="teacher-actions-online-label"><i class="fa-solid ${etiquetaConexion[1]}"></i> ${etiquetaConexion[0]}${d.__controlEstudiante?.sesionesDuplicadas ? ' · Sesión duplicada' : ''}</span>`;
           return `<tr class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn ${claseAcciones} btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="${tituloAcciones}"><i class="fa-solid fa-sliders"></i><span>Acciones</span>${estadoConexionAcciones}</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}<div class="code-version-badge" style="margin-top:.4rem;font-size:.68rem;padding:.25rem .45rem"><i class="fa-solid fa-code-branch"></i> Script v${escapeHtml(versionScript)}</div>${alertaHtml}${ayudasFilaHtml}${portapapelesFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td></tr>`;
               }).join('') || '<tr><td colspan="12" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
