@@ -4492,25 +4492,65 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
       };
     
+      window.__cerrarPanelProfesorFirestore = function() {
+        const detener = window.__profesorUnsubscribe;
+        window.__profesorUnsubscribe = null;
+        window.__profesorPanelActivo = false;
+        if (typeof detener === "function") {
+          try { detener(); } catch (error) {
+            console.warn("No se pudo cerrar el listener del panel docente:", error);
+          }
+        }
+      };
+
       window.__abrirPanelProfesorFirestore = function() {
         const { database } = contextoDocenteFirebase();
         if (!database) return;
-        if (window.__profesorUnsubscribe) window.__profesorUnsubscribe();
+        // Evita duplicar listeners si el panel se abre varias veces antes de
+        // que termine el ciclo de renderizado de la interfaz.
+        if (window.__profesorPanelActivo && window.__profesorUnsubscribe) return;
+        window.__cerrarPanelProfesorFirestore?.();
+        window.__profesorPanelActivo = true;
         if (window.__profesorRefreshInterval) {
           clearInterval(window.__profesorRefreshInterval);
           window.__profesorRefreshInterval = null;
         }
         let estudiantesActuales = [];
         let controlesActuales = new Map();
+        let ultimaEmision = "";
+        let emisionPendiente = false;
+        let cancelado = false;
+        const normalizarValor = valor => {
+          if (valor && typeof valor.toMillis === "function") return valor.toMillis();
+          if (valor && typeof valor.toDate === "function") return valor.toDate().toISOString();
+          return valor;
+        };
+        const firmaDatos = datos => {
+          try {
+            return JSON.stringify(datos, (_clave, valor) => normalizarValor(valor));
+          } catch {
+            return String(datos?.uid || "");
+          }
+        };
         const emitirPanel = () => {
-          const estudiantes = estudiantesActuales.map(item => ({
+          if (cancelado || emisionPendiente) return;
+          emisionPendiente = true;
+          requestAnimationFrame(() => {
+            emisionPendiente = false;
+            if (cancelado) return;
+            const estudiantes = estudiantesActuales.map(item => ({
             ...item.datos,
             uid: item.datos.uid || item.id,
             __controlEstudiante: controlesActuales.get(item.id) || null
-          }));
-          window.dispatchEvent(new CustomEvent("profesor-data", { detail: estudiantes }));
+            }));
+            const firma = firmaDatos(estudiantes);
+            if (firma === ultimaEmision) return;
+            ultimaEmision = firma;
+            window.dispatchEvent(new CustomEvent("profesor-data", { detail: estudiantes }));
+          });
         };
         const manejarError = error => {
+          if (cancelado) return;
           window.dispatchEvent(new CustomEvent("profesor-data-error", {
             detail: error?.message || "No se pudo actualizar el panel."
           }));
@@ -4537,9 +4577,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           manejarError
         );
         window.__profesorUnsubscribe = () => {
+          cancelado = true;
           detenerEstudiantes();
           detenerControles();
           window.__profesorRefreshInterval = null;
+          window.__profesorUnsubscribe = null;
+          window.__profesorPanelActivo = false;
         };
       };
       

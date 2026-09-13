@@ -9,6 +9,7 @@ $scripts = @(
   "actividad-utils.js",
   "actividad-network-status.js",
   "codemirror-bundle.js",
+  "panel-profesor.js",
   "actividad-cooperacion.js",
   "mejoras-seguimiento.js"
 )

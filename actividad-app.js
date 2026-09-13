@@ -8202,7 +8202,7 @@
       function cerrarPanelProfesor() {
           document.getElementById('panelProfesorModal').classList.remove('active');
           if (profesorUnsubscribe) { profesorUnsubscribe(); profesorUnsubscribe = null; }
-          if (window.__profesorUnsubscribe) { window.__profesorUnsubscribe(); window.__profesorUnsubscribe = null; }
+          window.__cerrarPanelProfesorFirestore?.();
       }
 
       const LIMITE_CONEXION_PROFESOR_MS = 2 * 60 * 1000;
@@ -11131,6 +11131,7 @@
               actualizarNavegacionDetalleEstudianteProfesor();
           }
       }
+      window.renderPanelProfesorCore = renderPanelProfesor;
       async function eliminarEstudianteProfesor(estudiante) {
           if (!estudiante?.uid) {
               alert('No se pudo identificar al estudiante.');
@@ -11178,7 +11179,10 @@
               if (!u) return;
               // Solicita la colección mediante un evento al módulo Firebase.
               window.__abrirPanelProfesorFirestore?.();
-              profesorUnsubscribe = () => { if (window.__profesorUnsubscribe) window.__profesorUnsubscribe(); window.__profesorUnsubscribe = null; };
+              profesorUnsubscribe = () => {
+                  window.__cerrarPanelProfesorFirestore?.();
+                  profesorUnsubscribe = null;
+              };
           } catch(e) { document.getElementById('estadoPanelProfesor').textContent='Error al conectar con Firebase: '+e.message; }
       }
 
