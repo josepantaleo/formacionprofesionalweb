@@ -10876,8 +10876,14 @@
               const cumpleBloqueo = !bloqueoFiltro
                 || (bloqueoFiltro === 'bloqueados' && pantallaBloqueada)
                 || (bloqueoFiltro === 'activos' && !pantallaBloqueada);
+              const hayFiltroActivo = Boolean(
+                q || emailFiltro || curso || division || turno || estadoFiltro ||
+                bloqueoFiltro || progresoFiltro || salidasFiltro || portapapelesFiltro ||
+                notaFiltro || descuentoFiltro || actualizacionFiltro ||
+                orden !== 'actualizacion-desc'
+              );
               d.__panelMeta = { progreso, nota, alerta: alerta.activa, actualizado, conectado, estadoConexion, cuentaInactiva, cuentaPendiente, cuentaRechazada, cronometroPausado, tieneCambios, salidas, intentosPortapapeles: resumenPortapapeles.total };
-              return (!cuentaPendiente || estadoFiltro === 'solicitudes')
+              return (!cuentaPendiente || estadoFiltro === 'solicitudes' || hayFiltroActivo)
                   && (!q || nombre.includes(q) || email.includes(q))
                   && (!emailFiltro || email.includes(emailFiltro))
                   && (!curso || e.curso===curso)
