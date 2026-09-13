@@ -61,6 +61,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
       const APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY = "6Ld7l5stAAAAABjs2OrNxeDMaKZ6oAGERjopw3U9";
       const FIREBASE_AI_TEMPLATE_ID = "tutor-javascript-ipem146-v1-0-0";
       const FIREBASE_AI_MODEL_NAME = "gemini-2.5-flash";
+      const VERSION_SCRIPT = (() => {
+        try {
+          const src = [...document.scripts].find(script => /actividad-app\.js(?:\?|$)/.test(script.src || ""));
+          return src ? (new URL(src.src, document.baseURI).searchParams.get("v") || "local") : "local";
+        } catch (_) {
+          return "local";
+        }
+      })();
+      window.VERSION_SCRIPT_FIREBASE = VERSION_SCRIPT;
       // Versión funcional del código que se sube y se revisa en ambos modos.
       const VERSION_CODIGO_SUBIDO = "1.0";
       window.VERSION_CODIGO_SUBIDO = VERSION_CODIGO_SUBIDO;
@@ -921,6 +930,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
                 seleccionCaracteres: Math.max(0, Number(evento.seleccionCaracteres) || 0),
                 visibilidad: String(evento.visibilidad || document.visibilityState || "visible").slice(0, 20),
                 conectado: evento.conectado !== false,
+                versionScript: String(evento.versionScript || VERSION_SCRIPT).slice(0, 80),
                 fechaISO: new Date(ahora).toISOString(),
                 fechaEpoch: ahora
               };
@@ -944,6 +954,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
                 conteos,
                 riesgo,
                 intentosUltimosDosMinutos: ultimosDosMinutos,
+                versionScript: String(nuevosRegistros[nuevosRegistros.length - 1]?.versionScript || VERSION_SCRIPT),
                 ultimoIntento: nuevosRegistros[nuevosRegistros.length - 1],
                 historial
               },
@@ -978,6 +989,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             seccionActiva: String(estado.seccionActiva || "").slice(0, 100),
             escribiendo: estado.escribiendo === true,
             versionCodigo: VERSION_CODIGO_SUBIDO,
+            versionScript: VERSION_SCRIPT,
             activoEn: serverTimestamp()
           });
           return true;

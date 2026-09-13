@@ -4,7 +4,8 @@
   "scripts": {
     "test:rules": "npx firebase-tools@14.17.0 emulators:exec --only firestore --project ipem146js \"node firestore-rules.test.cjs\"",
     "test:crdt": "node crdt-merge.test.cjs",
-    "test:cooperation": "node cooperation-contract.test.cjs"
+    "test:cooperation": "node cooperation-contract.test.cjs",
+    "version:bump": "powershell -NoProfile -ExecutionPolicy Bypass -File ./versionar-publicacion.ps1"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.0",

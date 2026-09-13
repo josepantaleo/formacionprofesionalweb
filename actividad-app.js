@@ -5716,6 +5716,7 @@
                       : 0,
                   visibilidad: document.visibilityState,
                   conectado: navigator.onLine !== false,
+                  versionScript: VERSION_SCRIPT,
                   fechaEpoch: Date.now()
               });
               if (!temporizadorEnvio) temporizadorEnvio = window.setTimeout(enviarColaIntentos, 1200);
