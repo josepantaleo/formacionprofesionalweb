@@ -1002,7 +1002,12 @@
         };
 
         function estudiantesActivosProfesor() {
-          return estudiantesProfesor.filter(item => item?.uid && (!item.estadoCuenta || item.estadoCuenta === 'activo'));
+          // La cooperación no requiere aprobación administrativa de la cuenta.
+          // Se excluyen únicamente registros sin identidad o dados de baja/rechazados.
+          return estudiantesProfesor.filter(item =>
+            item?.uid &&
+            !['rechazado', 'inactivo'].includes(String(item.estadoCuenta || '').toLowerCase())
+          );
         }
 
         function obtenerGrupoProfesor(seleccion = null) {
