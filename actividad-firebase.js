@@ -97,10 +97,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const app = initializeApp(firebaseConfig);
         const appCheckConfigured = !APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY.includes("REEMPLAZAR_");
         if (appCheckConfigured) {
-          initializeAppCheck(app, {
-            provider: new ReCaptchaEnterpriseProvider(APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY),
-            isTokenAutoRefreshEnabled: true
-          });
+          try {
+            initializeAppCheck(app, {
+              provider: new ReCaptchaEnterpriseProvider(APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY),
+              isTokenAutoRefreshEnabled: true
+            });
+          } catch (error) {
+            console.warn("Firebase App Check no pudo inicializarse; se continuará sin bloquear el acceso.", error);
+            window.firebaseAppCheckError = error?.message || String(error);
+          }
           try {
             const ai = getAI(app, { backend: new GoogleAIBackend() });
             firebaseAITemplateModel = getTemplateGenerativeModel(ai);
@@ -139,6 +144,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           window.firebaseTeacherUser = user || null;
           window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: user || null }));
         });
+      } else {
+        window.firebaseConfigError = "Hay valores REEMPLAZAR_ en firebaseConfig.";
       }
 
       window.firebaseAIRealConfigurada = Boolean(firebaseAITemplateModel || firebaseAIDirectModel);
