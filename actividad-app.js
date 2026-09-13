@@ -9,6 +9,15 @@
           }
       })();
       window.VERSION_SCRIPT = VERSION_SCRIPT;
+      function portapapelesDocentePermitido() {
+          const body = document.body;
+          return Boolean(
+              window.firebaseTeacherUser &&
+              body?.classList.contains('teacher-authorized') &&
+              body.classList.contains('teacher-temporary')
+          );
+      }
+      window.portapapelesDocentePermitido = portapapelesDocentePermitido;
       function actualizarEtiquetasVersionScript() {
           const texto = `Versión del script · v${VERSION_SCRIPT}`;
           document.querySelectorAll("#versionCodigoEstudiante, #versionCodigoDocente").forEach(elemento => {
@@ -5382,7 +5391,7 @@
           textarea.classList.add("codemirror-source-hidden");
 
           const bloquearPortapapelesDirecto = evento => {
-              if (document.body.classList.contains("teacher-authorized")) return;
+              if (portapapelesDocentePermitido()) return;
               const tecla = String(evento.key || "").toLowerCase();
               const atajo = evento.type === "keydown" &&
                   (((evento.ctrlKey || evento.metaKey) && ["c", "x", "v"].includes(tecla)) ||
@@ -5397,18 +5406,20 @@
               const estado = host.querySelector(".cm-workbench-status");
               if (estado) estado.textContent = "Copiar, cortar y pegar están deshabilitados para estudiantes.";
           };
-          ["copy", "cut", "paste", "contextmenu", "drop", "keydown"].forEach(tipo => {
+          ["copy", "cut", "paste", "contextmenu", "dragstart", "dragover", "drop", "keydown"].forEach(tipo => {
               host.addEventListener(tipo, bloquearPortapapelesDirecto, true);
               textarea.addEventListener(tipo, bloquearPortapapelesDirecto, true);
           });
-          host.addEventListener("beforeinput", evento => {
-              if (document.body.classList.contains("teacher-authorized")) return;
+          const bloquearEntradaPortapapelesDirecta = evento => {
+              if (portapapelesDocentePermitido()) return;
               if (!["insertFromPaste", "insertFromDrop", "deleteByCut"].includes(evento.inputType)) return;
               evento.preventDefault();
               evento.stopImmediatePropagation();
               const estado = host.querySelector(".cm-workbench-status");
               if (estado) estado.textContent = "Copiar, cortar y pegar están deshabilitados para estudiantes.";
-          }, true);
+          };
+          host.addEventListener("beforeinput", bloquearEntradaPortapapelesDirecta, true);
+          textarea.addEventListener("beforeinput", bloquearEntradaPortapapelesDirecta, true);
 
           const barra = document.createElement("div");
           barra.className = "cm-workbench-toolbar";
@@ -5446,7 +5457,7 @@
           let sincronizando = false;
           const restringirPortapapeles = () =>
               textarea.matches('.code-editor[id^="editor-"]') &&
-              !document.body.classList.contains('teacher-authorized');
+              !portapapelesDocentePermitido();
           let restaurandoHistorial = false;
           let ultimoGrupoHistorial = 0;
           const historialDeshacer = [];
@@ -5928,7 +5939,7 @@
           };
 
           const esEstudianteEnEditor = evento =>
-              !document.body.classList.contains('teacher-authorized') &&
+              !portapapelesDocentePermitido() &&
               Boolean(obtenerEditorEstudiante(evento.target));
 
           const informarBloqueo = evento => {
@@ -5941,9 +5952,11 @@
               if (['copy', 'cut', 'paste'].includes(evento.type)) {
                   return { copy: 'copiar', cut: 'cortar', paste: 'pegar' }[evento.type];
               }
+              if (evento.type === 'drop') return 'pegar';
               if (evento.type === 'beforeinput') {
                   return {
                       insertFromPaste: 'pegar',
+                      insertFromDrop: 'pegar',
                       deleteByCut: 'cortar'
                   }[evento.inputType] || '';
               }
@@ -5953,6 +5966,8 @@
                       return { c: 'copiar', x: 'cortar', v: 'pegar' }[tecla];
                   }
                   if (evento.shiftKey && tecla === 'insert') return 'pegar';
+                  if (evento.ctrlKey && tecla === 'insert') return 'copiar';
+                  if (evento.shiftKey && tecla === 'delete') return 'cortar';
               }
               return '';
           };
@@ -6016,7 +6031,11 @@
               const atajoPortapapeles = (evento.ctrlKey || evento.metaKey) &&
                   ['c', 'x', 'v'].includes(tecla);
               const pegarConInsert = evento.shiftKey && tecla === 'insert';
-              if (atajoPortapapeles || pegarConInsert) bloquearEvento(evento);
+              const copiarConInsert = evento.ctrlKey && tecla === 'insert';
+              const cortarConDelete = evento.shiftKey && tecla === 'delete';
+              if (atajoPortapapeles || pegarConInsert || copiarConInsert || cortarConDelete) {
+                  bloquearEvento(evento);
+              }
           }, true);
           document.addEventListener('visibilitychange', () => {
               if (document.visibilityState === 'hidden') enviarColaIntentos();
