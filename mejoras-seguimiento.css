@@ -303,6 +303,144 @@ textarea.collab-source-editor{position:relative!important;z-index:1!important;co
     grid-template-columns:1fr;
   }
 }
+
+/* Informe docente de intentos de portapapeles */
+.teacher-clipboard-report{
+  margin:1rem 0;
+  padding:.9rem;
+  border:1px solid rgba(34,197,94,.38);
+  border-left:4px solid #22c55e;
+  border-radius:8px;
+  background:#0f1d2c;
+}
+.teacher-clipboard-report.has-attempts{
+  border-color:rgba(248,113,113,.58);
+  border-left-color:#ef4444;
+  background:#26151c;
+}
+.teacher-clipboard-report>header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.8rem;
+  margin-bottom:.75rem;
+}
+.teacher-clipboard-report>header>div{
+  display:flex;
+  align-items:center;
+  gap:.65rem;
+  min-width:0;
+}
+.teacher-clipboard-report-icon{
+  display:grid;
+  place-items:center;
+  width:38px;
+  height:38px;
+  flex:0 0 38px;
+  border-radius:7px;
+  background:rgba(34,197,94,.16);
+  color:#86efac;
+}
+.teacher-clipboard-report.has-attempts .teacher-clipboard-report-icon{
+  background:rgba(239,68,68,.18);
+  color:#fca5a5;
+}
+.teacher-clipboard-report h3{margin:.08rem 0 0;color:#f8fafc;font-size:.9rem}
+.teacher-clipboard-report header small{color:#94a3b8;font-size:.58rem;font-weight:800;letter-spacing:.06em}
+.teacher-clipboard-report-stats{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  gap:.45rem;
+}
+.teacher-clipboard-report-stats>div{
+  display:grid;
+  gap:.12rem;
+  padding:.55rem;
+  border:1px solid rgba(148,163,184,.2);
+  border-radius:6px;
+  background:rgba(15,23,42,.68);
+}
+.teacher-clipboard-report-stats small{color:#94a3b8;font-size:.62rem}
+.teacher-clipboard-report-stats strong{color:#f8fafc;font-size:1rem;text-transform:capitalize}
+.teacher-clipboard-report>p{margin:.65rem 0 0;color:#cbd5e1;font-size:.72rem;line-height:1.4}
+.teacher-clipboard-report-note{color:#94a3b8!important}
+
+/* Comparación de calificaciones automáticas y docentes */
+.teacher-grade-chart-legend{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:.45rem .9rem;
+  margin:.1rem 0 .7rem;
+  color:#cbd5e1;
+  font-size:.66rem;
+}
+.teacher-grade-chart-legend span{
+  display:inline-flex;
+  align-items:center;
+  gap:.3rem;
+}
+.teacher-grade-chart-legend span::before{
+  content:"";
+  width:10px;
+  height:10px;
+  border-radius:2px;
+  background:#38bdf8;
+}
+.teacher-grade-chart-legend .is-teacher::before{background:#f59e0b}
+.teacher-grade-chart-legend .is-current::before{
+  box-sizing:border-box;
+  background:transparent;
+  border:2px solid #facc15;
+}
+.teacher-grade-comparison-chart{
+  grid-template-columns:repeat(auto-fit,minmax(48px,1fr));
+  gap:.55rem;
+}
+.teacher-grade-comparison-item{
+  min-width:48px;
+}
+.teacher-grade-comparison-track{
+  gap:4px;
+  padding:0 3px;
+}
+.teacher-grade-comparison-track .teacher-grade-bar{
+  width:min(18px,42%);
+  min-height:0;
+  border-radius:4px 4px 0 0;
+}
+.teacher-grade-comparison-track .teacher-grade-bar.is-automatic{
+  background:#38bdf8;
+}
+.teacher-grade-comparison-track .teacher-grade-bar.is-teacher{
+  background:#f59e0b;
+  box-shadow:0 0 0 1px rgba(254,215,170,.45);
+}
+.teacher-grade-comparison-track .teacher-grade-bar.is-empty{
+  height:3px!important;
+  background:transparent;
+  border:1px dashed #64748b;
+  box-shadow:none;
+}
+.teacher-grade-comparison-item>small{
+  min-height:2.2em;
+  overflow-wrap:anywhere;
+  line-height:1.1;
+}
+.teacher-grade-comparison-item.is-current .teacher-grade-comparison-track .teacher-grade-bar{
+  box-shadow:0 0 0 1px rgba(250,204,21,.6),0 0 10px rgba(250,204,21,.24);
+}
+@media(max-width:700px){
+  .teacher-clipboard-report>header{align-items:stretch;display:grid}
+  .teacher-clipboard-report>header .btn{width:100%}
+  .teacher-clipboard-report-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .teacher-clipboard-report-stats>div:last-child{grid-column:1/-1}
+  .teacher-grade-comparison-chart{
+    grid-template-columns:repeat(auto-fit,minmax(42px,1fr));
+    gap:.3rem;
+  }
+  .teacher-grade-chart-legend{align-items:flex-start;display:grid}
+}
 @media(max-width:900px){
   #editorColaborativoDocenteModal.is-pseudo-fullscreen .teacher-collab-box,
   #editorColaborativoDocenteModal .teacher-collab-box:fullscreen{

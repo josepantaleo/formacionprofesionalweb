@@ -9726,6 +9726,11 @@
           const notaFinalEditable = notaDefinitiva !== '—' ? notaDefinitiva : notaCalculada;
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
           const resumenConsultasIA = resumirConsultasIAEstudiante(d);
+          const resumenPortapapeles = obtenerResumenPortapapeles(d);
+          const ultimoIntentoPortapapeles = resumenPortapapeles.ultimoIntento;
+          const ultimoIntentoTexto = ultimoIntentoPortapapeles
+              ? `${String(ultimoIntentoPortapapeles.accion || "").toUpperCase()} · ${escapeHtml(ultimoIntentoPortapapeles.seccionTitulo || ultimoIntentoPortapapeles.seccionId || "Actividad sin identificar")} · ${ultimoIntentoPortapapeles.fechaISO ? new Date(ultimoIntentoPortapapeles.fechaISO).toLocaleString("es-AR") : "fecha no disponible"}`
+              : "Sin intentos registrados";
           const actividadesSocraticasValidas = obtenerActividadesSocraticasValidas(d);
           const resumenNivelesAnalista = obtenerConteoInformeSocratico(d);
           const respuestasSocraticasValidas = Object.values(resumenNivelesAnalista)
@@ -9742,13 +9747,56 @@
               return "is-excellent";
           };
           const graficoNotasHtml = seccionesData.map((sec, numero) => {
-              const nota = obtenerNotaDesafioEstudiante(d, sec.id, historial[sec.id] || {});
-              const notaNumerica = nota === null || nota === undefined || nota === "" ? null : Number(nota);
-              const valor = Number.isFinite(notaNumerica) ? Math.max(0, Math.min(10, notaNumerica)) : 0;
+              const resultado = historial[sec.id] || {};
+              const ajusteDocente = d.notasDesafiosDocente?.[sec.id] || null;
+              const notaAutomaticaBase = resultado.notaFinal ?? resultado.notaIA;
+              const notaAutomatica = notaAutomaticaBase === null || notaAutomaticaBase === undefined || notaAutomaticaBase === ""
+                  ? null
+                  : Number(notaAutomaticaBase);
+              const notaDocenteBase = ajusteDocente?.nota;
+              const notaDocente = notaDocenteBase === null || notaDocenteBase === undefined || notaDocenteBase === ""
+                  ? null
+                  : Number(notaDocenteBase);
+              const notaVigente = Number.isFinite(notaDocente)
+                  ? notaDocente
+                  : (Number.isFinite(notaAutomatica) ? notaAutomatica : null);
+              const alturaAutomatica = Number.isFinite(notaAutomatica)
+                  ? Math.max(0, Math.min(10, notaAutomatica)) * 10
+                  : 0;
+              const alturaDocente = Number.isFinite(notaDocente)
+                  ? Math.max(0, Math.min(10, notaDocente)) * 10
+                  : 0;
+              const nota = notaVigente;
+              const valor = Number.isFinite(notaVigente) ? Math.max(0, Math.min(10, notaVigente)) : 0;
               const actual = sec.id === desafioActualId;
               return `<div class="student-progress-chart-item ${actual ? "is-current" : ""}" title="${escapeHtml(`${sec.title}: ${Number.isFinite(Number(nota)) ? `${Number(nota).toFixed(1)}/10` : "sin nota"}${actual ? " · desafío actual" : ""}`)}">
                   <div class="student-progress-chart-track"><span class="${claseBarraNota(nota)}" style="height:${valor * 10}%"></span></div>
                   <strong>${Number.isFinite(Number(nota)) ? Number(nota).toFixed(1) : "—"}</strong><small>${numero + 1}</small>
+              </div>`;
+          }).join("");
+          const graficoComparativoNotasHtml = seccionesData.map((sec, numero) => {
+              const resultado = historial[sec.id] || {};
+              const ajusteDocente = d.notasDesafiosDocente?.[sec.id] || null;
+              const automaticaBase = resultado.notaFinal ?? resultado.notaIA;
+              const automatica = automaticaBase === null || automaticaBase === undefined || automaticaBase === ""
+                  ? null
+                  : Number(automaticaBase);
+              const docenteBase = ajusteDocente?.nota;
+              const docente = docenteBase === null || docenteBase === undefined || docenteBase === ""
+                  ? null
+                  : Number(docenteBase);
+              const vigente = Number.isFinite(docente)
+                  ? docente
+                  : (Number.isFinite(automatica) ? automatica : null);
+              const actual = sec.id === desafioActualId;
+              return `<div class="student-progress-chart-item teacher-grade-comparison-item ${actual ? "is-current" : ""}"
+                  title="${escapeHtml(`${sec.title} · Automática: ${Number.isFinite(automatica) ? automatica.toFixed(1) : "sin nota"} · Docente: ${Number.isFinite(docente) ? docente.toFixed(1) : "sin modificación"} · Vigente: ${Number.isFinite(vigente) ? vigente.toFixed(1) : "pendiente"}`)}">
+                  <div class="student-progress-chart-track teacher-grade-comparison-track">
+                      <span class="teacher-grade-bar is-automatic ${claseBarraNota(automatica)}" style="height:${Number.isFinite(automatica) ? Math.max(0, Math.min(10, automatica)) * 10 : 0}%"></span>
+                      <span class="teacher-grade-bar is-teacher ${Number.isFinite(docente) ? claseBarraNota(docente) : "is-empty"}" style="height:${Number.isFinite(docente) ? Math.max(0, Math.min(10, docente)) * 10 : 0}%"></span>
+                  </div>
+                  <strong>${Number.isFinite(vigente) ? vigente.toFixed(1) : "—"}</strong>
+                  <small>D${numero + 1}${Number.isFinite(docente) ? " · modificada" : ""}</small>
               </div>`;
           }).join("");
           const eventos = Array.isArray(d.eventosSalidasPestana)
@@ -10007,8 +10055,13 @@
                   </div>
               </section>
               <section class="student-progress-chart-section teacher-student-grade-chart">
-                  <header><div><i class="fa-solid fa-chart-column"></i><strong>Gráfico de notas por desafío</strong></div><small>Escala de 0 a 10 · la barra resaltada es el desafío actual</small></header>
-                  <div class="student-progress-chart" role="img" aria-label="Gráfico de notas por desafío del estudiante">${graficoNotasHtml}</div>
+                  <header><div><i class="fa-solid fa-chart-column"></i><strong>Notas automáticas y modificadas por el docente</strong></div><small>El número inferior muestra la nota vigente</small></header>
+                  <div class="teacher-grade-chart-legend" aria-label="Referencias del gráfico">
+                      <span class="is-automatic">Nota automática</span>
+                      <span class="is-teacher">Nota modificada por el docente</span>
+                      <span class="is-current">Desafío actual</span>
+                  </div>
+                  <div class="student-progress-chart teacher-grade-comparison-chart" role="img" aria-label="Comparación entre notas automáticas y notas modificadas por el docente">${graficoComparativoNotasHtml}</div>
               </section>
               <div class="teacher-detail-summary">
                   <div class="teacher-detail-stat"><small>Nombre</small><strong>${escapeHtml(e.nombre || d.nombreGoogle || 'Sin nombre')}</strong></div>
@@ -10030,6 +10083,28 @@
                   <div class="teacher-detail-stat"><small>Desbloqueos</small><strong>${cantidadDesbloqueos}</strong></div>
                   <div class="teacher-detail-stat"><small>Última actualización</small><strong>${escapeHtml(fecha)}</strong></div>
               </div>
+              <section class="teacher-clipboard-report ${resumenPortapapeles.total > 0 ? "has-attempts" : "is-clear"}">
+                  <header>
+                      <div>
+                          <span class="teacher-clipboard-report-icon"><i class="fa-solid fa-clipboard-list"></i></span>
+                          <div><small>CONTROL DE PORTAPAPELES</small><h3>Intentos de copiar, cortar y pegar</h3></div>
+                      </div>
+                      <button class="btn btn-secondary" type="button" onclick="abrirHistorialPortapapeles(${indice})">
+                          <i class="fa-solid fa-clock-rotate-left"></i> Ver historial completo
+                      </button>
+                  </header>
+                  <div class="teacher-clipboard-report-stats">
+                      <div><small>Total</small><strong>${resumenPortapapeles.total}</strong></div>
+                      <div><small>Copiar</small><strong>${resumenPortapapeles.conteos.copiar}</strong></div>
+                      <div><small>Cortar</small><strong>${resumenPortapapeles.conteos.cortar}</strong></div>
+                      <div><small>Pegar</small><strong>${resumenPortapapeles.conteos.pegar}</strong></div>
+                      <div><small>Nivel</small><strong>${escapeHtml(resumenPortapapeles.riesgo)}</strong></div>
+                  </div>
+                  <p><strong>Último intento:</strong> ${escapeHtml(ultimoIntentoTexto)}</p>
+                  <p class="teacher-clipboard-report-note">${resumenPortapapeles.total > 0
+                      ? "Los intentos fueron bloqueados y registrados para revisión docente."
+                      : "No se registraron intentos de usar el portapapeles en los editores de código."}</p>
+              </section>
               <div class="teacher-detail-toolbar">
                   <div class="teacher-detail-toolbar-title">
                       <strong><i class="fa-solid fa-layer-group"></i> Desafíos del informe</strong>
