@@ -327,6 +327,21 @@
           >
             <i class="fa-solid fa-rotate-right"></i> Reiniciar contador
           </button>
+          <button
+            class="btn student-progress-trigger"
+            id="btnAbrirProgresoEstudiante"
+            type="button"
+            onclick="abrirProgresoEstudiante()"
+            aria-haspopup="dialog"
+            aria-controls="progresoEstudianteModal"
+          >
+            <span class="student-progress-trigger-icon" aria-hidden="true"><i class="fa-solid fa-chart-column"></i></span>
+            <span class="student-progress-trigger-copy">
+              <strong>Mi progreso y calificaciones</strong>
+              <small id="resumenBotonProgreso">Ver avance, notas y recomendaciones</small>
+            </span>
+            <i class="fa-solid fa-chevron-right student-progress-trigger-arrow" aria-hidden="true"></i>
+          </button>
           <div class="progress-wrapper">
             <span class="progress-label" id="progressText">Progreso: 0%</span>
             <div class="progress-bar-bg" id="progressBarContainer" role="progressbar" aria-label="Progreso de actividades" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
@@ -1166,21 +1181,34 @@
       </div>
     </div>
 
-    <section id="informeVisualEstudiante" class="student-progress-report" aria-labelledby="informeVisualEstudianteTitulo">
-      <header class="student-progress-report-header">
-        <div>
-          <span class="student-progress-report-icon" aria-hidden="true"><i class="fa-solid fa-chart-line"></i></span>
-          <div>
-            <h2 id="informeVisualEstudianteTitulo">Mi progreso y recomendaciones</h2>
-            <p>Resultados de desafíos finalizados y acciones personales de mejora.</p>
+    <div class="modal-overlay student-progress-modal" id="progresoEstudianteModal" role="dialog" aria-modal="true" aria-labelledby="informeVisualEstudianteTitulo">
+      <div class="modal-box student-progress-modal-box" tabindex="-1">
+        <header class="student-progress-modal-header">
+          <div class="student-progress-modal-heading">
+            <span class="student-progress-report-icon" aria-hidden="true"><i class="fa-solid fa-chart-line"></i></span>
+            <div>
+              <span class="student-progress-eyebrow">Panel personal</span>
+              <h2 id="informeVisualEstudianteTitulo">Mi progreso y calificaciones</h2>
+              <p>Avance general, notas por desafío y recomendaciones personales.</p>
+            </div>
           </div>
-        </div>
-        <button class="btn btn-secondary" type="button" onclick="renderInformeVisualEstudiante()" title="Actualizar informe">
-          <i class="fa-solid fa-rotate"></i> Actualizar
-        </button>
-      </header>
-      <div id="informeVisualEstudianteContenido" aria-live="polite"></div>
-    </section>
+          <div class="student-progress-modal-actions">
+            <button class="btn btn-secondary student-progress-refresh" type="button" onclick="renderInformeVisualEstudiante()" title="Actualizar informe" aria-label="Actualizar informe">
+              <i class="fa-solid fa-rotate"></i><span>Actualizar</span>
+            </button>
+            <button class="btn btn-success student-progress-pdf" type="button" onclick="exportarResultadosPDF()" title="Descargar reporte PDF" aria-label="Descargar reporte PDF">
+              <i class="fa-solid fa-file-arrow-down"></i><span>PDF</span>
+            </button>
+            <button class="btn student-progress-modal-close" type="button" onclick="cerrarProgresoEstudiante()" aria-label="Cerrar progreso y calificaciones" title="Cerrar">
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+        </header>
+        <section id="informeVisualEstudiante" class="student-progress-report" aria-labelledby="informeVisualEstudianteTitulo">
+          <div id="informeVisualEstudianteContenido" aria-live="polite"></div>
+        </section>
+      </div>
+    </div>
 
     <!-- Barra Inferior Global para Exportar PDF -->
     <div class="export-bar">
