@@ -1103,8 +1103,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         if (!documentoEstudianteListo) {
           try {
             const snapEstudiante = await getDoc(doc(db, "estudiantes", user.uid));
+            const datosEstudiante = snapEstudiante.exists() ? snapEstudiante.data() : null;
+            const perfil = datosEstudiante?.estudiante || {};
+            const perfilLegacyCompleto = Boolean(
+              String(perfil.nombre || datosEstudiante?.nombreGoogle || "").trim() &&
+              String(perfil.curso || "").trim() &&
+              String(perfil.division || "").trim() &&
+              String(perfil.turno || "").trim()
+            );
             documentoEstudianteListo = Boolean(
-              snapEstudiante.exists() && snapEstudiante.data().estadoCuenta
+              datosEstudiante &&
+              (
+                ["activo", "pendiente"].includes(datosEstudiante.estadoCuenta) ||
+                (!datosEstudiante.estadoCuenta && perfilLegacyCompleto)
+              )
             );
             if (documentoEstudianteListo) {
               window.__uidPresenciaEstudianteListo = user.uid;
