@@ -58,7 +58,10 @@ Si el repositorio remoto ya contiene archivos, clonarlo primero o agregar el rem
 
 ## Actualización del 14 de septiembre de 2026
 
-- Versión de publicación: `20260914-4`.
+- Versión de publicación: `20260914-6`.
+- La actividad usa todo el ancho disponible y el tutor cerrado ya no reserva una columna vacía.
+- `Mi resumen de pestañas` se abre desde un botón compacto y muestra estado, límite, tiempo fuera y actividad reciente.
+- El popup puede cerrarse con su botón, haciendo clic fuera o presionando `Escape`.
 - Se ampliÃ³ el espacio de tareas a todo el ancho disponible y el tutor de programaciÃ³n ahora se abre desde un botÃ³n popup.
 - Se agregÃ³ el selector docente para desbloquear actividades especÃ­ficas y el popup `Mi resumen de pestaÃ±as`, un grÃ¡fico de calificaciones y desbloqueo docente remoto de una o todas las actividades.
 - Las acciones docentes muestran una explicaciÃ³n breve antes de abrirse:

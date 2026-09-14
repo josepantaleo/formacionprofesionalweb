@@ -21,7 +21,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         autocompletion,
         completionKeymap,
         startCompletion
-} from "./codemirror-bundle.js?v=20260914-4";
+} from "./codemirror-bundle.js?v=20260914-6";
 
       window.CodeMirror6 = {
         Compartment,
@@ -3029,7 +3029,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
       };
 
-      window.desbloquearActividadesEstudianteFirebase = async function(uid, sectionId = "", motivo = "") {
+      window.desbloquearActividadesEstudianteFirebase = async function(uid, sectionId = "") {
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
         const database = contexto.database;
@@ -3044,20 +3044,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             const ids = Array.isArray(sectionId) ? sectionId.filter(Boolean).map(String) : (sectionId ? [String(sectionId)] : []);
             if (ids.length) ids.forEach(id => delete finalizadas[id]);
             else Object.keys(finalizadas).forEach(id => delete finalizadas[id]);
-            const historial = Array.isArray(datos.historialDesbloqueoActividades)
-              ? datos.historialDesbloqueoActividades.slice(-49)
-              : [];
-            historial.push({
-              id: `${Date.now()}-${uid}`,
-              actividades: ids.length ? ids : Object.keys(datos.finalizadas || {}),
-              motivo: String(motivo || "Desbloqueo autorizado por el docente").trim().slice(0, 500),
-              por: user.email || user.displayName || user.uid,
-              porUid: user.uid,
-              en: new Date().toISOString()
-            });
             transaction.set(estudianteRef, {
               finalizadas,
-              historialDesbloqueoActividades: historial,
               desbloqueoActividades: {
                 id: `${Date.now()}-${uid}`,
                 seccion: ids.length ? ids : "todas",
