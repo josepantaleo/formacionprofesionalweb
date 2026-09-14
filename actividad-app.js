@@ -10693,33 +10693,81 @@
           estadoPantalla.innerHTML = bloqueado
               ? '<i class="fa-solid fa-lock"></i> Pantalla bloqueada'
               : '<i class="fa-solid fa-circle-check"></i> Pantalla habilitada';
+          const botonAccion = (clase, icono, etiqueta, accion, destacada = false) =>
+              `<button type="button" class="btn ${clase}${destacada ? ' student-action-primary' : ''}" onclick="cerrarAccionesEstudiante();${accion}"><i class="fa-solid ${icono}" aria-hidden="true"></i><span>${etiqueta}</span><i class="fa-solid fa-chevron-right student-action-arrow" aria-hidden="true"></i></button>`;
+          const grupoAcciones = (icono, titulo, clase, acciones) => acciones.length
+              ? `<section class="student-action-group ${clase}"><h4><i class="fa-solid ${icono}" aria-hidden="true"></i>${titulo}</h4><div class="student-action-group-grid">${acciones.join('')}</div></section>`
+              : '';
+          const disponibles = nombreFuncion => typeof window[nombreFuncion] === 'function';
+
+          const principales = [];
+          if (disponibles('abrirDetalleEstudianteProfesor')) {
+              principales.push(botonAccion('btn-primary', 'fa-eye', 'Ver progreso y evaluación', `abrirDetalleEstudianteProfesor(${indice})`, true));
+          }
+          if (disponibles('abrirProgramacionDocente')) {
+              principales.push(botonAccion('btn-success', 'fa-clipboard-list', 'Programación y comentarios', `window.abrirProgramacionDocente(${indice})`, true));
+          }
+          if (disponibles('abrirEditorDescuentoEstudiante')) {
+              principales.push(botonAccion('btn-warning', 'fa-circle-minus', 'Editar descuento', `abrirEditorDescuentoEstudiante(${indice})`));
+          }
+
+          const comunicacion = [];
+          if (disponibles('abrirMensajeriaDocente')) {
+              comunicacion.push(botonAccion('btn-primary', 'fa-message', 'Enviar mensaje', `abrirMensajeriaDocente('${escapeHtml(d.uid)}')`));
+          }
+          if (disponibles('abrirJitsiDocente')) {
+              comunicacion.push(botonAccion('btn-success', 'fa-video', jitsiDisponible ? 'Volver a Jitsi' : 'Iniciar llamada Jitsi', `abrirJitsiDocente(${indice})`));
+          }
+          if ((jitsiDisponible || jitsiTieneSala) && disponibles('cerrarSalaJitsiProfesor')) {
+              comunicacion.push(botonAccion('btn-danger', jitsiDisponible ? 'fa-video-slash' : 'fa-broom', jitsiDisponible ? 'Finalizar llamada' : 'Limpiar llamada anterior', `cerrarSalaJitsiProfesor(${indice})`));
+          }
+
+          const control = [];
+          if (bloqueado && disponibles('desbloquearPantallaEstudianteProfesor')) {
+              control.push(botonAccion('btn-success', 'fa-unlock-keyhole', 'Desbloquear pantalla', `desbloquearPantallaEstudianteProfesor(${indice})`, true));
+          } else if (!bloqueado && disponibles('bloquearPantallaEstudianteProfesor')) {
+              control.push(botonAccion('btn-danger', 'fa-lock', 'Bloquear pantalla', `bloquearPantallaEstudianteProfesor(${indice})`));
+          }
+          if (disponibles('controlarCronometroEstudianteProfesor')) {
+              control.push(botonAccion(pausado ? 'btn-success' : 'btn-warning', pausado ? 'fa-play' : 'fa-pause', `${pausado ? 'Reanudar' : 'Pausar'} cronómetro`, `controlarCronometroEstudianteProfesor(${indice}, '${pausado ? 'reanudar' : 'pausar'}')`));
+              control.push(botonAccion('btn-secondary', 'fa-clock-rotate-left', 'Reiniciar cronómetro', `controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')`));
+          }
+
+          const historiales = [];
+          if (disponibles('abrirHistorialDesbloqueos')) {
+              historiales.push(botonAccion('btn-secondary', 'fa-clock-rotate-left', 'Desbloqueos', `abrirHistorialDesbloqueos(${indice})`));
+          }
+          if (disponibles('abrirHistorialDescuentos')) {
+              historiales.push(botonAccion('btn-secondary', 'fa-file-invoice-dollar', 'Descuentos', `abrirHistorialDescuentos(${indice})`));
+          }
+          if (disponibles('abrirHistorialPestanas')) {
+              historiales.push(botonAccion('btn-secondary', 'fa-window-restore', 'Pestañas visitadas', `abrirHistorialPestanas(${indice})`));
+          }
+          if (disponibles('abrirHistorialPortapapeles')) {
+              historiales.push(botonAccion('btn-secondary', 'fa-clipboard-list', 'Copiar y pegar', `abrirHistorialPortapapeles(${indice})`));
+          }
+
+          const mantenimiento = [];
+          if (disponibles('reiniciarSalidasEstudianteProfesor')) {
+              mantenimiento.push(botonAccion('btn-warning', 'fa-rotate-left', 'Reiniciar contador de pestañas', `reiniciarSalidasEstudianteProfesor(${indice})`));
+          }
+          if (disponibles('borrarConsultasIAAlumnoProfesor')) {
+              mantenimiento.push(botonAccion('btn-secondary', 'fa-comments', 'Borrar consultas IA', `borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')`));
+          }
+          if (disponibles('eliminarEstudianteProfesor')) {
+              mantenimiento.push(botonAccion('student-action-danger', 'fa-trash-can', 'Eliminar estudiante', `eliminarEstudianteProfesor(estudiantesProfesor[${indice}])`));
+          }
+
           contenido.innerHTML = `
             ${llamadaJitsiId ? `<div class="student-action-jitsi-state"><i class="fa-solid fa-signal"></i><span>Estado Jitsi</span><strong>${escapeHtml(etiquetasJitsi[estadoJitsi] || 'Invitado')}</strong></div>` : ''}
-            <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirDetalleEstudianteProfesor(${indice})"><i class="fa-solid fa-eye"></i><span>Ver detalle completo</span></button>
-            <button class="btn btn-success" onclick="cerrarAccionesEstudiante();(window.abrirProgramacionDocente ? window.abrirProgramacionDocente(${indice}) : alert('La herramienta de programación todavía está cargando. Actualizá la página e intentá nuevamente.'))"><i class="fa-solid fa-clipboard-list"></i><span>Editar programación y comentarios</span></button>
-            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDesbloqueos(${indice})"><i class="fa-solid fa-clock-rotate-left"></i><span>Historial de desbloqueos</span></button>
-            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialDescuentos(${indice})"><i class="fa-solid fa-file-invoice-dollar"></i><span>Historial de descuentos</span></button>
-            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();abrirHistorialPestanas(${indice})"><i class="fa-solid fa-window-restore"></i><span>Historial de pestañas</span></button>
-            <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();abrirHistorialPortapapeles(${indice})"><i class="fa-solid fa-clipboard-list"></i><span>Intentos de copiar y pegar</span></button>
-            <button class="btn btn-primary" onclick="cerrarAccionesEstudiante();abrirMensajeriaDocente('${escapeHtml(d.uid)}')"><i class="fa-solid fa-message"></i><span>Enviar mensaje en pantalla</span></button>
-            <button class="btn btn-success" onclick="cerrarAccionesEstudiante();abrirJitsiDocente(${indice})"><i class="fa-solid fa-video"></i><span>${jitsiDisponible ? 'Volver a la llamada Jitsi' : 'Iniciar llamada Jitsi'}</span></button>
-            ${jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-video-slash"></i><span>Cancelar invitación / finalizar</span></button>` : ''}
-            ${jitsiTieneSala && !jitsiDisponible ? `<button class="btn btn-danger" onclick="cerrarAccionesEstudiante();cerrarSalaJitsiProfesor(${indice})"><i class="fa-solid fa-broom"></i><span>Limpiar llamada anterior</span></button>` : ''}
-            <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();abrirEditorDescuentoEstudiante(${indice})"><i class="fa-solid fa-circle-minus"></i><span>Editar descuento y motivo</span></button>
-            <button class="btn btn-danger" ${bloqueado ? 'disabled title="La pantalla ya está bloqueada"' : ''} onclick="cerrarAccionesEstudiante();bloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-lock"></i><span>Bloquear pantalla</span></button>
-            <button class="btn student-action-highlight" ${bloqueado ? '' : 'disabled title="La pantalla no está bloqueada"'} onclick="cerrarAccionesEstudiante();desbloquearPantallaEstudianteProfesor(${indice})"><i class="fa-solid fa-unlock-keyhole"></i><span>Desbloquear pantalla</span></button>
-            <button class="btn ${pausado ? 'btn-success' : 'btn-warning'}" onclick="cerrarAccionesEstudiante();controlarCronometroEstudianteProfesor(${indice}, '${pausado ? 'reanudar' : 'pausar'}')"><i class="fa-solid ${pausado ? 'fa-play' : 'fa-pause'}"></i><span>${pausado ? 'Reanudar' : 'Pausar'} cronómetro</span></button>
-            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')"><i class="fa-solid fa-clock-rotate-left"></i><span>Reiniciar cronómetro a 40:00</span></button>
-            <button class="btn btn-warning" onclick="cerrarAccionesEstudiante();reiniciarSalidasEstudianteProfesor(${indice})"><i class="fa-solid fa-rotate-left"></i><span>Reiniciar contador de pestañas</span></button>
-            <button class="btn btn-secondary" onclick="cerrarAccionesEstudiante();borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')"><i class="fa-solid fa-comments"></i><span>Borrar consultas IA</span></button>
-            <button class="btn student-action-danger" onclick="cerrarAccionesEstudiante();eliminarEstudianteProfesor(estudiantesProfesor[${indice}])"><i class="fa-solid fa-trash-can"></i><span>Eliminar estudiante</span></button>`;
-          const filtroAcciones = document.getElementById('filtroAccionesEstudiante');
-          const categoriaAcciones = document.getElementById('categoriaAccionesEstudiante');
-          const ordenAcciones = document.getElementById('ordenAccionesEstudiante');
-          if (filtroAcciones) filtroAcciones.value = '';
-          if (categoriaAcciones) categoriaAcciones.value = '';
-          if (ordenAcciones) ordenAcciones.value = 'recomendado';
-          filtrarOrdenarAccionesEstudiante();
+            ${grupoAcciones('fa-chart-line', 'Seguimiento', 'is-primary', principales)}
+            ${grupoAcciones('fa-comments', 'Comunicación', 'is-communication', comunicacion)}
+            ${grupoAcciones('fa-sliders', 'Control de la sesión', 'is-control', control)}
+            ${grupoAcciones('fa-clock-rotate-left', 'Registros', 'is-history', historiales)}
+            ${grupoAcciones('fa-screwdriver-wrench', 'Mantenimiento', 'is-maintenance', mantenimiento)}`;
+          const cantidad = contenido.querySelectorAll('button').length;
+          const cantidadElemento = document.getElementById('accionesEstudianteCantidad');
+          if (cantidadElemento) cantidadElemento.textContent = `${cantidad} acción${cantidad === 1 ? '' : 'es'}`;
           modal.style.removeProperty('display');
           modal.classList.add('active');
           modal.querySelector('.student-actions-modal-box')?.focus({ preventScroll: true });
