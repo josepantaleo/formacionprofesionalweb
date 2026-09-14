@@ -58,7 +58,12 @@ Si el repositorio remoto ya contiene archivos, clonarlo primero o agregar el rem
 
 ## Actualización del 14 de septiembre de 2026
 
-- Versión de publicación: `20260914-1`.
+- Versión de publicación: `20260914-2`.
+- Las acciones docentes muestran una explicaciÃ³n breve antes de abrirse:
+  - ProgramaciÃ³n y comentarios: publica consignas, fechas y devoluciones.
+  - Copiar y pegar: consulta los intentos de copiar, cortar o pegar registrados.
+- Se mantienen visibles Ãºnicamente las acciones disponibles para el estado actual del estudiante.
+
 - El acceso a “Mi progreso y calificaciones” se presenta como un botón popup para no ocupar espacio permanente en la actividad.
 - El popup reúne avance, calificaciones por desafío, recomendaciones y descarga PDF.
 

@@ -10693,8 +10693,8 @@
           estadoPantalla.innerHTML = bloqueado
               ? '<i class="fa-solid fa-lock"></i> Pantalla bloqueada'
               : '<i class="fa-solid fa-circle-check"></i> Pantalla habilitada';
-          const botonAccion = (clase, icono, etiqueta, accion, destacada = false) =>
-              `<button type="button" class="btn ${clase}${destacada ? ' student-action-primary' : ''}" onclick="cerrarAccionesEstudiante();${accion}"><i class="fa-solid ${icono}" aria-hidden="true"></i><span>${etiqueta}</span><i class="fa-solid fa-chevron-right student-action-arrow" aria-hidden="true"></i></button>`;
+          const botonAccion = (clase, icono, etiqueta, accion, destacada = false, detalle = '') =>
+              `<button type="button" class="btn ${clase}${destacada ? ' student-action-primary' : ''}" onclick="cerrarAccionesEstudiante();${accion}" title="${escapeHtml(detalle || etiqueta)}"><i class="fa-solid ${icono}" aria-hidden="true"></i><span class="student-action-copy"><strong>${etiqueta}</strong>${detalle ? `<small>${escapeHtml(detalle)}</small>` : ''}</span><i class="fa-solid fa-chevron-right student-action-arrow" aria-hidden="true"></i></button>`;
           const grupoAcciones = (icono, titulo, clase, acciones) => acciones.length
               ? `<section class="student-action-group ${clase}"><h4><i class="fa-solid ${icono}" aria-hidden="true"></i>${titulo}</h4><div class="student-action-group-grid">${acciones.join('')}</div></section>`
               : '';
@@ -10702,60 +10702,60 @@
 
           const principales = [];
           if (disponibles('abrirDetalleEstudianteProfesor')) {
-              principales.push(botonAccion('btn-primary', 'fa-eye', 'Ver progreso y evaluación', `abrirDetalleEstudianteProfesor(${indice})`, true));
+              principales.push(botonAccion('btn-primary', 'fa-eye', 'Ver progreso y evaluación', `abrirDetalleEstudianteProfesor(${indice})`, true, 'Notas, respuestas y estado de cada desafío'));
           }
           if (disponibles('abrirProgramacionDocente')) {
-              principales.push(botonAccion('btn-success', 'fa-clipboard-list', 'Programación y comentarios', `window.abrirProgramacionDocente(${indice})`, true));
+              principales.push(botonAccion('btn-success', 'fa-clipboard-list', 'Programación y comentarios', `window.abrirProgramacionDocente(${indice})`, true, 'Publicá consignas, fechas y devoluciones'));
           }
           if (disponibles('abrirEditorDescuentoEstudiante')) {
-              principales.push(botonAccion('btn-warning', 'fa-circle-minus', 'Editar descuento', `abrirEditorDescuentoEstudiante(${indice})`));
+              principales.push(botonAccion('btn-warning', 'fa-circle-minus', 'Editar descuento', `abrirEditorDescuentoEstudiante(${indice})`, false, 'Ajustá puntos y dejá el motivo'));
           }
 
           const comunicacion = [];
           if (disponibles('abrirMensajeriaDocente')) {
-              comunicacion.push(botonAccion('btn-primary', 'fa-message', 'Enviar mensaje', `abrirMensajeriaDocente('${escapeHtml(d.uid)}')`));
+              comunicacion.push(botonAccion('btn-primary', 'fa-message', 'Enviar mensaje', `abrirMensajeriaDocente('${escapeHtml(d.uid)}')`, false, 'Mostrá un aviso en la pantalla del estudiante'));
           }
           if (disponibles('abrirJitsiDocente')) {
-              comunicacion.push(botonAccion('btn-success', 'fa-video', jitsiDisponible ? 'Volver a Jitsi' : 'Iniciar llamada Jitsi', `abrirJitsiDocente(${indice})`));
+              comunicacion.push(botonAccion('btn-success', 'fa-video', jitsiDisponible ? 'Volver a Jitsi' : 'Iniciar llamada Jitsi', `abrirJitsiDocente(${indice})`, false, 'Abrí o iniciá la comunicación por video'));
           }
           if ((jitsiDisponible || jitsiTieneSala) && disponibles('cerrarSalaJitsiProfesor')) {
-              comunicacion.push(botonAccion('btn-danger', jitsiDisponible ? 'fa-video-slash' : 'fa-broom', jitsiDisponible ? 'Finalizar llamada' : 'Limpiar llamada anterior', `cerrarSalaJitsiProfesor(${indice})`));
+              comunicacion.push(botonAccion('btn-danger', jitsiDisponible ? 'fa-video-slash' : 'fa-broom', jitsiDisponible ? 'Finalizar llamada' : 'Limpiar llamada anterior', `cerrarSalaJitsiProfesor(${indice})`, false, 'Cerrá la sala y registrá su finalización'));
           }
 
           const control = [];
           if (bloqueado && disponibles('desbloquearPantallaEstudianteProfesor')) {
-              control.push(botonAccion('btn-success', 'fa-unlock-keyhole', 'Desbloquear pantalla', `desbloquearPantallaEstudianteProfesor(${indice})`, true));
+              control.push(botonAccion('btn-success', 'fa-unlock-keyhole', 'Desbloquear pantalla', `desbloquearPantallaEstudianteProfesor(${indice})`, true, 'Habilitá nuevamente la actividad'));
           } else if (!bloqueado && disponibles('bloquearPantallaEstudianteProfesor')) {
-              control.push(botonAccion('btn-danger', 'fa-lock', 'Bloquear pantalla', `bloquearPantallaEstudianteProfesor(${indice})`));
+              control.push(botonAccion('btn-danger', 'fa-lock', 'Bloquear pantalla', `bloquearPantallaEstudianteProfesor(${indice})`, false, 'Impedí temporalmente la interacción'));
           }
           if (disponibles('controlarCronometroEstudianteProfesor')) {
-              control.push(botonAccion(pausado ? 'btn-success' : 'btn-warning', pausado ? 'fa-play' : 'fa-pause', `${pausado ? 'Reanudar' : 'Pausar'} cronómetro`, `controlarCronometroEstudianteProfesor(${indice}, '${pausado ? 'reanudar' : 'pausar'}')`));
-              control.push(botonAccion('btn-secondary', 'fa-clock-rotate-left', 'Reiniciar cronómetro', `controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')`));
+              control.push(botonAccion(pausado ? 'btn-success' : 'btn-warning', pausado ? 'fa-play' : 'fa-pause', `${pausado ? 'Reanudar' : 'Pausar'} cronómetro`, `controlarCronometroEstudianteProfesor(${indice}, '${pausado ? 'reanudar' : 'pausar'}')`, false, 'Controlá el tiempo de la actividad'));
+              control.push(botonAccion('btn-secondary', 'fa-clock-rotate-left', 'Reiniciar cronómetro', `controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')`, false, 'Volvé el tiempo a 40:00'));
           }
 
           const historiales = [];
           if (disponibles('abrirHistorialDesbloqueos')) {
-              historiales.push(botonAccion('btn-secondary', 'fa-clock-rotate-left', 'Desbloqueos', `abrirHistorialDesbloqueos(${indice})`));
+              historiales.push(botonAccion('btn-secondary', 'fa-clock-rotate-left', 'Desbloqueos', `abrirHistorialDesbloqueos(${indice})`, false, 'Consultá los motivos y responsables'));
           }
           if (disponibles('abrirHistorialDescuentos')) {
-              historiales.push(botonAccion('btn-secondary', 'fa-file-invoice-dollar', 'Descuentos', `abrirHistorialDescuentos(${indice})`));
+              historiales.push(botonAccion('btn-secondary', 'fa-file-invoice-dollar', 'Descuentos', `abrirHistorialDescuentos(${indice})`, false, 'Revisá ajustes de nota y motivos'));
           }
           if (disponibles('abrirHistorialPestanas')) {
-              historiales.push(botonAccion('btn-secondary', 'fa-window-restore', 'Pestañas visitadas', `abrirHistorialPestanas(${indice})`));
+              historiales.push(botonAccion('btn-secondary', 'fa-window-restore', 'Pestañas visitadas', `abrirHistorialPestanas(${indice})`, false, 'Revisá títulos, dominios y duración'));
           }
           if (disponibles('abrirHistorialPortapapeles')) {
-              historiales.push(botonAccion('btn-secondary', 'fa-clipboard-list', 'Copiar y pegar', `abrirHistorialPortapapeles(${indice})`));
+              historiales.push(botonAccion('btn-secondary', 'fa-clipboard-list', 'Copiar y pegar', `abrirHistorialPortapapeles(${indice})`, false, 'Consultá intentos de copiar, cortar o pegar'));
           }
 
           const mantenimiento = [];
           if (disponibles('reiniciarSalidasEstudianteProfesor')) {
-              mantenimiento.push(botonAccion('btn-warning', 'fa-rotate-left', 'Reiniciar contador de pestañas', `reiniciarSalidasEstudianteProfesor(${indice})`));
+              mantenimiento.push(botonAccion('btn-warning', 'fa-rotate-left', 'Reiniciar contador de pestañas', `reiniciarSalidasEstudianteProfesor(${indice})`, false, 'Poné el contador de salidas en cero'));
           }
           if (disponibles('borrarConsultasIAAlumnoProfesor')) {
-              mantenimiento.push(botonAccion('btn-secondary', 'fa-comments', 'Borrar consultas IA', `borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')`));
+              mantenimiento.push(botonAccion('btn-secondary', 'fa-comments', 'Borrar consultas IA', `borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')`, false, 'Eliminá el historial de consultas del alumno'));
           }
           if (disponibles('eliminarEstudianteProfesor')) {
-              mantenimiento.push(botonAccion('student-action-danger', 'fa-trash-can', 'Eliminar estudiante', `eliminarEstudianteProfesor(estudiantesProfesor[${indice}])`));
+              mantenimiento.push(botonAccion('student-action-danger', 'fa-trash-can', 'Eliminar estudiante', `eliminarEstudianteProfesor(estudiantesProfesor[${indice}])`, false, 'Acción permanente sobre la cuenta'));
           }
 
           contenido.innerHTML = `
