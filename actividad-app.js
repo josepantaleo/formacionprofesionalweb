@@ -2577,7 +2577,7 @@
 
               const savedCode = getLocalStorage(`draft_editor-${sec.id}`) || sec.initialCode;
               const isFinalized = getLocalStorage(`finalized_${sec.id}`) === 'true';
-              const tutorMinimizado = getLocalStorage(`ai_tutor_minimized_${sec.id}`) === 'true';
+              const tutorMinimizado = getLocalStorage(`ai_tutor_minimized_${sec.id}`) !== 'false';
               if (isFinalized) actividadesFinalizadas[sec.id] = true;
               contadorPrevisualizaciones[sec.id] = parseInt(getLocalStorage(`preview_count_${sec.id}`) || '0');
 
@@ -2748,6 +2748,7 @@
                                   </div>
                               </section>
 
+                              <button class="btn tutor-popup-trigger" type="button" onclick="alternarTutorProgramacion('${sec.id}')" aria-controls="ai-chat-${sec.id}" aria-expanded="${String(!tutorMinimizado)}"><i class="fa-solid fa-graduation-cap"></i><span>Tutor de programación</span><small>Ayuda guiada</small></button>
                               <aside class="student-ai-column ${tutorMinimizado ? 'is-minimized' : ''}" aria-label="Tutor de programación">
                                   <div class="ai-chat-box" id="ai-chat-${sec.id}">
                                       <div class="ai-chat-header">
@@ -3718,9 +3719,28 @@
                   <i class="fa-solid ${minimizar ? 'fa-chevron-left' : 'fa-chevron-right'}"></i>
                   <span class="sr-only">${accion}</span>`;
           }
+          seccion.querySelector('.tutor-popup-trigger')?.setAttribute('aria-expanded', String(!minimizar));
           if (!minimizar) {
               columna.querySelector('.ai-chat-input')?.focus({ preventScroll: true });
           }
+      }
+
+      function abrirResumenPestanasEstudiante() {
+          const modal = document.getElementById('resumenPestanasEstudianteModal');
+          const contenido = document.getElementById('resumenPestanasEstudianteContenido');
+          if (!modal || !contenido) return;
+          const eventos = Array.isArray(eventosSalidasPestana) ? eventosSalidasPestana : [];
+          const total = eventos.length;
+          const segundos = eventos.reduce((suma, item) => suma + Math.max(0, Number(item.duracionSegundos || item.duracion || 0)), 0);
+          const minutos = Math.round(segundos / 60);
+          contenido.innerHTML = `<div class="student-tabs-summary-stats"><div><small>Cambios registrados</small><strong>${total}</strong></div><div><small>Tiempo fuera</small><strong>${minutos} min</strong></div><div><small>Último cambio</small><strong>${total ? escapeHtml(new Date(eventos[total - 1].timestamp || eventos[total - 1].en || Date.now()).toLocaleTimeString('es-AR')) : 'Sin cambios'}</strong></div></div><div class="student-tabs-summary-list">${total ? eventos.slice(-12).reverse().map(item => `<article><strong>${escapeHtml(item.titulo || item.dominio || item.motivo || 'Cambio de pestaña')}</strong><small>${escapeHtml(new Date(item.timestamp || item.en || Date.now()).toLocaleString('es-AR'))} · ${Math.max(0, Number(item.duracionSegundos || item.duracion || 0))} s</small></article>`).join('') : '<p class="student-tabs-summary-empty">Todavía no hay cambios de pestaña registrados.</p>'}</div>`;
+          modal.classList.add('active');
+          document.body.classList.add('student-tabs-summary-open');
+          modal.querySelector('.student-tabs-summary-box')?.focus({preventScroll:true});
+      }
+      function cerrarResumenPestanasEstudiante() {
+          document.getElementById('resumenPestanasEstudianteModal')?.classList.remove('active');
+          document.body.classList.remove('student-tabs-summary-open');
       }
 
       async function solicitarAyudaEditor(sectionId, modo, boton = null) {
@@ -9012,6 +9032,67 @@
           alert('Pantalla desbloqueada y evento registrado en el historial.');
       }
 
+      async function desbloquearActividadesEstudianteProfesor(indice, alcance = 'actual') {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) { alert('No se encontró el identificador Firebase del estudiante.'); return; }
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'el estudiante';
+          const todas = alcance === 'todas';
+          const sectionId = todas ? '' : (d.seccionActiva || d.pantallaBloqueadaSeccion || seccionActivaActual || '');
+          if (!todas && !sectionId) { alert('No se pudo identificar la actividad actual. Abrí el detalle del estudiante y seleccioná una actividad.'); return; }
+          if (!confirm(todas ? `¿Desbloquear todas las actividades finalizadas de ${nombre}?` : `¿Desbloquear la actividad ${sectionId} de ${nombre}?`)) return;
+          const ok = await window.desbloquearActividadesEstudianteFirebase?.(d.uid, sectionId);
+          if (!ok) { alert('No se pudieron desbloquear las actividades. Verificá las reglas de Firestore.'); return; }
+          if (d.finalizadas && todas) Object.keys(d.finalizadas).forEach(id => delete d.finalizadas[id]);
+          if (d.finalizadas && sectionId) delete d.finalizadas[sectionId];
+          renderPanelProfesor();
+          alert(todas ? 'Todas las actividades fueron desbloqueadas.' : 'La actividad fue desbloqueada.');
+      }
+
+      function abrirSelectorDesbloqueoActividades(indice) {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid) { alert('No se encontró el identificador Firebase del estudiante.'); return; }
+          const finalizadas = d.finalizadas || {};
+          const actividades = seccionesData.filter(sec => finalizadas[sec.id] === true);
+          if (!actividades.length) { alert('Este estudiante no tiene actividades finalizadas para desbloquear.'); return; }
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'el estudiante';
+          document.getElementById('selectorDesbloqueoActividadesModal')?.remove();
+          const modal = document.createElement('div');
+          modal.id = 'selectorDesbloqueoActividadesModal';
+          modal.className = 'modal-overlay';
+          modal.setAttribute('role', 'dialog');
+          modal.setAttribute('aria-modal', 'true');
+          modal.innerHTML = `<div class="modal-box teacher-unlock-selector-box" tabindex="-1"><header class="teacher-unlock-selector-header"><div><span class="student-progress-eyebrow">Panel docente</span><h3><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear actividades</h3><p>${escapeHtml(nombre)} · Elegí exactamente qué actividades volver a habilitar.</p></div><button type="button" class="btn btn-secondary teacher-unlock-selector-close" aria-label="Cerrar"><span aria-hidden="true">×</span></button></header><div class="teacher-unlock-selector-toolbar"><button type="button" class="btn btn-secondary" data-unlock-select-all><i class="fa-solid fa-check-double"></i> Seleccionar todas</button><button type="button" class="btn btn-secondary" data-unlock-clear><i class="fa-solid fa-square-minus"></i> Limpiar selección</button><span data-unlock-count>0 seleccionadas</span></div><div class="teacher-unlock-selector-list">${actividades.map(sec => `<label class="teacher-unlock-option"><input type="checkbox" value="${escapeHtml(sec.id)}"><span><strong>${escapeHtml(sec.title || sec.id)}</strong><small>Actividad finalizada · se conservarán respuestas y calificaciones</small></span></label>`).join('')}</div><div class="teacher-unlock-selector-actions"><span class="teacher-unlock-selector-status" role="status"></span><button type="button" class="btn btn-success" data-unlock-confirm disabled><i class="fa-solid fa-unlock"></i> Desbloquear seleccionadas</button></div></div>`;
+          document.body.appendChild(modal);
+          const cerrar = () => modal.remove();
+          modal.querySelector('.teacher-unlock-selector-close').onclick = cerrar;
+          modal.onclick = event => { if (event.target === modal) cerrar(); };
+          const checks = () => [...modal.querySelectorAll('input[type="checkbox"]')];
+          const actualizar = () => {
+              const seleccionadas = checks().filter(input => input.checked).length;
+              modal.querySelector('[data-unlock-count]').textContent = `${seleccionadas} seleccionada${seleccionadas === 1 ? '' : 's'}`;
+              modal.querySelector('[data-unlock-confirm]').disabled = seleccionadas === 0;
+          };
+          modal.querySelectorAll('input[type="checkbox"]').forEach(input => input.addEventListener('change', actualizar));
+          modal.querySelector('[data-unlock-select-all]').onclick = () => { checks().forEach(input => input.checked = true); actualizar(); };
+          modal.querySelector('[data-unlock-clear]').onclick = () => { checks().forEach(input => input.checked = false); actualizar(); };
+          modal.querySelector('[data-unlock-confirm]').onclick = async () => {
+              const ids = checks().filter(input => input.checked).map(input => input.value);
+              if (!ids.length) return;
+              const boton = modal.querySelector('[data-unlock-confirm]');
+              const contador = modal.querySelector('[data-unlock-count]');
+              boton.disabled = true;
+              contador.textContent = 'Guardando desbloqueos...';
+              const ok = await window.desbloquearActividadesEstudianteFirebase?.(d.uid, ids);
+              if (!ok) { contador.textContent = 'No se pudo guardar. Verificá las reglas de Firestore.'; boton.disabled = false; return; }
+              ids.forEach(id => delete d.finalizadas[id]);
+              renderPanelProfesor();
+              cerrar();
+              alert(`${ids.length} actividad${ids.length === 1 ? '' : 'es'} desbloqueada${ids.length === 1 ? '' : 's'} correctamente.`);
+          };
+          modal.classList.add('active');
+          modal.querySelector('.teacher-unlock-selector-box').focus({preventScroll:true});
+      }
+
       async function bloquearPantallaEstudianteProfesor(indice) {
           const d = estudiantesProfesor[indice];
           if (!d?.uid) { alert('No se encontró el identificador Firebase del estudiante.'); return; }
@@ -10711,6 +10792,11 @@
               principales.push(botonAccion('btn-warning', 'fa-circle-minus', 'Editar descuento', `abrirEditorDescuentoEstudiante(${indice})`, false, 'Ajustá puntos y dejá el motivo'));
           }
 
+          if (disponibles('desbloquearActividadesEstudianteProfesor')) {
+              principales.push(botonAccion('btn-success', 'fa-unlock', 'Desbloquear actividad', `abrirSelectorDesbloqueoActividades(${indice})`, true, 'Elegí qué actividad finalizada volver a habilitar'));
+              principales.push(botonAccion('btn-success', 'fa-unlock-keyhole', 'Desbloquear todas', `desbloquearActividadesEstudianteProfesor(${indice}, 'todas')`, true, 'Volvé a habilitar todas las actividades finalizadas'));
+          }
+
           const comunicacion = [];
           if (disponibles('abrirMensajeriaDocente')) {
               comunicacion.push(botonAccion('btn-primary', 'fa-message', 'Enviar mensaje', `abrirMensajeriaDocente('${escapeHtml(d.uid)}')`, false, 'Mostrá un aviso en la pantalla del estudiante'));
@@ -12129,6 +12215,13 @@
                   <div><small>Respuestas socráticas</small><strong>${totalRespuestas}</strong><span>Solo desafíos finalizados</span></div>
                   <div><small>Plan personal</small><strong>${completadas}/${datos.recomendaciones.length}</strong><span>${enProgreso} en progreso</span></div>
               </div>
+              <section class="student-progress-chart-section">
+                  <header><div><i class="fa-solid fa-chart-column"></i><strong>Gráfico de calificaciones</strong></div><small>Escala de 0 a 10 por desafío</small></header>
+                  <div class="student-progress-chart" role="img" aria-label="Gráfico de calificaciones por desafío">${datos.actividades.map(actividad => {
+                      const nota = Number.isFinite(actividad.nota) ? Math.max(0, Math.min(10, actividad.nota)) : 0;
+                      return `<div class="student-progress-chart-item" title="${escapeHtml(`${actividad.titulo}: ${Number.isFinite(actividad.nota) ? actividad.nota.toFixed(1) : 'sin nota'}`)}"><div class="student-progress-chart-track"><span class="${colores(actividad)}" style="height:${nota * 10}%"></span></div><strong>${Number.isFinite(actividad.nota) ? actividad.nota.toFixed(1) : '—'}</strong><small>${actividad.indice}</small></div>`;
+                  }).join('')}</div>
+              </section>
               <section class="student-heatmap-section">
                   <header><div><i class="fa-solid fa-grip"></i><strong>Calificaciones por desafío</strong></div>
                       <div class="student-heatmap-legend">

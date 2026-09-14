@@ -21,7 +21,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         autocompletion,
         completionKeymap,
         startCompletion
-} from "./codemirror-bundle.js?v=20260914-2";
+} from "./codemirror-bundle.js?v=20260914-3";
 
       window.CodeMirror6 = {
         Compartment,
@@ -3025,6 +3025,40 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             code: error?.code || "",
             message: error?.message || "Error desconocido"
           };
+          return false;
+        }
+      };
+
+      window.desbloquearActividadesEstudianteFirebase = async function(uid, sectionId = "") {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !(await verificarUsuarioDocente(user))) return false;
+        try {
+          const estudianteRef = doc(database, "estudiantes", uid);
+          await runTransaction(database, async transaction => {
+            const snapshot = await transaction.get(estudianteRef);
+            if (!snapshot.exists()) throw new Error("student-not-found");
+            const datos = snapshot.data();
+            const finalizadas = { ...(datos.finalizadas || {}) };
+            const ids = Array.isArray(sectionId) ? sectionId.filter(Boolean).map(String) : (sectionId ? [String(sectionId)] : []);
+            if (ids.length) ids.forEach(id => delete finalizadas[id]);
+            else Object.keys(finalizadas).forEach(id => delete finalizadas[id]);
+            transaction.set(estudianteRef, {
+              finalizadas,
+              desbloqueoActividades: {
+                id: `${Date.now()}-${uid}`,
+                seccion: ids.length ? ids : "todas",
+                por: user.email || user.displayName || user.uid,
+                porUid: user.uid,
+                en: serverTimestamp()
+              },
+              actualizadoEn: serverTimestamp()
+            }, { merge: true });
+          });
+          return true;
+        } catch (error) {
+          console.error("Error desbloqueando actividades del estudiante:", error);
           return false;
         }
       };

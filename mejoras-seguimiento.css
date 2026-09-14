@@ -5315,6 +5315,31 @@ body.teacher-light-mode .teacher-detail-quick-filters button.is-active{
 }
 
 /* Acceso compacto y popup de progreso del estudiante */
+.student-tabs-summary-trigger{display:inline-flex;align-items:center;gap:.45rem;min-height:2.35rem}
+.student-tabs-summary-modal{z-index:12000}
+.student-tabs-summary-box{width:min(760px,calc(100vw - 1rem));max-height:calc(100dvh - 1rem);overflow:auto}
+.student-tabs-summary-content{padding:1rem}
+.student-tabs-summary-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.6rem;margin-bottom:1rem}
+.student-tabs-summary-stats>div{padding:.8rem;border:1px solid rgba(56,189,248,.24);border-radius:8px;background:rgba(15,23,42,.72)}
+.student-tabs-summary-stats small,.student-tabs-summary-list small{display:block;color:var(--text-muted);font-size:.72rem}
+.student-tabs-summary-stats strong{display:block;margin-top:.2rem;color:#e0f2fe;font-size:1.25rem}
+.student-tabs-summary-list{display:grid;gap:.5rem}
+.student-tabs-summary-list article{padding:.7rem .8rem;border:1px solid rgba(148,163,184,.18);border-radius:7px;background:rgba(30,41,59,.35)}
+.student-tabs-summary-list article strong{display:block;color:#f8fafc;font-size:.82rem}
+.student-tabs-summary-empty{margin:0;color:var(--text-muted)}
+.student-progress-chart-section{margin:1rem 0;padding:.9rem;border:1px solid rgba(56,189,248,.2);border-radius:8px;background:#0f172a}
+.student-progress-chart-section header{display:flex;justify-content:space-between;gap:.7rem;align-items:center;margin-bottom:.8rem}
+.student-progress-chart-section header small{color:var(--text-muted)}
+.student-progress-chart{display:grid;grid-template-columns:repeat(auto-fit,minmax(34px,1fr));align-items:end;gap:.55rem;min-height:180px;padding:.5rem .2rem .1rem}
+.student-progress-chart-item{display:grid;grid-template-rows:1fr auto auto;gap:.2rem;min-width:0;height:170px;text-align:center}
+.student-progress-chart-track{display:flex;align-items:flex-end;justify-content:center;height:130px;border-bottom:1px solid rgba(148,163,184,.25);background:repeating-linear-gradient(to top,transparent 0,transparent 25px,rgba(148,163,184,.09) 26px)}
+.student-progress-chart-track span{display:block;width:min(28px,80%);min-height:3px;border-radius:4px 4px 0 0;background:#38bdf8}
+.student-progress-chart-track span.is-critical{background:#ef4444}.student-progress-chart-track span.is-warning{background:#f59e0b}.student-progress-chart-track span.is-good{background:#22c55e}.student-progress-chart-track span.is-excellent{background:#06b6d4}.student-progress-chart-item strong{font-size:.68rem;color:#e2e8f0}.student-progress-chart-item small{font-size:.65rem;color:#94a3b8}
+.tutor-popup-trigger{display:flex;align-items:center;gap:.55rem;width:100%;margin:.65rem 0 0;padding:.65rem .8rem;text-align:left;background:linear-gradient(135deg,#0e7490,#1d4ed8);border:1px solid rgba(125,211,252,.45)}
+.tutor-popup-trigger small{margin-left:auto;color:#dbeafe;font-size:.7rem}
+.student-coding-workspace{width:100%;max-width:none}
+.section-card{width:100%;max-width:none}
+@media(max-width:700px){.student-tabs-summary-stats{grid-template-columns:1fr 1fr}.student-tabs-summary-stats>div:last-child{grid-column:1/-1}.student-progress-chart{gap:.25rem}.tutor-popup-trigger{min-height:44px}}
 .student-progress-trigger{
   display:grid;
   grid-template-columns:34px minmax(0,1fr) auto;

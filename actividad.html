@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -15,8 +15,8 @@
       href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="actividad-base.css?v=20260914-2" />
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260914-2" />
+    <link rel="stylesheet" href="actividad-base.css?v=20260914-3" />
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260914-3" />
     <style>
       .skip-link {
         position: fixed;
@@ -239,7 +239,7 @@
       }
     </style>
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
-    <script type="module" src="actividad-firebase.js?v=20260914-2"></script>
+    <script type="module" src="actividad-firebase.js?v=20260914-3"></script>
   </head>
   <body onload="initApp()">
     <a class="skip-link" href="#contenidoPrincipal">Saltar al contenido principal</a>
@@ -308,6 +308,9 @@
             <i class="fa-solid fa-eye"></i> Cambios de pestaña:
             <span id="blurCount">0</span>
           </div>
+          <button class="btn btn-secondary student-tabs-summary-trigger" id="btnAbrirResumenPestanas" type="button" onclick="abrirResumenPestanasEstudiante()" aria-haspopup="dialog" aria-controls="resumenPestanasEstudianteModal">
+            <i class="fa-solid fa-window-restore"></i><span>Mi resumen de pestañas</span>
+          </button>
           <button class="btn btn-secondary" id="btnJustificarSalida" style="display:none;font-size:.75rem;padding:.4rem .8rem" onclick="abrirJustificacionUltimaSalida()">
             <i class="fa-solid fa-comment"></i> Justificar última
           </button>
@@ -397,6 +400,19 @@
       <div id="sectionsContainer"></div>
       <div style="height: 80px"></div>
     </main>
+
+    <div class="modal-overlay student-tabs-summary-modal" id="resumenPestanasEstudianteModal" role="dialog" aria-modal="true" aria-labelledby="resumenPestanasEstudianteTitle">
+      <div class="modal-box student-tabs-summary-box" tabindex="-1">
+        <header class="student-progress-modal-header">
+          <div class="student-progress-modal-heading">
+            <span class="student-progress-report-icon" aria-hidden="true"><i class="fa-solid fa-window-restore"></i></span>
+            <div><span class="student-progress-eyebrow">Seguimiento personal</span><h2 id="resumenPestanasEstudianteTitle">Mi resumen de pestañas</h2><p>Revisá tus cambios de pestaña y el tiempo fuera de la actividad.</p></div>
+          </div>
+          <button class="btn student-progress-modal-close" type="button" onclick="cerrarResumenPestanasEstudiante()" aria-label="Cerrar resumen de pestañas"><span aria-hidden="true">×</span></button>
+        </header>
+        <section id="resumenPestanasEstudianteContenido" class="student-tabs-summary-content" aria-live="polite"></section>
+      </div>
+    </div>
 
     <!-- Panel docente en tiempo real -->
     <div class="modal-overlay" id="panelProfesorModal" role="dialog" aria-modal="true" aria-labelledby="panelProfesorTitle">
@@ -1224,13 +1240,13 @@
       </button>
     </div>
 
-    <script src="actividad-network-status.js?v=20260914-2"></script>
-    <script src="actividad-utils.js?v=20260914-2"></script>
-    <script src="actividad-pdf-loader.js?v=20260914-2"></script>
-    <script src="actividad-app.js?v=20260914-2"></script>
-    <script src="panel-profesor.js?v=20260914-2"></script>
-    <script src="actividad-cooperacion.js?v=20260914-2"></script>
-    <script src="mejoras-seguimiento.js?v=20260914-2"></script>
+    <script src="actividad-network-status.js?v=20260914-3"></script>
+    <script src="actividad-utils.js?v=20260914-3"></script>
+    <script src="actividad-pdf-loader.js?v=20260914-3"></script>
+    <script src="actividad-app.js?v=20260914-3"></script>
+    <script src="panel-profesor.js?v=20260914-3"></script>
+    <script src="actividad-cooperacion.js?v=20260914-3"></script>
+    <script src="mejoras-seguimiento.js?v=20260914-3"></script>
   </body>
 </html>
 
