@@ -56,7 +56,11 @@ git push -u origin main
 
 Si el repositorio remoto ya contiene archivos, clonarlo primero o agregar el remoto y revisar su historial antes de realizar el primer `push`.
 
-## Actualización del 10 de septiembre de 2026
+## Actualización del 14 de septiembre de 2026
+
+- Versión de publicación: `20260914-1`.
+- El acceso a “Mi progreso y calificaciones” se presenta como un botón popup para no ocupar espacio permanente en la actividad.
+- El popup reúne avance, calificaciones por desafío, recomendaciones y descarga PDF.
 
 - `actividad.html` fue separado en módulos HTML, CSS y JavaScript.
 - Se mantuvo el orden de ejecución y la compatibilidad con las funciones globales existentes.

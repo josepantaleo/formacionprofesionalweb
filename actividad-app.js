@@ -12071,6 +12071,35 @@
           }
       }
 
+      function abrirProgresoEstudiante() {
+          if (!cuentaEstudianteActiva) {
+              alert("Ingresá como estudiante para ver tu progreso y tus calificaciones.");
+              return;
+          }
+          const modal = document.getElementById("progresoEstudianteModal");
+          if (!modal) return;
+          renderInformeVisualEstudiante();
+          modal.classList.add("active");
+          document.body.classList.add("student-progress-modal-open");
+          setTimeout(() => modal.querySelector(".student-progress-modal-box")?.focus({ preventScroll: true }), 0);
+      }
+
+      function cerrarProgresoEstudiante() {
+          document.getElementById("progresoEstudianteModal")?.classList.remove("active");
+          document.body.classList.remove("student-progress-modal-open");
+          document.getElementById("btnAbrirProgresoEstudiante")?.focus({ preventScroll: true });
+      }
+
+      document.getElementById("progresoEstudianteModal")?.addEventListener("click", event => {
+          if (event.target?.id === "progresoEstudianteModal") cerrarProgresoEstudiante();
+      });
+
+      document.addEventListener("keydown", event => {
+          if (event.key === "Escape" && document.getElementById("progresoEstudianteModal")?.classList.contains("active")) {
+              cerrarProgresoEstudiante();
+          }
+      });
+
       function renderInformeVisualEstudiante() {
           const contenedor = document.getElementById("informeVisualEstudianteContenido");
           if (!contenedor || !cuentaEstudianteActiva) return;
@@ -12089,6 +12118,10 @@
           };
           const completadas = datos.recomendaciones.filter(item => item.estado === "completada").length;
           const enProgreso = datos.recomendaciones.filter(item => item.estado === "en_progreso").length;
+          const resumenBoton = document.getElementById("resumenBotonProgreso");
+          if (resumenBoton) {
+              resumenBoton.textContent = `${datos.progreso}% completado · Promedio ${formatearNotaGrafico(datos.promedio)}`;
+          }
           contenedor.innerHTML = `
               <div class="student-report-summary">
                   <div><small>Avance</small><strong>${datos.progreso}%</strong><span>${datos.finalizadas}/${datos.actividades.length} desafíos</span></div>
@@ -12097,7 +12130,7 @@
                   <div><small>Plan personal</small><strong>${completadas}/${datos.recomendaciones.length}</strong><span>${enProgreso} en progreso</span></div>
               </div>
               <section class="student-heatmap-section">
-                  <header><div><i class="fa-solid fa-grip"></i><strong>Mapa de calor de notas</strong></div>
+                  <header><div><i class="fa-solid fa-grip"></i><strong>Calificaciones por desafío</strong></div>
                       <div class="student-heatmap-legend">
                           <span class="is-pending">Pendiente</span><span class="is-ungraded">Sin nota</span>
                           <span class="is-critical">0–3,9</span><span class="is-warning">4–5,9</span>

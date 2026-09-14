@@ -5289,3 +5289,235 @@ body.teacher-light-mode .teacher-detail-quick-filters button.is-active{
     grid-column:auto;
   }
 }
+
+/* Acceso compacto y popup de progreso del estudiante */
+.student-progress-trigger{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr) auto;
+  align-items:center;
+  gap:.55rem;
+  min-width:238px;
+  padding:.42rem .62rem;
+  border:1px solid rgba(56,189,248,.5);
+  border-radius:7px;
+  background:#0c4a6e;
+  color:#f0f9ff;
+  text-align:left;
+  box-shadow:0 5px 16px rgba(2,132,199,.18);
+}
+.student-progress-trigger:hover{
+  border-color:#7dd3fc;
+  background:#075985;
+}
+.student-progress-trigger-icon{
+  display:grid;
+  place-items:center;
+  width:34px;
+  height:34px;
+  border-radius:6px;
+  background:rgba(125,211,252,.16);
+  color:#7dd3fc;
+}
+.student-progress-trigger-copy{
+  display:grid;
+  gap:.08rem;
+  min-width:0;
+}
+.student-progress-trigger-copy strong{
+  font-size:.72rem;
+  line-height:1.2;
+}
+.student-progress-trigger-copy small{
+  overflow:hidden;
+  color:#bae6fd;
+  font-size:.6rem;
+  line-height:1.2;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.student-progress-trigger-arrow{
+  color:#7dd3fc;
+  font-size:.65rem;
+}
+body.teacher-authorized .student-progress-trigger{
+  display:none;
+}
+body.student-progress-modal-open{
+  overflow:hidden;
+}
+.student-progress-modal{
+  z-index:12500!important;
+  padding:1rem;
+}
+.student-progress-modal-box{
+  box-sizing:border-box;
+  width:min(1180px,calc(100vw - 2rem));
+  max-width:1180px;
+  max-height:calc(100dvh - 2rem);
+  padding:0;
+  overflow:hidden;
+  border:1px solid rgba(56,189,248,.4);
+  border-radius:8px;
+  background:#0b1220;
+  box-shadow:0 26px 80px rgba(0,0,0,.68);
+}
+.student-progress-modal-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:1rem;
+  padding:.85rem 1rem;
+  border-bottom:1px solid rgba(148,163,184,.2);
+  background:#111c30;
+}
+.student-progress-modal-heading{
+  display:flex;
+  align-items:center;
+  gap:.7rem;
+  min-width:0;
+}
+.student-progress-modal-heading h2{
+  margin:.08rem 0 0;
+  color:#f0f9ff;
+  font-size:1.05rem;
+  letter-spacing:0;
+}
+.student-progress-modal-heading p{
+  margin:.18rem 0 0;
+  color:#94a3b8;
+  font-size:.68rem;
+}
+.student-progress-eyebrow{
+  display:block;
+  color:#7dd3fc;
+  font-size:.58rem;
+  font-weight:800;
+  text-transform:uppercase;
+}
+.student-progress-modal-actions{
+  display:flex;
+  align-items:center;
+  gap:.4rem;
+  flex:0 0 auto;
+}
+.student-progress-modal-actions .btn{
+  min-height:38px;
+}
+.student-progress-modal-close{
+  display:grid!important;
+  place-items:center;
+  width:38px;
+  min-width:38px;
+  height:38px;
+  padding:0!important;
+  border:1px solid #64748b;
+  background:#475569;
+  color:#fff;
+}
+.student-progress-modal-close span{
+  font-size:1.25rem;
+  line-height:1;
+}
+#progresoEstudianteModal .student-progress-report{
+  width:auto;
+  max-height:calc(100dvh - 7rem);
+  margin:0;
+  padding:1rem;
+  overflow:auto;
+  overscroll-behavior:contain;
+  border:0;
+  border-radius:0;
+  background:#0b1220;
+  box-shadow:none;
+}
+#progresoEstudianteModal .student-report-summary>div{
+  border-color:rgba(56,189,248,.2);
+  background:#111c30;
+}
+#progresoEstudianteModal .student-heatmap-section,
+#progresoEstudianteModal .student-recommendations-section{
+  border-color:rgba(148,163,184,.18);
+  background:#0f172a;
+}
+
+@media(max-width:900px){
+  .top-header>div:last-child{
+    width:100%;
+  }
+  .student-progress-trigger{
+    order:8;
+    flex:1 1 260px;
+  }
+  .progress-wrapper{
+    order:9;
+    flex:1 1 150px;
+  }
+}
+
+@media(max-width:760px){
+  .student-progress-trigger{
+    width:100%;
+    min-width:0;
+  }
+  .student-progress-modal{
+    padding:.4rem;
+  }
+  .student-progress-modal-box{
+    width:100%;
+    max-width:100%;
+    max-height:calc(100dvh - .8rem);
+  }
+  .student-progress-modal-header{
+    align-items:flex-start;
+    padding:.7rem;
+  }
+  .student-progress-modal-heading p{
+    display:none;
+  }
+  .student-progress-modal-actions .btn:not(.student-progress-modal-close) span{
+    display:none;
+  }
+  .student-progress-modal-actions .btn:not(.student-progress-modal-close) i{
+    display:none;
+  }
+  .student-progress-refresh::after{
+    content:"↻";
+    font-size:1rem;
+    line-height:1;
+  }
+  .student-progress-pdf::after{
+    content:"PDF";
+    font-size:.56rem;
+    font-weight:900;
+    line-height:1;
+  }
+  #progresoEstudianteModal .student-progress-report{
+    max-height:calc(100dvh - 5.3rem);
+    padding:.7rem;
+  }
+}
+
+@media(max-width:560px){
+  .student-progress-modal-header{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:.55rem;
+  }
+  .student-progress-modal-heading .student-progress-report-icon{
+    display:none;
+  }
+  .student-progress-modal-heading h2{
+    font-size:.9rem;
+  }
+  .student-progress-modal-actions{
+    justify-content:flex-start;
+    gap:.25rem;
+  }
+  .student-progress-modal-actions .btn{
+    width:36px;
+    min-width:36px;
+    min-height:36px;
+    padding:0;
+    justify-content:center;
+  }
+}
