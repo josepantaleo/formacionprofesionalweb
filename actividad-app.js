@@ -9730,6 +9730,27 @@
           const resumenNivelesAnalista = obtenerConteoInformeSocratico(d);
           const respuestasSocraticasValidas = Object.values(resumenNivelesAnalista)
               .reduce((suma, valor) => suma + Number(valor || 0), 0);
+          const desafioActualId = d.seccionActiva || d.pantallaBloqueadaSeccion
+              || seccionesData.find(sec => !finalizadas[sec.id])?.id
+              || null;
+          const desafioActual = seccionesData.find(sec => sec.id === desafioActualId) || null;
+          const claseBarraNota = nota => {
+              if (!Number.isFinite(Number(nota))) return "is-ungraded";
+              if (Number(nota) < 4) return "is-critical";
+              if (Number(nota) < 6) return "is-warning";
+              if (Number(nota) < 8) return "is-good";
+              return "is-excellent";
+          };
+          const graficoNotasHtml = seccionesData.map((sec, numero) => {
+              const nota = obtenerNotaDesafioEstudiante(d, sec.id, historial[sec.id] || {});
+              const notaNumerica = nota === null || nota === undefined || nota === "" ? null : Number(nota);
+              const valor = Number.isFinite(notaNumerica) ? Math.max(0, Math.min(10, notaNumerica)) : 0;
+              const actual = sec.id === desafioActualId;
+              return `<div class="student-progress-chart-item ${actual ? "is-current" : ""}" title="${escapeHtml(`${sec.title}: ${Number.isFinite(Number(nota)) ? `${Number(nota).toFixed(1)}/10` : "sin nota"}${actual ? " · desafío actual" : ""}`)}">
+                  <div class="student-progress-chart-track"><span class="${claseBarraNota(nota)}" style="height:${valor * 10}%"></span></div>
+                  <strong>${Number.isFinite(Number(nota)) ? Number(nota).toFixed(1) : "—"}</strong><small>${numero + 1}</small>
+              </div>`;
+          }).join("");
           const eventos = Array.isArray(d.eventosSalidasPestana)
               ? d.eventosSalidasPestana
               : (Array.isArray(d.eventosSalidasPestana) ? d.eventosSalidasPestana : []);
@@ -9977,6 +9998,18 @@
 
           document.getElementById('detalleEstudianteProfesorContenido').innerHTML = `
               ${panelAprobacion}
+              <section class="student-current-challenge ${desafioActual ? "" : "is-complete"}" aria-label="Desafío actual del estudiante">
+                  <div class="student-current-challenge-icon"><i class="fa-solid ${desafioActual ? "fa-location-crosshairs" : "fa-flag-checkered"}"></i></div>
+                  <div class="student-current-challenge-copy">
+                      <small>${desafioActual ? "DESAFÍO ACTUAL DEL ESTUDIANTE" : "TRAYECTO COMPLETADO"}</small>
+                      <strong>${escapeHtml(desafioActual ? desafioActual.title : "Todos los desafíos finalizados")}</strong>
+                      <span>${desafioActual ? `Última sección registrada: ${escapeHtml(d.seccionActiva || "sin registro")}.` : "El estudiante ya completó todos los desafíos disponibles."}</span>
+                  </div>
+              </section>
+              <section class="student-progress-chart-section teacher-student-grade-chart">
+                  <header><div><i class="fa-solid fa-chart-column"></i><strong>Gráfico de notas por desafío</strong></div><small>Escala de 0 a 10 · la barra resaltada es el desafío actual</small></header>
+                  <div class="student-progress-chart" role="img" aria-label="Gráfico de notas por desafío del estudiante">${graficoNotasHtml}</div>
+              </section>
               <div class="teacher-detail-summary">
                   <div class="teacher-detail-stat"><small>Nombre</small><strong>${escapeHtml(e.nombre || d.nombreGoogle || 'Sin nombre')}</strong></div>
                   <div class="teacher-detail-stat"><small>Email</small><strong>${escapeHtml(d.email || 'Sin email')}</strong></div>
