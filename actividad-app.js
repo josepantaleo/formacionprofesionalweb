@@ -12268,6 +12268,12 @@
               if (actividad.nota < 8) return "is-good";
               return "is-excellent";
           };
+          const actividadActiva = datos.actividades.find(item => item.id === seccionActivaActual)
+              || datos.actividades.find(item => !item.finalizada)
+              || null;
+          const desafioActualTexto = actividadActiva
+              ? `Desafío ${actividadActiva.indice}: ${actividadActiva.titulo.replace(/^\d+\.\s*/, "")}`
+              : "Trayecto completado";
           const completadas = datos.recomendaciones.filter(item => item.estado === "completada").length;
           const enProgreso = datos.recomendaciones.filter(item => item.estado === "en_progreso").length;
           const resumenBoton = document.getElementById("resumenBotonProgreso");
@@ -12275,6 +12281,15 @@
               resumenBoton.textContent = `${datos.progreso}% completado · Promedio ${formatearNotaGrafico(datos.promedio)}`;
           }
           contenedor.innerHTML = `
+              <section class="student-current-challenge ${actividadActiva ? "" : "is-complete"}" aria-label="Desafío actual">
+                  <div class="student-current-challenge-icon"><i class="fa-solid ${actividadActiva ? "fa-location-crosshairs" : "fa-flag-checkered"}"></i></div>
+                  <div class="student-current-challenge-copy">
+                      <small>${actividadActiva ? "DESAFÍO ACTUAL" : "TRAYECTO COMPLETADO"}</small>
+                      <strong>${escapeHtml(desafioActualTexto)}</strong>
+                      <span>${actividadActiva?.finalizada ? "Seleccionado recientemente. Podés revisar su nota y volver a practicar." : "Continuá con este desafío para avanzar al siguiente."}</span>
+                  </div>
+                  ${actividadActiva ? `<b>${Number.isFinite(actividadActiva.nota) ? `${actividadActiva.nota.toFixed(1)}/10` : (actividadActiva.finalizada ? "Sin nota" : "Pendiente")}</b>` : ""}
+              </section>
               <div class="student-report-summary">
                   <div><small>Avance</small><strong>${datos.progreso}%</strong><span>${datos.finalizadas}/${datos.actividades.length} desafíos</span></div>
                   <div><small>Promedio actual</small><strong>${formatearNotaGrafico(datos.promedio)}</strong><span>${datos.evaluadas.length} desafíos con nota</span></div>
@@ -12285,6 +12300,8 @@
                   <header><div><i class="fa-solid fa-chart-column"></i><strong>Gráfico de calificaciones</strong></div><small>Escala de 0 a 10 por desafío</small></header>
                   <div class="student-progress-chart" role="img" aria-label="Gráfico de calificaciones por desafío">${datos.actividades.map(actividad => {
                       const nota = Number.isFinite(actividad.nota) ? Math.max(0, Math.min(10, actividad.nota)) : 0;
+                      const esActual = actividadActiva?.id === actividad.id;
+                      const claseActual = esActual ? " is-current" : "";
                       return `<div class="student-progress-chart-item" title="${escapeHtml(`${actividad.titulo}: ${Number.isFinite(actividad.nota) ? actividad.nota.toFixed(1) : 'sin nota'}`)}"><div class="student-progress-chart-track"><span class="${colores(actividad)}" style="height:${nota * 10}%"></span></div><strong>${Number.isFinite(actividad.nota) ? actividad.nota.toFixed(1) : '—'}</strong><small>${actividad.indice}</small></div>`;
                   }).join('')}</div>
               </section>
@@ -12330,6 +12347,15 @@
                       </article>`).join("")}</div>
                   <p id="estadoInformeVisualEstudiante" class="student-report-save-status">Estados sincronizados con tu progreso.</p>
               </section>`;
+          if (actividadActiva) {
+              const indiceActual = datos.actividades.findIndex(item => item.id === actividadActiva.id);
+              const barraActual = contenedor.querySelectorAll(".student-progress-chart-item")[indiceActual];
+              const tarjetaActual = contenedor.querySelectorAll(".student-heatmap-cell")[indiceActual];
+              barraActual?.classList.add("is-current");
+              tarjetaActual?.classList.add("is-current");
+              if (barraActual) barraActual.querySelector("small").textContent += " · actual";
+              if (tarjetaActual) tarjetaActual.querySelector("strong").insertAdjacentHTML("beforeend", "<em>Actual</em>");
+          }
       }
 
       async function exportarResultadosPDF() {
