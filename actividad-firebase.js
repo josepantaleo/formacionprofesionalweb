@@ -715,7 +715,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               }
             }));
           }
-          if (datos.mensajeDocenteActual?.id) {
+          if (datos.mensajeDocenteActual?.id && datos.mensajeDocenteActual.leido !== true) {
             window.ultimoMensajeDocenteCompatible = {
               ...datos.mensajeDocenteActual,
               canal: "documento-estudiante"
@@ -723,6 +723,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             window.dispatchEvent(new CustomEvent("mensaje-docente-compatible", {
               detail: window.ultimoMensajeDocenteCompatible
             }));
+          } else {
+            window.ultimoMensajeDocenteCompatible = null;
           }
         }, error => {
           console.error("Error escuchando reinicio de cambios de pestaña:", error);
