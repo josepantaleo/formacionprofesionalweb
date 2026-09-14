@@ -883,7 +883,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const recuperacion = {};
         if (!datos.uid) recuperacion.uid = user.uid;
         if (!datos.email) recuperacion.email = user.email || "";
-        if (!datos.estadoCuenta) recuperacion.estadoCuenta = "pendiente";
+        // Los registros antiguos podían no tener estadoCuenta. No los
+        // conviertas automáticamente en pendientes: initApp decide si el
+        // perfil completo corresponde a una cuenta ya habilitada.
         if (datos.emailVerificado !== (user.emailVerified === true)) {
           recuperacion.emailVerificado = user.emailVerified === true;
         }

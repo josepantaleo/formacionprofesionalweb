@@ -15,9 +15,36 @@ service cloud.firestore {
     function isActiveStudent(uid) {
       return ownsDocument(uid) &&
         exists(/databases/$(database)/documents/estudiantes/$(uid)) &&
-        get(
-          /databases/$(database)/documents/estudiantes/$(uid)
-        ).data.get('estadoCuenta', 'pendiente') == 'activo';
+        (
+          get(
+            /databases/$(database)/documents/estudiantes/$(uid)
+          ).data.get('estadoCuenta', '') == 'activo' ||
+          (
+            !get(
+              /databases/$(database)/documents/estudiantes/$(uid)
+            ).data.keys().hasAny(['estadoCuenta']) &&
+            get(
+              /databases/$(database)/documents/estudiantes/$(uid)
+            ).data.get('estudiante', {}).keys().hasAll([
+              'nombre',
+              'curso',
+              'division',
+              'turno'
+            ]) &&
+            get(
+              /databases/$(database)/documents/estudiantes/$(uid)
+            ).data.estudiante.nombre is string &&
+            get(
+              /databases/$(database)/documents/estudiantes/$(uid)
+            ).data.estudiante.curso is string &&
+            get(
+              /databases/$(database)/documents/estudiantes/$(uid)
+            ).data.estudiante.division is string &&
+            get(
+              /databases/$(database)/documents/estudiantes/$(uid)
+            ).data.estudiante.turno is string
+          )
+        );
     }
 
     function verifiedEmail() {

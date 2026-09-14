@@ -2451,8 +2451,7 @@
           const datosFirebase = await window.cargarProgresoFirebase();
           registroFirebaseExistente = Boolean(
               datosFirebase?.uid &&
-              datosFirebase?.email &&
-              datosFirebase?.estadoCuenta
+              datosFirebase?.email
           );
           window.ultimoDocumentoEstudianteFirebase = datosFirebase || null;
           const perfilFirebaseCompleto = !!(datosFirebase?.estudiante &&
@@ -2464,8 +2463,13 @@
               bloquearCuentaEstudiante(datosFirebase.bajaMotivo || '');
               return;
           }
-          estadoCuentaEstudiante = datosFirebase
+          // Compatibilidad con alumnos registrados antes de incorporar
+          // estadoCuenta: un perfil completo ya existente conserva el acceso.
+          const estadoCuentaPersistido = datosFirebase
               ? (datosFirebase.estadoCuenta || 'pendiente')
+              : 'pendiente';
+          estadoCuentaEstudiante = datosFirebase
+              ? (datosFirebase.estadoCuenta || (perfilFirebaseCompleto ? 'activo' : estadoCuentaPersistido))
               : 'pendiente';
           const estadoLocalAnterior = getLocalStorage('app_account_state') || '';
           if (estadoCuentaEstudiante === 'activo' &&
