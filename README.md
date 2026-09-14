@@ -58,7 +58,11 @@ Si el repositorio remoto ya contiene archivos, clonarlo primero o agregar el rem
 
 ## Actualización del 14 de septiembre de 2026
 
-- Versión de publicación: `20260914-6`.
+- Versión de publicación: `20260914-8`.
+- El Tutor de programación se abre como popup de pantalla completa, sin reducir el editor ni reservar una columna lateral.
+- El popup conserva las pistas, consultas IA, casos de prueba, historial y controles de ayuda.
+- El Tutor de programación se abre como un popup de pantalla completa sin reducir el editor.
+- Puede cerrarse con su botón, haciendo clic en el fondo o presionando `Escape`.
 - La actividad usa todo el ancho disponible y el tutor cerrado ya no reserva una columna vacía.
 - `Mi resumen de pestañas` se abre desde un botón compacto y muestra estado, límite, tiempo fuera y actividad reciente.
 - El popup puede cerrarse con su botón, haciendo clic fuera o presionando `Escape`.

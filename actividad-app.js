@@ -2749,7 +2749,7 @@
                               </section>
 
                               <button class="btn tutor-popup-trigger" type="button" onclick="alternarTutorProgramacion('${sec.id}')" aria-controls="ai-chat-${sec.id}" aria-expanded="${String(!tutorMinimizado)}"><i class="fa-solid fa-graduation-cap"></i><span>Tutor de programación</span><small>Ayuda guiada</small></button>
-                              <aside class="student-ai-column ${tutorMinimizado ? 'is-minimized' : ''}" aria-label="Tutor de programación">
+                              <aside class="student-ai-column ${tutorMinimizado ? 'is-minimized' : ''}" aria-label="Tutor de programación" role="dialog" aria-modal="true" aria-hidden="${String(tutorMinimizado)}">
                                   <div class="ai-chat-box" id="ai-chat-${sec.id}">
                                       <div class="ai-chat-header">
                                           <div class="ai-chat-title"><i class="fa-solid fa-graduation-cap"></i><span>Tutor de programación</span></div>
@@ -2758,9 +2758,9 @@
                                                   <span class="ai-chat-note">${window.firebaseAIRealConfigurada ? "IA segura conectada" : "Tutor local activo"}</span>
                                                   <span class="ai-chat-sync saved" id="ai-chat-sync-${sec.id}"><i class="fa-solid fa-cloud"></i> Sincronizado</span>
                                               </div>
-                                              <button class="ai-chat-minimize" type="button" onclick="alternarTutorProgramacion('${sec.id}', this)" aria-expanded="${String(!tutorMinimizado)}" title="${tutorMinimizado ? 'Restaurar Tutor de programación' : 'Minimizar Tutor de programación'}">
-                                                  <i class="fa-solid ${tutorMinimizado ? 'fa-chevron-left' : 'fa-chevron-right'}"></i>
-                                                  <span class="sr-only">${tutorMinimizado ? 'Restaurar Tutor de programación' : 'Minimizar Tutor de programación'}</span>
+                                              <button class="ai-chat-minimize" type="button" onclick="alternarTutorProgramacion('${sec.id}', this)" aria-expanded="${String(!tutorMinimizado)}" title="Cerrar Tutor de programación">
+                                                  <i class="fa-solid fa-xmark"></i>
+                                                  <span class="sr-only">Cerrar Tutor de programación</span>
                                               </button>
                                           </div>
                                       </div>
@@ -3708,6 +3708,8 @@
           columna.classList.toggle('is-minimized', minimizar);
           espacio.classList.toggle('tutor-minimized', minimizar);
           setLocalStorage(`ai_tutor_minimized_${sectionId}`, String(minimizar));
+          columna.setAttribute('aria-hidden', String(minimizar));
+          document.body.classList.toggle('student-tutor-modal-open', !minimizar);
           const control = boton || columna.querySelector('.ai-chat-minimize');
           if (control) {
               const accion = minimizar
@@ -3716,7 +3718,7 @@
               control.setAttribute('aria-expanded', String(!minimizar));
               control.title = accion;
               control.innerHTML = `
-                  <i class="fa-solid ${minimizar ? 'fa-chevron-left' : 'fa-chevron-right'}"></i>
+                  <i class="fa-solid ${minimizar ? 'fa-graduation-cap' : 'fa-xmark'}"></i>
                   <span class="sr-only">${accion}</span>`;
           }
           seccion.querySelector('.tutor-popup-trigger')?.setAttribute('aria-expanded', String(!minimizar));
@@ -3724,6 +3726,19 @@
               columna.querySelector('.ai-chat-input')?.focus({ preventScroll: true });
           }
       }
+
+      document.addEventListener('click', event => {
+          const fondoTutor = event.target?.classList?.contains('student-ai-column') ? event.target : null;
+          if (!fondoTutor || fondoTutor.classList.contains('is-minimized')) return;
+          const sectionId = fondoTutor.closest('.section-card')?.id;
+          if (sectionId) alternarTutorProgramacion(sectionId);
+      });
+      document.addEventListener('keydown', event => {
+          if (event.key !== 'Escape') return;
+          const tutorAbierto = document.querySelector('.student-ai-column:not(.is-minimized)');
+          const sectionId = tutorAbierto?.closest('.section-card')?.id;
+          if (sectionId) alternarTutorProgramacion(sectionId);
+      });
 
       function abrirResumenPestanasEstudiante() {
           const modal = document.getElementById('resumenPestanasEstudianteModal');

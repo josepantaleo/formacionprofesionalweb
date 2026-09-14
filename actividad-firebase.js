@@ -21,7 +21,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         autocompletion,
         completionKeymap,
         startCompletion
-} from "./codemirror-bundle.js?v=20260914-6";
+} from "./codemirror-bundle.js?v=20260914-8";
 
       window.CodeMirror6 = {
         Compartment,
