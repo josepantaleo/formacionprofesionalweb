@@ -58,7 +58,9 @@ Si el repositorio remoto ya contiene archivos, clonarlo primero o agregar el rem
 
 ## Actualización del 14 de septiembre de 2026
 
-- Versión de publicación: `20260914-8`.
+- Versión de publicación: `20260914-9`.
+- El desbloqueo desde “Ver progreso y evaluación” ahora actualiza Firebase y sincroniza en tiempo real la habilitación del editor del estudiante.
+- Cada desafío finalizado muestra “Desbloquear para volver a resolver”.
 - El Tutor de programación se abre como popup de pantalla completa, sin reducir el editor ni reservar una columna lateral.
 - El popup conserva las pistas, consultas IA, casos de prueba, historial y controles de ayuda.
 - El Tutor de programación se abre como un popup de pantalla completa sin reducir el editor.

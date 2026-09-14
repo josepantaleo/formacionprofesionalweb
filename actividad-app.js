@@ -860,6 +860,31 @@
           removeLocalStorage("app_screen_locked_section");
           aplicarBloqueoInterfazEstudiante(false);
       });
+      window.addEventListener("actividades-desbloqueadas-estudiante", event => {
+          const finalizadasRemotas = event.detail?.finalizadas;
+          if (!finalizadasRemotas || typeof finalizadasRemotas !== "object") return;
+          actividadesFinalizadas = { ...finalizadasRemotas };
+          seccionesData.forEach(sec => {
+              if (actividadesFinalizadas[sec.id] === true) {
+                  setLocalStorage(`finalized_${sec.id}`, 'true');
+              } else {
+                  removeLocalStorage(`finalized_${sec.id}`);
+                  actualizarBloqueoEditorEstudiante(sec.id);
+                  ['run', 'preview', 'ai', 'reset'].forEach(btn => {
+                      const control = document.getElementById(`btn-${btn}-${sec.id}`);
+                      if (control) control.disabled = false;
+                  });
+                  const estado = document.getElementById(`editor-state-${sec.id}`);
+                  if (estado) {
+                      estado.className = 'student-editor-state idle';
+                      estado.innerHTML = '<i class="fa-solid fa-pen"></i> Listo para programar';
+                  }
+                  const consola = document.getElementById(`console-${sec.id}`);
+                  if (consola && consola.textContent.includes('Actividad finalizada')) consola.textContent = '// Ejecutá el código para ver aquí los resultados o errores.';
+              }
+          });
+          actualizarProgreso();
+      });
       window.addEventListener("pantalla-bloqueada-estudiante", () => {
           pantallaBloqueada = true;
           aplicarBloqueoInterfazEstudiante(true);
@@ -9063,6 +9088,25 @@
           alert(todas ? 'Todas las actividades fueron desbloqueadas.' : 'La actividad fue desbloqueada.');
       }
 
+      async function desbloquearActividadDesdeDetalleProfesor(indice, sectionId) {
+          const d = estudiantesProfesor[indice];
+          if (!d?.uid || !sectionId) return;
+          const sec = seccionesData.find(item => item.id === sectionId);
+          const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'el estudiante';
+          const motivo = prompt(`Motivo para volver a habilitar "${sec?.title || sectionId}" para ${nombre}:`, 'Debe volver a resolver la actividad');
+          if (motivo === null) return;
+          const motivoFinal = motivo.trim() || 'Debe volver a resolver la actividad';
+          const ok = await window.desbloquearActividadesEstudianteFirebase?.(d.uid, [sectionId], motivoFinal);
+          if (!ok) {
+              alert('No se pudo desbloquear la actividad. Verificá la autorización docente y las reglas de Firestore.');
+              return;
+          }
+          d.finalizadas = { ...(d.finalizadas || {}) };
+          delete d.finalizadas[sectionId];
+          abrirDetalleEstudianteProfesor(indice);
+          alert(`"${sec?.title || sectionId}" quedó habilitada para volver a resolver.`);
+      }
+
       function abrirSelectorDesbloqueoActividades(indice) {
           const d = estudiantesProfesor[indice];
           if (!d?.uid) { alert('No se encontró el identificador Firebase del estudiante.'); return; }
@@ -9818,6 +9862,9 @@
                               </label>
                           </div>
                           <div class="teacher-challenge-grade-actions">
+                              ${finalizadas[sec.id] ? `<button class="btn btn-success" type="button" onclick="desbloquearActividadDesdeDetalleProfesor(${indice}, '${sec.id}')">
+                                  <i class="fa-solid fa-unlock"></i> Desbloquear para volver a resolver
+                              </button>` : `<span class="teacher-challenge-grade-status saved"><i class="fa-solid fa-pen"></i> Actividad habilitada para resolver</span>`}
                               <button class="btn btn-primary" type="button" onclick="guardarNotaDesafioProfesor(${indice}, '${sec.id}')">
                                   <i class="fa-solid fa-floppy-disk"></i> Guardar nota
                               </button>

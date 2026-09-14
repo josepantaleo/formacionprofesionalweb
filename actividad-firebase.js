@@ -21,7 +21,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         autocompletion,
         completionKeymap,
         startCompletion
-} from "./codemirror-bundle.js?v=20260914-8";
+} from "./codemirror-bundle.js?v=20260914-9";
 
       window.CodeMirror6 = {
         Compartment,
@@ -634,6 +634,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           if (!snapshot.exists()) return;
           const datos = snapshot.data();
           window.ultimoDocumentoEstudianteFirebase = datos;
+          if (datos.finalizadas && typeof datos.finalizadas === "object") {
+            window.dispatchEvent(new CustomEvent("actividades-desbloqueadas-estudiante", {
+              detail: { finalizadas: datos.finalizadas, desbloqueo: datos.desbloqueoActividades || null }
+            }));
+          }
           const colaboracion = datos.colaboracionDocente || {};
           if (colaboracion.sectionId && typeof colaboracion.codigo === "string") {
             const editorColaborativo = document.getElementById(`editor-${colaboracion.sectionId}`);
