@@ -12,7 +12,8 @@ $scripts = @(
   "panel-profesor.js",
   "actividad-cooperacion.js",
   "mejoras-seguimiento.js",
-  "button-contract.test.cjs"
+  "button-contract.test.cjs",
+  "mobile-ui-contract.test.cjs"
 )
 foreach ($script in $scripts) {
   node --check ".\$script"
@@ -28,7 +29,9 @@ $required = @(
   "mejoras-seguimiento.css",
   "mejoras-seguimiento.js",
   "reglas.txt",
-  "button-contract.test.cjs"
+  "button-contract.test.cjs",
+  "actividad-mobile.css",
+  "mobile-ui-contract.test.cjs"
 )
 $missing = $required | Where-Object { -not (Test-Path $_) }
 if ($missing) { throw "Archivos faltantes: $($missing -join ', ')" }
@@ -38,5 +41,8 @@ if ($LASTEXITCODE -ne 0) { throw "Fallo el contrato de interfaz." }
 
 node ".\button-contract.test.cjs"
 if ($LASTEXITCODE -ne 0) { throw "Fallo el contrato de botones." }
+
+node ".\mobile-ui-contract.test.cjs"
+if ($LASTEXITCODE -ne 0) { throw "Fallo el contrato movil." }
 
 Write-Host "Validacion del proyecto: OK"
