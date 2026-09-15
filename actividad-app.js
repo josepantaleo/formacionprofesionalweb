@@ -863,27 +863,49 @@
       window.addEventListener("actividades-desbloqueadas-estudiante", event => {
           const finalizadasRemotas = event.detail?.finalizadas;
           if (!finalizadasRemotas || typeof finalizadasRemotas !== "object") return;
+          const desbloqueo = event.detail?.desbloqueo || null;
+          const desbloqueoId = String(desbloqueo?.id || "");
+          if (desbloqueoId) window.__ultimoDesbloqueoActividadesId = desbloqueoId;
           actividadesFinalizadas = { ...finalizadasRemotas };
           seccionesData.forEach(sec => {
               if (actividadesFinalizadas[sec.id] === true) {
                   setLocalStorage(`finalized_${sec.id}`, 'true');
               } else {
                   removeLocalStorage(`finalized_${sec.id}`);
+                  removeLocalStorage(`preview_count_${sec.id}`);
+                  contadorPrevisualizaciones[sec.id] = 0;
                   actualizarBloqueoEditorEstudiante(sec.id);
-                  ['run', 'preview', 'ai', 'reset'].forEach(btn => {
+                  ['run', 'preview', 'ai', 'reset', 'pause'].forEach(btn => {
                       const control = document.getElementById(`btn-${btn}-${sec.id}`);
                       if (control) control.disabled = false;
                   });
+                  document.querySelectorAll(`#${CSS.escape(sec.id)} [data-ai-editor-action], #ai-chat-input-${CSS.escape(sec.id)}, #ai-chat-${CSS.escape(sec.id)} button[type="submit"]`).forEach(control => {
+                      control.disabled = false;
+                  });
+                  const botonPrevia = document.getElementById(`btn-preview-${sec.id}`);
+                  if (botonPrevia) botonPrevia.innerHTML = '<i class="fa-solid fa-star-half-stroke"></i> Nota previa (3)';
                   const estado = document.getElementById(`editor-state-${sec.id}`);
                   if (estado) {
                       estado.className = 'student-editor-state idle';
-                      estado.innerHTML = '<i class="fa-solid fa-pen"></i> Listo para programar';
+                      estado.innerHTML = '<i class="fa-solid fa-pen"></i> Actividad desbloqueada';
                   }
                   const consola = document.getElementById(`console-${sec.id}`);
                   if (consola && consola.textContent.includes('Actividad finalizada')) consola.textContent = '// Ejecutá el código para ver aquí los resultados o errores.';
+                  document.getElementById(`ai-feedback-${sec.id}`)?.classList.remove('active');
+                  const navBtn = document.getElementById(`nav-btn-${sec.id}`);
+                  navBtn?.querySelector('.status-icon')?.remove();
+                  actualizarIconoEstado(sec.id, false);
+                  if (desbloqueoId) {
+                      tiemposRestantes[sec.id] = TIEMPO_MAXIMO_SEGUNDOS;
+                      removeLocalStorage(`timer_${sec.id}`);
+                      actualizarDisplayTiempo(sec.id);
+                  }
               }
           });
           actualizarProgreso();
+          firebaseSaveGeneration++;
+          firebaseSaveDirty = true;
+          firebaseLastSavedFingerprint = "";
       });
       window.addEventListener("pantalla-bloqueada-estudiante", () => {
           pantallaBloqueada = true;
@@ -1970,6 +1992,7 @@
               codigos,
               tiemposRestantes: { ...tiemposRestantes },
               finalizadas: { ...actividadesFinalizadas },
+              __desbloqueoAplicadoId: String(window.__ultimoDesbloqueoActividadesId || ""),
               historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
               chatIA: JSON.parse(JSON.stringify(historialChatIA || {})),
               ayudasComprension: JSON.parse(JSON.stringify(ayudasComprension || {})),

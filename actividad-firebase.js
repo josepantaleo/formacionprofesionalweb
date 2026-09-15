@@ -634,11 +634,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           if (!snapshot.exists()) return;
           const datos = snapshot.data();
           window.ultimoDocumentoEstudianteFirebase = datos;
-          if (datos.finalizadas && typeof datos.finalizadas === "object") {
-            window.dispatchEvent(new CustomEvent("actividades-desbloqueadas-estudiante", {
-              detail: { finalizadas: datos.finalizadas, desbloqueo: datos.desbloqueoActividades || null }
-            }));
-          }
+          window.dispatchEvent(new CustomEvent("actividades-desbloqueadas-estudiante", {
+            detail: {
+              finalizadas: datos.finalizadas && typeof datos.finalizadas === "object"
+                ? datos.finalizadas
+                : {},
+              desbloqueo: datos.desbloqueoActividades || null
+            }
+          }));
           const colaboracion = datos.colaboracionDocente || {};
           if (colaboracion.sectionId && typeof colaboracion.codigo === "string") {
             const editorColaborativo = document.getElementById(`editor-${colaboracion.sectionId}`);
@@ -924,15 +927,41 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
         try {
           const ref = doc(db, "estudiantes", user.uid);
-          await setDoc(ref, {
-            ...payload,
-            uid: user.uid,
-            email: user.email || "",
-            emailVerificado: user.emailVerified === true,
-            nombreGoogle: user.displayName || "",
-            fotoGoogle: user.photoURL || "",
-            actualizadoEn: serverTimestamp()
-          }, { merge: true });
+          const payloadSeguro = { ...(payload || {}) };
+          const desbloqueoAplicadoId = String(payloadSeguro.__desbloqueoAplicadoId || "");
+          delete payloadSeguro.__desbloqueoAplicadoId;
+          await runTransaction(db, async transaction => {
+            const actual = await transaction.get(ref);
+            const datosActuales = actual.exists() ? actual.data() : {};
+            const desbloqueoServidor = datosActuales.desbloqueoActividades || {};
+            const desbloqueoServidorId = String(desbloqueoServidor.id || "");
+            if (
+              payloadSeguro.finalizadas &&
+              typeof payloadSeguro.finalizadas === "object" &&
+              desbloqueoServidorId &&
+              desbloqueoServidorId !== desbloqueoAplicadoId
+            ) {
+              const finalizadasSeguras = { ...payloadSeguro.finalizadas };
+              const seccionesDesbloqueadas = Array.isArray(desbloqueoServidor.seccion)
+                ? desbloqueoServidor.seccion.map(String)
+                : [];
+              if (desbloqueoServidor.seccion === "todas") {
+                Object.keys(finalizadasSeguras).forEach(id => delete finalizadasSeguras[id]);
+              } else {
+                seccionesDesbloqueadas.forEach(id => delete finalizadasSeguras[id]);
+              }
+              payloadSeguro.finalizadas = finalizadasSeguras;
+            }
+            transaction.set(ref, {
+              ...payloadSeguro,
+              uid: user.uid,
+              email: user.email || "",
+              emailVerificado: user.emailVerified === true,
+              nombreGoogle: user.displayName || "",
+              fotoGoogle: user.photoURL || "",
+              actualizadoEn: serverTimestamp()
+            }, { merge: true });
+          });
           return true;
         } catch (error) {
           console.error("Firebase save error:", error);
