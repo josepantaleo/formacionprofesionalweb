@@ -8495,14 +8495,6 @@
               return '';
           }
       })();
-      const CLAVE_VISIBILIDAD_VALORES_GRAFICO_NOTAS = 'teacher_student_grade_chart_show_values';
-      let mostrarValoresGraficoNotasEstudiante = (() => {
-          try {
-              return sessionStorage.getItem(CLAVE_VISIBILIDAD_VALORES_GRAFICO_NOTAS) !== 'false';
-          } catch (_) {
-              return true;
-          }
-      })();
       const CLAVE_POSICION_GRAFICO_NOTAS_ESTUDIANTE = 'teacher_student_grade_chart_scroll_left';
       let ultimaPosicionGraficoNotasEstudiante = (() => {
           try {
@@ -8585,35 +8577,6 @@
           if (!botonTodos) return;
           filtrarGraficoNotasDesafiosEstudiante('', botonTodos);
           botonTodos.focus({ preventScroll: true });
-      }
-      function aplicarVisibilidadValoresGraficoNotasEstudiante(grafico, mostrar) {
-          if (!grafico) return;
-          mostrarValoresGraficoNotasEstudiante = mostrar !== false;
-          grafico.classList.toggle('hide-grade-values', !mostrarValoresGraficoNotasEstudiante);
-          const boton = grafico.querySelector('.teacher-student-grade-values-toggle');
-          if (boton) {
-              boton.setAttribute('aria-pressed', String(mostrarValoresGraficoNotasEstudiante));
-              boton.setAttribute('aria-label', mostrarValoresGraficoNotasEstudiante
-                  ? 'Ocultar notas numéricas del gráfico'
-                  : 'Mostrar notas numéricas del gráfico');
-              boton.innerHTML = mostrarValoresGraficoNotasEstudiante
-                  ? '<i class="fa-solid fa-eye-slash"></i> Ocultar notas'
-                  : '<i class="fa-solid fa-eye"></i> Mostrar notas';
-          }
-          try {
-              sessionStorage.setItem(
-                  CLAVE_VISIBILIDAD_VALORES_GRAFICO_NOTAS,
-                  String(mostrarValoresGraficoNotasEstudiante)
-              );
-          } catch (_) {}
-      }
-      function alternarValoresGraficoNotasEstudiante(boton = null) {
-          const grafico = boton?.closest?.('.teacher-student-grade-chart');
-          if (!grafico) return;
-          aplicarVisibilidadValoresGraficoNotasEstudiante(
-              grafico,
-              grafico.classList.contains('hide-grade-values')
-          );
       }
       function renderGraficoNotasDesafiosEstudiante(d) {
           const historial = d?.historialResultados || {};
@@ -8710,9 +8673,6 @@
                       </button>
                       <button type="button" data-grade-filter-button="pendientes" aria-pressed="false" onclick="filtrarGraficoNotasDesafiosEstudiante('pendientes', this)">
                           <i class="fa-solid fa-clock"></i> Pendientes
-                      </button>
-                      <button type="button" class="teacher-student-grade-values-toggle" aria-pressed="true" aria-label="Ocultar notas numéricas del gráfico" onclick="alternarValoresGraficoNotasEstudiante(this)">
-                          <i class="fa-solid fa-eye-slash"></i> Ocultar notas
                       </button>
                       <button type="button" class="is-reset" onclick="restablecerFiltroGraficoNotasEstudiante(this)" title="Volver a mostrar todos los desafíos">
                           <i class="fa-solid fa-arrow-rotate-left"></i> Restablecer filtro
@@ -10443,7 +10403,6 @@
           if (botonFiltroRecordado) {
               filtrarGraficoNotasDesafiosEstudiante(ultimoFiltroGraficoNotasEstudiante, botonFiltroRecordado);
           }
-          aplicarVisibilidadValoresGraficoNotasEstudiante(graficoNotas, mostrarValoresGraficoNotasEstudiante);
           restaurarPosicionGraficoNotasEstudiante(graficoNotas);
           window.cargarHistorialAccesosProfesorFirebase?.(d.uid).then(accesos => {
               const contenedor = document.getElementById("historialAccesosProfesor");
