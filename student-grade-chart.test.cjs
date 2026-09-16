@@ -53,8 +53,19 @@ assert(
   "Los desafios no exponen estados filtrables."
 );
 assert(
-  /actividad-app\.js\?v=20260916-2/.test(html) &&
-  /mejoras-seguimiento\.css\?v=20260916-2/.test(html),
+  /CLAVE_FILTRO_GRAFICO_NOTAS_ESTUDIANTE/.test(app) &&
+  /sessionStorage\.getItem\(CLAVE_FILTRO_GRAFICO_NOTAS_ESTUDIANTE\)/.test(app) &&
+  /sessionStorage\.setItem\(CLAVE_FILTRO_GRAFICO_NOTAS_ESTUDIANTE,\s*filtroNormalizado\)/.test(app),
+  "El ultimo filtro no se conserva durante la sesion."
+);
+assert(
+  /botonFiltroRecordado/.test(app) &&
+  /filtrarGraficoNotasDesafiosEstudiante\(ultimoFiltroGraficoNotasEstudiante,\s*botonFiltroRecordado\)/.test(app),
+  "El filtro recordado no se reaplica al cambiar de estudiante."
+);
+assert(
+  /actividad-app\.js\?v=20260916-3/.test(html) &&
+  /mejoras-seguimiento\.css\?v=20260916-3/.test(html),
   "Falta actualizar la version de los recursos modificados."
 );
 

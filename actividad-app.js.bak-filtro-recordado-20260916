@@ -8486,25 +8486,12 @@
               estadoConexion
           };
       }
-      const CLAVE_FILTRO_GRAFICO_NOTAS_ESTUDIANTE = 'teacher_student_grade_chart_filter';
-      let ultimoFiltroGraficoNotasEstudiante = (() => {
-          try {
-              const guardado = sessionStorage.getItem(CLAVE_FILTRO_GRAFICO_NOTAS_ESTUDIANTE) || '';
-              return ['finalizados', 'corregidos', 'pendientes'].includes(guardado) ? guardado : '';
-          } catch (_) {
-              return '';
-          }
-      })();
       function filtrarGraficoNotasDesafiosEstudiante(filtro = '', boton = null) {
           const grafico = boton?.closest?.('.teacher-student-grade-chart');
           if (!grafico) return;
           const filtroNormalizado = ['finalizados', 'corregidos', 'pendientes'].includes(filtro)
               ? filtro
               : '';
-          ultimoFiltroGraficoNotasEstudiante = filtroNormalizado;
-          try {
-              sessionStorage.setItem(CLAVE_FILTRO_GRAFICO_NOTAS_ESTUDIANTE, filtroNormalizado);
-          } catch (_) {}
           const coincide = elemento => {
               if (!filtroNormalizado) return true;
               if (filtroNormalizado === 'finalizados') return elemento.dataset.gradeFinalizada === 'true';
@@ -10350,14 +10337,6 @@
               </div>
               <div id="listaDesafiosDetalleProfesor">${actividadesHtml}</div>`;
           document.getElementById('detalleEstudianteProfesorModal').classList.add('active');
-          const graficoNotas = document.querySelector('#detalleEstudianteProfesorContenido .teacher-student-grade-chart');
-          const botonFiltroRecordado = graficoNotas
-              ? [...graficoNotas.querySelectorAll('[data-grade-filter-button]')]
-                  .find(control => control.dataset.gradeFilterButton === ultimoFiltroGraficoNotasEstudiante)
-              : null;
-          if (botonFiltroRecordado) {
-              filtrarGraficoNotasDesafiosEstudiante(ultimoFiltroGraficoNotasEstudiante, botonFiltroRecordado);
-          }
           window.cargarHistorialAccesosProfesorFirebase?.(d.uid).then(accesos => {
               const contenedor = document.getElementById("historialAccesosProfesor");
               if (!contenedor) return;
