@@ -894,7 +894,9 @@
                   document.getElementById(`ai-feedback-${sec.id}`)?.classList.remove('active');
                   const navBtn = document.getElementById(`nav-btn-${sec.id}`);
                   navBtn?.querySelector('.status-icon')?.remove();
-                  actualizarIconoEstado(sec.id, false);
+                  navBtn?.classList.remove('is-completed');
+                  navBtn?.classList.add('is-pending');
+                  navBtn?.removeAttribute('data-progress-status');
                   if (desbloqueoId) {
                       tiemposRestantes[sec.id] = TIEMPO_MAXIMO_SEGUNDOS;
                       removeLocalStorage(`timer_${sec.id}`);
@@ -3581,17 +3583,27 @@
           alert("Sistema, actividades y registro de cambios de pestaña reiniciados.");
       }
 
-      function actualizarIconoEstado(sectionId, esExitoso) {
+      function actualizarIconoEstado(sectionId, esFinalizada = true) {
           const navBtn = document.getElementById(`nav-btn-${sectionId}`);
-          if (navBtn) {
-              let statusIcon = navBtn.querySelector('.status-icon');
-              if (!statusIcon) {
-                  statusIcon = document.createElement('i');
-                  statusIcon.className = 'fa-solid fa-circle-check status-icon';
-                  navBtn.appendChild(statusIcon);
-              }
-              statusIcon.style.color = esExitoso ? 'var(--success)' : 'var(--danger)';
+          if (!navBtn) return;
+          const iconoAnterior = navBtn.querySelector('.status-icon');
+          if (!esFinalizada) {
+              iconoAnterior?.remove();
+              navBtn.classList.remove('is-completed');
+              navBtn.classList.add('is-pending');
+              navBtn.dataset.progressStatus = 'pendiente';
+              navBtn.removeAttribute('title');
+              return;
           }
+          const statusIcon = iconoAnterior || document.createElement('i');
+          statusIcon.className = 'fa-solid fa-circle-check status-icon';
+          statusIcon.style.color = 'var(--success)';
+          statusIcon.setAttribute('aria-label', 'Actividad finalizada');
+          statusIcon.title = 'Actividad finalizada';
+          if (!iconoAnterior) navBtn.appendChild(statusIcon);
+          navBtn.classList.add('is-completed');
+          navBtn.classList.remove('is-pending');
+          navBtn.dataset.progressStatus = 'finalizada';
       }
 
       function restablecerCodigo(sectionId) {
@@ -3658,10 +3670,28 @@
 
       function actualizarProgreso() {
           const finalizadasCount = seccionesData.filter(sec => actividadesFinalizadas[sec.id] === true).length;
-          const porcentaje = Math.round((finalizadasCount / seccionesData.length) * 100);
-          document.getElementById('progressBar').style.width = `${porcentaje}%`;
-          document.getElementById('progressBarContainer')?.setAttribute('aria-valuenow', String(porcentaje));
-          document.getElementById('progressText').innerText = `Progreso: ${porcentaje}% (${finalizadasCount}/${seccionesData.length} finalizadas)`;
+          const totalActividades = seccionesData.length;
+          const porcentaje = totalActividades ? Math.round((finalizadasCount / totalActividades) * 100) : 0;
+          const barra = document.getElementById('progressBar');
+          const contenedorBarra = document.getElementById('progressBarContainer');
+          const texto = document.getElementById('progressText');
+          if (barra) barra.style.width = `${porcentaje}%`;
+          if (contenedorBarra) {
+              contenedorBarra.setAttribute('aria-valuenow', String(porcentaje));
+              contenedorBarra.setAttribute(
+                  'aria-label',
+                  `Progreso de actividades: ${finalizadasCount} de ${totalActividades} finalizadas`
+              );
+          }
+          if (texto) {
+              texto.innerText = `Progreso: ${porcentaje}% (${finalizadasCount}/${totalActividades} finalizadas)`;
+          }
+          seccionesData.forEach(sec => {
+              actualizarIconoEstado(sec.id, actividadesFinalizadas[sec.id] === true);
+          });
+          window.dispatchEvent(new CustomEvent('progreso-estudiante-actualizado', {
+              detail: { porcentaje, finalizadas: finalizadasCount, total: totalActividades }
+          }));
           renderInformeVisualEstudiante();
       }
 

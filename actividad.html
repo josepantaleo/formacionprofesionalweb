@@ -16,8 +16,8 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="actividad-base.css?v=20260914-9" />
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260915-04" />
-    <link rel="stylesheet" href="actividad-mobile.css?v=20260915-04" />
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260915-05" />
+    <link rel="stylesheet" href="actividad-mobile.css?v=20260915-05" />
     <style>
       .skip-link {
         position: fixed;
@@ -240,7 +240,7 @@
       }
     </style>
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
-    <script type="module" src="actividad-firebase.js?v=20260915-04"></script>
+    <script type="module" src="actividad-firebase.js?v=20260916-01"></script>
   </head>
   <body onload="initApp()">
     <a class="skip-link" href="#contenidoPrincipal">Saltar al contenido principal</a>
@@ -366,8 +366,6 @@
           <div class="btn-group">
             <button type="button" class="btn btn-success" onclick="guardarAhoraFirebase()"><i class="fa-solid fa-cloud-arrow-up"></i> Guardar ahora</button>
             <button type="button" class="btn btn-warning" id="btnIngresoDocente" onclick="ingresarComoDocente(this)"><i class="fa-solid fa-chalkboard-user"></i> Ingresar como docente</button>
-            <button type="button" class="btn btn-primary teacher-only" onclick="solicitarAccionProfesor('editor_desafios')"><i class="fa-solid fa-puzzle-piece"></i> Editor de desafíos</button>
-            <button type="button" class="btn btn-primary teacher-only" onclick="solicitarAccionProfesor('panel_profesor')"><i class="fa-solid fa-chalkboard-user"></i> Panel Profesor</button>
             <button type="button" class="btn btn-warning teacher-only teacher-session-only" onclick="cerrarAccesoDocenteTemporal()"><i class="fa-solid fa-user-lock"></i> Cerrar acceso docente</button>
             <button type="button" class="btn btn-danger" onclick="cerrarSesionGoogle()"><i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión</button>
           </div>
@@ -1241,13 +1239,13 @@
       </button>
     </div>
 
-    <script src="actividad-network-status.js?v=20260915-04"></script>
-    <script src="actividad-utils.js?v=20260915-04"></script>
-    <script src="actividad-pdf-loader.js?v=20260914-9"></script>
-    <script src="actividad-app.js?v=20260915-04"></script>
-            <script src="panel-profesor.js?v=20260915-04"></script>
-    <script src="actividad-cooperacion.js?v=20260914-9"></script>
-    <script src="mejoras-seguimiento.js?v=20260915-04"></script>
+    <script src="actividad-network-status.js?v=20260916-01"></script>
+    <script src="actividad-utils.js?v=20260916-01"></script>
+    <script src="actividad-pdf-loader.js?v=20260916-01"></script>
+    <script src="actividad-app.js?v=20260916-01"></script>
+    <script src="panel-profesor.js?v=20260916-01"></script>
+    <script src="actividad-cooperacion.js?v=20260916-01"></script>
+    <script src="mejoras-seguimiento.js?v=20260916-01"></script>
   </body>
 </html>
 

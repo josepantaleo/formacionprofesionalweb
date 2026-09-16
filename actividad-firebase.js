@@ -3678,6 +3678,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const contexto = contextoDocenteFirebase();
         const database = contexto.database || db;
         if (!database) return;
+        if (!window.firebaseCurrentUser) return;
         if (window.__jitsiConfiguracionUnsubscribe) window.__jitsiConfiguracionUnsubscribe();
         window.__jitsiConfiguracionUnsubscribe = onSnapshot(
           doc(database, "controlClase", idClaseActual(), "configuracion", "jitsi"),
@@ -3685,7 +3686,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             if (!snapshot.exists()) return;
             window.dispatchEvent(new CustomEvent("jitsi-configuracion-remota", { detail: snapshot.data() }));
           },
-          error => console.error("Error escuchando configuración Jitsi:", error)
+          error => {
+            if (error?.code !== "permission-denied") {
+              console.error("Error escuchando configuración Jitsi:", error);
+            }
+          }
         );
       };
       const JITSI_HISTORY_ENABLED = false;
