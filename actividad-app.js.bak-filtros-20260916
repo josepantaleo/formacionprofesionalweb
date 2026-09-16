@@ -8486,47 +8486,6 @@
               estadoConexion
           };
       }
-      function filtrarGraficoNotasDesafiosEstudiante(filtro = '', boton = null) {
-          const grafico = boton?.closest?.('.teacher-student-grade-chart');
-          if (!grafico) return;
-          const filtroNormalizado = ['finalizados', 'corregidos', 'pendientes'].includes(filtro)
-              ? filtro
-              : '';
-          const coincide = elemento => {
-              if (!filtroNormalizado) return true;
-              if (filtroNormalizado === 'finalizados') return elemento.dataset.gradeFinalizada === 'true';
-              if (filtroNormalizado === 'corregidos') return elemento.dataset.gradeDocente === 'true';
-              return elemento.dataset.gradeFinalizada !== 'true';
-          };
-          grafico.querySelectorAll('.teacher-student-grade-item').forEach(elemento => {
-              const visible = coincide(elemento);
-              elemento.classList.toggle('is-filtered-out', !visible);
-          });
-          let visibles = 0;
-          grafico.querySelectorAll('.teacher-student-grade-key-item').forEach(elemento => {
-              const visible = coincide(elemento);
-              elemento.classList.toggle('is-filtered-out', !visible);
-              if (visible) visibles += 1;
-          });
-          grafico.querySelectorAll('[data-grade-filter-button]').forEach(control => {
-              const activo = control.dataset.gradeFilterButton === filtroNormalizado;
-              control.classList.toggle('is-active', activo);
-              control.setAttribute('aria-pressed', String(activo));
-          });
-          const etiquetas = {
-              finalizados: 'finalizados',
-              corregidos: 'corregidos por el docente',
-              pendientes: 'pendientes'
-          };
-          const estado = grafico.querySelector('.teacher-student-grade-filter-status');
-          if (estado) {
-              estado.textContent = filtroNormalizado
-                  ? `${visibles} desafío${visibles === 1 ? '' : 's'} ${etiquetas[filtroNormalizado]}`
-                  : `${visibles} desafíos mostrados`;
-          }
-          const sinResultados = grafico.querySelector('.teacher-student-grade-filter-empty');
-          if (sinResultados) sinResultados.hidden = visibles > 0;
-      }
       function renderGraficoNotasDesafiosEstudiante(d) {
           const historial = d?.historialResultados || {};
           const notasDocente = d?.notasDesafiosDocente || {};
@@ -8584,11 +8543,9 @@
                       <title>${escapeHtml(`Desafío actual: ${item.titulo}`)}</title>
                     </circle>`
                   : '';
-              return `<g class="teacher-student-grade-item" data-grade-finalizada="${item.finalizada}" data-grade-docente="${item.docente !== null}">
-                  ${etiquetaActual}${barraAutomatica}${barraDocente}${marcadorActual}
+              return `${etiquetaActual}${barraAutomatica}${barraDocente}${marcadorActual}
                   <text class="${item.actual ? 'is-current' : ''}" x="${centro.toFixed(1)}" y="${alto - 45}" text-anchor="middle">D${item.indice}</text>
-                  <text class="teacher-student-grade-status-label" x="${centro.toFixed(1)}" y="${alto - 25}" text-anchor="middle">${item.finalizada ? 'Finalizado' : (item.actual ? 'Actual' : 'Pendiente')}</text>
-                </g>`;
+                  <text class="teacher-student-grade-status-label" x="${centro.toFixed(1)}" y="${alto - 25}" text-anchor="middle">${item.finalizada ? 'Finalizado' : (item.actual ? 'Actual' : 'Pendiente')}</text>`;
           }).join('');
           const tituloActual = desafioActual.desafio?.title || 'Sin desafío informado';
           const estadoActual = desafioActual.trabajandoAhora
@@ -8605,23 +8562,6 @@
                       <strong>${escapeHtml(tituloActual)}</strong>
                   </div>
               </header>
-              <div class="teacher-student-grade-filter-bar">
-                  <div class="teacher-student-grade-filters" role="group" aria-label="Filtrar desafíos del gráfico">
-                      <button type="button" class="is-active" data-grade-filter-button="" aria-pressed="true" onclick="filtrarGraficoNotasDesafiosEstudiante('', this)">
-                          <i class="fa-solid fa-layer-group"></i> Todos
-                      </button>
-                      <button type="button" data-grade-filter-button="finalizados" aria-pressed="false" onclick="filtrarGraficoNotasDesafiosEstudiante('finalizados', this)">
-                          <i class="fa-solid fa-circle-check"></i> Finalizados
-                      </button>
-                      <button type="button" data-grade-filter-button="corregidos" aria-pressed="false" onclick="filtrarGraficoNotasDesafiosEstudiante('corregidos', this)">
-                          <i class="fa-solid fa-pen-to-square"></i> Corregidos
-                      </button>
-                      <button type="button" data-grade-filter-button="pendientes" aria-pressed="false" onclick="filtrarGraficoNotasDesafiosEstudiante('pendientes', this)">
-                          <i class="fa-solid fa-clock"></i> Pendientes
-                      </button>
-                  </div>
-                  <span class="teacher-student-grade-filter-status" aria-live="polite">${datos.length} desafíos mostrados</span>
-              </div>
               <div class="teacher-student-grade-legend" aria-label="Referencias del gráfico">
                   <span class="is-automatic">Nota automática</span>
                   <span class="is-teacher">Nota modificada por docente</span>
@@ -8633,8 +8573,7 @@
                       <g class="teacher-student-grade-columns">${columnas}</g>
                   </svg>` : '<div class="teacher-student-grade-empty">Todavía no hay notas ni un desafío activo para mostrar.</div>'}
               </div>
-              <div class="teacher-student-grade-filter-empty" hidden>No hay desafíos que coincidan con este filtro.</div>
-              <div class="teacher-student-grade-key">${datos.map(item => `<span class="teacher-student-grade-key-item ${item.actual ? 'is-current' : ''}" data-grade-finalizada="${item.finalizada}" data-grade-docente="${item.docente !== null}" title="${escapeHtml(item.titulo)}"><b>D${item.indice}</b> ${escapeHtml(item.titulo)}</span>`).join('')}</div>
+              <div class="teacher-student-grade-key">${datos.map(item => `<span class="${item.actual ? 'is-current' : ''}" title="${escapeHtml(item.titulo)}"><b>D${item.indice}</b> ${escapeHtml(item.titulo)}</span>`).join('')}</div>
           </section>`;
       }
       function formatearTiempoProfesor(segundos) {

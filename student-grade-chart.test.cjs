@@ -40,8 +40,21 @@ assert(
   "Falta distinguir desafios finalizados, actuales y pendientes."
 );
 assert(
-  /actividad-app\.js\?v=20260916-1/.test(html) &&
-  /mejoras-seguimiento\.css\?v=20260916-1/.test(html),
+  /function\s+filtrarGraficoNotasDesafiosEstudiante\s*\(/.test(app) &&
+  /data-grade-filter-button="finalizados"/.test(app) &&
+  /data-grade-filter-button="corregidos"/.test(app) &&
+  /data-grade-filter-button="pendientes"/.test(app),
+  "Faltan los filtros del grafico por estado del desafio."
+);
+assert(
+  /data-grade-finalizada/.test(app) &&
+  /data-grade-docente/.test(app) &&
+  /teacher-student-grade-item\.is-filtered-out/.test(css),
+  "Los desafios no exponen estados filtrables."
+);
+assert(
+  /actividad-app\.js\?v=20260916-2/.test(html) &&
+  /mejoras-seguimiento\.css\?v=20260916-2/.test(html),
   "Falta actualizar la version de los recursos modificados."
 );
 
