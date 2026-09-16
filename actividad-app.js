@@ -947,35 +947,161 @@
           return typeof codigoCodeMirror === 'string' ? codigoCodeMirror : String(editor.value || '');
       }
 
+      const claveEvaluacionVisible = sectionId => `evaluacion_visible_${sectionId}`;
+      const claveEvaluacionOculta = sectionId => `evaluacion_oculta_${sectionId}`;
+
+      function obtenerEstadoEvaluacion(sectionId) {
+          const resultado = historialResultados[sectionId] || {};
+          const detalleNota = obtenerNotaVigenteModuloEstudiante(sectionId);
+          if (detalleNota.corregida) {
+              return { codigo: 'docente', texto: 'Nota docente corregida', icono: 'fa-chalkboard-user' };
+          }
+          if (actividadesFinalizadas[sectionId] === true || Number.isFinite(Number(resultado.notaFinal))) {
+              return { codigo: 'finalizada', texto: 'Entrega finalizada', icono: 'fa-circle-check' };
+          }
+          if (resultado.comparacionRealizada || Number.isFinite(Number(resultado.notaCodigo))) {
+              return { codigo: 'comparacion', texto: 'Comparación realizada', icono: 'fa-code-compare' };
+          }
+          try {
+              const visible = JSON.parse(getLocalStorage(claveEvaluacionVisible(sectionId)) || 'null');
+              if (visible?.tipo === 'previa') {
+                  return { codigo: 'previa', texto: 'Nota previa orientativa', icono: 'fa-star-half-stroke' };
+              }
+          } catch (_) {}
+          return { codigo: 'vacia', texto: 'Sin evaluación visible', icono: 'fa-eye-slash' };
+      }
+
+      function existeEvaluacionRegistrada(sectionId) {
+          const resultado = historialResultados[sectionId] || {};
+          return Boolean(
+              resultado.comparacionRealizada ||
+              resultado.codigo ||
+              resultado.analista ||
+              Number.isFinite(Number(resultado.notaCodigo)) ||
+              Number.isFinite(Number(resultado.notaFinal))
+          );
+      }
+
+      function actualizarControlesEvaluacion(sectionId, mensaje = '') {
+          const estado = obtenerEstadoEvaluacion(sectionId);
+          const oculta = getLocalStorage(claveEvaluacionOculta(sectionId)) === 'true';
+          const barra = document.getElementById(`evaluation-visibility-${sectionId}`);
+          const insignia = document.getElementById(`evaluation-status-${sectionId}`);
+          const aviso = document.getElementById(`evaluation-notice-${sectionId}`);
+          const mostrar = document.getElementById(`btn-show-evaluation-${sectionId}`);
+          const limpiar = document.getElementById(`btn-clear-evaluation-${sectionId}`);
+          if (barra) barra.dataset.state = estado.codigo;
+          if (insignia) {
+              insignia.className = `evaluation-status is-${estado.codigo}`;
+              insignia.innerHTML = `<i class="fa-solid ${estado.icono}" aria-hidden="true"></i><span>${estado.texto}</span>`;
+          }
+          if (aviso) {
+              aviso.textContent = mensaje;
+              aviso.hidden = !mensaje;
+          }
+          if (mostrar) {
+              mostrar.hidden = !(oculta && existeEvaluacionRegistrada(sectionId));
+          }
+          if (limpiar) {
+              limpiar.hidden = !document.getElementById(`ai-feedback-${sectionId}`)?.classList.contains('active');
+          }
+      }
+
       function guardarEvaluacionVisible(sectionId, tipo = 'previa') {
           const feedback = document.getElementById(`ai-feedback-${sectionId}`);
           if (!feedback) return;
-          setLocalStorage(`evaluacion_visible_${sectionId}`, JSON.stringify({
+          removeLocalStorage(claveEvaluacionOculta(sectionId));
+          setLocalStorage(claveEvaluacionVisible(sectionId), JSON.stringify({
               tipo,
               estudiante: document.getElementById(`ai-student-code-${sectionId}`)?.textContent || '',
               referencia: document.getElementById(`ai-ideal-code-${sectionId}`)?.textContent || '',
               resumen: document.getElementById(`ai-text-${sectionId}`)?.innerHTML || '',
               guardadoEn: Date.now()
           }));
+          actualizarControlesEvaluacion(sectionId);
       }
 
-      function restaurarEvaluacionVisible(sectionId) {
-          const raw = getLocalStorage(`evaluacion_visible_${sectionId}`);
-          if (!raw) return;
+      function construirResumenEvaluacionRegistrada(sectionId) {
+          const resultado = historialResultados[sectionId] || {};
+          const notaCodigo = Number(resultado.notaCodigo);
+          const notaPreguntas = Number(resultado.notaPreguntas);
+          const notaAutomatica = Number(resultado.notaFinal ?? resultado.notaIA);
+          const detalle = obtenerNotaVigenteModuloEstudiante(sectionId);
+          const diferencia = detalle.corregida && Number.isFinite(notaAutomatica)
+              ? Number((detalle.nota - notaAutomatica).toFixed(1))
+              : null;
+          return `
+              <div class="evaluation-grade-summary">
+                  <div><small>Código</small><strong>${Number.isFinite(notaCodigo) ? `${notaCodigo.toFixed(1)}/10` : 'Pendiente'}</strong></div>
+                  <div><small>Preguntas</small><strong>${Number.isFinite(notaPreguntas) ? `${notaPreguntas.toFixed(1)}/10` : 'Pendiente'}</strong></div>
+                  <div><small>Automática</small><strong>${Number.isFinite(notaAutomatica) ? `${notaAutomatica.toFixed(1)}/10` : 'Pendiente'}</strong></div>
+                  <div><small>Nota vigente</small><strong>${Number.isFinite(detalle.nota) ? `${detalle.nota.toFixed(1)}/10` : 'Pendiente'}</strong></div>
+              </div>
+              ${diferencia !== null ? `<p class="evaluation-grade-difference ${diferencia >= 0 ? 'is-positive' : 'is-negative'}"><strong>Diferencia por corrección docente:</strong> ${diferencia > 0 ? '+' : ''}${diferencia.toFixed(1)} puntos.</p>` : ''}
+              ${resultado.analisisIA ? `<p>${escapeHtml(resultado.analisisIA)}</p>` : ''}
+              <small>Esta vista se reconstruyó desde la entrega registrada, sin volver a calcular la calificación.</small>`;
+      }
+
+      function restaurarEvaluacionVisible(sectionId, forzar = false) {
+          const oculta = getLocalStorage(claveEvaluacionOculta(sectionId)) === 'true';
+          if (oculta && !forzar) {
+              document.getElementById(`ai-feedback-${sectionId}`)?.classList.remove('active');
+              actualizarControlesEvaluacion(sectionId);
+              return;
+          }
+          const raw = getLocalStorage(claveEvaluacionVisible(sectionId));
           try {
-              const datos = JSON.parse(raw);
+              const datos = raw ? JSON.parse(raw) : null;
               const feedback = document.getElementById(`ai-feedback-${sectionId}`);
-              if (!feedback || !datos || !datos.resumen) return;
+              if (!feedback) return;
+              if (!datos?.resumen && !existeEvaluacionRegistrada(sectionId)) {
+                  actualizarControlesEvaluacion(sectionId);
+                  return;
+              }
               feedback.classList.add('active');
               const estudiante = document.getElementById(`ai-student-code-${sectionId}`);
               const referencia = document.getElementById(`ai-ideal-code-${sectionId}`);
               const resumen = document.getElementById(`ai-text-${sectionId}`);
-              if (estudiante) estudiante.textContent = datos.estudiante || '';
-              if (referencia) referencia.textContent = datos.referencia || '';
-              if (resumen) resumen.innerHTML = datos.resumen;
+              const resultado = historialResultados[sectionId] || {};
+              const sec = seccionesData.find(item => item.id === sectionId);
+              if (estudiante) estudiante.textContent = datos?.estudiante || resultado.codigo || '';
+              if (referencia) referencia.textContent = datos?.referencia || resultado.solucionIA || sec?.aiSolution || '';
+              if (resumen) resumen.innerHTML = datos?.resumen || construirResumenEvaluacionRegistrada(sectionId);
+              const preguntas = document.getElementById(`analyst-questions-${sectionId}`);
+              if (
+                  resultado.comparacionRealizada &&
+                  actividadesFinalizadas[sectionId] !== true &&
+                  preguntas &&
+                  !preguntas.children.length &&
+                  resultado.codigo
+              ) {
+                  construirAnalista(sectionId, resultado.codigo);
+              }
+              removeLocalStorage(claveEvaluacionOculta(sectionId));
+              actualizarControlesEvaluacion(sectionId, 'Evaluación guardada restaurada.');
           } catch (_) {
-              removeLocalStorage(`evaluacion_visible_${sectionId}`);
+              removeLocalStorage(claveEvaluacionVisible(sectionId));
+              actualizarControlesEvaluacion(sectionId);
           }
+      }
+
+      function limpiarEvaluacionVisible(sectionId) {
+          document.getElementById(`ai-feedback-${sectionId}`)?.classList.remove('active');
+          removeLocalStorage(claveEvaluacionVisible(sectionId));
+          setLocalStorage(claveEvaluacionOculta(sectionId), 'true');
+          actualizarControlesEvaluacion(
+              sectionId,
+              'Evaluación oculta. La entrega registrada no fue eliminada.'
+          );
+          document.getElementById(`evaluation-notice-${sectionId}`)?.focus({ preventScroll: true });
+      }
+
+      function mostrarEvaluacionGuardada(sectionId) {
+          restaurarEvaluacionVisible(sectionId, true);
+          document.getElementById(`ai-feedback-${sectionId}`)?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+          });
       }
 
       function formatearFechaNotaDocente(valor) {
@@ -1034,7 +1160,10 @@
       }
 
       function actualizarNotasDocenteVisiblesEstudiante() {
-          seccionesData.forEach(sec => actualizarNotaDocenteVisibleEstudiante(sec.id));
+          seccionesData.forEach(sec => {
+              actualizarNotaDocenteVisibleEstudiante(sec.id);
+              actualizarControlesEvaluacion(sec.id);
+          });
       }
 
       window.addEventListener('notas-desafios-docente', event => {
@@ -2287,6 +2416,10 @@
               seccionActivaActual = datos.seccionActiva;
               setLocalStorage(SECCION_ACTIVA_STORAGE_KEY, seccionActivaActual);
           }
+          seccionesData.forEach(sec => {
+              actualizarControlesEvaluacion(sec.id);
+              restaurarEvaluacionVisible(sec.id);
+          });
       }
 
       function solicitarDatosNuevoEstudiante(esNuevoRegistro = true, datosExistentes = null) {
@@ -2913,8 +3046,22 @@
                               </aside>
                           </div>
 
+                          <div class="evaluation-visibility-bar" id="evaluation-visibility-${sec.id}" data-state="vacia">
+                              <span class="evaluation-status is-vacia" id="evaluation-status-${sec.id}">
+                                  <i class="fa-solid fa-eye-slash" aria-hidden="true"></i><span>Sin evaluación visible</span>
+                              </span>
+                              <button class="btn btn-secondary evaluation-show-button" id="btn-show-evaluation-${sec.id}" type="button" onclick="mostrarEvaluacionGuardada('${sec.id}')" hidden>
+                                  <i class="fa-solid fa-eye" aria-hidden="true"></i> Mostrar evaluación guardada
+                              </button>
+                              <p class="evaluation-visibility-notice" id="evaluation-notice-${sec.id}" role="status" aria-live="polite" tabindex="-1" hidden></p>
+                          </div>
                           <div class="ai-feedback-box ${isFinalized ? 'active' : ''}" id="ai-feedback-${sec.id}">
-                              <div class="ai-header"><i class="fa-solid fa-wand-magic-sparkles"></i> Evaluación automática orientativa</div>
+                              <div class="ai-header">
+                                  <span><i class="fa-solid fa-wand-magic-sparkles"></i> Evaluación automática orientativa</span>
+                                  <button class="btn btn-secondary evaluation-clear-button" id="btn-clear-evaluation-${sec.id}" type="button" onclick="limpiarEvaluacionVisible('${sec.id}')" aria-label="Limpiar la evaluación visible sin borrar la entrega">
+                                      <i class="fa-solid fa-eye-slash" aria-hidden="true"></i> Limpiar evaluación visible
+                                  </button>
+                              </div>
                               <div class="ai-comparison-grid">
                                   <div class="ai-column">
                                       <h4><i class="fa-solid fa-user-graduate"></i> Tu Código Entregado</h4>
@@ -3300,7 +3447,8 @@
           delete actividadesFinalizadas[sectionId];
           removeLocalStorage(`finalized_${sectionId}`);
           removeLocalStorage(`preview_count_${sectionId}`);
-          removeLocalStorage(`evaluacion_visible_${sectionId}`);
+          removeLocalStorage(claveEvaluacionVisible(sectionId));
+          removeLocalStorage(claveEvaluacionOculta(sectionId));
           delete historialResultados[sectionId];
           contadorPrevisualizaciones[sectionId] = 0;
 
@@ -3342,7 +3490,8 @@
               delete actividadesFinalizadas[sec.id];
               removeLocalStorage(`finalized_${sec.id}`);
               removeLocalStorage(`preview_count_${sec.id}`);
-              removeLocalStorage(`evaluacion_visible_${sec.id}`);
+              removeLocalStorage(claveEvaluacionVisible(sec.id));
+              removeLocalStorage(claveEvaluacionOculta(sec.id));
               delete historialResultados[sec.id];
               contadorPrevisualizaciones[sec.id] = 0;
 
@@ -3599,7 +3748,8 @@
           seccionesData.forEach(sec => {
               removeLocalStorage(`finalized_${sec.id}`);
               removeLocalStorage(`preview_count_${sec.id}`);
-              removeLocalStorage(`evaluacion_visible_${sec.id}`);
+              removeLocalStorage(claveEvaluacionVisible(sec.id));
+              removeLocalStorage(claveEvaluacionOculta(sec.id));
               removeLocalStorage(`timer_${sec.id}`);
               tiemposRestantes[sec.id] = TIEMPO_MAXIMO_SEGUNDOS;
               modulosPausados[sec.id] = false;
@@ -3688,7 +3838,8 @@
                   document.getElementById(`editor-${sectionId}`).dispatchEvent(new Event('input', { bubbles: true }));
                   document.getElementById(`console-${sectionId}`).innerText = '// Código restablecido.';
                   document.getElementById(`ai-feedback-${sectionId}`).classList.remove('active');
-                  removeLocalStorage(`evaluacion_visible_${sectionId}`);
+                  removeLocalStorage(claveEvaluacionVisible(sectionId));
+                  removeLocalStorage(claveEvaluacionOculta(sectionId));
                   removeLocalStorage(`draft_editor-${sectionId}`);
                   delete historialResultados[sectionId];
 
@@ -5429,6 +5580,7 @@
                   </div>`
               );
           }
+          guardarEvaluacionVisible(sectionId, 'finalizada');
           programarGuardadoFirebase();
       }
 
