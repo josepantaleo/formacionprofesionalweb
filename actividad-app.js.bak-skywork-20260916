@@ -8468,114 +8468,6 @@
               promedio: evaluadas.length ? suma / evaluadas.length : null
           };
       }
-      function obtenerDesafioActualEstudiante(d) {
-          const control = d?.__controlEstudiante || {};
-          const idsValidos = new Set(seccionesData.map(sec => sec.id));
-          const idControl = idsValidos.has(control.seccionActiva) ? control.seccionActiva : '';
-          const idGuardado = idsValidos.has(d?.seccionActiva) ? d.seccionActiva : '';
-          const id = idControl || idGuardado;
-          const desafio = seccionesData.find(sec => sec.id === id) || null;
-          const estadoConexion = obtenerEstadoConexionProfesor(d);
-          const trabajandoAhora = idControl && estadoConexion === 'trabajando';
-          const conectado = idControl && !['desconectado', 'sin_conexion'].includes(estadoConexion);
-          return {
-              id,
-              desafio,
-              trabajandoAhora: Boolean(trabajandoAhora),
-              conectado: Boolean(conectado),
-              estadoConexion
-          };
-      }
-      function renderGraficoNotasDesafiosEstudiante(d) {
-          const historial = d?.historialResultados || {};
-          const notasDocente = d?.notasDesafiosDocente || {};
-          const desafioActual = obtenerDesafioActualEstudiante(d);
-          const limitarNota = valor => {
-              const numero = valor === null || valor === undefined || valor === '' ? NaN : Number(valor);
-              return Number.isFinite(numero) ? Math.max(0, Math.min(10, numero)) : null;
-          };
-          const datos = seccionesData.map((sec, indice) => {
-              const resultado = historial[sec.id] || {};
-              return {
-                  id: sec.id,
-                  indice: indice + 1,
-                  titulo: sec.title || `Desafío ${indice + 1}`,
-                  automatica: limitarNota(resultado.notaFinal ?? resultado.notaIA),
-                  docente: limitarNota(notasDocente[sec.id]?.nota),
-                  finalizada: d?.finalizadas?.[sec.id] === true,
-                  actual: sec.id === desafioActual.id
-              };
-          });
-          const hayNotas = datos.some(item => item.automatica !== null || item.docente !== null);
-          const ancho = Math.max(820, datos.length * 66 + 92);
-          const alto = 342;
-          const margen = { izquierda: 48, derecha: 20, superior: 28, inferior: 72 };
-          const altoUtil = alto - margen.superior - margen.inferior;
-          const anchoUtil = ancho - margen.izquierda - margen.derecha;
-          const paso = anchoUtil / Math.max(1, datos.length);
-          const yNota = nota => margen.superior + altoUtil - (nota / 10) * altoUtil;
-          const ejes = [0, 2, 4, 6, 8, 10].map(nota => {
-              const y = yNota(nota);
-              return `<line x1="${margen.izquierda}" y1="${y}" x2="${ancho - margen.derecha}" y2="${y}"></line>
-                  <text x="${margen.izquierda - 9}" y="${y + 4}" text-anchor="end">${nota}</text>`;
-          }).join('');
-          const columnas = datos.map((item, posicion) => {
-              const centro = margen.izquierda + paso * posicion + paso / 2;
-              const anchoBarra = Math.min(16, Math.max(9, paso * .24));
-              const separacion = 3;
-              const xAutomatica = centro - anchoBarra - separacion / 2;
-              const xDocente = centro + separacion / 2;
-              const alturaAutomatica = item.automatica === null ? 0 : alto - margen.inferior - yNota(item.automatica);
-              const alturaDocente = item.docente === null ? 0 : alto - margen.inferior - yNota(item.docente);
-              const etiquetaActual = item.actual
-                  ? `<rect class="teacher-student-grade-current-band" x="${(centro - paso * .45).toFixed(1)}" y="${margen.superior - 8}" width="${(paso * .9).toFixed(1)}" height="${altoUtil + 34}" rx="5"></rect>`
-                  : '';
-              const barraAutomatica = item.automatica === null ? ''
-                  : `<rect class="teacher-student-grade-bar is-automatic" x="${xAutomatica.toFixed(1)}" y="${yNota(item.automatica).toFixed(1)}" width="${anchoBarra.toFixed(1)}" height="${alturaAutomatica.toFixed(1)}" rx="2">
-                      <title>${escapeHtml(`${item.titulo}: nota automática ${item.automatica.toFixed(1)}/10`)}</title>
-                    </rect>`;
-              const barraDocente = item.docente === null ? ''
-                  : `<rect class="teacher-student-grade-bar is-teacher" x="${xDocente.toFixed(1)}" y="${yNota(item.docente).toFixed(1)}" width="${anchoBarra.toFixed(1)}" height="${alturaDocente.toFixed(1)}" rx="2">
-                      <title>${escapeHtml(`${item.titulo}: nota modificada por el docente ${item.docente.toFixed(1)}/10`)}</title>
-                    </rect>`;
-              const marcadorActual = item.actual
-                  ? `<circle class="teacher-student-grade-current-point" cx="${centro.toFixed(1)}" cy="${margen.superior - 10}" r="6">
-                      <title>${escapeHtml(`Desafío actual: ${item.titulo}`)}</title>
-                    </circle>`
-                  : '';
-              return `${etiquetaActual}${barraAutomatica}${barraDocente}${marcadorActual}
-                  <text class="${item.actual ? 'is-current' : ''}" x="${centro.toFixed(1)}" y="${alto - 45}" text-anchor="middle">D${item.indice}</text>
-                  <text class="teacher-student-grade-status-label" x="${centro.toFixed(1)}" y="${alto - 25}" text-anchor="middle">${item.finalizada ? 'Finalizado' : (item.actual ? 'Actual' : 'Pendiente')}</text>`;
-          }).join('');
-          const tituloActual = desafioActual.desafio?.title || 'Sin desafío informado';
-          const estadoActual = desafioActual.trabajandoAhora
-              ? 'Trabajando ahora'
-              : (desafioActual.conectado ? 'Desafío abierto' : (desafioActual.id ? 'Último desafío informado' : 'Sin actividad informada'));
-          return `<section class="teacher-student-grade-chart">
-              <header>
-                  <div>
-                      <h3><i class="fa-solid fa-chart-column"></i> Notas por desafío</h3>
-                      <p>Compara la calificación automática con la nota modificada por el docente.</p>
-                  </div>
-                  <div class="teacher-student-current-challenge ${desafioActual.trabajandoAhora ? 'is-live' : ''}">
-                      <span><i class="fa-solid ${desafioActual.trabajandoAhora ? 'fa-keyboard' : 'fa-location-dot'}"></i> ${escapeHtml(estadoActual)}</span>
-                      <strong>${escapeHtml(tituloActual)}</strong>
-                  </div>
-              </header>
-              <div class="teacher-student-grade-legend" aria-label="Referencias del gráfico">
-                  <span class="is-automatic">Nota automática</span>
-                  <span class="is-teacher">Nota modificada por docente</span>
-                  <span class="is-current">Desafío actual</span>
-              </div>
-              <div class="teacher-student-grade-chart-scroll" tabindex="0" aria-label="Gráfico desplazable de notas por desafío">
-                  ${hayNotas || desafioActual.id ? `<svg viewBox="0 0 ${ancho} ${alto}" style="min-width:${ancho}px" role="img" aria-label="Notas automáticas y modificadas por el docente en cada desafío">
-                      <g class="teacher-student-grade-grid">${ejes}</g>
-                      <g class="teacher-student-grade-columns">${columnas}</g>
-                  </svg>` : '<div class="teacher-student-grade-empty">Todavía no hay notas ni un desafío activo para mostrar.</div>'}
-              </div>
-              <div class="teacher-student-grade-key">${datos.map(item => `<span class="${item.actual ? 'is-current' : ''}" title="${escapeHtml(item.titulo)}"><b>D${item.indice}</b> ${escapeHtml(item.titulo)}</span>`).join('')}</div>
-          </section>`;
-      }
       function formatearTiempoProfesor(segundos) {
           const total = Math.max(0, Number(segundos) || 0);
           const minutos = Math.floor(total / 60);
@@ -9829,8 +9721,6 @@
           const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
           const notaFinalEditable = notaDefinitiva !== '—' ? notaDefinitiva : notaCalculada;
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
-          const desafioActualDetalle = obtenerDesafioActualEstudiante(d);
-          const graficoNotasDesafios = renderGraficoNotasDesafiosEstudiante(d);
           const resumenConsultasIA = resumirConsultasIAEstudiante(d);
           const actividadesSocraticasValidas = obtenerActividadesSocraticasValidas(d);
           const resumenNivelesAnalista = obtenerConteoInformeSocratico(d);
@@ -10087,10 +9977,9 @@
                   <div class="teacher-detail-stat"><small>Nombre</small><strong>${escapeHtml(e.nombre || d.nombreGoogle || 'Sin nombre')}</strong></div>
                   <div class="teacher-detail-stat"><small>Email</small><strong>${escapeHtml(d.email || 'Sin email')}</strong></div>
                   <div class="teacher-detail-stat"><small>Curso y división</small><strong>${escapeHtml(`${e.curso || '—'} ${e.division || ''}`)}</strong></div>
-                   <div class="teacher-detail-stat"><small>Turno</small><strong>${escapeHtml(e.turno || '—')}</strong></div>
-                   <div class="teacher-detail-stat"><small>Progreso</small><strong>${progreso}%</strong></div>
-                   <div class="teacher-detail-stat teacher-current-challenge-stat"><small>Desafío actual</small><strong>${escapeHtml(desafioActualDetalle.desafio?.title || 'Sin actividad informada')}</strong><span>${desafioActualDetalle.trabajandoAhora ? 'Trabajando ahora' : (desafioActualDetalle.id ? 'Último informado' : 'Sin conexión activa')}</span></div>
-                   <div class="teacher-detail-stat"><small>Desafíos con evaluación socrática</small><strong>${actividadesSocraticasValidas.length}</strong></div>
+                  <div class="teacher-detail-stat"><small>Turno</small><strong>${escapeHtml(e.turno || '—')}</strong></div>
+                  <div class="teacher-detail-stat"><small>Progreso</small><strong>${progreso}%</strong></div>
+                  <div class="teacher-detail-stat"><small>Desafíos con evaluación socrática</small><strong>${actividadesSocraticasValidas.length}</strong></div>
                   <div class="teacher-detail-stat"><small>Total de respuestas socráticas</small><strong>${respuestasSocraticasValidas}</strong></div>
                   <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong></div>
                   <div class="teacher-detail-stat"><small>Nota calculada</small><strong>${notaCalculada === '—' ? 'Pendiente' : `${notaCalculada}/10`}</strong></div>
@@ -10102,10 +9991,9 @@
                   <div class="teacher-detail-stat"><small>Estado de cuenta</small><strong style="color:${colorCuentaDetalle}">${estadoCuentaDetalle}</strong></div>
                   <div class="teacher-detail-stat"><small>Salidas de pestaña</small><strong>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</strong></div>
                   <div class="teacher-detail-stat"><small>Desbloqueos</small><strong>${cantidadDesbloqueos}</strong></div>
-                   <div class="teacher-detail-stat"><small>Última actualización</small><strong>${escapeHtml(fecha)}</strong></div>
-               </div>
-               ${graficoNotasDesafios}
-               <div class="teacher-detail-toolbar">
+                  <div class="teacher-detail-stat"><small>Última actualización</small><strong>${escapeHtml(fecha)}</strong></div>
+              </div>
+              <div class="teacher-detail-toolbar">
                   <div class="teacher-detail-toolbar-title">
                       <strong><i class="fa-solid fa-layer-group"></i> Desafíos del informe</strong>
                       <span id="estadoFiltroDetalleProfesor">${seccionesData.length} de ${seccionesData.length} desafíos</span>
