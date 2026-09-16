@@ -118,8 +118,6 @@
         }
 
         async function iniciarSincronizacionConfiguracionJitsi() {
-          const usuario = window.firebaseCurrentUser || await window.firebaseAuthReady;
-          if (!usuario) return;
           const configuracion = await window.cargarConfiguracionJitsiFirebase?.();
           if (configuracion) aplicarConfiguracionJitsiRemota(configuracion);
           window.escucharConfiguracionJitsiFirebase?.();
@@ -1551,9 +1549,6 @@
         });
         window.setTimeout(actualizarInvitacionJitsiEstudiante, 0);
         window.setTimeout(iniciarSincronizacionConfiguracionJitsi, 500);
-        window.addEventListener('firebase-auth-changed', () => {
-          if (window.firebaseCurrentUser) iniciarSincronizacionConfiguracionJitsi();
-        });
          window.setInterval(() => {
            actualizarInvitacionJitsiEstudiante();
            const modal = document.getElementById('jitsiModal');

@@ -7,8 +7,6 @@
     "test:cooperation": "node cooperation-contract.test.cjs",
     "test:session": "node session-presence-contract.test.cjs",
     "test:ui": "node ui-contract.test.cjs",
-    "test:buttons": "node button-contract.test.cjs",
-    "test:mobile": "node mobile-ui-contract.test.cjs",
     "validate": "powershell -NoProfile -ExecutionPolicy Bypass -File ./validate-project.ps1",
     "version:bump": "powershell -NoProfile -ExecutionPolicy Bypass -File ./versionar-publicacion.ps1",
     "version:publish": "powershell -NoProfile -ExecutionPolicy Bypass -File ./versionar-publicacion.ps1 -SourceRoot . -DestinationRoot \"C:\\Users\\Estudiante\\Desktop\\formacionprofesionalweb-main\""
@@ -16,7 +14,6 @@
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.0",
     "firebase": "^12.3.0",
-    "playwright": "^1.55.1",
     "yjs": "^13.6.31"
   }
 }

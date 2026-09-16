@@ -11,13 +11,11 @@ $scripts = @(
   "codemirror-bundle.js",
   "panel-profesor.js",
   "actividad-cooperacion.js",
-  "mejoras-seguimiento.js",
-  "button-contract.test.cjs",
-  "mobile-ui-contract.test.cjs"
+  "mejoras-seguimiento.js"
 )
 foreach ($script in $scripts) {
   node --check ".\$script"
-  if ($LASTEXITCODE -ne 0) { throw "Sintaxis invalida: $script" }
+  if ($LASTEXITCODE -ne 0) { throw "Sintaxis inválida: $script" }
 }
 
 $required = @(
@@ -28,21 +26,12 @@ $required = @(
   "actividad-firebase.js",
   "mejoras-seguimiento.css",
   "mejoras-seguimiento.js",
-  "reglas.txt",
-  "button-contract.test.cjs",
-  "actividad-mobile.css",
-  "mobile-ui-contract.test.cjs"
+  "reglas.txt"
 )
 $missing = $required | Where-Object { -not (Test-Path $_) }
 if ($missing) { throw "Archivos faltantes: $($missing -join ', ')" }
 
 node ".\ui-contract.test.cjs"
-if ($LASTEXITCODE -ne 0) { throw "Fallo el contrato de interfaz." }
+if ($LASTEXITCODE -ne 0) { throw "Falló el contrato de interfaz." }
 
-node ".\button-contract.test.cjs"
-if ($LASTEXITCODE -ne 0) { throw "Fallo el contrato de botones." }
-
-node ".\mobile-ui-contract.test.cjs"
-if ($LASTEXITCODE -ne 0) { throw "Fallo el contrato movil." }
-
-Write-Host "Validacion del proyecto: OK"
+Write-Host "Validación del proyecto: OK"

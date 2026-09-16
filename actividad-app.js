@@ -863,51 +863,27 @@
       window.addEventListener("actividades-desbloqueadas-estudiante", event => {
           const finalizadasRemotas = event.detail?.finalizadas;
           if (!finalizadasRemotas || typeof finalizadasRemotas !== "object") return;
-          const desbloqueo = event.detail?.desbloqueo || null;
-          const desbloqueoId = String(desbloqueo?.id || "");
-          if (desbloqueoId) window.__ultimoDesbloqueoActividadesId = desbloqueoId;
           actividadesFinalizadas = { ...finalizadasRemotas };
           seccionesData.forEach(sec => {
               if (actividadesFinalizadas[sec.id] === true) {
                   setLocalStorage(`finalized_${sec.id}`, 'true');
               } else {
                   removeLocalStorage(`finalized_${sec.id}`);
-                  removeLocalStorage(`preview_count_${sec.id}`);
-                  contadorPrevisualizaciones[sec.id] = 0;
                   actualizarBloqueoEditorEstudiante(sec.id);
-                  ['run', 'preview', 'ai', 'reset', 'pause'].forEach(btn => {
+                  ['run', 'preview', 'ai', 'reset'].forEach(btn => {
                       const control = document.getElementById(`btn-${btn}-${sec.id}`);
                       if (control) control.disabled = false;
                   });
-                  document.querySelectorAll(`#${CSS.escape(sec.id)} [data-ai-editor-action], #ai-chat-input-${CSS.escape(sec.id)}, #ai-chat-${CSS.escape(sec.id)} button[type="submit"]`).forEach(control => {
-                      control.disabled = false;
-                  });
-                  const botonPrevia = document.getElementById(`btn-preview-${sec.id}`);
-                  if (botonPrevia) botonPrevia.innerHTML = '<i class="fa-solid fa-star-half-stroke"></i> Nota previa (3)';
                   const estado = document.getElementById(`editor-state-${sec.id}`);
                   if (estado) {
                       estado.className = 'student-editor-state idle';
-                      estado.innerHTML = '<i class="fa-solid fa-pen"></i> Actividad desbloqueada';
+                      estado.innerHTML = '<i class="fa-solid fa-pen"></i> Listo para programar';
                   }
                   const consola = document.getElementById(`console-${sec.id}`);
                   if (consola && consola.textContent.includes('Actividad finalizada')) consola.textContent = '// Ejecutá el código para ver aquí los resultados o errores.';
-                  document.getElementById(`ai-feedback-${sec.id}`)?.classList.remove('active');
-                  const navBtn = document.getElementById(`nav-btn-${sec.id}`);
-                  navBtn?.querySelector('.status-icon')?.remove();
-                  navBtn?.classList.remove('is-completed');
-                  navBtn?.classList.add('is-pending');
-                  navBtn?.removeAttribute('data-progress-status');
-                  if (desbloqueoId) {
-                      tiemposRestantes[sec.id] = TIEMPO_MAXIMO_SEGUNDOS;
-                      removeLocalStorage(`timer_${sec.id}`);
-                      actualizarDisplayTiempo(sec.id);
-                  }
               }
           });
           actualizarProgreso();
-          firebaseSaveGeneration++;
-          firebaseSaveDirty = true;
-          firebaseLastSavedFingerprint = "";
       });
       window.addEventListener("pantalla-bloqueada-estudiante", () => {
           pantallaBloqueada = true;
@@ -934,175 +910,7 @@
           notaCalculadaAlConfirmar: null,
           notaModificadaManualmente: false
       };
-      const SECCION_ACTIVA_STORAGE_KEY = 'app_active_section';
-      let seccionActivaActual = getLocalStorage(SECCION_ACTIVA_STORAGE_KEY) &&
-          seccionesData.some(sec => sec.id === getLocalStorage(SECCION_ACTIVA_STORAGE_KEY))
-          ? getLocalStorage(SECCION_ACTIVA_STORAGE_KEY)
-          : seccionesData[0].id;
-
-      function obtenerCodigoActualEditor(sectionId) {
-          const editor = document.getElementById(`editor-${sectionId}`);
-          if (!editor) return '';
-          const codigoCodeMirror = editor.__codeMirrorView?.state?.doc?.toString?.();
-          return typeof codigoCodeMirror === 'string' ? codigoCodeMirror : String(editor.value || '');
-      }
-
-      const claveEvaluacionVisible = sectionId => `evaluacion_visible_${sectionId}`;
-      const claveEvaluacionOculta = sectionId => `evaluacion_oculta_${sectionId}`;
-
-      function obtenerEstadoEvaluacion(sectionId) {
-          const resultado = historialResultados[sectionId] || {};
-          const detalleNota = obtenerNotaVigenteModuloEstudiante(sectionId);
-          if (detalleNota.corregida) {
-              return { codigo: 'docente', texto: 'Nota docente corregida', icono: 'fa-chalkboard-user' };
-          }
-          if (actividadesFinalizadas[sectionId] === true || Number.isFinite(Number(resultado.notaFinal))) {
-              return { codigo: 'finalizada', texto: 'Entrega finalizada', icono: 'fa-circle-check' };
-          }
-          if (resultado.comparacionRealizada || Number.isFinite(Number(resultado.notaCodigo))) {
-              return { codigo: 'comparacion', texto: 'Comparación realizada', icono: 'fa-code-compare' };
-          }
-          try {
-              const visible = JSON.parse(getLocalStorage(claveEvaluacionVisible(sectionId)) || 'null');
-              if (visible?.tipo === 'previa') {
-                  return { codigo: 'previa', texto: 'Nota previa orientativa', icono: 'fa-star-half-stroke' };
-              }
-          } catch (_) {}
-          return { codigo: 'vacia', texto: 'Sin evaluación visible', icono: 'fa-eye-slash' };
-      }
-
-      function existeEvaluacionRegistrada(sectionId) {
-          const resultado = historialResultados[sectionId] || {};
-          return Boolean(
-              resultado.comparacionRealizada ||
-              resultado.codigo ||
-              resultado.analista ||
-              Number.isFinite(Number(resultado.notaCodigo)) ||
-              Number.isFinite(Number(resultado.notaFinal))
-          );
-      }
-
-      function actualizarControlesEvaluacion(sectionId, mensaje = '') {
-          const estado = obtenerEstadoEvaluacion(sectionId);
-          const oculta = getLocalStorage(claveEvaluacionOculta(sectionId)) === 'true';
-          const barra = document.getElementById(`evaluation-visibility-${sectionId}`);
-          const insignia = document.getElementById(`evaluation-status-${sectionId}`);
-          const aviso = document.getElementById(`evaluation-notice-${sectionId}`);
-          const mostrar = document.getElementById(`btn-show-evaluation-${sectionId}`);
-          const limpiar = document.getElementById(`btn-clear-evaluation-${sectionId}`);
-          if (barra) barra.dataset.state = estado.codigo;
-          if (insignia) {
-              insignia.className = `evaluation-status is-${estado.codigo}`;
-              insignia.innerHTML = `<i class="fa-solid ${estado.icono}" aria-hidden="true"></i><span>${estado.texto}</span>`;
-          }
-          if (aviso) {
-              aviso.textContent = mensaje;
-              aviso.hidden = !mensaje;
-          }
-          if (mostrar) {
-              mostrar.hidden = !(oculta && existeEvaluacionRegistrada(sectionId));
-          }
-          if (limpiar) {
-              limpiar.hidden = !document.getElementById(`ai-feedback-${sectionId}`)?.classList.contains('active');
-          }
-      }
-
-      function guardarEvaluacionVisible(sectionId, tipo = 'previa') {
-          const feedback = document.getElementById(`ai-feedback-${sectionId}`);
-          if (!feedback) return;
-          removeLocalStorage(claveEvaluacionOculta(sectionId));
-          setLocalStorage(claveEvaluacionVisible(sectionId), JSON.stringify({
-              tipo,
-              estudiante: document.getElementById(`ai-student-code-${sectionId}`)?.textContent || '',
-              referencia: document.getElementById(`ai-ideal-code-${sectionId}`)?.textContent || '',
-              resumen: document.getElementById(`ai-text-${sectionId}`)?.innerHTML || '',
-              guardadoEn: Date.now()
-          }));
-          actualizarControlesEvaluacion(sectionId);
-      }
-
-      function construirResumenEvaluacionRegistrada(sectionId) {
-          const resultado = historialResultados[sectionId] || {};
-          const notaCodigo = Number(resultado.notaCodigo);
-          const notaPreguntas = Number(resultado.notaPreguntas);
-          const notaAutomatica = Number(resultado.notaFinal ?? resultado.notaIA);
-          const detalle = obtenerNotaVigenteModuloEstudiante(sectionId);
-          const diferencia = detalle.corregida && Number.isFinite(notaAutomatica)
-              ? Number((detalle.nota - notaAutomatica).toFixed(1))
-              : null;
-          return `
-              <div class="evaluation-grade-summary">
-                  <div><small>Código</small><strong>${Number.isFinite(notaCodigo) ? `${notaCodigo.toFixed(1)}/10` : 'Pendiente'}</strong></div>
-                  <div><small>Preguntas</small><strong>${Number.isFinite(notaPreguntas) ? `${notaPreguntas.toFixed(1)}/10` : 'Pendiente'}</strong></div>
-                  <div><small>Automática</small><strong>${Number.isFinite(notaAutomatica) ? `${notaAutomatica.toFixed(1)}/10` : 'Pendiente'}</strong></div>
-                  <div><small>Nota vigente</small><strong>${Number.isFinite(detalle.nota) ? `${detalle.nota.toFixed(1)}/10` : 'Pendiente'}</strong></div>
-              </div>
-              ${diferencia !== null ? `<p class="evaluation-grade-difference ${diferencia >= 0 ? 'is-positive' : 'is-negative'}"><strong>Diferencia por corrección docente:</strong> ${diferencia > 0 ? '+' : ''}${diferencia.toFixed(1)} puntos.</p>` : ''}
-              ${resultado.analisisIA ? `<p>${escapeHtml(resultado.analisisIA)}</p>` : ''}
-              <small>Esta vista se reconstruyó desde la entrega registrada, sin volver a calcular la calificación.</small>`;
-      }
-
-      function restaurarEvaluacionVisible(sectionId, forzar = false) {
-          const oculta = getLocalStorage(claveEvaluacionOculta(sectionId)) === 'true';
-          if (oculta && !forzar) {
-              document.getElementById(`ai-feedback-${sectionId}`)?.classList.remove('active');
-              actualizarControlesEvaluacion(sectionId);
-              return;
-          }
-          const raw = getLocalStorage(claveEvaluacionVisible(sectionId));
-          try {
-              const datos = raw ? JSON.parse(raw) : null;
-              const feedback = document.getElementById(`ai-feedback-${sectionId}`);
-              if (!feedback) return;
-              if (!datos?.resumen && !existeEvaluacionRegistrada(sectionId)) {
-                  actualizarControlesEvaluacion(sectionId);
-                  return;
-              }
-              feedback.classList.add('active');
-              const estudiante = document.getElementById(`ai-student-code-${sectionId}`);
-              const referencia = document.getElementById(`ai-ideal-code-${sectionId}`);
-              const resumen = document.getElementById(`ai-text-${sectionId}`);
-              const resultado = historialResultados[sectionId] || {};
-              const sec = seccionesData.find(item => item.id === sectionId);
-              if (estudiante) estudiante.textContent = datos?.estudiante || resultado.codigo || '';
-              if (referencia) referencia.textContent = datos?.referencia || resultado.solucionIA || sec?.aiSolution || '';
-              if (resumen) resumen.innerHTML = datos?.resumen || construirResumenEvaluacionRegistrada(sectionId);
-              const preguntas = document.getElementById(`analyst-questions-${sectionId}`);
-              if (
-                  resultado.comparacionRealizada &&
-                  actividadesFinalizadas[sectionId] !== true &&
-                  preguntas &&
-                  !preguntas.children.length &&
-                  resultado.codigo
-              ) {
-                  construirAnalista(sectionId, resultado.codigo);
-              }
-              removeLocalStorage(claveEvaluacionOculta(sectionId));
-              actualizarControlesEvaluacion(sectionId, 'Evaluación guardada restaurada.');
-          } catch (_) {
-              removeLocalStorage(claveEvaluacionVisible(sectionId));
-              actualizarControlesEvaluacion(sectionId);
-          }
-      }
-
-      function limpiarEvaluacionVisible(sectionId) {
-          document.getElementById(`ai-feedback-${sectionId}`)?.classList.remove('active');
-          removeLocalStorage(claveEvaluacionVisible(sectionId));
-          setLocalStorage(claveEvaluacionOculta(sectionId), 'true');
-          actualizarControlesEvaluacion(
-              sectionId,
-              'Evaluación oculta. La entrega registrada no fue eliminada.'
-          );
-          document.getElementById(`evaluation-notice-${sectionId}`)?.focus({ preventScroll: true });
-      }
-
-      function mostrarEvaluacionGuardada(sectionId) {
-          restaurarEvaluacionVisible(sectionId, true);
-          document.getElementById(`ai-feedback-${sectionId}`)?.scrollIntoView({
-              behavior: 'smooth',
-              block: 'start'
-          });
-      }
+      let seccionActivaActual = seccionesData[0].id;
 
       function formatearFechaNotaDocente(valor) {
           if (!valor) return '';
@@ -1160,10 +968,7 @@
       }
 
       function actualizarNotasDocenteVisiblesEstudiante() {
-          seccionesData.forEach(sec => {
-              actualizarNotaDocenteVisibleEstudiante(sec.id);
-              actualizarControlesEvaluacion(sec.id);
-          });
+          seccionesData.forEach(sec => actualizarNotaDocenteVisibleEstudiante(sec.id));
       }
 
       window.addEventListener('notas-desafios-docente', event => {
@@ -1780,18 +1585,11 @@
               boton.disabled = true;
               boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verificando cuenta...';
           }
-          let autorizado = false;
-          try {
-              autorizado = await window.autorizarDocenteFirebase?.();
-              await actualizarVisibilidadDocente();
-          } catch (error) {
-              console.error('No se pudo completar el acceso docente:', error);
-              window.servicioAlertas?.error?.('No se pudo verificar la cuenta docente. Revisa la conexion e intenta nuevamente.');
-          } finally {
-              if (boton) {
-                  boton.disabled = false;
-                  boton.innerHTML = contenidoOriginal;
-              }
+          const autorizado = await window.autorizarDocenteFirebase?.();
+          await actualizarVisibilidadDocente();
+          if (boton) {
+              boton.disabled = false;
+              boton.innerHTML = contenidoOriginal;
           }
           if (!autorizado) return;
           abrirPanelProfesor();
@@ -1801,14 +1599,8 @@
           if (boton) boton.disabled = true;
           const estado = document.getElementById('estadoClaseProfesor');
           if (estado) estado.textContent = 'Iniciando la clase...';
-          let iniciada = false;
-          try {
-              iniciada = await window.iniciarClaseFirebase?.();
-          } catch (error) {
-              console.error('No se pudo iniciar la clase:', error);
-          } finally {
-              if (boton) boton.disabled = false;
-          }
+          const iniciada = await window.iniciarClaseFirebase?.();
+          if (boton) boton.disabled = false;
           if (!iniciada) {
               if (estado) estado.textContent = 'No se pudo iniciar. Verificá que las reglas de Firestore estén publicadas.';
               return;
@@ -1824,15 +1616,8 @@
       async function finalizarClaseDesdeInterfaz(boton = null) {
           if (boton) boton.disabled = true;
           const estado = document.getElementById('estadoClaseProfesor');
-          let finalizada = false;
-          try {
-              finalizada = await window.finalizarClaseFirebase?.();
-          } catch (error) {
-              console.error('No se pudo finalizar la clase:', error);
-              if (estado) estado.textContent = 'No se pudo finalizar la clase. Revisa la conexion.';
-          } finally {
-              if (boton) boton.disabled = false;
-          }
+          const finalizada = await window.finalizarClaseFirebase?.();
+          if (boton) boton.disabled = false;
           if (!finalizada) return;
           aplicarEstadoInicioClase(false, {
               finalizadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || 'docente autorizado'
@@ -2185,7 +1970,6 @@
               codigos,
               tiemposRestantes: { ...tiemposRestantes },
               finalizadas: { ...actividadesFinalizadas },
-              __desbloqueoAplicadoId: String(window.__ultimoDesbloqueoActividadesId || ""),
               historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
               chatIA: JSON.parse(JSON.stringify(historialChatIA || {})),
               ayudasComprension: JSON.parse(JSON.stringify(ayudasComprension || {})),
@@ -2412,14 +2196,7 @@
           pantallaBloqueadaEn = String(datos.pantallaBloqueadaEn || "");
           pantallaBloqueadaSeccion = String(datos.pantallaBloqueadaSeccion || "");
           aplicarBloqueoInterfazEstudiante(pantallaBloqueada);
-          if (datos.seccionActiva && seccionesData.some(s => s.id === datos.seccionActiva)) {
-              seccionActivaActual = datos.seccionActiva;
-              setLocalStorage(SECCION_ACTIVA_STORAGE_KEY, seccionActivaActual);
-          }
-          seccionesData.forEach(sec => {
-              actualizarControlesEvaluacion(sec.id);
-              restaurarEvaluacionVisible(sec.id);
-          });
+          if (datos.seccionActiva && seccionesData.some(s => s.id === datos.seccionActiva)) seccionActivaActual = datos.seccionActiva;
       }
 
       function solicitarDatosNuevoEstudiante(esNuevoRegistro = true, datosExistentes = null) {
@@ -2821,17 +2598,10 @@
               };
               li.tabIndex = 0;
               li.setAttribute('role', 'button');
-              li.setAttribute('aria-label', `Abrir ${sec.title}. Estado: ${idx === 0 ? 'En curso' : 'Pendiente'}`);
+              li.setAttribute('aria-label', `Abrir ${sec.title}`);
               li.setAttribute('aria-current', idx === 0 ? 'page' : 'false');
               li.id = `nav-btn-${sec.id}`;
-              li.innerHTML = `
-                  <i class="fa-solid ${sec.icon}" aria-hidden="true"></i>
-                  <span class="nav-item-copy">
-                      <span class="nav-item-title">${escapeHtml(sec.title)}</span>
-                      <small class="nav-progress-state ${idx === 0 ? 'is-current' : 'is-pending'}">
-                          ${idx === 0 ? 'En curso' : 'Pendiente'}
-                      </small>
-                  </span>`;
+              li.innerHTML = `<i class="fa-solid ${sec.icon}"></i> <span>${sec.title}</span>`;
               navList.appendChild(li);
 
               const savedCode = getLocalStorage(`draft_editor-${sec.id}`) || sec.initialCode;
@@ -2858,13 +2628,13 @@
                       <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
                           <span class="timer-display" id="timer-display-${sec.id}">40:00</span>
                           <small style="color:var(--text-muted)">Comienza al hacer clic en el editor</small>
-                          <button type="button" class="btn btn-warning teacher-only" id="btn-pause-${sec.id}" onclick="solicitarPausaModulo('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
+                          <button class="btn btn-warning teacher-only" id="btn-pause-${sec.id}" onclick="solicitarPausaModulo('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
                               <i class="fa-solid fa-pause"></i> Pausar (Profe)
                           </button>
-                          <button type="button" class="btn btn-danger teacher-only" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;" onclick="solicitarAccionProfesor('unlock_current')">
+                          <button class="btn btn-danger teacher-only" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;" onclick="solicitarAccionProfesor('unlock_current')">
                               <i class="fa-solid fa-unlock"></i> Desbloquear Este
                           </button>
-                          <button type="button" class="btn btn-danger teacher-only" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;" onclick="solicitarAccionProfesor('unlock_all')">
+                          <button class="btn btn-danger teacher-only" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;" onclick="solicitarAccionProfesor('unlock_all')">
                               <i class="fa-solid fa-unlock-keyhole"></i> Desbloquear Todos
                           </button>
                       </div>
@@ -2984,16 +2754,16 @@
                                   </div>
 
                                   <div class="student-run-actions">
-                                      <button type="button" class="btn btn-primary student-run-primary" id="btn-run-${sec.id}" onclick="ejecutarCodigo('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
+                                      <button class="btn btn-primary student-run-primary" id="btn-run-${sec.id}" onclick="ejecutarCodigo('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
                                           <i class="fa-solid fa-play"></i> Ejecutar código
                                       </button>
-                                      <button type="button" class="btn btn-preview" id="btn-preview-${sec.id}" onclick="previsualizarNotaIA('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
+                                      <button class="btn btn-preview" id="btn-preview-${sec.id}" onclick="previsualizarNotaIA('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
                                           <i class="fa-solid fa-star-half-stroke"></i> Nota previa (${3 - contadorPrevisualizaciones[sec.id]})
                                       </button>
-                                      <button type="button" class="btn btn-ai" id="btn-ai-${sec.id}" onclick="resolverYCompararIA('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
+                                      <button class="btn btn-ai" id="btn-ai-${sec.id}" onclick="resolverYCompararIA('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
                                           <i class="fa-solid fa-flag-checkered"></i> Entregar y comparar
                                       </button>
-                                      <button type="button" class="btn btn-secondary" id="btn-reset-${sec.id}" onclick="restablecerCodigo('${sec.id}')" ${isFinalized ? 'disabled' : ''} title="Volver al código inicial">
+                                      <button class="btn btn-secondary" id="btn-reset-${sec.id}" onclick="restablecerCodigo('${sec.id}')" ${isFinalized ? 'disabled' : ''} title="Volver al código inicial">
                                           <i class="fa-solid fa-rotate-left"></i> Restablecer
                                       </button>
                                   </div>
@@ -3046,22 +2816,8 @@
                               </aside>
                           </div>
 
-                          <div class="evaluation-visibility-bar" id="evaluation-visibility-${sec.id}" data-state="vacia">
-                              <span class="evaluation-status is-vacia" id="evaluation-status-${sec.id}">
-                                  <i class="fa-solid fa-eye-slash" aria-hidden="true"></i><span>Sin evaluación visible</span>
-                              </span>
-                              <button class="btn btn-secondary evaluation-show-button" id="btn-show-evaluation-${sec.id}" type="button" onclick="mostrarEvaluacionGuardada('${sec.id}')" hidden>
-                                  <i class="fa-solid fa-eye" aria-hidden="true"></i> Mostrar evaluación guardada
-                              </button>
-                              <p class="evaluation-visibility-notice" id="evaluation-notice-${sec.id}" role="status" aria-live="polite" tabindex="-1" hidden></p>
-                          </div>
                           <div class="ai-feedback-box ${isFinalized ? 'active' : ''}" id="ai-feedback-${sec.id}">
-                              <div class="ai-header">
-                                  <span><i class="fa-solid fa-wand-magic-sparkles"></i> Evaluación automática orientativa</span>
-                                  <button class="btn btn-secondary evaluation-clear-button" id="btn-clear-evaluation-${sec.id}" type="button" onclick="limpiarEvaluacionVisible('${sec.id}')" aria-label="Limpiar la evaluación visible sin borrar la entrega">
-                                      <i class="fa-solid fa-eye-slash" aria-hidden="true"></i> Limpiar evaluación visible
-                                  </button>
-                              </div>
+                              <div class="ai-header"><i class="fa-solid fa-wand-magic-sparkles"></i> Evaluación automática orientativa</div>
                               <div class="ai-comparison-grid">
                                   <div class="ai-column">
                                       <h4><i class="fa-solid fa-user-graduate"></i> Tu Código Entregado</h4>
@@ -3089,7 +2845,7 @@
                                       <span class="analyst-badge" id="excellence-${sec.id}">Excelencia: pendiente</span>
                                   </div>
                                   <div id="analyst-questions-${sec.id}"></div>
-                                  <button type="button" class="btn btn-success" id="analyst-submit-${sec.id}" onclick="evaluarAnalista('${sec.id}')">
+                                  <button class="btn btn-success" id="analyst-submit-${sec.id}" onclick="evaluarAnalista('${sec.id}')">
                                       <i class="fa-solid fa-check-double"></i> Entregar respuestas al analista
                                   </button>
                                   <div class="analyst-result" id="analyst-result-${sec.id}"></div>
@@ -3116,14 +2872,13 @@
               }
               renderizarChatIA(sec.id);
               actualizarDisplayTiempo(sec.id);
-              restaurarEvaluacionVisible(sec.id);
 
               if (isFinalized) {
                   actualizarIconoEstado(sec.id, true);
               }
           });
 
-          switchSection(seccionActivaActual);
+          document.getElementById('currentTitle').innerText = seccionesData[0].title;
           configurarEditores();
           await window.iniciarColaboracionCRDTEstudiante?.();
           bloquearCopiaYPegado();
@@ -3447,8 +3202,6 @@
           delete actividadesFinalizadas[sectionId];
           removeLocalStorage(`finalized_${sectionId}`);
           removeLocalStorage(`preview_count_${sectionId}`);
-          removeLocalStorage(claveEvaluacionVisible(sectionId));
-          removeLocalStorage(claveEvaluacionOculta(sectionId));
           delete historialResultados[sectionId];
           contadorPrevisualizaciones[sectionId] = 0;
 
@@ -3490,8 +3243,6 @@
               delete actividadesFinalizadas[sec.id];
               removeLocalStorage(`finalized_${sec.id}`);
               removeLocalStorage(`preview_count_${sec.id}`);
-              removeLocalStorage(claveEvaluacionVisible(sec.id));
-              removeLocalStorage(claveEvaluacionOculta(sec.id));
               delete historialResultados[sec.id];
               contadorPrevisualizaciones[sec.id] = 0;
 
@@ -3748,8 +3499,6 @@
           seccionesData.forEach(sec => {
               removeLocalStorage(`finalized_${sec.id}`);
               removeLocalStorage(`preview_count_${sec.id}`);
-              removeLocalStorage(claveEvaluacionVisible(sec.id));
-              removeLocalStorage(claveEvaluacionOculta(sec.id));
               removeLocalStorage(`timer_${sec.id}`);
               tiemposRestantes[sec.id] = TIEMPO_MAXIMO_SEGUNDOS;
               modulosPausados[sec.id] = false;
@@ -3789,41 +3538,16 @@
           alert("Sistema, actividades y registro de cambios de pestaña reiniciados.");
       }
 
-      function actualizarIconoEstado(sectionId, esFinalizada = true) {
+      function actualizarIconoEstado(sectionId, esExitoso) {
           const navBtn = document.getElementById(`nav-btn-${sectionId}`);
-          if (!navBtn) return;
-          const iconoAnterior = navBtn.querySelector('.status-icon');
-          const etiqueta = navBtn.querySelector('.nav-progress-state');
-          const seccion = seccionesData.find(item => item.id === sectionId);
-          const titulo = seccion?.title || sectionId;
-          if (!esFinalizada) {
-              iconoAnterior?.remove();
-              navBtn.classList.remove('is-completed');
-              const enCurso = seccionActivaActual === sectionId;
-              navBtn.classList.toggle('is-current', enCurso);
-              navBtn.classList.toggle('is-pending', !enCurso);
-              navBtn.dataset.progressStatus = enCurso ? 'en-curso' : 'pendiente';
-              navBtn.setAttribute('aria-label', `Abrir ${titulo}. Estado: ${enCurso ? 'En curso' : 'Pendiente'}`);
-              if (etiqueta) {
-                  etiqueta.className = `nav-progress-state ${enCurso ? 'is-current' : 'is-pending'}`;
-                  etiqueta.textContent = enCurso ? 'En curso' : 'Pendiente';
+          if (navBtn) {
+              let statusIcon = navBtn.querySelector('.status-icon');
+              if (!statusIcon) {
+                  statusIcon = document.createElement('i');
+                  statusIcon.className = 'fa-solid fa-circle-check status-icon';
+                  navBtn.appendChild(statusIcon);
               }
-              navBtn.removeAttribute('title');
-              return;
-          }
-          const statusIcon = iconoAnterior || document.createElement('i');
-          statusIcon.className = 'fa-solid fa-circle-check status-icon';
-          statusIcon.style.color = 'var(--success)';
-          statusIcon.setAttribute('aria-label', 'Actividad finalizada');
-          statusIcon.title = 'Actividad finalizada';
-          if (!iconoAnterior) navBtn.appendChild(statusIcon);
-          navBtn.classList.add('is-completed');
-          navBtn.classList.remove('is-pending', 'is-current');
-          navBtn.dataset.progressStatus = 'finalizada';
-          navBtn.setAttribute('aria-label', `Abrir ${titulo}. Estado: Finalizado`);
-          if (etiqueta) {
-              etiqueta.className = 'nav-progress-state is-finalized';
-              etiqueta.textContent = 'Finalizado';
+              statusIcon.style.color = esExitoso ? 'var(--success)' : 'var(--danger)';
           }
       }
 
@@ -3838,8 +3562,6 @@
                   document.getElementById(`editor-${sectionId}`).dispatchEvent(new Event('input', { bubbles: true }));
                   document.getElementById(`console-${sectionId}`).innerText = '// Código restablecido.';
                   document.getElementById(`ai-feedback-${sectionId}`).classList.remove('active');
-                  removeLocalStorage(claveEvaluacionVisible(sectionId));
-                  removeLocalStorage(claveEvaluacionOculta(sectionId));
                   removeLocalStorage(`draft_editor-${sectionId}`);
                   delete historialResultados[sectionId];
 
@@ -3863,7 +3585,6 @@
       }
 
       function switchSection(sectionId) {
-          if (!seccionesData.some(sec => sec.id === sectionId)) return;
           Object.keys(cronometrosActivos).forEach(id => {
               if (!cronometrosActivos[id]) return;
               clearInterval(cronometrosActivos[id]);
@@ -3871,7 +3592,6 @@
           });
           moduloCronometroEnCurso = null;
           seccionActivaActual = sectionId;
-          setLocalStorage(SECCION_ACTIVA_STORAGE_KEY, sectionId);
           document.querySelectorAll('.section-card').forEach(card => card.classList.remove('active'));
           document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
           document.querySelectorAll('.nav-item').forEach(item => item.setAttribute('aria-current', 'false'));
@@ -3886,9 +3606,6 @@
               const data = seccionesData.find(s => s.id === sectionId);
               if (data) document.getElementById('currentTitle').innerText = data.title;
           }
-          seccionesData.forEach(sec => {
-              actualizarIconoEstado(sec.id, actividadesFinalizadas[sec.id] === true);
-          });
           actualizarContextoExtensionSeguimiento();
           programarGuardadoFirebase();
           window.dispatchEvent(new CustomEvent("seccion-estudiante-cambiada", {
@@ -3898,28 +3615,10 @@
 
       function actualizarProgreso() {
           const finalizadasCount = seccionesData.filter(sec => actividadesFinalizadas[sec.id] === true).length;
-          const totalActividades = seccionesData.length;
-          const porcentaje = totalActividades ? Math.round((finalizadasCount / totalActividades) * 100) : 0;
-          const barra = document.getElementById('progressBar');
-          const contenedorBarra = document.getElementById('progressBarContainer');
-          const texto = document.getElementById('progressText');
-          if (barra) barra.style.width = `${porcentaje}%`;
-          if (contenedorBarra) {
-              contenedorBarra.setAttribute('aria-valuenow', String(porcentaje));
-              contenedorBarra.setAttribute(
-                  'aria-label',
-                  `Progreso de actividades: ${finalizadasCount} de ${totalActividades} finalizadas`
-              );
-          }
-          if (texto) {
-              texto.innerText = `Progreso: ${porcentaje}% (${finalizadasCount}/${totalActividades} finalizadas)`;
-          }
-          seccionesData.forEach(sec => {
-              actualizarIconoEstado(sec.id, actividadesFinalizadas[sec.id] === true);
-          });
-          window.dispatchEvent(new CustomEvent('progreso-estudiante-actualizado', {
-              detail: { porcentaje, finalizadas: finalizadasCount, total: totalActividades }
-          }));
+          const porcentaje = Math.round((finalizadasCount / seccionesData.length) * 100);
+          document.getElementById('progressBar').style.width = `${porcentaje}%`;
+          document.getElementById('progressBarContainer')?.setAttribute('aria-valuenow', String(porcentaje));
+          document.getElementById('progressText').innerText = `Progreso: ${porcentaje}% (${finalizadasCount}/${seccionesData.length} finalizadas)`;
           renderInformeVisualEstudiante();
       }
 
@@ -4121,8 +3820,7 @@
           const editor = document.getElementById(`editor-${sectionId}`);
           const consoleBox = document.getElementById(`console-${sectionId}`);
           if (!editor || !consoleBox) return;
-          const code = obtenerCodigoActualEditor(sectionId);
-          editor.value = code;
+          const code = editor.value;
 
           actualizarEstadoEditorEstudiante(sectionId, "running");
           consoleBox.style.color = "#fbbf24";
@@ -4560,7 +4258,7 @@
 
           const editor = document.getElementById(`editor-${sectionId}`);
           const sec = seccionesData.find(s => s.id === sectionId);
-          const code = obtenerCodigoActualEditor(sectionId).trim();
+          const code = editor.value.trim();
           const feedbackBox = document.getElementById(`ai-feedback-${sectionId}`);
           const studentCodeDisplay = document.getElementById(`ai-student-code-${sectionId}`);
           const feedbackText = document.getElementById(`ai-text-${sectionId}`);
@@ -4582,7 +4280,6 @@
               `<br><strong>Próximos pasos:</strong><ol>${diagnostico.pasos.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ol>` +
               `<br><strong>Pregunta guía:</strong> ${escaparTextoAnalista(diagnostico.preguntaGuia)}` +
               `<br><small>La nota previa orienta tu revisión; no reemplaza la entrega ni la corrección docente.</small>`;
-          guardarEvaluacionVisible(sectionId, 'previa');
       }
 
       const preguntasSocraticas = [
@@ -5120,16 +4817,10 @@
           input.value = "";
           input.disabled = true;
           agregarMensajeChatIA(sectionId, "student", pregunta);
-          try {
-              const respuesta = await generarRespuestaChatIASegura(sectionId, pregunta);
-              agregarMensajeChatIA(sectionId, "assistant", respuesta);
-          } catch (error) {
-              console.error('No se pudo obtener la respuesta del tutor:', error);
-              agregarMensajeChatIA(sectionId, "assistant", "No se pudo responder en este momento. Revisa la conexion e intenta nuevamente.");
-          } finally {
-              input.disabled = false;
-              input.focus();
-          }
+          const respuesta = await generarRespuestaChatIASegura(sectionId, pregunta);
+          agregarMensajeChatIA(sectionId, "assistant", respuesta);
+          input.disabled = false;
+          input.focus();
       }
 
       function extraerEvidencias(code) {
@@ -5580,7 +5271,6 @@
                   </div>`
               );
           }
-          guardarEvaluacionVisible(sectionId, 'finalizada');
           programarGuardadoFirebase();
       }
 
@@ -5598,7 +5288,7 @@
           const studentCodeDisplay = document.getElementById(`ai-student-code-${sectionId}`);
           const idealDisplay = document.getElementById(`ai-ideal-code-${sectionId}`);
           const feedbackText = document.getElementById(`ai-text-${sectionId}`);
-           const code = obtenerCodigoActualEditor(sectionId).trim();
+          const code = editor.value.trim();
 
           if (!editor || !sec || !feedbackBox || !feedbackText) return;
 
@@ -5685,9 +5375,7 @@
               }
 
               if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
-           historialResultados[sectionId].codigo = code;
-           historialResultados[sectionId].comparacionRealizada = true;
-           historialResultados[sectionId].comparacionEn = new Date().toISOString();
+              historialResultados[sectionId].codigo = code;
               historialResultados[sectionId].solucionIA = sec.aiSolution;
               historialResultados[sectionId].notaCodigo = puntaje;
               historialResultados[sectionId].evaluacionCodigo = evaluacion;
@@ -5697,9 +5385,8 @@
               delete historialResultados[sectionId].notaFinal;
               delete historialResultados[sectionId].notaIA;
               historialResultados[sectionId].analisisIA = analisis.replace(/<[^>]*>?/gm, '');
-               historialResultados[sectionId].exito = Boolean(resultadoAlumno.ok);
-               guardarEvaluacionVisible(sectionId, 'entrega');
-               programarGuardadoFirebase();
+              historialResultados[sectionId].exito = Boolean(resultadoAlumno.ok);
+              programarGuardadoFirebase();
       }
 
       function generarTextoAnalistaPDF(sectionId) {
@@ -6528,8 +6215,8 @@
                       Solicitud: ${escapeHtml(fecha)}
                   </p>
                   <div class="pending-request-actions">
-                      <button type="button" class="btn btn-success" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'activo')"><i class="fa-solid fa-user-check"></i> Aceptar</button>
-                      <button type="button" class="btn btn-danger" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'rechazado')"><i class="fa-solid fa-user-xmark"></i> Rechazar</button>
+                      <button class="btn btn-success" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'activo')"><i class="fa-solid fa-user-check"></i> Aceptar</button>
+                      <button class="btn btn-danger" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'rechazado')"><i class="fa-solid fa-user-xmark"></i> Rechazar</button>
                   </div>
               </article>`;
           }).join('') : '<p style="color:var(--text-muted);margin:0">No hay solicitudes pendientes.</p>';
@@ -6618,8 +6305,8 @@
                   ${antecedentes.length ? `<details style="margin-bottom:.6rem;font-size:.73rem;color:var(--text-muted)"><summary style="cursor:pointer;color:#fca5a5">Antecedentes de rechazo (${antecedentes.length})</summary>${antecedentes.map(a => `<div style="margin-top:.35rem">Motivo: ${escapeHtml(a.motivo || 'Sin motivo')}<br>Responsable: ${escapeHtml(a.rechazadoPor || 'Sin registrar')}</div>`).join('')}</details>` : ''}
                   ${problemas.length ? `<div class="pending-request-warning"><i class="fa-solid fa-triangle-exclamation"></i> No se puede aceptar todavía:<br>${problemas.map(escapeHtml).join('<br>')}</div>` : ''}
                   <div class="pending-request-actions">
-                      <button type="button" class="btn btn-success" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'activo')" ${seleccionable ? '' : 'disabled'}><i class="fa-solid fa-user-check"></i> Aceptar</button>
-                      <button type="button" class="btn btn-danger" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'rechazado')"><i class="fa-solid fa-user-xmark"></i> Rechazar</button>
+                      <button class="btn btn-success" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'activo')" ${seleccionable ? '' : 'disabled'}><i class="fa-solid fa-user-check"></i> Aceptar</button>
+                      <button class="btn btn-danger" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'rechazado')"><i class="fa-solid fa-user-xmark"></i> Rechazar</button>
                   </div>
               </article>`;
           }).join('') : '<p style="color:var(--text-muted);margin:0">No hay solicitudes pendientes.</p>';
@@ -10128,14 +9815,14 @@
               <div style="padding:1rem;border:1px solid rgba(245,158,11,.45);border-radius:8px;background:rgba(245,158,11,.08);margin-bottom:1rem">
                   <strong style="color:#fde68a"><i class="fa-solid fa-user-clock"></i> Solicitud de acceso pendiente</strong>
                   <div class="btn-group" style="margin-top:.75rem">
-                      <button type="button" class="btn btn-success" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'activo')"><i class="fa-solid fa-user-check"></i> Aceptar estudiante</button>
-                      <button type="button" class="btn btn-danger" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'rechazado')"><i class="fa-solid fa-user-xmark"></i> Rechazar solicitud</button>
+                      <button class="btn btn-success" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'activo')"><i class="fa-solid fa-user-check"></i> Aceptar estudiante</button>
+                      <button class="btn btn-danger" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'rechazado')"><i class="fa-solid fa-user-xmark"></i> Rechazar solicitud</button>
                   </div>
               </div>` : (cuentaRechazada ? `
               <div style="padding:1rem;border:1px solid rgba(239,68,68,.45);border-radius:8px;background:rgba(239,68,68,.08);margin-bottom:1rem">
                   <strong style="color:#fca5a5"><i class="fa-solid fa-user-xmark"></i> Solicitud rechazada</strong>
                   <div style="margin-top:.45rem">Motivo: ${escapeHtml(d.rechazoMotivo || 'Sin motivo registrado')}</div>
-                  <button type="button" class="btn btn-success" style="margin-top:.75rem" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'activo')"><i class="fa-solid fa-user-check"></i> Habilitar cuenta</button>
+                  <button class="btn btn-success" style="margin-top:.75rem" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'activo')"><i class="fa-solid fa-user-check"></i> Habilitar cuenta</button>
               </div>` : '');
           const fecha = d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : 'Sin fecha';
           const cantidadDesbloqueos = Number(d.cantidadDesbloqueos || 0);
@@ -10472,7 +10159,7 @@
                   <strong>Estado institucional: ${cuentaInactiva ? 'INACTIVA' : 'ACTIVA'}</strong>
                   ${cuentaInactiva ? `<div style="margin-top:.35rem">Motivo: ${escapeHtml(d.bajaMotivo || 'Sin motivo')}<br>Fecha: ${escapeHtml(d.bajaFecha ? new Date(d.bajaFecha).toLocaleString() : 'Sin fecha')}<br>Responsable: ${escapeHtml(d.bajaPor || 'Sin registrar')}</div>` : '<div style="margin-top:.35rem;color:var(--text-muted)">La cuenta puede iniciar sesión normalmente.</div>'}
                   <div style="margin-top:.7rem">
-                      <button type="button" class="btn ${cuentaInactiva ? 'btn-success' : 'btn-danger'}" onclick="cambiarEstadoCuentaEstudiante(${indice}, '${cuentaInactiva ? 'activo' : 'inactivo'}')">
+                      <button class="btn ${cuentaInactiva ? 'btn-success' : 'btn-danger'}" onclick="cambiarEstadoCuentaEstudiante(${indice}, '${cuentaInactiva ? 'activo' : 'inactivo'}')">
                           <i class="fa-solid ${cuentaInactiva ? 'fa-user-check' : 'fa-user-slash'}"></i>
                           ${cuentaInactiva ? 'Reactivar cuenta' : 'Dar de baja'}
                       </button>
@@ -10481,14 +10168,14 @@
               <div style="padding:1rem;border:1px solid rgba(56,189,248,.35);border-radius:8px;background:rgba(56,189,248,.06);margin-bottom:1rem">
                   <strong>Control individual del cronómetro: ${cronometroIndividualPausado ? 'PAUSADO' : 'ACTIVO'}</strong>
                   <div class="btn-group" style="margin-top:.7rem">
-                      <button type="button" class="btn ${cronometroIndividualPausado ? 'btn-success' : 'btn-warning'}" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroIndividualPausado ? 'reanudar' : 'pausar'}')">
+                      <button class="btn ${cronometroIndividualPausado ? 'btn-success' : 'btn-warning'}" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroIndividualPausado ? 'reanudar' : 'pausar'}')">
                           <i class="fa-solid ${cronometroIndividualPausado ? 'fa-play' : 'fa-pause'}"></i>
                           ${cronometroIndividualPausado ? 'Reanudar cronómetro' : 'Pausar cronómetro'}
                       </button>
-                      <button type="button" class="btn btn-secondary" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')">
+                      <button class="btn btn-secondary" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')">
                           <i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00
                       </button>
-                      <button type="button" class="btn btn-danger" onclick="desbloquearPantallaEstudianteProfesor(${indice})">
+                      <button class="btn btn-danger" onclick="desbloquearPantallaEstudianteProfesor(${indice})">
                           <i class="fa-solid fa-unlock-keyhole"></i> Desbloquear pantalla
                       </button>
                   </div>
@@ -10521,7 +10208,7 @@
                   <summary>Registro de cambios de pestaña y revisión docente <small>${eventos.length} evento${eventos.length === 1 ? '' : 's'} · ${revision.estado || 'pendiente'}</small></summary>
                   <div class="teacher-activity-content">
                       <p style="color:var(--text-muted);margin-bottom:.7rem;">Estos eventos son indicadores para revisión; no constituyen por sí solos una prueba de fraude.</p>
-                      <button type="button" class="btn btn-danger" style="margin-bottom:.8rem" onclick="reiniciarSalidasEstudianteProfesor(${indice})">
+                      <button class="btn btn-danger" style="margin-bottom:.8rem" onclick="reiniciarSalidasEstudianteProfesor(${indice})">
                           <i class="fa-solid fa-rotate-left"></i> Reiniciar contador de cambios de pestaña
                       </button>
                       ${eventosHtml}
@@ -10569,7 +10256,7 @@
                                   <small>Se confirmará el valor ingresado arriba. Si se modifica el descuento desde el editor rápido, deberá confirmarse nuevamente.</small>
                               </span>
                           </label>
-                          <button type="button" class="btn btn-warning" style="margin-top:.8rem" onclick="guardarRevisionSalidasProfesor(${indice})">
+                          <button class="btn btn-warning" style="margin-top:.8rem" onclick="guardarRevisionSalidasProfesor(${indice})">
                               <i class="fa-solid fa-floppy-disk"></i> Guardar decisión y confirmación
                           </button>
                       </div>
@@ -11691,8 +11378,8 @@
                   const acciones = fila.querySelector('td:last-child > div');
                   const indiceReal = estudiantesProfesor.indexOf(estudiante);
                   if (acciones) acciones.insertAdjacentHTML('afterbegin', `
-                      <button type="button" class="btn btn-success" style="padding:.4rem .65rem" onclick="cambiarEstadoCuentaEstudiante(${indiceReal}, 'activo')"><i class="fa-solid fa-user-check"></i> Aceptar</button>
-                      <button type="button" class="btn btn-danger" style="padding:.4rem .65rem" onclick="cambiarEstadoCuentaEstudiante(${indiceReal}, 'rechazado')"><i class="fa-solid fa-user-xmark"></i> Rechazar</button>
+                      <button class="btn btn-success" style="padding:.4rem .65rem" onclick="cambiarEstadoCuentaEstudiante(${indiceReal}, 'activo')"><i class="fa-solid fa-user-check"></i> Aceptar</button>
+                      <button class="btn btn-danger" style="padding:.4rem .65rem" onclick="cambiarEstadoCuentaEstudiante(${indiceReal}, 'rechazado')"><i class="fa-solid fa-user-xmark"></i> Rechazar</button>
                   `);
               }
           });
@@ -11873,10 +11560,10 @@
           <p style="color:var(--text-muted);font-size:.8rem;">Los pesos deben sumar 100.</p>
           <table style="width:100%;border-collapse:collapse;min-width:650px;"><thead><tr><th>Criterio</th><th>Peso</th><th>Indicador</th><th></th></tr></thead><tbody id="edf_criterios"></tbody></table>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem;">
-            <button type="button" class="btn btn-secondary" onclick="agregarCriterioFirebase()">➕ Criterio</button>
-            <button type="button" class="btn btn-secondary" onclick="normalizarCriteriosFirebase()">⚖️ Normalizar</button>
-            <button type="button" class="btn btn-primary" onclick="guardarDesafioActualFirebase()">☁️ Guardar desafío</button>
-            <button type="button" class="btn btn-secondary" onclick="guardarLos19Firebase()">☁️ Guardar los 19</button>
+            <button class="btn btn-secondary" onclick="agregarCriterioFirebase()">➕ Criterio</button>
+            <button class="btn btn-secondary" onclick="normalizarCriteriosFirebase()">⚖️ Normalizar</button>
+            <button class="btn btn-primary" onclick="guardarDesafioActualFirebase()">☁️ Guardar desafío</button>
+            <button class="btn btn-secondary" onclick="guardarLos19Firebase()">☁️ Guardar los 19</button>
           </div>`;
         criterios.forEach(c=>agregarFilaCriterioFirebase(c));
         document.querySelectorAll('#formDesafioFirebase input,#formDesafioFirebase textarea').forEach(el => {
@@ -11892,7 +11579,7 @@
         tr.innerHTML=`<td><input data-k="criterio" value="${escapeHtml(c.criterio||'')}"></td>
           <td><input data-k="peso" type="number" min="0" max="100" value="${Number(c.peso)||0}" style="width:80px"></td>
           <td><input data-k="indicador" value="${escapeHtml(c.indicador||'')}"></td>
-          <td><button type="button" class="btn btn-danger" onclick="this.closest('tr').remove()">🗑️</button></td>`;
+          <td><button class="btn btn-danger" onclick="this.closest('tr').remove()">🗑️</button></td>`;
         document.getElementById('edf_criterios').appendChild(tr);
       }
       function agregarCriterioFirebase(){agregarFilaCriterioFirebase();}
