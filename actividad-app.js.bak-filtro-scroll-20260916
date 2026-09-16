@@ -8495,37 +8495,6 @@
               return '';
           }
       })();
-      const CLAVE_POSICION_GRAFICO_NOTAS_ESTUDIANTE = 'teacher_student_grade_chart_scroll_left';
-      let ultimaPosicionGraficoNotasEstudiante = (() => {
-          try {
-              const guardada = Number(sessionStorage.getItem(CLAVE_POSICION_GRAFICO_NOTAS_ESTUDIANTE));
-              return Number.isFinite(guardada) && guardada >= 0 ? guardada : 0;
-          } catch (_) {
-              return 0;
-          }
-      })();
-      let temporizadorPosicionGraficoNotasEstudiante = null;
-      function recordarPosicionGraficoNotasEstudiante(contenedor) {
-          if (!contenedor) return;
-          ultimaPosicionGraficoNotasEstudiante = Math.max(0, Number(contenedor.scrollLeft) || 0);
-          clearTimeout(temporizadorPosicionGraficoNotasEstudiante);
-          temporizadorPosicionGraficoNotasEstudiante = setTimeout(() => {
-              try {
-                  sessionStorage.setItem(
-                      CLAVE_POSICION_GRAFICO_NOTAS_ESTUDIANTE,
-                      String(Math.round(ultimaPosicionGraficoNotasEstudiante))
-                  );
-              } catch (_) {}
-          }, 120);
-      }
-      function restaurarPosicionGraficoNotasEstudiante(grafico) {
-          const contenedor = grafico?.querySelector?.('.teacher-student-grade-chart-scroll');
-          if (!contenedor) return;
-          requestAnimationFrame(() => {
-              const maximo = Math.max(0, contenedor.scrollWidth - contenedor.clientWidth);
-              contenedor.scrollLeft = Math.min(ultimaPosicionGraficoNotasEstudiante, maximo);
-          });
-      }
       function filtrarGraficoNotasDesafiosEstudiante(filtro = '', boton = null) {
           const grafico = boton?.closest?.('.teacher-student-grade-chart');
           if (!grafico) return;
@@ -8570,13 +8539,6 @@
           }
           const sinResultados = grafico.querySelector('.teacher-student-grade-filter-empty');
           if (sinResultados) sinResultados.hidden = visibles > 0;
-      }
-      function restablecerFiltroGraficoNotasEstudiante(boton = null) {
-          const grafico = boton?.closest?.('.teacher-student-grade-chart');
-          const botonTodos = grafico?.querySelector?.('[data-grade-filter-button=""]');
-          if (!botonTodos) return;
-          filtrarGraficoNotasDesafiosEstudiante('', botonTodos);
-          botonTodos.focus({ preventScroll: true });
       }
       function renderGraficoNotasDesafiosEstudiante(d) {
           const historial = d?.historialResultados || {};
@@ -8630,17 +8592,13 @@
                   : `<rect class="teacher-student-grade-bar is-teacher" x="${xDocente.toFixed(1)}" y="${yNota(item.docente).toFixed(1)}" width="${anchoBarra.toFixed(1)}" height="${alturaDocente.toFixed(1)}" rx="2">
                       <title>${escapeHtml(`${item.titulo}: nota modificada por el docente ${item.docente.toFixed(1)}/10`)}</title>
                     </rect>`;
-              const valorAutomatico = item.automatica === null ? ''
-                  : `<text class="teacher-student-grade-value is-automatic" x="${(xAutomatica + anchoBarra / 2).toFixed(1)}" y="${Math.max(margen.superior - 1, yNota(item.automatica) - 6).toFixed(1)}" text-anchor="middle">${item.automatica.toFixed(1)}</text>`;
-              const valorDocente = item.docente === null ? ''
-                  : `<text class="teacher-student-grade-value is-teacher" x="${(xDocente + anchoBarra / 2).toFixed(1)}" y="${Math.max(margen.superior - 1, yNota(item.docente) - 6).toFixed(1)}" text-anchor="middle">${item.docente.toFixed(1)}</text>`;
               const marcadorActual = item.actual
                   ? `<circle class="teacher-student-grade-current-point" cx="${centro.toFixed(1)}" cy="${margen.superior - 10}" r="6">
                       <title>${escapeHtml(`Desafío actual: ${item.titulo}`)}</title>
                     </circle>`
                   : '';
               return `<g class="teacher-student-grade-item" data-grade-finalizada="${item.finalizada}" data-grade-docente="${item.docente !== null}">
-                  ${etiquetaActual}${barraAutomatica}${barraDocente}${valorAutomatico}${valorDocente}${marcadorActual}
+                  ${etiquetaActual}${barraAutomatica}${barraDocente}${marcadorActual}
                   <text class="${item.actual ? 'is-current' : ''}" x="${centro.toFixed(1)}" y="${alto - 45}" text-anchor="middle">D${item.indice}</text>
                   <text class="teacher-student-grade-status-label" x="${centro.toFixed(1)}" y="${alto - 25}" text-anchor="middle">${item.finalizada ? 'Finalizado' : (item.actual ? 'Actual' : 'Pendiente')}</text>
                 </g>`;
@@ -8674,9 +8632,6 @@
                       <button type="button" data-grade-filter-button="pendientes" aria-pressed="false" onclick="filtrarGraficoNotasDesafiosEstudiante('pendientes', this)">
                           <i class="fa-solid fa-clock"></i> Pendientes
                       </button>
-                      <button type="button" class="is-reset" onclick="restablecerFiltroGraficoNotasEstudiante(this)" title="Volver a mostrar todos los desafíos">
-                          <i class="fa-solid fa-arrow-rotate-left"></i> Restablecer filtro
-                      </button>
                   </div>
                   <span class="teacher-student-grade-filter-status" aria-live="polite">${datos.length} desafíos mostrados</span>
               </div>
@@ -8685,7 +8640,7 @@
                   <span class="is-teacher">Nota modificada por docente</span>
                   <span class="is-current">Desafío actual</span>
               </div>
-              <div class="teacher-student-grade-chart-scroll" tabindex="0" aria-label="Gráfico desplazable de notas por desafío" onscroll="recordarPosicionGraficoNotasEstudiante(this)">
+              <div class="teacher-student-grade-chart-scroll" tabindex="0" aria-label="Gráfico desplazable de notas por desafío">
                   ${hayNotas || desafioActual.id ? `<svg viewBox="0 0 ${ancho} ${alto}" style="min-width:${ancho}px" role="img" aria-label="Notas automáticas y modificadas por el docente en cada desafío">
                       <g class="teacher-student-grade-grid">${ejes}</g>
                       <g class="teacher-student-grade-columns">${columnas}</g>
@@ -10403,7 +10358,6 @@
           if (botonFiltroRecordado) {
               filtrarGraficoNotasDesafiosEstudiante(ultimoFiltroGraficoNotasEstudiante, botonFiltroRecordado);
           }
-          restaurarPosicionGraficoNotasEstudiante(graficoNotas);
           window.cargarHistorialAccesosProfesorFirebase?.(d.uid).then(accesos => {
               const contenedor = document.getElementById("historialAccesosProfesor");
               if (!contenedor) return;

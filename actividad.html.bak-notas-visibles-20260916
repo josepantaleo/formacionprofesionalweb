@@ -16,7 +16,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="actividad-base.css?v=20260914-9" />
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260916-5" />
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260916-4" />
     <style>
       .skip-link {
         position: fixed;
@@ -1243,7 +1243,7 @@
     <script src="actividad-network-status.js?v=20260914-9"></script>
     <script src="actividad-utils.js?v=20260914-9"></script>
     <script src="actividad-pdf-loader.js?v=20260914-9"></script>
-    <script src="actividad-app.js?v=20260916-5"></script>
+    <script src="actividad-app.js?v=20260916-4"></script>
     <script src="panel-profesor.js?v=20260914-9"></script>
     <script src="actividad-cooperacion.js?v=20260914-9"></script>
     <script src="mejoras-seguimiento.js?v=20260914-9"></script>

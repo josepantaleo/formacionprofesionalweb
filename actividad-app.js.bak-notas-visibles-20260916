@@ -8630,17 +8630,13 @@
                   : `<rect class="teacher-student-grade-bar is-teacher" x="${xDocente.toFixed(1)}" y="${yNota(item.docente).toFixed(1)}" width="${anchoBarra.toFixed(1)}" height="${alturaDocente.toFixed(1)}" rx="2">
                       <title>${escapeHtml(`${item.titulo}: nota modificada por el docente ${item.docente.toFixed(1)}/10`)}</title>
                     </rect>`;
-              const valorAutomatico = item.automatica === null ? ''
-                  : `<text class="teacher-student-grade-value is-automatic" x="${(xAutomatica + anchoBarra / 2).toFixed(1)}" y="${Math.max(margen.superior - 1, yNota(item.automatica) - 6).toFixed(1)}" text-anchor="middle">${item.automatica.toFixed(1)}</text>`;
-              const valorDocente = item.docente === null ? ''
-                  : `<text class="teacher-student-grade-value is-teacher" x="${(xDocente + anchoBarra / 2).toFixed(1)}" y="${Math.max(margen.superior - 1, yNota(item.docente) - 6).toFixed(1)}" text-anchor="middle">${item.docente.toFixed(1)}</text>`;
               const marcadorActual = item.actual
                   ? `<circle class="teacher-student-grade-current-point" cx="${centro.toFixed(1)}" cy="${margen.superior - 10}" r="6">
                       <title>${escapeHtml(`Desafío actual: ${item.titulo}`)}</title>
                     </circle>`
                   : '';
               return `<g class="teacher-student-grade-item" data-grade-finalizada="${item.finalizada}" data-grade-docente="${item.docente !== null}">
-                  ${etiquetaActual}${barraAutomatica}${barraDocente}${valorAutomatico}${valorDocente}${marcadorActual}
+                  ${etiquetaActual}${barraAutomatica}${barraDocente}${marcadorActual}
                   <text class="${item.actual ? 'is-current' : ''}" x="${centro.toFixed(1)}" y="${alto - 45}" text-anchor="middle">D${item.indice}</text>
                   <text class="teacher-student-grade-status-label" x="${centro.toFixed(1)}" y="${alto - 25}" text-anchor="middle">${item.finalizada ? 'Finalizado' : (item.actual ? 'Actual' : 'Pendiente')}</text>
                 </g>`;

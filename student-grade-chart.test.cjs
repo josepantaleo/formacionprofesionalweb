@@ -64,8 +64,20 @@ assert(
   "El filtro recordado no se reaplica al cambiar de estudiante."
 );
 assert(
-  /actividad-app\.js\?v=20260916-3/.test(html) &&
-  /mejoras-seguimiento\.css\?v=20260916-3/.test(html),
+  /function\s+restablecerFiltroGraficoNotasEstudiante\s*\(/.test(app) &&
+  /Restablecer filtro/.test(app) &&
+  /filtrarGraficoNotasDesafiosEstudiante\('',\s*botonTodos\)/.test(app),
+  "Falta el boton para restablecer rapidamente el filtro a Todos."
+);
+assert(
+  /CLAVE_POSICION_GRAFICO_NOTAS_ESTUDIANTE/.test(app) &&
+  /recordarPosicionGraficoNotasEstudiante\(this\)/.test(app) &&
+  /restaurarPosicionGraficoNotasEstudiante\(graficoNotas\)/.test(app),
+  "La posicion horizontal del grafico no se recuerda al cambiar de estudiante."
+);
+assert(
+  /actividad-app\.js\?v=20260916-4/.test(html) &&
+  /mejoras-seguimiento\.css\?v=20260916-4/.test(html),
   "Falta actualizar la version de los recursos modificados."
 );
 

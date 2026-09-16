@@ -4311,15 +4311,6 @@ body.teacher-light-mode .teacher-filter-group h4{
   background:rgba(14,165,233,.18);
   color:#e0f2fe;
 }
-.teacher-student-grade-filters button.is-reset{
-  border-color:rgba(245,158,11,.42);
-  background:rgba(245,158,11,.09);
-  color:#fde68a;
-}
-.teacher-student-grade-filters button.is-reset:hover{
-  border-color:#f59e0b;
-  color:#fef3c7;
-}
 .teacher-student-grade-filters button:focus-visible{
   outline:2px solid #38bdf8;
   outline-offset:2px;
@@ -4384,16 +4375,6 @@ body.teacher-light-mode .teacher-filter-group h4{
 .teacher-student-grade-bar.is-automatic{fill:#38bdf8}
 .teacher-student-grade-bar.is-teacher{fill:#f59e0b}
 .teacher-student-grade-bar:hover{filter:brightness(1.18)}
-.teacher-student-grade-value{
-  font-size:9px!important;
-  font-weight:900;
-  paint-order:stroke fill;
-  stroke:#020617;
-  stroke-width:2.5px;
-  stroke-linejoin:round;
-}
-.teacher-student-grade-value.is-automatic{fill:#bae6fd}
-.teacher-student-grade-value.is-teacher{fill:#fde68a}
 .teacher-student-grade-current-band{
   fill:rgba(168,85,247,.11);
   stroke:rgba(192,132,252,.55);
@@ -4454,12 +4435,6 @@ body.teacher-light-mode .teacher-student-grade-grid line{stroke:rgba(71,85,105,.
 body.teacher-light-mode .teacher-student-grade-grid text,
 body.teacher-light-mode .teacher-student-grade-columns text,
 body.teacher-light-mode .teacher-student-grade-key{fill:#475569;color:#475569}
-body.teacher-light-mode .teacher-student-grade-value{
-  stroke:#fff;
-  stroke-width:3px;
-}
-body.teacher-light-mode .teacher-student-grade-value.is-automatic{fill:#0369a1}
-body.teacher-light-mode .teacher-student-grade-value.is-teacher{fill:#a16207}
 body.teacher-light-mode .teacher-student-grade-filters button{
   border-color:#cbd5e1;
   background:#fff;
@@ -4469,11 +4444,6 @@ body.teacher-light-mode .teacher-student-grade-filters button.is-active{
   border-color:#0284c7;
   background:#e0f2fe;
   color:#075985;
-}
-body.teacher-light-mode .teacher-student-grade-filters button.is-reset{
-  border-color:#f59e0b;
-  background:#fffbeb;
-  color:#92400e;
 }
 @media(max-width:980px){
   .teacher-grade-charts{grid-template-columns:minmax(0,1fr)}
@@ -4490,7 +4460,6 @@ body.teacher-light-mode .teacher-student-grade-filters button.is-reset{
   .teacher-student-grade-filter-bar{display:grid}
   .teacher-student-grade-filter-status{text-align:left}
   .teacher-student-grade-filters button{flex:1 1 calc(50% - .35rem);min-height:44px}
-  .teacher-student-grade-filters button.is-reset{flex-basis:100%}
   .teacher-student-grade-key{grid-template-columns:minmax(0,1fr)}
 }
 
