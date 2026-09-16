@@ -934,7 +934,49 @@
           notaCalculadaAlConfirmar: null,
           notaModificadaManualmente: false
       };
-      let seccionActivaActual = seccionesData[0].id;
+      const SECCION_ACTIVA_STORAGE_KEY = 'app_active_section';
+      let seccionActivaActual = getLocalStorage(SECCION_ACTIVA_STORAGE_KEY) &&
+          seccionesData.some(sec => sec.id === getLocalStorage(SECCION_ACTIVA_STORAGE_KEY))
+          ? getLocalStorage(SECCION_ACTIVA_STORAGE_KEY)
+          : seccionesData[0].id;
+
+      function obtenerCodigoActualEditor(sectionId) {
+          const editor = document.getElementById(`editor-${sectionId}`);
+          if (!editor) return '';
+          const codigoCodeMirror = editor.__codeMirrorView?.state?.doc?.toString?.();
+          return typeof codigoCodeMirror === 'string' ? codigoCodeMirror : String(editor.value || '');
+      }
+
+      function guardarEvaluacionVisible(sectionId, tipo = 'previa') {
+          const feedback = document.getElementById(`ai-feedback-${sectionId}`);
+          if (!feedback) return;
+          setLocalStorage(`evaluacion_visible_${sectionId}`, JSON.stringify({
+              tipo,
+              estudiante: document.getElementById(`ai-student-code-${sectionId}`)?.textContent || '',
+              referencia: document.getElementById(`ai-ideal-code-${sectionId}`)?.textContent || '',
+              resumen: document.getElementById(`ai-text-${sectionId}`)?.innerHTML || '',
+              guardadoEn: Date.now()
+          }));
+      }
+
+      function restaurarEvaluacionVisible(sectionId) {
+          const raw = getLocalStorage(`evaluacion_visible_${sectionId}`);
+          if (!raw) return;
+          try {
+              const datos = JSON.parse(raw);
+              const feedback = document.getElementById(`ai-feedback-${sectionId}`);
+              if (!feedback || !datos || !datos.resumen) return;
+              feedback.classList.add('active');
+              const estudiante = document.getElementById(`ai-student-code-${sectionId}`);
+              const referencia = document.getElementById(`ai-ideal-code-${sectionId}`);
+              const resumen = document.getElementById(`ai-text-${sectionId}`);
+              if (estudiante) estudiante.textContent = datos.estudiante || '';
+              if (referencia) referencia.textContent = datos.referencia || '';
+              if (resumen) resumen.innerHTML = datos.resumen;
+          } catch (_) {
+              removeLocalStorage(`evaluacion_visible_${sectionId}`);
+          }
+      }
 
       function formatearFechaNotaDocente(valor) {
           if (!valor) return '';
@@ -2241,7 +2283,10 @@
           pantallaBloqueadaEn = String(datos.pantallaBloqueadaEn || "");
           pantallaBloqueadaSeccion = String(datos.pantallaBloqueadaSeccion || "");
           aplicarBloqueoInterfazEstudiante(pantallaBloqueada);
-          if (datos.seccionActiva && seccionesData.some(s => s.id === datos.seccionActiva)) seccionActivaActual = datos.seccionActiva;
+          if (datos.seccionActiva && seccionesData.some(s => s.id === datos.seccionActiva)) {
+              seccionActivaActual = datos.seccionActiva;
+              setLocalStorage(SECCION_ACTIVA_STORAGE_KEY, seccionActivaActual);
+          }
       }
 
       function solicitarDatosNuevoEstudiante(esNuevoRegistro = true, datosExistentes = null) {
@@ -2643,10 +2688,17 @@
               };
               li.tabIndex = 0;
               li.setAttribute('role', 'button');
-              li.setAttribute('aria-label', `Abrir ${sec.title}`);
+              li.setAttribute('aria-label', `Abrir ${sec.title}. Estado: ${idx === 0 ? 'En curso' : 'Pendiente'}`);
               li.setAttribute('aria-current', idx === 0 ? 'page' : 'false');
               li.id = `nav-btn-${sec.id}`;
-              li.innerHTML = `<i class="fa-solid ${sec.icon}"></i> <span>${sec.title}</span>`;
+              li.innerHTML = `
+                  <i class="fa-solid ${sec.icon}" aria-hidden="true"></i>
+                  <span class="nav-item-copy">
+                      <span class="nav-item-title">${escapeHtml(sec.title)}</span>
+                      <small class="nav-progress-state ${idx === 0 ? 'is-current' : 'is-pending'}">
+                          ${idx === 0 ? 'En curso' : 'Pendiente'}
+                      </small>
+                  </span>`;
               navList.appendChild(li);
 
               const savedCode = getLocalStorage(`draft_editor-${sec.id}`) || sec.initialCode;
@@ -2917,13 +2969,14 @@
               }
               renderizarChatIA(sec.id);
               actualizarDisplayTiempo(sec.id);
+              restaurarEvaluacionVisible(sec.id);
 
               if (isFinalized) {
                   actualizarIconoEstado(sec.id, true);
               }
           });
 
-          document.getElementById('currentTitle').innerText = seccionesData[0].title;
+          switchSection(seccionActivaActual);
           configurarEditores();
           await window.iniciarColaboracionCRDTEstudiante?.();
           bloquearCopiaYPegado();
@@ -3247,6 +3300,7 @@
           delete actividadesFinalizadas[sectionId];
           removeLocalStorage(`finalized_${sectionId}`);
           removeLocalStorage(`preview_count_${sectionId}`);
+          removeLocalStorage(`evaluacion_visible_${sectionId}`);
           delete historialResultados[sectionId];
           contadorPrevisualizaciones[sectionId] = 0;
 
@@ -3288,6 +3342,7 @@
               delete actividadesFinalizadas[sec.id];
               removeLocalStorage(`finalized_${sec.id}`);
               removeLocalStorage(`preview_count_${sec.id}`);
+              removeLocalStorage(`evaluacion_visible_${sec.id}`);
               delete historialResultados[sec.id];
               contadorPrevisualizaciones[sec.id] = 0;
 
@@ -3544,6 +3599,7 @@
           seccionesData.forEach(sec => {
               removeLocalStorage(`finalized_${sec.id}`);
               removeLocalStorage(`preview_count_${sec.id}`);
+              removeLocalStorage(`evaluacion_visible_${sec.id}`);
               removeLocalStorage(`timer_${sec.id}`);
               tiemposRestantes[sec.id] = TIEMPO_MAXIMO_SEGUNDOS;
               modulosPausados[sec.id] = false;
@@ -3587,11 +3643,21 @@
           const navBtn = document.getElementById(`nav-btn-${sectionId}`);
           if (!navBtn) return;
           const iconoAnterior = navBtn.querySelector('.status-icon');
+          const etiqueta = navBtn.querySelector('.nav-progress-state');
+          const seccion = seccionesData.find(item => item.id === sectionId);
+          const titulo = seccion?.title || sectionId;
           if (!esFinalizada) {
               iconoAnterior?.remove();
               navBtn.classList.remove('is-completed');
-              navBtn.classList.add('is-pending');
-              navBtn.dataset.progressStatus = 'pendiente';
+              const enCurso = seccionActivaActual === sectionId;
+              navBtn.classList.toggle('is-current', enCurso);
+              navBtn.classList.toggle('is-pending', !enCurso);
+              navBtn.dataset.progressStatus = enCurso ? 'en-curso' : 'pendiente';
+              navBtn.setAttribute('aria-label', `Abrir ${titulo}. Estado: ${enCurso ? 'En curso' : 'Pendiente'}`);
+              if (etiqueta) {
+                  etiqueta.className = `nav-progress-state ${enCurso ? 'is-current' : 'is-pending'}`;
+                  etiqueta.textContent = enCurso ? 'En curso' : 'Pendiente';
+              }
               navBtn.removeAttribute('title');
               return;
           }
@@ -3602,8 +3668,13 @@
           statusIcon.title = 'Actividad finalizada';
           if (!iconoAnterior) navBtn.appendChild(statusIcon);
           navBtn.classList.add('is-completed');
-          navBtn.classList.remove('is-pending');
+          navBtn.classList.remove('is-pending', 'is-current');
           navBtn.dataset.progressStatus = 'finalizada';
+          navBtn.setAttribute('aria-label', `Abrir ${titulo}. Estado: Finalizado`);
+          if (etiqueta) {
+              etiqueta.className = 'nav-progress-state is-finalized';
+              etiqueta.textContent = 'Finalizado';
+          }
       }
 
       function restablecerCodigo(sectionId) {
@@ -3617,6 +3688,7 @@
                   document.getElementById(`editor-${sectionId}`).dispatchEvent(new Event('input', { bubbles: true }));
                   document.getElementById(`console-${sectionId}`).innerText = '// Código restablecido.';
                   document.getElementById(`ai-feedback-${sectionId}`).classList.remove('active');
+                  removeLocalStorage(`evaluacion_visible_${sectionId}`);
                   removeLocalStorage(`draft_editor-${sectionId}`);
                   delete historialResultados[sectionId];
 
@@ -3640,6 +3712,7 @@
       }
 
       function switchSection(sectionId) {
+          if (!seccionesData.some(sec => sec.id === sectionId)) return;
           Object.keys(cronometrosActivos).forEach(id => {
               if (!cronometrosActivos[id]) return;
               clearInterval(cronometrosActivos[id]);
@@ -3647,6 +3720,7 @@
           });
           moduloCronometroEnCurso = null;
           seccionActivaActual = sectionId;
+          setLocalStorage(SECCION_ACTIVA_STORAGE_KEY, sectionId);
           document.querySelectorAll('.section-card').forEach(card => card.classList.remove('active'));
           document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
           document.querySelectorAll('.nav-item').forEach(item => item.setAttribute('aria-current', 'false'));
@@ -3661,6 +3735,9 @@
               const data = seccionesData.find(s => s.id === sectionId);
               if (data) document.getElementById('currentTitle').innerText = data.title;
           }
+          seccionesData.forEach(sec => {
+              actualizarIconoEstado(sec.id, actividadesFinalizadas[sec.id] === true);
+          });
           actualizarContextoExtensionSeguimiento();
           programarGuardadoFirebase();
           window.dispatchEvent(new CustomEvent("seccion-estudiante-cambiada", {
@@ -3893,7 +3970,8 @@
           const editor = document.getElementById(`editor-${sectionId}`);
           const consoleBox = document.getElementById(`console-${sectionId}`);
           if (!editor || !consoleBox) return;
-          const code = editor.value;
+          const code = obtenerCodigoActualEditor(sectionId);
+          editor.value = code;
 
           actualizarEstadoEditorEstudiante(sectionId, "running");
           consoleBox.style.color = "#fbbf24";
@@ -4331,7 +4409,7 @@
 
           const editor = document.getElementById(`editor-${sectionId}`);
           const sec = seccionesData.find(s => s.id === sectionId);
-          const code = editor.value.trim();
+          const code = obtenerCodigoActualEditor(sectionId).trim();
           const feedbackBox = document.getElementById(`ai-feedback-${sectionId}`);
           const studentCodeDisplay = document.getElementById(`ai-student-code-${sectionId}`);
           const feedbackText = document.getElementById(`ai-text-${sectionId}`);
@@ -4353,6 +4431,7 @@
               `<br><strong>Próximos pasos:</strong><ol>${diagnostico.pasos.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ol>` +
               `<br><strong>Pregunta guía:</strong> ${escaparTextoAnalista(diagnostico.preguntaGuia)}` +
               `<br><small>La nota previa orienta tu revisión; no reemplaza la entrega ni la corrección docente.</small>`;
+          guardarEvaluacionVisible(sectionId, 'previa');
       }
 
       const preguntasSocraticas = [
@@ -5367,7 +5446,7 @@
           const studentCodeDisplay = document.getElementById(`ai-student-code-${sectionId}`);
           const idealDisplay = document.getElementById(`ai-ideal-code-${sectionId}`);
           const feedbackText = document.getElementById(`ai-text-${sectionId}`);
-          const code = editor.value.trim();
+           const code = obtenerCodigoActualEditor(sectionId).trim();
 
           if (!editor || !sec || !feedbackBox || !feedbackText) return;
 
@@ -5454,7 +5533,9 @@
               }
 
               if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
-              historialResultados[sectionId].codigo = code;
+           historialResultados[sectionId].codigo = code;
+           historialResultados[sectionId].comparacionRealizada = true;
+           historialResultados[sectionId].comparacionEn = new Date().toISOString();
               historialResultados[sectionId].solucionIA = sec.aiSolution;
               historialResultados[sectionId].notaCodigo = puntaje;
               historialResultados[sectionId].evaluacionCodigo = evaluacion;
@@ -5464,8 +5545,9 @@
               delete historialResultados[sectionId].notaFinal;
               delete historialResultados[sectionId].notaIA;
               historialResultados[sectionId].analisisIA = analisis.replace(/<[^>]*>?/gm, '');
-              historialResultados[sectionId].exito = Boolean(resultadoAlumno.ok);
-              programarGuardadoFirebase();
+               historialResultados[sectionId].exito = Boolean(resultadoAlumno.ok);
+               guardarEvaluacionVisible(sectionId, 'entrega');
+               programarGuardadoFirebase();
       }
 
       function generarTextoAnalistaPDF(sectionId) {
