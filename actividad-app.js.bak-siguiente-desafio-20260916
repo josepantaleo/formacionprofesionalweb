@@ -8473,9 +8473,7 @@
           const idsValidos = new Set(seccionesData.map(sec => sec.id));
           const idControl = idsValidos.has(control.seccionActiva) ? control.seccionActiva : '';
           const idGuardado = idsValidos.has(d?.seccionActiva) ? d.seccionActiva : '';
-          const finalizadas = d?.finalizadas || {};
-          const siguiente = seccionesData.find(sec => finalizadas[sec.id] !== true) || null;
-          const id = idControl || idGuardado || siguiente?.id || '';
+          const id = idControl || idGuardado;
           const desafio = seccionesData.find(sec => sec.id === id) || null;
           const estadoConexion = obtenerEstadoConexionProfesor(d);
           const trabajandoAhora = idControl && estadoConexion === 'trabajando';
@@ -8485,7 +8483,6 @@
               desafio,
               trabajandoAhora: Boolean(trabajandoAhora),
               conectado: Boolean(conectado),
-              siguiente: !idControl && !idGuardado && Boolean(siguiente?.id),
               estadoConexion
           };
       }
@@ -8682,14 +8679,13 @@
               return `<g class="teacher-student-grade-item" data-grade-finalizada="${item.finalizada}" data-grade-docente="${item.docente !== null}">
                   ${etiquetaActual}${barraAutomatica}${barraDocente}${valorAutomatico}${valorDocente}${marcadorActual}
                   <text class="${item.actual ? 'is-current' : ''}" x="${centro.toFixed(1)}" y="${alto - 45}" text-anchor="middle">D${item.indice}</text>
-                  <text class="teacher-student-grade-status-label" x="${centro.toFixed(1)}" y="${alto - 25}" text-anchor="middle">${item.finalizada ? 'Finalizado' : (item.actual ? (desafioActual.siguiente ? 'Siguiente' : 'Actual') : 'Pendiente')}</text>
+                  <text class="teacher-student-grade-status-label" x="${centro.toFixed(1)}" y="${alto - 25}" text-anchor="middle">${item.finalizada ? 'Finalizado' : (item.actual ? 'Actual' : 'Pendiente')}</text>
                 </g>`;
           }).join('');
           const tituloActual = desafioActual.desafio?.title || 'Sin desafío informado';
           const estadoActual = desafioActual.trabajandoAhora
               ? 'Trabajando ahora'
               : (desafioActual.conectado ? 'Desafío abierto' : (desafioActual.id ? 'Último desafío informado' : 'Sin actividad informada'));
-          const estadoActualTexto = desafioActual.siguiente ? 'Siguiente desafío' : estadoActual;
           return `<section class="teacher-student-grade-chart">
               <header>
                   <div>
@@ -8697,7 +8693,7 @@
                       <p>Compara la calificación automática con la nota modificada por el docente.</p>
                   </div>
                   <div class="teacher-student-current-challenge ${desafioActual.trabajandoAhora ? 'is-live' : ''}">
-                      <span><i class="fa-solid ${desafioActual.trabajandoAhora ? 'fa-keyboard' : (desafioActual.siguiente ? 'fa-forward-step' : 'fa-location-dot')}"></i> ${escapeHtml(estadoActualTexto)}</span>
+                      <span><i class="fa-solid ${desafioActual.trabajandoAhora ? 'fa-keyboard' : 'fa-location-dot'}"></i> ${escapeHtml(estadoActual)}</span>
                       <strong>${escapeHtml(tituloActual)}</strong>
                   </div>
               </header>
@@ -10252,7 +10248,7 @@
                   <div class="teacher-detail-stat"><small>Curso y división</small><strong>${escapeHtml(`${e.curso || '—'} ${e.division || ''}`)}</strong></div>
                    <div class="teacher-detail-stat"><small>Turno</small><strong>${escapeHtml(e.turno || '—')}</strong></div>
                    <div class="teacher-detail-stat"><small>Progreso</small><strong>${progreso}%</strong></div>
-                   <div class="teacher-detail-stat teacher-current-challenge-stat"><small>${desafioActualDetalle.siguiente ? 'Siguiente desafío' : 'Desafío actual'}</small><strong>${escapeHtml(desafioActualDetalle.desafio?.title || 'Sin actividad informada')}</strong><span>${desafioActualDetalle.trabajandoAhora ? 'Trabajando ahora' : (desafioActualDetalle.siguiente ? 'Calculado por finalización' : (desafioActualDetalle.id ? 'Último informado' : 'Sin conexión activa'))}</span></div>
+                   <div class="teacher-detail-stat teacher-current-challenge-stat"><small>Desafío actual</small><strong>${escapeHtml(desafioActualDetalle.desafio?.title || 'Sin actividad informada')}</strong><span>${desafioActualDetalle.trabajandoAhora ? 'Trabajando ahora' : (desafioActualDetalle.id ? 'Último informado' : 'Sin conexión activa')}</span></div>
                    <div class="teacher-detail-stat"><small>Desafíos con evaluación socrática</small><strong>${actividadesSocraticasValidas.length}</strong></div>
                   <div class="teacher-detail-stat"><small>Total de respuestas socráticas</small><strong>${respuestasSocraticasValidas}</strong></div>
                   <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong></div>
