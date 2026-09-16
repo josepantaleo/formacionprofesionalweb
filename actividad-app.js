@@ -2451,7 +2451,8 @@
           const datosFirebase = await window.cargarProgresoFirebase();
           registroFirebaseExistente = Boolean(
               datosFirebase?.uid &&
-              datosFirebase?.email
+              datosFirebase?.email &&
+              datosFirebase?.estadoCuenta
           );
           window.ultimoDocumentoEstudianteFirebase = datosFirebase || null;
           const perfilFirebaseCompleto = !!(datosFirebase?.estudiante &&
@@ -2463,13 +2464,8 @@
               bloquearCuentaEstudiante(datosFirebase.bajaMotivo || '');
               return;
           }
-          // Compatibilidad con alumnos registrados antes de incorporar
-          // estadoCuenta: un perfil completo ya existente conserva el acceso.
-          const estadoCuentaPersistido = datosFirebase
-              ? (datosFirebase.estadoCuenta || 'pendiente')
-              : 'pendiente';
           estadoCuentaEstudiante = datosFirebase
-              ? (datosFirebase.estadoCuenta || (perfilFirebaseCompleto ? 'activo' : estadoCuentaPersistido))
+              ? (datosFirebase.estadoCuenta || 'pendiente')
               : 'pendiente';
           const estadoLocalAnterior = getLocalStorage('app_account_state') || '';
           if (estadoCuentaEstudiante === 'activo' &&
@@ -9726,79 +9722,10 @@
           const notaFinalEditable = notaDefinitiva !== '—' ? notaDefinitiva : notaCalculada;
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
           const resumenConsultasIA = resumirConsultasIAEstudiante(d);
-          const resumenPortapapeles = obtenerResumenPortapapeles(d);
-          const ultimoIntentoPortapapeles = resumenPortapapeles.ultimoIntento;
-          const ultimoIntentoTexto = ultimoIntentoPortapapeles
-              ? `${String(ultimoIntentoPortapapeles.accion || "").toUpperCase()} · ${escapeHtml(ultimoIntentoPortapapeles.seccionTitulo || ultimoIntentoPortapapeles.seccionId || "Actividad sin identificar")} · ${ultimoIntentoPortapapeles.fechaISO ? new Date(ultimoIntentoPortapapeles.fechaISO).toLocaleString("es-AR") : "fecha no disponible"}`
-              : "Sin intentos registrados";
           const actividadesSocraticasValidas = obtenerActividadesSocraticasValidas(d);
           const resumenNivelesAnalista = obtenerConteoInformeSocratico(d);
           const respuestasSocraticasValidas = Object.values(resumenNivelesAnalista)
               .reduce((suma, valor) => suma + Number(valor || 0), 0);
-          const desafioActualId = d.seccionActiva || d.pantallaBloqueadaSeccion
-              || seccionesData.find(sec => !finalizadas[sec.id])?.id
-              || null;
-          const desafioActual = seccionesData.find(sec => sec.id === desafioActualId) || null;
-          const claseBarraNota = nota => {
-              if (!Number.isFinite(Number(nota))) return "is-ungraded";
-              if (Number(nota) < 4) return "is-critical";
-              if (Number(nota) < 6) return "is-warning";
-              if (Number(nota) < 8) return "is-good";
-              return "is-excellent";
-          };
-          const graficoNotasHtml = seccionesData.map((sec, numero) => {
-              const resultado = historial[sec.id] || {};
-              const ajusteDocente = d.notasDesafiosDocente?.[sec.id] || null;
-              const notaAutomaticaBase = resultado.notaFinal ?? resultado.notaIA;
-              const notaAutomatica = notaAutomaticaBase === null || notaAutomaticaBase === undefined || notaAutomaticaBase === ""
-                  ? null
-                  : Number(notaAutomaticaBase);
-              const notaDocenteBase = ajusteDocente?.nota;
-              const notaDocente = notaDocenteBase === null || notaDocenteBase === undefined || notaDocenteBase === ""
-                  ? null
-                  : Number(notaDocenteBase);
-              const notaVigente = Number.isFinite(notaDocente)
-                  ? notaDocente
-                  : (Number.isFinite(notaAutomatica) ? notaAutomatica : null);
-              const alturaAutomatica = Number.isFinite(notaAutomatica)
-                  ? Math.max(0, Math.min(10, notaAutomatica)) * 10
-                  : 0;
-              const alturaDocente = Number.isFinite(notaDocente)
-                  ? Math.max(0, Math.min(10, notaDocente)) * 10
-                  : 0;
-              const nota = notaVigente;
-              const valor = Number.isFinite(notaVigente) ? Math.max(0, Math.min(10, notaVigente)) : 0;
-              const actual = sec.id === desafioActualId;
-              return `<div class="student-progress-chart-item ${actual ? "is-current" : ""}" title="${escapeHtml(`${sec.title}: ${Number.isFinite(Number(nota)) ? `${Number(nota).toFixed(1)}/10` : "sin nota"}${actual ? " · desafío actual" : ""}`)}">
-                  <div class="student-progress-chart-track"><span class="${claseBarraNota(nota)}" style="height:${valor * 10}%"></span></div>
-                  <strong>${Number.isFinite(Number(nota)) ? Number(nota).toFixed(1) : "—"}</strong><small>${numero + 1}</small>
-              </div>`;
-          }).join("");
-          const graficoComparativoNotasHtml = seccionesData.map((sec, numero) => {
-              const resultado = historial[sec.id] || {};
-              const ajusteDocente = d.notasDesafiosDocente?.[sec.id] || null;
-              const automaticaBase = resultado.notaFinal ?? resultado.notaIA;
-              const automatica = automaticaBase === null || automaticaBase === undefined || automaticaBase === ""
-                  ? null
-                  : Number(automaticaBase);
-              const docenteBase = ajusteDocente?.nota;
-              const docente = docenteBase === null || docenteBase === undefined || docenteBase === ""
-                  ? null
-                  : Number(docenteBase);
-              const vigente = Number.isFinite(docente)
-                  ? docente
-                  : (Number.isFinite(automatica) ? automatica : null);
-              const actual = sec.id === desafioActualId;
-              return `<div class="student-progress-chart-item teacher-grade-comparison-item ${actual ? "is-current" : ""}"
-                  title="${escapeHtml(`${sec.title} · Automática: ${Number.isFinite(automatica) ? automatica.toFixed(1) : "sin nota"} · Docente: ${Number.isFinite(docente) ? docente.toFixed(1) : "sin modificación"} · Vigente: ${Number.isFinite(vigente) ? vigente.toFixed(1) : "pendiente"}`)}">
-                  <div class="student-progress-chart-track teacher-grade-comparison-track">
-                      <span class="teacher-grade-bar is-automatic ${claseBarraNota(automatica)}" style="height:${Number.isFinite(automatica) ? Math.max(0, Math.min(10, automatica)) * 10 : 0}%"></span>
-                      <span class="teacher-grade-bar is-teacher ${Number.isFinite(docente) ? claseBarraNota(docente) : "is-empty"}" style="height:${Number.isFinite(docente) ? Math.max(0, Math.min(10, docente)) * 10 : 0}%"></span>
-                  </div>
-                  <strong>${Number.isFinite(vigente) ? vigente.toFixed(1) : "—"}</strong>
-                  <small>D${numero + 1}${Number.isFinite(docente) ? " · modificada" : ""}</small>
-              </div>`;
-          }).join("");
           const eventos = Array.isArray(d.eventosSalidasPestana)
               ? d.eventosSalidasPestana
               : (Array.isArray(d.eventosSalidasPestana) ? d.eventosSalidasPestana : []);
@@ -10046,23 +9973,6 @@
 
           document.getElementById('detalleEstudianteProfesorContenido').innerHTML = `
               ${panelAprobacion}
-              <section class="student-current-challenge ${desafioActual ? "" : "is-complete"}" aria-label="Desafío actual del estudiante">
-                  <div class="student-current-challenge-icon"><i class="fa-solid ${desafioActual ? "fa-location-crosshairs" : "fa-flag-checkered"}"></i></div>
-                  <div class="student-current-challenge-copy">
-                      <small>${desafioActual ? "DESAFÍO ACTUAL DEL ESTUDIANTE" : "TRAYECTO COMPLETADO"}</small>
-                      <strong>${escapeHtml(desafioActual ? desafioActual.title : "Todos los desafíos finalizados")}</strong>
-                      <span>${desafioActual ? `Última sección registrada: ${escapeHtml(d.seccionActiva || "sin registro")}.` : "El estudiante ya completó todos los desafíos disponibles."}</span>
-                  </div>
-              </section>
-              <section class="student-progress-chart-section teacher-student-grade-chart">
-                  <header><div><i class="fa-solid fa-chart-column"></i><strong>Notas automáticas y modificadas por el docente</strong></div><small>El número inferior muestra la nota vigente</small></header>
-                  <div class="teacher-grade-chart-legend" aria-label="Referencias del gráfico">
-                      <span class="is-automatic">Nota automática</span>
-                      <span class="is-teacher">Nota modificada por el docente</span>
-                      <span class="is-current">Desafío actual</span>
-                  </div>
-                  <div class="student-progress-chart teacher-grade-comparison-chart" role="img" aria-label="Comparación entre notas automáticas y notas modificadas por el docente">${graficoComparativoNotasHtml}</div>
-              </section>
               <div class="teacher-detail-summary">
                   <div class="teacher-detail-stat"><small>Nombre</small><strong>${escapeHtml(e.nombre || d.nombreGoogle || 'Sin nombre')}</strong></div>
                   <div class="teacher-detail-stat"><small>Email</small><strong>${escapeHtml(d.email || 'Sin email')}</strong></div>
@@ -10083,28 +9993,6 @@
                   <div class="teacher-detail-stat"><small>Desbloqueos</small><strong>${cantidadDesbloqueos}</strong></div>
                   <div class="teacher-detail-stat"><small>Última actualización</small><strong>${escapeHtml(fecha)}</strong></div>
               </div>
-              <section class="teacher-clipboard-report ${resumenPortapapeles.total > 0 ? "has-attempts" : "is-clear"}">
-                  <header>
-                      <div>
-                          <span class="teacher-clipboard-report-icon"><i class="fa-solid fa-clipboard-list"></i></span>
-                          <div><small>CONTROL DE PORTAPAPELES</small><h3>Intentos de copiar, cortar y pegar</h3></div>
-                      </div>
-                      <button class="btn btn-secondary" type="button" onclick="abrirHistorialPortapapeles(${indice})">
-                          <i class="fa-solid fa-clock-rotate-left"></i> Ver historial completo
-                      </button>
-                  </header>
-                  <div class="teacher-clipboard-report-stats">
-                      <div><small>Total</small><strong>${resumenPortapapeles.total}</strong></div>
-                      <div><small>Copiar</small><strong>${resumenPortapapeles.conteos.copiar}</strong></div>
-                      <div><small>Cortar</small><strong>${resumenPortapapeles.conteos.cortar}</strong></div>
-                      <div><small>Pegar</small><strong>${resumenPortapapeles.conteos.pegar}</strong></div>
-                      <div><small>Nivel</small><strong>${escapeHtml(resumenPortapapeles.riesgo)}</strong></div>
-                  </div>
-                  <p><strong>Último intento:</strong> ${escapeHtml(ultimoIntentoTexto)}</p>
-                  <p class="teacher-clipboard-report-note">${resumenPortapapeles.total > 0
-                      ? "Los intentos fueron bloqueados y registrados para revisión docente."
-                      : "No se registraron intentos de usar el portapapeles en los editores de código."}</p>
-              </section>
               <div class="teacher-detail-toolbar">
                   <div class="teacher-detail-toolbar-title">
                       <strong><i class="fa-solid fa-layer-group"></i> Desafíos del informe</strong>
@@ -12376,12 +12264,6 @@
               if (actividad.nota < 8) return "is-good";
               return "is-excellent";
           };
-          const actividadActiva = datos.actividades.find(item => item.id === seccionActivaActual)
-              || datos.actividades.find(item => !item.finalizada)
-              || null;
-          const desafioActualTexto = actividadActiva
-              ? `Desafío ${actividadActiva.indice}: ${actividadActiva.titulo.replace(/^\d+\.\s*/, "")}`
-              : "Trayecto completado";
           const completadas = datos.recomendaciones.filter(item => item.estado === "completada").length;
           const enProgreso = datos.recomendaciones.filter(item => item.estado === "en_progreso").length;
           const resumenBoton = document.getElementById("resumenBotonProgreso");
@@ -12389,15 +12271,6 @@
               resumenBoton.textContent = `${datos.progreso}% completado · Promedio ${formatearNotaGrafico(datos.promedio)}`;
           }
           contenedor.innerHTML = `
-              <section class="student-current-challenge ${actividadActiva ? "" : "is-complete"}" aria-label="Desafío actual">
-                  <div class="student-current-challenge-icon"><i class="fa-solid ${actividadActiva ? "fa-location-crosshairs" : "fa-flag-checkered"}"></i></div>
-                  <div class="student-current-challenge-copy">
-                      <small>${actividadActiva ? "DESAFÍO ACTUAL" : "TRAYECTO COMPLETADO"}</small>
-                      <strong>${escapeHtml(desafioActualTexto)}</strong>
-                      <span>${actividadActiva?.finalizada ? "Seleccionado recientemente. Podés revisar su nota y volver a practicar." : "Continuá con este desafío para avanzar al siguiente."}</span>
-                  </div>
-                  ${actividadActiva ? `<b>${Number.isFinite(actividadActiva.nota) ? `${actividadActiva.nota.toFixed(1)}/10` : (actividadActiva.finalizada ? "Sin nota" : "Pendiente")}</b>` : ""}
-              </section>
               <div class="student-report-summary">
                   <div><small>Avance</small><strong>${datos.progreso}%</strong><span>${datos.finalizadas}/${datos.actividades.length} desafíos</span></div>
                   <div><small>Promedio actual</small><strong>${formatearNotaGrafico(datos.promedio)}</strong><span>${datos.evaluadas.length} desafíos con nota</span></div>
@@ -12408,8 +12281,6 @@
                   <header><div><i class="fa-solid fa-chart-column"></i><strong>Gráfico de calificaciones</strong></div><small>Escala de 0 a 10 por desafío</small></header>
                   <div class="student-progress-chart" role="img" aria-label="Gráfico de calificaciones por desafío">${datos.actividades.map(actividad => {
                       const nota = Number.isFinite(actividad.nota) ? Math.max(0, Math.min(10, actividad.nota)) : 0;
-                      const esActual = actividadActiva?.id === actividad.id;
-                      const claseActual = esActual ? " is-current" : "";
                       return `<div class="student-progress-chart-item" title="${escapeHtml(`${actividad.titulo}: ${Number.isFinite(actividad.nota) ? actividad.nota.toFixed(1) : 'sin nota'}`)}"><div class="student-progress-chart-track"><span class="${colores(actividad)}" style="height:${nota * 10}%"></span></div><strong>${Number.isFinite(actividad.nota) ? actividad.nota.toFixed(1) : '—'}</strong><small>${actividad.indice}</small></div>`;
                   }).join('')}</div>
               </section>
@@ -12455,15 +12326,6 @@
                       </article>`).join("")}</div>
                   <p id="estadoInformeVisualEstudiante" class="student-report-save-status">Estados sincronizados con tu progreso.</p>
               </section>`;
-          if (actividadActiva) {
-              const indiceActual = datos.actividades.findIndex(item => item.id === actividadActiva.id);
-              const barraActual = contenedor.querySelectorAll(".student-progress-chart-item")[indiceActual];
-              const tarjetaActual = contenedor.querySelectorAll(".student-heatmap-cell")[indiceActual];
-              barraActual?.classList.add("is-current");
-              tarjetaActual?.classList.add("is-current");
-              if (barraActual) barraActual.querySelector("small").textContent += " · actual";
-              if (tarjetaActual) tarjetaActual.querySelector("strong").insertAdjacentHTML("beforeend", "<em>Actual</em>");
-          }
       }
 
       async function exportarResultadosPDF() {

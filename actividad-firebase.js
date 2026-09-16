@@ -715,7 +715,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               }
             }));
           }
-          if (datos.mensajeDocenteActual?.id && datos.mensajeDocenteActual.leido !== true) {
+          if (datos.mensajeDocenteActual?.id) {
             window.ultimoMensajeDocenteCompatible = {
               ...datos.mensajeDocenteActual,
               canal: "documento-estudiante"
@@ -723,8 +723,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             window.dispatchEvent(new CustomEvent("mensaje-docente-compatible", {
               detail: window.ultimoMensajeDocenteCompatible
             }));
-          } else {
-            window.ultimoMensajeDocenteCompatible = null;
           }
         }, error => {
           console.error("Error escuchando reinicio de cambios de pestaña:", error);
@@ -885,9 +883,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const recuperacion = {};
         if (!datos.uid) recuperacion.uid = user.uid;
         if (!datos.email) recuperacion.email = user.email || "";
-        // Los registros antiguos podían no tener estadoCuenta. No los
-        // conviertas automáticamente en pendientes: initApp decide si el
-        // perfil completo corresponde a una cuenta ya habilitada.
+        if (!datos.estadoCuenta) recuperacion.estadoCuenta = "pendiente";
         if (datos.emailVerificado !== (user.emailVerified === true)) {
           recuperacion.emailVerificado = user.emailVerified === true;
         }
@@ -1103,20 +1099,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         if (!documentoEstudianteListo) {
           try {
             const snapEstudiante = await getDoc(doc(db, "estudiantes", user.uid));
-            const datosEstudiante = snapEstudiante.exists() ? snapEstudiante.data() : null;
-            const perfil = datosEstudiante?.estudiante || {};
-            const perfilLegacyCompleto = Boolean(
-              String(perfil.nombre || datosEstudiante?.nombreGoogle || "").trim() &&
-              String(perfil.curso || "").trim() &&
-              String(perfil.division || "").trim() &&
-              String(perfil.turno || "").trim()
-            );
             documentoEstudianteListo = Boolean(
-              datosEstudiante &&
-              (
-                ["activo", "pendiente"].includes(datosEstudiante.estadoCuenta) ||
-                (!datosEstudiante.estadoCuenta && perfilLegacyCompleto)
-              )
+              snapEstudiante.exists() && snapEstudiante.data().estadoCuenta
             );
             if (documentoEstudianteListo) {
               window.__uidPresenciaEstudianteListo = user.uid;
