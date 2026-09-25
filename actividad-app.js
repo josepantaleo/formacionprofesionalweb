@@ -2341,7 +2341,12 @@
 
       function solicitarDatosNuevoEstudiante(esNuevoRegistro = true, datosExistentes = null) {
         return new Promise((resolve) => {
-          const modal=document.createElement('div'); modal.className='modal-overlay'; modal.style.display='flex';
+          const modal=document.createElement('div');
+          modal.className='modal-overlay';
+          modal.style.display='flex';
+          // El alta se abre mientras el overlay de autenticación sigue visible.
+          // Debe quedar por encima para que el estudiante pueda completar los datos.
+          modal.style.zIndex='10050';
           const textoRegistro = esNuevoRegistro
               ? "Primera vez con este correo. Completá tus datos para comenzar."
               : "Este correo ya está registrado. Completá los datos faltantes para continuar.";
