@@ -2589,7 +2589,7 @@
               }
           }
 
-          const datosFirebase = await window.cargarProgresoFirebase();
+          let datosFirebase = await window.cargarProgresoFirebase();
           registroFirebaseExistente = Boolean(
               datosFirebase?.uid &&
               datosFirebase?.email &&
@@ -2601,12 +2601,20 @@
               datosFirebase.estudiante.curso &&
               datosFirebase.estudiante.division &&
               datosFirebase.estudiante.turno);
-          if (!datosFirebase) {
-              // Un UID eliminado vuelve como registro nuevo: primero debe
-              // completar sus datos y quedar pendiente de aprobación.
-              await solicitarDatosNuevoEstudiante(true, null);
-              bloquearCuentaPorAprobacion('pendiente');
-              return;
+          if (!datosFirebase || !perfilFirebaseCompleto) {
+              // Un UID eliminado o un registro incompleto vuelve al alta:
+              // primero completa sus datos y queda pendiente de aprobación.
+              const esNuevoRegistro = !datosFirebase;
+              await solicitarDatosNuevoEstudiante(esNuevoRegistro, datosFirebase);
+              const datosDespuesDelAlta = await window.cargarProgresoFirebase?.();
+              const estadoDespuesDelAlta = datosDespuesDelAlta?.estadoCuenta || 'pendiente';
+              estadoCuentaEstudiante = estadoDespuesDelAlta;
+              if (estadoDespuesDelAlta !== 'activo') {
+                  window.escucharReinicioSalidasFirebase?.();
+                  bloquearCuentaPorAprobacion(estadoDespuesDelAlta);
+                  return;
+              }
+              datosFirebase = datosDespuesDelAlta;
           }
           if (datosFirebase?.estadoCuenta === 'inactivo') {
               bloquearCuentaEstudiante(datosFirebase.bajaMotivo || '');
@@ -2624,7 +2632,7 @@
               });
               return;
           }
-          if (estadoCuentaEstudiante === 'pendiente' && perfilFirebaseCompleto) {
+          if (estadoCuentaEstudiante === 'pendiente') {
               window.escucharReinicioSalidasFirebase?.();
               bloquearCuentaPorAprobacion('pendiente');
               return;
