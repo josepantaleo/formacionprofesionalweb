@@ -1876,6 +1876,7 @@
       window.addEventListener('profesor-data', e => {
           const datos = e.detail || [];
           detectarNuevasSolicitudes(datos);
+          detectarNuevasSolicitudesColaboracion(datos);
           estudiantesProfesor = datos;
           renderSolicitudesColaboracionProfesor(datos);
           document.getElementById('estadoPanelProfesor').textContent = `Actualizado: ${new Date().toLocaleTimeString()}`;
@@ -6662,6 +6663,7 @@
       let profesorUnsubscribe = null;
       let estudiantesProfesor = [];
       let solicitudesPendientesConocidas = null;
+      let solicitudesColaboracionConocidas = null;
       let sonidoSolicitudesActivo = localStorage.getItem('teacher_pending_request_sound') === 'true';
 
       function cambiarSonidoSolicitudes(activo) {
@@ -6696,6 +6698,45 @@
 
       function ocultarAlertaNuevaSolicitud() {
           document.getElementById('alertaNuevaSolicitud')?.classList.remove('active');
+      }
+
+      function ocultarAlertaColaboracionFlotante() {
+          const alerta = document.getElementById('alertaColaboracionFlotante');
+          if (alerta) alerta.hidden = true;
+      }
+      window.ocultarAlertaColaboracionFlotante = ocultarAlertaColaboracionFlotante;
+
+      function mostrarAlertaColaboracionFlotante(solicitudes) {
+          if (!solicitudes.length) return;
+          const nombres = solicitudes.map(item => item.estudianteNombre || 'Estudiante');
+          const texto = solicitudes.length === 1
+              ? `Solicitud de colaboración: ${nombres[0]}`
+              : `${solicitudes.length} solicitudes de colaboración pendientes`;
+          const etiqueta = document.getElementById('textoAlertaColaboracionFlotante');
+          const alerta = document.getElementById('alertaColaboracionFlotante');
+          if (!etiqueta || !alerta) return;
+          etiqueta.textContent = texto;
+          alerta.hidden = false;
+      }
+
+      function detectarNuevasSolicitudesColaboracion(datos) {
+          const actuales = [];
+          (Array.isArray(datos) ? datos : []).forEach(estudiante => {
+              const nombre = estudiante?.nombre || estudiante?.displayName || estudiante?.email || 'Estudiante';
+              (Array.isArray(estudiante?.__solicitudesColaboracion) ? estudiante.__solicitudesColaboracion : [])
+                  .forEach(item => actuales.push({
+                      id: `${estudiante.uid || estudiante.id || ''}/${item.sectionId || item.id || ''}`,
+                      estudianteNombre: nombre
+                  }));
+          });
+          const idsActuales = new Set(actuales.map(item => item.id));
+          if (solicitudesColaboracionConocidas === null) {
+              solicitudesColaboracionConocidas = idsActuales;
+              return;
+          }
+          const nuevas = actuales.filter(item => !solicitudesColaboracionConocidas.has(item.id));
+          solicitudesColaboracionConocidas = idsActuales;
+          mostrarAlertaColaboracionFlotante(nuevas);
       }
 
       function mostrarAlertaNuevaSolicitud(nuevas) {

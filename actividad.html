@@ -15,7 +15,7 @@
       href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@300;400;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="actividad-base.css?v=20260925-1" />
+    <link rel="stylesheet" href="actividad-base.css?v=20260925-2" />
     <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260923-8" />
     <style>
       .skip-link {
@@ -1238,6 +1238,15 @@
       </div>
     </div>
 
+    <div id="alertaColaboracionFlotante" class="collaboration-floating-alert" role="alert" aria-live="assertive" hidden>
+      <button type="button" class="collaboration-floating-alert-main" onclick="abrirPanelProfesor()" aria-label="Abrir solicitudes de colaboración">
+        <i class="fa-solid fa-hand" aria-hidden="true"></i>
+        <span id="textoAlertaColaboracionFlotante">Nueva solicitud de colaboración</span>
+      </button>
+      <button type="button" class="collaboration-floating-alert-close" onclick="ocultarAlertaColaboracionFlotante()" aria-label="Cerrar aviso">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
     <div class="student-floating-timer" id="studentFloatingTimer" aria-live="polite" aria-label="Tiempo restante del desafío" hidden>
       <i class="fa-solid fa-stopwatch" aria-hidden="true"></i>
       <span class="student-floating-timer-label" id="studentFloatingTimerModule">Desafío activo</span>
@@ -1246,7 +1255,7 @@
     <script src="actividad-network-status.js?v=20260914-9"></script>
     <script src="actividad-utils.js?v=20260914-9"></script>
     <script src="actividad-pdf-loader.js?v=20260914-9"></script>
-      <script src="actividad-app.js?v=20260925-10"></script>
+      <script src="actividad-app.js?v=20260925-11"></script>
     <script src="panel-profesor.js?v=20260914-9"></script>
     <script src="actividad-cooperacion.js?v=20260914-9"></script>
       <script src="mejoras-seguimiento.js?v=20260924-1"></script>
