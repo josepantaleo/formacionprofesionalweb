@@ -1877,6 +1877,7 @@
           const datos = e.detail || [];
           detectarNuevasSolicitudes(datos);
           estudiantesProfesor = datos;
+          renderSolicitudesColaboracionProfesor(datos);
           document.getElementById('estadoPanelProfesor').textContent = `Actualizado: ${new Date().toLocaleTimeString()}`;
           renderPanelProfesor();
       });
@@ -2910,8 +2911,12 @@
                                           <button class="student-focus-toggle" type="button" onclick="alternarModoEnfoque('${sec.id}', this)" aria-pressed="false" title="Ocultar temporalmente teoría y ayudas">
                                               <i class="fa-solid fa-expand"></i><span>Enfoque</span>
                                           </button>
+                                          <button class="student-focus-toggle" type="button" id="btn-solicitar-colaboracion-${sec.id}" onclick="solicitarColaboracionEstudiante('${sec.id}')" title="Avisar al docente y solicitar colaboración con tu código">
+                                              <i class="fa-solid fa-hand"></i><span>Solicitar colaboración</span>
+                                          </button>
                                       </div>
                                   </div>
+                                  <div id="estado-colaboracion-${sec.id}" role="status" aria-live="polite" hidden style="margin:.45rem 0;color:#bae6fd;font-size:.8rem;"></div>
                                   <div class="student-ai-editor-actions" aria-label="Ayuda de programación con IA">
                                       <button type="button" data-ai-editor-action class="student-ai-editor-action" onclick="solicitarAyudaEditor('${sec.id}', 'consigna', this)" ${isFinalized ? 'disabled' : ''} title="Organizar la consigna antes de programar">
                                           <i class="fa-solid fa-list-ol"></i><span>Planificar</span>
@@ -3451,6 +3456,35 @@
           seccionPendientePausa = sectionId;
           solicitarAccionProfesor('pausar_modulo');
       }
+
+      async function solicitarColaboracionEstudiante(sectionId) {
+          const sesion = window.__sesionCRDTEstudianteActiva;
+          if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
+              alert('Abrí el editor del desafío y esperá a que la colaboración esté disponible.');
+              return;
+          }
+          const sec = seccionesData.find(item => item.id === sectionId);
+          const motivo = prompt(
+              `¿Qué necesitás revisar con el docente en "${sec?.title || 'este desafío'}"?`,
+              'Necesito ayuda para revisar mi código.'
+          );
+          if (motivo === null) return;
+          const boton = document.getElementById(`btn-solicitar-colaboracion-${sectionId}`);
+          if (boton) boton.disabled = true;
+          try {
+              const ok = await sesion.sesion.solicitarCooperacion(motivo);
+              if (!ok) throw new Error('No se pudo registrar la solicitud.');
+              const estado = document.getElementById(`estado-colaboracion-${sectionId}`);
+              if (estado) {
+                  estado.hidden = false;
+                  estado.textContent = 'Solicitud enviada al docente. Queda pendiente de atención.';
+              }
+          } catch (error) {
+              if (boton) boton.disabled = false;
+              alert(error?.message || 'No se pudo enviar la solicitud de colaboración.');
+          }
+      }
+      window.solicitarColaboracionEstudiante = solicitarColaboracionEstudiante;
 
       function solicitarAccionProfesor(accion) {
           tipoAccionModal = accion;
@@ -11903,6 +11937,64 @@
               .map(item => ({ item, tiempo: obtenerFechaReaperturaProfesor(item.fecha || item.en) }))
               .filter(item => item.tiempo > 0)
               .sort((a, b) => b.tiempo - a.tiempo)[0] || null;
+      }
+
+      function renderSolicitudesColaboracionProfesor(datos) {
+          const contador = document.getElementById('contadorSolicitudesColaboracion');
+          const resumen = document.getElementById('resumenSolicitudesColaboracion');
+          const lista = document.getElementById('listaSolicitudesColaboracionProfesor');
+          if (!contador || !resumen || !lista) return;
+
+          const escapar = valor => String(valor ?? '').replace(/[&<>"']/g, caracter => ({
+              '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+          }[caracter]));
+          const aFecha = valor => {
+              if (!valor) return null;
+              if (typeof valor.toDate === 'function') return valor.toDate();
+              if (valor.seconds) return new Date(valor.seconds * 1000);
+              const fecha = new Date(valor);
+              return Number.isNaN(fecha.getTime()) ? null : fecha;
+          };
+          const solicitudes = [];
+          (Array.isArray(datos) ? datos : []).forEach(estudiante => {
+              const items = Array.isArray(estudiante?.__solicitudesColaboracion)
+                  ? estudiante.__solicitudesColaboracion
+                  : [];
+              items.forEach(item => solicitudes.push({
+                  ...item,
+                  estudianteNombre: estudiante.nombre || estudiante.displayName || estudiante.email || 'Estudiante',
+                  estudianteEmail: estudiante.email || '',
+                  estudianteId: estudiante.id || estudiante.uid || ''
+              }));
+          });
+          solicitudes.sort((a, b) => {
+              const fechaA = aFecha(a.solicitudEn)?.getTime() || 0;
+              const fechaB = aFecha(b.solicitudEn)?.getTime() || 0;
+              return fechaB - fechaA;
+          });
+          contador.textContent = String(solicitudes.length);
+          resumen.textContent = solicitudes.length
+              ? `Hay ${solicitudes.length} solicitud${solicitudes.length === 1 ? '' : 'es'} de colaboración pendiente${solicitudes.length === 1 ? '' : 's'}.`
+              : 'No hay solicitudes de colaboración pendientes.';
+          if (!solicitudes.length) {
+              lista.innerHTML = '<p style="color:var(--text-muted);margin:0">No hay solicitudes de colaboración pendientes.</p>';
+              return;
+          }
+          lista.innerHTML = solicitudes.map(item => {
+              const fecha = aFecha(item.solicitudEn);
+              const fechaTexto = fecha ? fecha.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : 'Fecha no disponible';
+              const titulo = item.sectionTitle || item.sectionName || item.sectionId || 'Desafío sin título';
+              const motivo = item.objetivoCooperacion || item.motivo || 'El estudiante solicita revisar su código.';
+              return `<article class="pending-request-card" style="border-color:rgba(56,189,248,.38)">
+                  <div style="display:flex;justify-content:space-between;gap:.75rem;align-items:flex-start">
+                    <strong><i class="fa-solid fa-user-graduate"></i> ${escapar(item.estudianteNombre)}</strong>
+                    <time datetime="${fecha ? fecha.toISOString() : ''}" style="color:var(--text-muted);font-size:.76rem">${escapar(fechaTexto)}</time>
+                  </div>
+                  <div style="margin-top:.35rem;color:#bae6fd;font-weight:700">${escapar(titulo)}</div>
+                  <p style="margin:.45rem 0 0;color:var(--text-muted);font-size:.84rem">${escapar(motivo)}</p>
+                  ${item.estudianteEmail ? `<div style="margin-top:.35rem;color:var(--text-muted);font-size:.76rem">${escapar(item.estudianteEmail)}</div>` : ''}
+              </article>`;
+          }).join('');
       }
 
       function renderPanelProfesor() {

@@ -1692,9 +1692,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
              return { ...modoCooperacionActual };
            },
            async solicitarCooperacion(objetivo = "") {
-            if (rol !== "docente") return false;
+            if (rol !== "docente" && user.uid !== uid) return false;
             const descripcion = String(objetivo || "Acompañamiento docente sobre la actividad actual").trim().slice(0, 500);
-            await setDoc(metaRef, {
+            await setDoc(metaRef, rol === "docente" ? {
               modoCooperacionActiva: true,
               edicionCooperativaPausada: false,
               estadoConsentimiento: "aceptado",
@@ -1706,6 +1706,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
                motivoRechazo: "",
                actualizadoEn: serverTimestamp(),
                actualizadoPor: user.email || user.uid
+             } : {
+              modoCooperacionActiva: false,
+              edicionCooperativaPausada: true,
+              estadoConsentimiento: "pendiente",
+              objetivoCooperacion: descripcion,
+              solicitadoPor: user.displayName || user.email || "Estudiante",
+              solicitudEn: serverTimestamp(),
+              respondidoEn: null,
+              respondidoPor: "",
+              motivoRechazo: "",
+              actualizadoEn: serverTimestamp(),
+              actualizadoPor: user.email || user.uid
              }, { merge: true });
              return true;
            },
@@ -4632,6 +4644,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
         let estudiantesActuales = [];
         let controlesActuales = new Map();
+        let colaboracionesPendientes = new Map();
         let ultimaEmision = "";
         let emisionPendiente = false;
         let cancelado = false;
@@ -4656,7 +4669,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             const estudiantes = estudiantesActuales.map(item => ({
             ...item.datos,
             uid: item.datos.uid || item.id,
-            __controlEstudiante: controlesActuales.get(item.id) || null
+            __controlEstudiante: controlesActuales.get(item.id) || null,
+            __solicitudesColaboracion: colaboracionesPendientes.get(item.id) || []
             }));
             const firma = firmaDatos(estudiantes);
             if (firma === ultimaEmision) return;
@@ -4691,10 +4705,35 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           },
           manejarError
         );
+        const detenerColaboraciones = onSnapshot(
+          collectionGroup(database, "colaboracionCodigo"),
+          snapshot => {
+            const mapa = new Map();
+            snapshot.docs.forEach(item => {
+              const datos = item.data();
+              if (datos.estadoConsentimiento !== "pendiente") return;
+              const segmentos = item.ref.path.split("/");
+              const uid = segmentos[1];
+              const sectionId = segmentos[3] || datos.sectionId || item.id;
+              if (!uid) return;
+              if (!mapa.has(uid)) mapa.set(uid, []);
+              mapa.get(uid).push({
+                id: item.id,
+                uid,
+                sectionId,
+                ...datos
+              });
+            });
+            colaboracionesPendientes = mapa;
+            emitirPanel();
+          },
+          manejarError
+        );
         window.__profesorUnsubscribe = () => {
           cancelado = true;
           detenerEstudiantes();
           detenerControles();
+          detenerColaboraciones();
           window.__profesorRefreshInterval = null;
           window.__profesorUnsubscribe = null;
           window.__profesorPanelActivo = false;

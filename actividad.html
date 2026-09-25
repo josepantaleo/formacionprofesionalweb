@@ -239,7 +239,7 @@
       }
     </style>
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
-      <script type="module" src="actividad-firebase.js?v=20260924-3"></script>
+      <script type="module" src="actividad-firebase.js?v=20260925-1"></script>
   </head>
   <body onload="initApp()">
     <a class="skip-link" href="#contenidoPrincipal">Saltar al contenido principal</a>
@@ -583,6 +583,21 @@
           </div>
           <div id="listaSolicitudesPendientes" class="pending-requests-grid">
             <p style="color:var(--text-muted);margin:0">No hay solicitudes pendientes.</p>
+          </div>
+        </section>
+        <section id="solicitudesColaboracionProfesor" class="pending-requests-panel" aria-labelledby="solicitudesColaboracionTitulo" style="margin-top:1rem">
+          <div class="pending-requests-header">
+            <div class="pending-requests-title">
+              <i class="fa-solid fa-hand"></i>
+              <h3 id="solicitudesColaboracionTitulo" style="margin:0;color:inherit">Solicitudes de colaboración</h3>
+              <span id="contadorSolicitudesColaboracion" class="pending-count">0</span>
+            </div>
+          </div>
+          <div id="resumenSolicitudesColaboracion" style="color:var(--text-muted);font-size:.82rem;margin-bottom:.65rem">
+            No hay solicitudes de colaboración pendientes.
+          </div>
+          <div id="listaSolicitudesColaboracionProfesor" class="pending-requests-grid">
+            <p style="color:var(--text-muted);margin:0">No hay solicitudes de colaboración pendientes.</p>
           </div>
         </section>
         <details open style="margin-top:1rem;padding:.8rem;border:1px solid rgba(16,185,129,.32);border-radius:8px;background:rgba(16,185,129,.06)">
@@ -1231,7 +1246,7 @@
     <script src="actividad-network-status.js?v=20260914-9"></script>
     <script src="actividad-utils.js?v=20260914-9"></script>
     <script src="actividad-pdf-loader.js?v=20260914-9"></script>
-      <script src="actividad-app.js?v=20260925-7"></script>
+      <script src="actividad-app.js?v=20260925-8"></script>
     <script src="panel-profesor.js?v=20260914-9"></script>
     <script src="actividad-cooperacion.js?v=20260914-9"></script>
       <script src="mejoras-seguimiento.js?v=20260924-1"></script>
