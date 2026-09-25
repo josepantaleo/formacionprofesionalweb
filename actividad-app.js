@@ -2649,6 +2649,10 @@
           const estadoLocalAnterior = getLocalStorage('app_account_state') || '';
           if (estadoCuentaEstudiante === 'activo' &&
               (estadoLocalAnterior === 'pendiente' || estadoLocalAnterior === 'rechazado')) {
+              reiniciarCronometrosLocales({
+                  incluirFinalizados: true,
+                  limpiarPausas: true
+              });
               mostrarAvisoAccesoAprobado({
                   aprobadoPor: datosFirebase?.aprobadoPor || '',
                   aprobadoEn: datosFirebase?.aprobadoEn || null
@@ -3826,8 +3830,11 @@
                   }
               }
           });
+          const pausaEfectivaActual = seccionActivaActual
+              ? Boolean(modulosPausados[seccionActivaActual])
+              : false;
           if (
-              !pausaEfectiva &&
+              !pausaEfectivaActual &&
               moduloCronometroEnCurso &&
               moduloCronometroEnCurso === seccionActivaActual
           ) {
@@ -3876,18 +3883,31 @@
           }
       }
 
-      function reiniciarCronometrosLocales() {
+      function reiniciarCronometrosLocales(opciones = {}) {
+          const incluirFinalizados = opciones.incluirFinalizados === true;
+          const limpiarPausas = opciones.limpiarPausas === true;
           seccionesData.forEach(sec => {
-              if (actividadesFinalizadas[sec.id]) return;
+              if (!incluirFinalizados && actividadesFinalizadas[sec.id]) return;
               if (cronometrosActivos[sec.id]) {
                   clearInterval(cronometrosActivos[sec.id]);
                   cronometrosActivos[sec.id] = null;
               }
               tiemposRestantes[sec.id] = TIEMPO_MAXIMO_SEGUNDOS;
               setLocalStorage(`timer_${sec.id}`, TIEMPO_MAXIMO_SEGUNDOS);
+              removeLocalStorage(`timer_started_${sec.id}`);
+              if (limpiarPausas) {
+                  removeLocalStorage(`pausa_${sec.id}`);
+                  modulosPausados[sec.id] = false;
+              }
               actualizarDisplayTiempo(sec.id);
           });
+          if (limpiarPausas) {
+              cronometrosPausadosIndividualmente = false;
+              cronometrosPausadosPorDocente = false;
+              removeLocalStorage('pausa_global');
+          }
           moduloCronometroEnCurso = null;
+          actualizarBotonPausaCronometros();
       }
 
       function aplicarControlCronometrosDocente(datos = {}) {
