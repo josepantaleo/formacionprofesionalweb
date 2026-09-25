@@ -3378,6 +3378,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
         if (!user || !contexto.database || !uid) return false;
+        let rutaEnProceso = `estudiantes/${uid}`;
         try {
           if (!(await verificarUsuarioDocente(user))) return false;
           const database = contexto.database;
@@ -3398,11 +3399,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           let documentosAsociadosEliminados = 0;
 
           for (const nombreSubcoleccion of subcoleccionesEstudiante) {
+            rutaEnProceso = `estudiantes/${uid}/${nombreSubcoleccion}`;
             const referencia = collection(database, "estudiantes", uid, nombreSubcoleccion);
             const snapshot = await getDocs(referencia);
             const documentos = snapshot.docs;
 
             for (let inicio = 0; inicio < documentos.length; inicio += 450) {
+              rutaEnProceso = `estudiantes/${uid}/${nombreSubcoleccion} (borrado)`;
               const lote = writeBatch(database);
               documentos.slice(inicio, inicio + 450).forEach(documento => {
                 lote.delete(documento.ref);
@@ -3413,9 +3416,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           }
 
           // colaboracionCodigo contiene subcolecciones propias por sección.
+          rutaEnProceso = `estudiantes/${uid}/colaboracionCodigo`;
           const colaboracion = await getDocs(collection(database, "estudiantes", uid, "colaboracionCodigo"));
           for (const seccion of colaboracion.docs) {
             for (const nombreSubcoleccion of ["actualizaciones", "presencia", "mensajes", "historialAportes"]) {
+              rutaEnProceso = `estudiantes/${uid}/colaboracionCodigo/${seccion.id}/${nombreSubcoleccion}`;
               const anidada = await getDocs(collection(
                 database,
                 "estudiantes",
@@ -3425,17 +3430,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
                 nombreSubcoleccion
               ));
               for (let inicio = 0; inicio < anidada.docs.length; inicio += 450) {
+                rutaEnProceso = `estudiantes/${uid}/colaboracionCodigo/${seccion.id}/${nombreSubcoleccion} (borrado)`;
                 const lote = writeBatch(database);
                 anidada.docs.slice(inicio, inicio + 450).forEach(documento => lote.delete(documento.ref));
                 await lote.commit();
               }
               documentosAsociadosEliminados += anidada.docs.length;
             }
+            rutaEnProceso = `estudiantes/${uid}/colaboracionCodigo/${seccion.id}`;
             await deleteDoc(seccion.ref);
           }
           documentosAsociadosEliminados += colaboracion.docs.length;
 
           const controlRef = doc(database, "controlEstudiantes", uid);
+          rutaEnProceso = `controlEstudiantes/${uid}/sesiones`;
           const sesionesSnapshot = await getDocs(collection(database, "controlEstudiantes", uid, "sesiones"));
           for (let inicio = 0; inicio < sesionesSnapshot.docs.length; inicio += 450) {
             const lote = writeBatch(database);
@@ -3443,8 +3451,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             await lote.commit();
           }
           documentosAsociadosEliminados += sesionesSnapshot.docs.length;
+          rutaEnProceso = `controlEstudiantes/${uid}`;
           await deleteDoc(controlRef);
 
+          rutaEnProceso = `estudiantes/${uid}`;
           await deleteDoc(doc(database, "estudiantes", uid));
           window.ultimoResumenEliminacionEstudiante = {
             uid,
@@ -3461,7 +3471,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             uid,
             documentoPrincipalEliminado: false,
             error: error?.message || "Error desconocido",
-            codigo: error?.code || ""
+            codigo: error?.code || "",
+            ruta: rutaEnProceso
           };
           return false;
         }

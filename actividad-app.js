@@ -12217,7 +12217,8 @@
           const ok = await window.eliminarEstudianteFirebase?.(estudiante.uid);
           if (!ok) {
               const detalleError = window.ultimoResumenEliminacionEstudiante?.error || '';
-              alert(`No se pudo completar la eliminación total. Verificá la autorización docente y que las reglas de Firebase estén publicadas.${detalleError ? `\n\nDetalle: ${detalleError}` : ''}`);
+              const rutaError = window.ultimoResumenEliminacionEstudiante?.ruta || '';
+              alert(`No se pudo completar la eliminación total. Verificá la autorización docente y que las reglas de Firebase estén publicadas.${detalleError ? `\n\nDetalle: ${detalleError}` : ''}${rutaError ? `\n\nRuta rechazada: ${rutaError}` : ''}`);
               return;
           }
           const resumenEliminacion = window.ultimoResumenEliminacionEstudiante || {};
