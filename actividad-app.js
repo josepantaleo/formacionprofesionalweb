@@ -3482,6 +3482,13 @@
               }
           } catch (error) {
               if (boton) boton.disabled = false;
+              const estado = document.getElementById(`estado-colaboracion-${sectionId}`);
+              if (estado) {
+                  estado.hidden = false;
+                  estado.textContent = error?.code === 'permission-denied'
+                      ? 'Firebase rechazó la solicitud. Verificá que las reglas publicadas correspondan a este proyecto.'
+                      : (error?.message || 'No se pudo enviar la solicitud de colaboración.');
+              }
               alert(error?.message || 'No se pudo enviar la solicitud de colaboración.');
           }
       }

@@ -577,7 +577,8 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
  estado.textContent="Verificando la cuenta docente...";salida.textContent="Preparando colaboración";salida.className="";
  modal.classList.add("active");
  try{
-  const autorizado=await window.autorizarDocenteFirebase?.();
+ const usuarioDocente=window.firebaseTeacherUser||window.firebaseCurrentUser;
+ const autorizado=Boolean(usuarioDocente)&&Boolean(await window.esDocenteAutorizadoFirebase?.());
   if(!autorizado)throw new Error("teacher-not-authorized");
   editor.__desvincularCRDT?.();
   modal.__quitarPresenciaColaborativa?.();modal.__quitarModoCooperacion?.();

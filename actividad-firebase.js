@@ -1411,8 +1411,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
 
       async function iniciarSesionCodigoCRDT({ uid, sectionId, codigoInicial = "", rol = "estudiante" }) {
         if (!uid || !sectionId) throw new Error("crdt-invalid-target");
-        if (rol === "docente" && !(await window.autorizarDocenteFirebase?.())) {
-          throw new Error("teacher-not-authorized");
+        if (rol === "docente") {
+          const usuarioDocente = window.firebaseTeacherUser || window.firebaseCurrentUser;
+          if (!usuarioDocente || !(await verificarUsuarioDocente(usuarioDocente))) {
+            throw new Error("teacher-not-authorized");
+          }
         }
         const contexto = rol === "docente"
           ? contextoDocenteFirebase()
