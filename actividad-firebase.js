@@ -3356,18 +3356,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const database = contexto.database;
         if (!user || !database || !uid || !estadoData) return false;
         try {
-          await setDoc(doc(database, "estudiantes", uid), {
-            estadoCuenta: estadoData.estadoCuenta,
-            bajaMotivo: estadoData.bajaMotivo || "",
-            bajaFecha: estadoData.bajaFecha || null,
-            bajaPor: estadoData.bajaPor || "",
-            rechazoMotivo: estadoData.rechazoMotivo || "",
-            rechazadoEn: estadoData.rechazadoEn || null,
-            rechazadoPor: estadoData.rechazadoPor || "",
-            aprobadoEn: estadoData.aprobadoEn || null,
-            aprobadoPor: estadoData.aprobadoPor || "",
-            actualizadoEn: serverTimestamp()
-          }, { merge: true });
+          const actualizacion = { estadoCuenta: estadoData.estadoCuenta, actualizadoEn: serverTimestamp() };
+          [
+            "bajaMotivo", "bajaFecha", "bajaPor",
+            "rechazoMotivo", "rechazadoEn", "rechazadoPor",
+            "aprobadoEn", "aprobadoPor"
+          ].forEach(campo => {
+            if (Object.prototype.hasOwnProperty.call(estadoData, campo)) {
+              actualizacion[campo] = estadoData[campo];
+            }
+          });
+          await setDoc(doc(database, "estudiantes", uid), actualizacion, { merge: true });
           return true;
         } catch (error) {
           console.error("Error guardando estado de estudiante:", error);
@@ -3383,10 +3382,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           if (!(await verificarUsuarioDocente(user))) return false;
           const database = contexto.database;
           const subcoleccionesEstudiante = [
+            "auditoriaPortapapeles",
+            "comentariosDocente",
+            "historialAccesos",
             "historialDesbloqueos",
             "historialDescuentos",
             "historialNotasDesafios",
             "historialPestanas",
+            "historialProgramacionDocente",
             "revisionesPestanas",
             "revisionesPestanasEstudiante",
             "mensajesDocente",
@@ -3408,6 +3411,39 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             }
             documentosAsociadosEliminados += documentos.length;
           }
+
+          // colaboracionCodigo contiene subcolecciones propias por sección.
+          const colaboracion = await getDocs(collection(database, "estudiantes", uid, "colaboracionCodigo"));
+          for (const seccion of colaboracion.docs) {
+            for (const nombreSubcoleccion of ["actualizaciones", "presencia", "mensajes", "historialAportes"]) {
+              const anidada = await getDocs(collection(
+                database,
+                "estudiantes",
+                uid,
+                "colaboracionCodigo",
+                seccion.id,
+                nombreSubcoleccion
+              ));
+              for (let inicio = 0; inicio < anidada.docs.length; inicio += 450) {
+                const lote = writeBatch(database);
+                anidada.docs.slice(inicio, inicio + 450).forEach(documento => lote.delete(documento.ref));
+                await lote.commit();
+              }
+              documentosAsociadosEliminados += anidada.docs.length;
+            }
+            await deleteDoc(seccion.ref);
+          }
+          documentosAsociadosEliminados += colaboracion.docs.length;
+
+          const controlRef = doc(database, "controlEstudiantes", uid);
+          const sesionesSnapshot = await getDocs(collection(database, "controlEstudiantes", uid, "sesiones"));
+          for (let inicio = 0; inicio < sesionesSnapshot.docs.length; inicio += 450) {
+            const lote = writeBatch(database);
+            sesionesSnapshot.docs.slice(inicio, inicio + 450).forEach(documento => lote.delete(documento.ref));
+            await lote.commit();
+          }
+          documentosAsociadosEliminados += sesionesSnapshot.docs.length;
+          await deleteDoc(controlRef);
 
           await deleteDoc(doc(database, "estudiantes", uid));
           window.ultimoResumenEliminacionEstudiante = {
