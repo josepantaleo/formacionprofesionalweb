@@ -1610,7 +1610,7 @@
               if (mensaje) mensaje.textContent = datos.iniciadaPor
                   ? `Clase iniciada por ${datos.iniciadaPor}. Ya podés comenzar.`
                   : "La clase fue habilitada. Ya podés comenzar.";
-              if (cronometroDesafioIniciado(seccionActivaActual)) {
+              if (seccionActivaActual && cronometroDesafioIniciado(seccionActivaActual)) {
                   iniciarCronometro(seccionActivaActual);
               }
           } else {
@@ -2222,6 +2222,23 @@
           claves.forEach(clave => localStorage.removeItem(clave));
       }
 
+      function limpiarTemporizadoresNuevaCuenta(uid = firebaseStorageUid) {
+          if (!uid) return;
+          seccionesData.forEach(sec => {
+              localStorage.removeItem(`firebase_user_${uid}_timer_${sec.id}`);
+              localStorage.removeItem(`firebase_user_${uid}_timer_started_${sec.id}`);
+              localStorage.removeItem(`legacy_timer_${sec.id}`);
+              localStorage.removeItem(`legacy_timer_started_${sec.id}`);
+              tiemposRestantes[sec.id] = TIEMPO_MAXIMO_SEGUNDOS;
+              actividadesFinalizadas[sec.id] = false;
+              modulosPausados[sec.id] = false;
+              delete avisosTiempoEstudiante[sec.id];
+              if (cronometrosActivos[sec.id]) clearInterval(cronometrosActivos[sec.id]);
+              cronometrosActivos[sec.id] = null;
+          });
+          moduloCronometroEnCurso = null;
+      }
+
       function limpiarLocalStorage() {
           limpiarDatosLocalesDelEstudiante(firebaseStorageUid);
           programarGuardadoFirebase();
@@ -2610,6 +2627,7 @@
               // Un UID eliminado o un registro incompleto vuelve al alta:
               // primero completa sus datos y queda pendiente de aprobación.
               const esNuevoRegistro = !datosFirebase;
+              if (esNuevoRegistro) limpiarTemporizadoresNuevaCuenta(user.uid);
               await solicitarDatosNuevoEstudiante(esNuevoRegistro, datosFirebase);
               const datosDespuesDelAlta = await window.cargarProgresoFirebase?.();
               const estadoDespuesDelAlta = datosDespuesDelAlta?.estadoCuenta || 'pendiente';
@@ -3324,6 +3342,7 @@
 
       function iniciarCronometro(sectionId) {
           if (
+              !sectionId ||
               sectionId !== obtenerSeccionSeleccionadaVisualmente() ||
               !cuentaEstudianteActiva ||
               !claseHabilitada ||
