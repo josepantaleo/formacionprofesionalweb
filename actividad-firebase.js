@@ -4682,6 +4682,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         let controlesActuales = new Map();
         let colaboracionesPendientes = new Map();
         let detenerColaboraciones = new Map();
+        let intervaloColaboraciones = null;
         let ultimaEmision = "";
         let emisionPendiente = false;
         let cancelado = false;
@@ -4749,6 +4750,29 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             detenerColaboraciones.set(uid, detener);
           });
         };
+        const refrescarColaboraciones = async () => {
+          if (cancelado || !estudiantesActuales.length) return;
+          await Promise.all(estudiantesActuales.map(async item => {
+            const uid = item.id;
+            if (!uid) return;
+            try {
+              const snapshot = await getDocs(collection(database, "estudiantes", uid, "colaboracionCodigo"));
+              const pendientes = snapshot.docs
+                .map(documento => ({
+                  id: documento.id,
+                  uid,
+                  sectionId: documento.id,
+                  ...documento.data()
+                }))
+                .filter(documento => documento.estadoConsentimiento === "pendiente");
+              if (pendientes.length) colaboracionesPendientes.set(uid, pendientes);
+              else colaboracionesPendientes.delete(uid);
+            } catch (error) {
+              manejarError(error);
+            }
+          }));
+          emitirPanel();
+        };
         const detenerEstudiantes = onSnapshot(
           collection(database, "estudiantes"),
           snapshot => {
@@ -4757,6 +4781,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               datos: item.data()
             }));
             actualizarListenersColaboracion();
+            void refrescarColaboraciones();
             emitirPanel();
           },
           manejarError
@@ -4771,6 +4796,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           },
           manejarError
         );
+        intervaloColaboraciones = setInterval(() => {
+          void refrescarColaboraciones();
+        }, 5000);
         window.__profesorUnsubscribe = () => {
           cancelado = true;
           detenerEstudiantes();
@@ -4779,6 +4807,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             try { detener(); } catch {}
           });
           detenerColaboraciones.clear();
+          if (intervaloColaboraciones) {
+            clearInterval(intervaloColaboraciones);
+            intervaloColaboraciones = null;
+          }
           window.__profesorRefreshInterval = null;
           window.__profesorUnsubscribe = null;
           window.__profesorPanelActivo = false;
