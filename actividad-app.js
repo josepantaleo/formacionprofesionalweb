@@ -1655,7 +1655,7 @@
           }
           const btnIngresoDocente = document.getElementById('btnIngresoDocente');
           if (btnIngresoDocente) {
-              btnIngresoDocente.style.display = autorizado ? 'none' : 'inline-flex';
+              btnIngresoDocente.style.display = autorizacionTemporal ? 'none' : 'inline-flex';
               btnIngresoDocente.disabled = false;
           }
           document.querySelectorAll('.teacher-only').forEach(control => {
@@ -1665,7 +1665,7 @@
               control.hidden = !visible;
               control.style.display = visible ? '' : 'none';
           });
-          if (!autorizado) {
+          if (!autorizado || !autorizacionTemporal) {
               document.getElementById('passwordModal')?.classList.remove('active');
               document.getElementById('panelProfesorModal')?.classList.remove('active');
               document.getElementById('editorDesafiosFirebaseModal')?.classList.remove('active');
@@ -3165,6 +3165,17 @@
 
       function ubicarCronometroEnEncabezadoDesafio(sectionId = obtenerSeccionSeleccionadaVisualmente()) {
           const cronometro = document.getElementById('studentFloatingTimer');
+          const overlayAuth = document.getElementById('firebaseAuthOverlay');
+          const accesoEstudianteVisible = !cuentaEstudianteActiva ||
+              Boolean(overlayAuth && (
+                  !overlayAuth.classList.contains('hidden') ||
+                  overlayAuth.hidden === false && overlayAuth.getAttribute('aria-hidden') === 'true'
+              ));
+          if (cronometro && accesoEstudianteVisible) {
+              cronometro.hidden = true;
+              cronometro.removeAttribute('data-section-id');
+              return;
+          }
           const tarjeta = sectionId ? document.getElementById(sectionId) : null;
           const encabezado = tarjeta?.querySelector('.section-title');
           if (!cronometro || !encabezado) return;
