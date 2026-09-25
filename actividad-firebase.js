@@ -2464,6 +2464,42 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
       };
 
+      window.responderCooperacionDocenteFirebase = async function({
+        uid,
+        sectionId,
+        aceptar,
+        motivo = ""
+      } = {}) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto?.user || window.firebaseCurrentUser || await window.firebaseAuthReady;
+        const database = contexto?.database || db;
+        if (!user || !database || !uid || !sectionId) return false;
+        try {
+          const referencia = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId);
+          const snapshot = await getDoc(referencia);
+          if (!snapshot.exists() || snapshot.data()?.estadoConsentimiento !== "pendiente") return false;
+          const aceptada = aceptar === true;
+          await setDoc(referencia, {
+            modoCooperacionActiva: aceptada,
+            edicionCooperativaPausada: !aceptada,
+            estadoConsentimiento: aceptada ? "aceptado" : "rechazado",
+            respondidoEn: serverTimestamp(),
+            respondidoPor: user.email || user.displayName || user.uid,
+            motivoRechazo: aceptada ? "" : String(motivo || "").trim().slice(0, 300),
+            actualizadoEn: serverTimestamp(),
+            actualizadoPor: user.email || user.uid
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("No se pudo responder la solicitud docente de cooperacion:", error);
+          window.ultimoErrorCooperacion = {
+            code: error?.code || "",
+            message: error?.message || "No se pudo actualizar la solicitud."
+          };
+          return false;
+        }
+      };
+
       window.escucharChatColaborativoFirebase = function(uid, sectionId, alActualizar, opciones = {}) {
         const { user, database, rol } = contextoChatColaborativoFirebase(opciones.rol);
         if (!user || !database || !uid || !sectionId || typeof alActualizar !== "function") {

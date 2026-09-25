@@ -11985,6 +11985,8 @@
               const fechaTexto = fecha ? fecha.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : 'Fecha no disponible';
               const titulo = item.sectionTitle || item.sectionName || item.sectionId || 'Desafío sin título';
               const motivo = item.objetivoCooperacion || item.motivo || 'El estudiante solicita revisar su código.';
+              const uid = escapar(item.uid || item.estudianteId);
+              const sectionId = escapar(item.sectionId);
               return `<article class="pending-request-card" style="border-color:rgba(56,189,248,.38)">
                   <div style="display:flex;justify-content:space-between;gap:.75rem;align-items:flex-start">
                     <strong><i class="fa-solid fa-user-graduate"></i> ${escapar(item.estudianteNombre)}</strong>
@@ -11993,9 +11995,56 @@
                   <div style="margin-top:.35rem;color:#bae6fd;font-weight:700">${escapar(titulo)}</div>
                   <p style="margin:.45rem 0 0;color:var(--text-muted);font-size:.84rem">${escapar(motivo)}</p>
                   ${item.estudianteEmail ? `<div style="margin-top:.35rem;color:var(--text-muted);font-size:.76rem">${escapar(item.estudianteEmail)}</div>` : ''}
+                  <div style="display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.65rem">
+                    <button class="btn btn-success" type="button" onclick="responderSolicitudColaboracionProfesor('${uid}', '${sectionId}', true, this)">
+                      <i class="fa-solid fa-check"></i> Aceptar
+                    </button>
+                    <button class="btn btn-danger" type="button" onclick="responderSolicitudColaboracionProfesor('${uid}', '${sectionId}', false, this)">
+                      <i class="fa-solid fa-xmark"></i> Rechazar
+                    </button>
+                  </div>
               </article>`;
           }).join('');
       }
+
+      async function responderSolicitudColaboracionProfesor(uid, sectionId, aceptar, boton) {
+          if (typeof window.responderCooperacionDocenteFirebase !== 'function') {
+              alert('La función de colaboración docente todavía no está disponible. Recargá la página.');
+              return;
+          }
+          let motivo = '';
+          if (!aceptar) {
+              const respuesta = prompt('Motivo del rechazo (opcional):', '');
+              if (respuesta === null) return;
+              motivo = respuesta;
+          }
+          const tarjeta = boton?.closest('article');
+          const botones = tarjeta?.querySelectorAll('button');
+          botones?.forEach(item => { item.disabled = true; });
+          try {
+              const ok = await window.responderCooperacionDocenteFirebase({
+                  uid,
+                  sectionId,
+                  aceptar,
+                  motivo
+              });
+              if (!ok) throw new Error(window.ultimoErrorCooperacion?.message || 'No se pudo actualizar la solicitud.');
+              if (tarjeta) {
+                  tarjeta.remove();
+                  const contador = document.getElementById('contadorSolicitudesColaboracion');
+                  const actual = Math.max(0, Number(contador?.textContent || 0) - 1);
+                  if (contador) contador.textContent = String(actual);
+                  const resumen = document.getElementById('resumenSolicitudesColaboracion');
+                  if (resumen) resumen.textContent = actual
+                      ? `Hay ${actual} solicitud${actual === 1 ? '' : 'es'} de colaboración pendiente${actual === 1 ? '' : 's'}.`
+                      : 'No hay solicitudes de colaboración pendientes.';
+              }
+          } catch (error) {
+              botones?.forEach(item => { item.disabled = false; });
+              alert(error?.message || 'No se pudo actualizar la solicitud.');
+          }
+      }
+      window.responderSolicitudColaboracionProfesor = responderSolicitudColaboracionProfesor;
 
       function renderPanelProfesor() {
           renderBandejaSolicitudesPendientes();
