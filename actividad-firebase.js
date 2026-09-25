@@ -2456,6 +2456,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             actualizadoEn: serverTimestamp(),
             actualizadoPor: user.email || user.uid
           }, { merge: true });
+          await setDoc(doc(database, "solicitudesColaboracion", `${uid}_${sectionId}`), {
+            estado: aceptada ? "aceptado" : "rechazado",
+            respondidoEn: serverTimestamp(),
+            respondidoPor: user.email || user.displayName || user.uid,
+            motivoRechazo: aceptada ? "" : String(motivo || "").trim().slice(0, 300),
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
           return true;
         } catch (error) {
           console.error("No se pudo responder la solicitud de cooperacion:", error);
@@ -2492,12 +2499,53 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             actualizadoEn: serverTimestamp(),
             actualizadoPor: user.email || user.uid
           }, { merge: true });
+          await setDoc(doc(database, "solicitudesColaboracion", `${uid}_${sectionId}`), {
+            estado: aceptada ? "aceptado" : "rechazado",
+            respondidoEn: serverTimestamp(),
+            respondidoPor: user.email || user.displayName || user.uid,
+            motivoRechazo: aceptada ? "" : String(motivo || "").trim().slice(0, 300),
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
           return true;
         } catch (error) {
           console.error("No se pudo responder la solicitud docente de cooperacion:", error);
           window.ultimoErrorCooperacion = {
             code: error?.code || "",
             message: error?.message || "No se pudo actualizar la solicitud."
+          };
+          return false;
+        }
+      };
+
+      window.registrarSolicitudColaboracionFirebase = async function({
+        uid,
+        sectionId,
+        objetivo = "",
+        solicitadoPor = ""
+      } = {}) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db || !uid || user.uid !== uid || !sectionId) return false;
+        const descripcion = String(objetivo || "Necesito ayuda para revisar mi código.").trim().slice(0, 500);
+        const id = `${uid}_${sectionId}`;
+        try {
+          await setDoc(doc(db, "solicitudesColaboracion", id), {
+            id,
+            uid,
+            sectionId,
+            objetivo: descripcion,
+            solicitadoPor: String(solicitadoPor || user.displayName || user.email || "Estudiante").slice(0, 254),
+            solicitudEn: serverTimestamp(),
+            estado: "pendiente",
+            respondidoEn: null,
+            respondidoPor: "",
+            motivoRechazo: "",
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+          return true;
+        } catch (error) {
+          window.ultimoErrorCooperacion = {
+            code: error?.code || "",
+            message: error?.message || "No se pudo registrar la solicitud."
           };
           return false;
         }
@@ -4684,8 +4732,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         let estudiantesActuales = [];
         let controlesActuales = new Map();
         let colaboracionesPendientes = new Map();
+        let colaboracionesCRDTPendientes = new Map();
         let detenerColaboraciones = new Map();
         let intervaloColaboraciones = null;
+        let detenerSolicitudesDirectas = null;
         let ultimaEmision = "";
         let emisionPendiente = false;
         let cancelado = false;
@@ -4711,7 +4761,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             ...item.datos,
             uid: item.datos.uid || item.id,
             __controlEstudiante: controlesActuales.get(item.id) || null,
-            __solicitudesColaboracion: colaboracionesPendientes.get(item.id) || []
+            __solicitudesColaboracion: [
+              ...(colaboracionesPendientes.get(item.id) || []),
+              ...(colaboracionesCRDTPendientes.get(item.id) || [])
+            ].filter((solicitud, indice, lista) =>
+              lista.findIndex(otra =>
+                `${otra.uid}/${otra.sectionId}` === `${solicitud.uid}/${solicitud.sectionId}`
+              ) === indice
+            )
             }));
             const firma = firmaDatos(estudiantes);
             if (firma === ultimaEmision) return;
@@ -4732,6 +4789,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             try { detener(); } catch {}
             detenerColaboraciones.delete(uid);
             colaboracionesPendientes.delete(uid);
+            colaboracionesCRDTPendientes.delete(uid);
           });
           estudiantesActuales.forEach(item => {
             const uid = item.id;
@@ -4746,8 +4804,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
                   ...documento.data()
                 }))
                 .filter(documento => documento.estadoConsentimiento === "pendiente");
-              if (pendientes.length) colaboracionesPendientes.set(uid, pendientes);
-              else colaboracionesPendientes.delete(uid);
+              if (pendientes.length) colaboracionesCRDTPendientes.set(uid, pendientes);
+              else colaboracionesCRDTPendientes.delete(uid);
               emitirPanel();
             }, manejarError);
             detenerColaboraciones.set(uid, detener);
@@ -4768,14 +4826,40 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
                   ...documento.data()
                 }))
                 .filter(documento => documento.estadoConsentimiento === "pendiente");
-              if (pendientes.length) colaboracionesPendientes.set(uid, pendientes);
-              else colaboracionesPendientes.delete(uid);
+              if (pendientes.length) colaboracionesCRDTPendientes.set(uid, pendientes);
+              else colaboracionesCRDTPendientes.delete(uid);
             } catch (error) {
               manejarError(error);
             }
           }));
           emitirPanel();
         };
+        detenerSolicitudesDirectas = onSnapshot(
+          collection(database, "solicitudesColaboracion"),
+          snapshot => {
+            const mapa = new Map();
+            snapshot.docs.forEach(documento => {
+              const datos = documento.data();
+              if (datos.estado !== "pendiente" || !datos.uid) return;
+              if (!mapa.has(datos.uid)) mapa.set(datos.uid, []);
+              mapa.get(datos.uid).push({
+                id: documento.id,
+                uid: datos.uid,
+                sectionId: datos.sectionId || documento.id,
+                objetivoCooperacion: datos.objetivo || "",
+                solicitadoPor: datos.solicitadoPor || "",
+                solicitudEn: datos.solicitudEn || null,
+                ...datos
+              });
+            });
+            mapa.forEach((solicitudes, uid) => colaboracionesPendientes.set(uid, solicitudes));
+            [...colaboracionesPendientes.keys()].forEach(uid => {
+              if (!mapa.has(uid)) colaboracionesPendientes.delete(uid);
+            });
+            emitirPanel();
+          },
+          manejarError
+        );
         const detenerEstudiantes = onSnapshot(
           collection(database, "estudiantes"),
           snapshot => {
@@ -4810,6 +4894,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             try { detener(); } catch {}
           });
           detenerColaboraciones.clear();
+          try { detenerSolicitudesDirectas?.(); } catch {}
+          detenerSolicitudesDirectas = null;
           if (intervaloColaboraciones) {
             clearInterval(intervaloColaboraciones);
             intervaloColaboraciones = null;

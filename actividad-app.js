@@ -3473,7 +3473,14 @@
           const boton = document.getElementById(`btn-solicitar-colaboracion-${sectionId}`);
           if (boton) boton.disabled = true;
           try {
-              const ok = await sesion.sesion.solicitarCooperacion(motivo);
+              const okSolicitud = await window.registrarSolicitudColaboracionFirebase?.({
+                  uid: window.firebaseCurrentUser?.uid,
+                  sectionId,
+                  objetivo: motivo,
+                  solicitadoPor: window.firebaseCurrentUser?.displayName || window.firebaseCurrentUser?.email || 'Estudiante'
+              });
+              if (!okSolicitud) throw new Error(window.ultimoErrorCooperacion?.message || 'No se pudo registrar la solicitud.');
+              const ok = await sesion.sesion.solicitarCooperacion(motivo).catch(() => true);
               if (!ok) throw new Error('No se pudo registrar la solicitud.');
               const estado = document.getElementById(`estado-colaboracion-${sectionId}`);
               if (estado) {
