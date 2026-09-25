@@ -1917,7 +1917,9 @@
       }
 
       async function guardarIdentificacionFirebase() {
-          if (!firebaseInitialized || !window.firebaseCurrentUser) return false;
+          // El alta inicial ocurre antes de activar la cuenta de estudiante.
+          // Basta con tener una sesión autenticada y el puente de Firebase.
+          if (!window.firebaseCurrentUser || typeof window.guardarProgresoFirebase !== 'function') return false;
           const nombre = document.getElementById('studentName')?.value.trim() || '';
           const curso = document.getElementById('studentCourse')?.value.trim() || '';
           const division = document.getElementById('studentDivision')?.value.trim().toUpperCase() || '';
