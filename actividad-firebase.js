@@ -4681,6 +4681,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         let estudiantesActuales = [];
         let controlesActuales = new Map();
         let colaboracionesPendientes = new Map();
+        let detenerColaboraciones = new Map();
         let ultimaEmision = "";
         let emisionPendiente = false;
         let cancelado = false;
@@ -4720,6 +4721,34 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             detail: error?.message || "No se pudo actualizar el panel."
           }));
         };
+        const actualizarListenersColaboracion = () => {
+          const idsActivos = new Set(estudiantesActuales.map(item => item.id).filter(Boolean));
+          detenerColaboraciones.forEach((detener, uid) => {
+            if (idsActivos.has(uid)) return;
+            try { detener(); } catch {}
+            detenerColaboraciones.delete(uid);
+            colaboracionesPendientes.delete(uid);
+          });
+          estudiantesActuales.forEach(item => {
+            const uid = item.id;
+            if (!uid || detenerColaboraciones.has(uid)) return;
+            const referencia = collection(database, "estudiantes", uid, "colaboracionCodigo");
+            const detener = onSnapshot(referencia, snapshot => {
+              const pendientes = snapshot.docs
+                .map(documento => ({
+                  id: documento.id,
+                  uid,
+                  sectionId: documento.id,
+                  ...documento.data()
+                }))
+                .filter(documento => documento.estadoConsentimiento === "pendiente");
+              if (pendientes.length) colaboracionesPendientes.set(uid, pendientes);
+              else colaboracionesPendientes.delete(uid);
+              emitirPanel();
+            }, manejarError);
+            detenerColaboraciones.set(uid, detener);
+          });
+        };
         const detenerEstudiantes = onSnapshot(
           collection(database, "estudiantes"),
           snapshot => {
@@ -4727,6 +4756,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               id: item.id,
               datos: item.data()
             }));
+            actualizarListenersColaboracion();
             emitirPanel();
           },
           manejarError
@@ -4741,35 +4771,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           },
           manejarError
         );
-        const detenerColaboraciones = onSnapshot(
-          collectionGroup(database, "colaboracionCodigo"),
-          snapshot => {
-            const mapa = new Map();
-            snapshot.docs.forEach(item => {
-              const datos = item.data();
-              if (datos.estadoConsentimiento !== "pendiente") return;
-              const segmentos = item.ref.path.split("/");
-              const uid = segmentos[1];
-              const sectionId = segmentos[3] || datos.sectionId || item.id;
-              if (!uid) return;
-              if (!mapa.has(uid)) mapa.set(uid, []);
-              mapa.get(uid).push({
-                id: item.id,
-                uid,
-                sectionId,
-                ...datos
-              });
-            });
-            colaboracionesPendientes = mapa;
-            emitirPanel();
-          },
-          manejarError
-        );
         window.__profesorUnsubscribe = () => {
           cancelado = true;
           detenerEstudiantes();
           detenerControles();
-          detenerColaboraciones();
+          detenerColaboraciones.forEach(detener => {
+            try { detener(); } catch {}
+          });
+          detenerColaboraciones.clear();
           window.__profesorRefreshInterval = null;
           window.__profesorUnsubscribe = null;
           window.__profesorPanelActivo = false;
