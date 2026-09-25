@@ -288,12 +288,12 @@
 }
 
 .student-floating-timer {
-  position: absolute;
-  top: 50%;
+  position: fixed;
+  top: auto;
   right: 1rem;
-  bottom: auto;
-  z-index: 4;
-  transform: translateY(-50%);
+  bottom: 1rem;
+  z-index: 10020;
+  transform: none;
   display: flex;
   align-items: center;
   gap: 0.55rem;
@@ -305,11 +305,12 @@
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
   color: var(--text);
   backdrop-filter: blur(8px);
+  pointer-events: none;
 }
 
 .section-title {
   position: relative;
-  padding-right: min(24rem, 48%);
+  padding-right: 0.5rem;
 }
 
 .student-floating-timer-label {
@@ -344,14 +345,14 @@
   .student-floating-timer {
     top: auto;
     right: 0.5rem;
-    bottom: 0.35rem;
+    bottom: 0.5rem;
     transform: none;
     max-width: calc(100% - 1rem);
   }
 
   .section-title {
     padding-right: 0.5rem;
-    padding-bottom: 2.7rem;
+    padding-bottom: 0.5rem;
   }
 }
 
