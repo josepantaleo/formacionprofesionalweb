@@ -5919,6 +5919,10 @@
           host.__sourceTextarea = textarea;
           textarea.parentNode.insertBefore(host, textarea);
           textarea.classList.add("codemirror-source-hidden");
+          const sectionIdEditor = textarea.id.replace("editor-", "");
+          host.addEventListener("click", () => {
+              iniciarCronometro(sectionIdEditor);
+          });
 
           const bloquearPortapapelesDirecto = evento => {
               if (portapapelesDocentePermitido()) return;
