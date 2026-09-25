@@ -11989,7 +11989,10 @@
               const sectionId = escapar(item.sectionId);
               return `<article class="pending-request-card" style="border-color:rgba(56,189,248,.38)">
                   <div style="display:flex;justify-content:space-between;gap:.75rem;align-items:flex-start">
-                    <strong><i class="fa-solid fa-user-graduate"></i> ${escapar(item.estudianteNombre)}</strong>
+                    <strong style="display:inline-flex;align-items:center;gap:.45rem;color:#bae6fd">
+                      <i class="fa-solid fa-hand" aria-hidden="true"></i>
+                      <span>${escapar(item.estudianteNombre)}</span>
+                    </strong>
                     <time datetime="${fecha ? fecha.toISOString() : ''}" style="color:var(--text-muted);font-size:.76rem">${escapar(fechaTexto)}</time>
                   </div>
                   <div style="margin-top:.35rem;color:#bae6fd;font-weight:700">${escapar(titulo)}</div>
@@ -12035,9 +12038,14 @@
                   const actual = Math.max(0, Number(contador?.textContent || 0) - 1);
                   if (contador) contador.textContent = String(actual);
                   const resumen = document.getElementById('resumenSolicitudesColaboracion');
-                  if (resumen) resumen.textContent = actual
+              if (resumen) resumen.textContent = actual
                       ? `Hay ${actual} solicitud${actual === 1 ? '' : 'es'} de colaboración pendiente${actual === 1 ? '' : 's'}.`
                       : 'No hay solicitudes de colaboración pendientes.';
+                  if (aceptar && typeof window.abrirEditorColaborativoProfesor === 'function') {
+                      window.setTimeout(() => {
+                          window.abrirEditorColaborativoProfesor(uid, sectionId);
+                      }, 150);
+                  }
               }
           } catch (error) {
               botones?.forEach(item => { item.disabled = false; });
