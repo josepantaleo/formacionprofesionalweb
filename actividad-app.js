@@ -2599,6 +2599,13 @@
               datosFirebase.estudiante.curso &&
               datosFirebase.estudiante.division &&
               datosFirebase.estudiante.turno);
+          if (!datosFirebase) {
+              // Un UID eliminado vuelve como registro nuevo: primero debe
+              // completar sus datos y quedar pendiente de aprobación.
+              await solicitarDatosNuevoEstudiante(true, null);
+              bloquearCuentaPorAprobacion('pendiente');
+              return;
+          }
           if (datosFirebase?.estadoCuenta === 'inactivo') {
               bloquearCuentaEstudiante(datosFirebase.bajaMotivo || '');
               return;
