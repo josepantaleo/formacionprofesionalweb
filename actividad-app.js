@@ -984,6 +984,7 @@
 
       // Control de Cronómetros por Módulo (40 minutos = 2400 segundos)
       const TIEMPO_MAXIMO_SEGUNDOS = 2400;
+      const UMBRAL_REVISION_DIEZ_MINUTOS = 600;
       const UMBRAL_REVISION_CINCO_MINUTOS = 300;
       const UMBRAL_REVISION_ULTIMO_MINUTO = 60;
       let tiemposRestantes = {};
@@ -3304,15 +3305,22 @@
 
       function controlarAvisoTiempoEstudiante(sectionId) {
           const segundos = Number(tiemposRestantes[sectionId] || 0);
-          const estado = avisosTiempoEstudiante[sectionId] || {};
+          const estado = { ...(avisosTiempoEstudiante[sectionId] || {}) };
+          if (segundos <= UMBRAL_REVISION_DIEZ_MINUTOS && !estado.diez) {
+              mostrarRevisionTiempoEstudiante(sectionId, "diez");
+              estado.diez = true;
+          }
           if (segundos <= UMBRAL_REVISION_CINCO_MINUTOS && !estado.cinco) {
               mostrarRevisionTiempoEstudiante(sectionId, "cinco");
-              avisosTiempoEstudiante[sectionId] = { ...estado, cinco: true };
-              programarGuardadoFirebase();
+              estado.cinco = true;
           }
           if (segundos <= UMBRAL_REVISION_ULTIMO_MINUTO && !estado.uno) {
               mostrarRevisionTiempoEstudiante(sectionId, "uno");
-              avisosTiempoEstudiante[sectionId] = { ...avisosTiempoEstudiante[sectionId], uno: true };
+              estado.uno = true;
+          }
+          if (Object.keys(estado).length) {
+              avisosTiempoEstudiante[sectionId] = estado;
+              programarGuardadoFirebase();
           }
       }
 
@@ -3895,6 +3903,8 @@
               tiemposRestantes[sec.id] = TIEMPO_MAXIMO_SEGUNDOS;
               setLocalStorage(`timer_${sec.id}`, TIEMPO_MAXIMO_SEGUNDOS);
               removeLocalStorage(`timer_started_${sec.id}`);
+              delete avisosTiempoEstudiante[sec.id];
+              document.getElementById(`time-review-alert-${sec.id}`)?.setAttribute("hidden", "");
               if (limpiarPausas) {
                   removeLocalStorage(`pausa_${sec.id}`);
                   modulosPausados[sec.id] = false;
