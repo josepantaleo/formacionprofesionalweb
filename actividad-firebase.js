@@ -2554,7 +2554,13 @@
       window.obtenerSolicitudesColaboracionDocenteFirebase = async function() {
         const autorizado = await window.esDocenteAutorizadoFirebase?.();
         const contexto = contextoDocenteFirebase();
-        if (!autorizado || !contexto.database) return [];
+        if (!autorizado || !contexto.database) {
+          window.ultimoErrorCooperacion = {
+            code: "teacher-not-ready",
+            message: "La autorización docente todavía no está lista."
+          };
+          return [];
+        }
         try {
           const snapshot = await getDocs(collection(contexto.database, "solicitudesColaboracion"));
           return snapshot.docs

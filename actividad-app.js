@@ -12071,8 +12071,17 @@
       }
 
       async function cargarSolicitudesColaboracionDirectas() {
-          const solicitudes = await window.obtenerSolicitudesColaboracionDocenteFirebase?.() || [];
-          if (!solicitudes.length) return;
+          const resumen = document.getElementById('resumenSolicitudesColaboracion');
+          let solicitudes = [];
+          for (let intento = 0; intento < 3 && !solicitudes.length; intento += 1) {
+              solicitudes = await window.obtenerSolicitudesColaboracionDocenteFirebase?.() || [];
+              if (!solicitudes.length) await new Promise(resolve => setTimeout(resolve, 600));
+          }
+          if (!solicitudes.length) {
+              const detalle = window.ultimoErrorCooperacion?.message;
+              if (detalle && resumen) resumen.textContent = `No se pudieron consultar las solicitudes: ${detalle}`;
+              return;
+          }
           const mapa = new Map((Array.isArray(estudiantesProfesor) ? estudiantesProfesor : [])
               .map(item => [item.uid || item.id, item]));
           solicitudes.forEach(item => {
