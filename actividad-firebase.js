@@ -4770,6 +4770,22 @@
               ) === indice
             )
             }));
+            const idsEstudiantes = new Set(estudiantes.map(item => item.uid || item.id));
+            const solicitudesSueltas = new Map();
+            [...colaboracionesPendientes.entries(), ...colaboracionesCRDTPendientes.entries()]
+              .forEach(([uid, solicitudes]) => {
+                if (idsEstudiantes.has(uid) || !Array.isArray(solicitudes)) return;
+                solicitudesSueltas.set(uid, solicitudes);
+              });
+            solicitudesSueltas.forEach((solicitudes, uid) => {
+              estudiantes.push({
+                uid,
+                email: solicitudes[0]?.solicitadoPor || "",
+                nombre: solicitudes[0]?.solicitadoPor || "Estudiante",
+                estudiante: { nombre: solicitudes[0]?.solicitadoPor || "Estudiante" },
+                __solicitudesColaboracion: solicitudes
+              });
+            });
             const firma = firmaDatos(estudiantes);
             if (firma === ultimaEmision) return;
             ultimaEmision = firma;
