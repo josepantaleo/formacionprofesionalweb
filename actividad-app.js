@@ -12002,6 +12002,7 @@
       function renderSolicitudesColaboracionProfesor(datos) {
           const contador = document.getElementById('contadorSolicitudesColaboracion');
           const resumen = document.getElementById('resumenSolicitudesColaboracion');
+          const diagnostico = document.getElementById('diagnosticoSolicitudesColaboracion');
           const lista = document.getElementById('listaSolicitudesColaboracionProfesor');
           if (!contador || !resumen || !lista) return;
 
@@ -12033,11 +12034,29 @@
               return fechaB - fechaA;
           });
           contador.textContent = String(solicitudes.length);
+          if (diagnostico) {
+              const auth = window.estadoAutorizacionDocente || {};
+              const usuario = window.firebaseTeacherUser || window.firebaseCurrentUser;
+              const estadoLectura = window.ultimoEstadoSolicitudesColaboracion;
+              const filtros = ['filtroCursoProfesor', 'filtroDivisionProfesor', 'filtroTurnoProfesor', 'filtroEstadoProfesor']
+                  .map(id => document.getElementById(id)?.value || '')
+                  .filter(Boolean);
+              diagnostico.textContent = estadoLectura
+                  ? `Firestore: ${estadoLectura.coleccion} · ${estadoLectura.pendientes} pendientes · proyecto ${estadoLectura.proyecto}. `
+                    + `Docente: ${auth.autorizado === true ? 'autorizado' : 'no confirmado'}`
+                    + `${usuario?.email ? ` (${usuario.email})` : ''}. `
+                    + `Filtros activos: ${filtros.length ? filtros.join(', ') : 'ninguno'}.`
+                  : `Firestore: esperando lectura de solicitudesColaboracion. `
+                    + `Docente: ${auth.autorizado === true ? 'autorizado' : 'no confirmado'}`
+                    + `${usuario?.email ? ` (${usuario.email})` : ''}.`;
+              diagnostico.style.color = auth.autorizado === true ? 'var(--text-muted)' : '#fca5a5';
+          }
           resumen.textContent = solicitudes.length
               ? `Hay ${solicitudes.length} solicitud${solicitudes.length === 1 ? '' : 'es'} de colaboración pendiente${solicitudes.length === 1 ? '' : 's'}.`
               : 'No hay solicitudes de colaboración pendientes.';
           if (!solicitudes.length) {
-              lista.innerHTML = '<p style="color:var(--text-muted);margin:0">No hay solicitudes de colaboración pendientes.</p>';
+              const detalleError = window.ultimoErrorCooperacion?.message;
+              lista.innerHTML = `<p style="color:var(--text-muted);margin:0">No hay solicitudes de colaboración pendientes.${detalleError ? ` <span style="color:#fca5a5">(${escapar(detalleError)})</span>` : ''}</p>`;
               return;
           }
           lista.innerHTML = solicitudes.map(item => {

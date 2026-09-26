@@ -16,7 +16,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="actividad-base.css?v=20260925-2" />
-    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260923-8" />
+    <link rel="stylesheet" href="mejoras-seguimiento.css?v=20260926-1" />
     <link rel="stylesheet" href="actividad-mobile.css?v=20260926-1" />
     <style>
       .skip-link {
@@ -240,7 +240,7 @@
       }
     </style>
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
-      <script type="module" src="actividad-firebase.js?v=20260925-7"></script>
+      <script type="module" src="actividad-firebase.js?v=20260926-1"></script>
   </head>
   <body onload="initApp()">
     <a class="skip-link" href="#contenidoPrincipal">Saltar al contenido principal</a>
@@ -596,6 +596,10 @@
           </div>
           <div id="resumenSolicitudesColaboracion" style="color:var(--text-muted);font-size:.82rem;margin-bottom:.65rem">
             No hay solicitudes de colaboración pendientes.
+          </div>
+          <div id="diagnosticoSolicitudesColaboracion" role="status" aria-live="polite"
+            style="margin-bottom:.65rem;padding:.5rem .65rem;border:1px solid rgba(148,163,184,.25);border-radius:6px;color:var(--text-muted);font-size:.76rem">
+            Comprobando autenticación y conexión con Firestore…
           </div>
           <div id="listaSolicitudesColaboracionProfesor" class="pending-requests-grid">
             <p style="color:var(--text-muted);margin:0">No hay solicitudes de colaboración pendientes.</p>
@@ -1256,9 +1260,9 @@
     <script src="actividad-network-status.js?v=20260914-9"></script>
     <script src="actividad-utils.js?v=20260914-9"></script>
     <script src="actividad-pdf-loader.js?v=20260914-9"></script>
-      <script src="actividad-app.js?v=20260925-14"></script>
+      <script src="actividad-app.js?v=20260926-1"></script>
     <script src="panel-profesor.js?v=20260914-9"></script>
     <script src="actividad-cooperacion.js?v=20260914-9"></script>
-      <script src="mejoras-seguimiento.js?v=20260925-4"></script>
+      <script src="mejoras-seguimiento.js?v=20260926-1"></script>
   </body>
 </html>

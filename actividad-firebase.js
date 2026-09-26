@@ -2563,9 +2563,17 @@
         }
         try {
           const snapshot = await getDocs(collection(contexto.database, "solicitudesColaboracion"));
-          return snapshot.docs
+          const solicitudes = snapshot.docs
             .map(item => ({ id: item.id, ...item.data() }))
             .filter(item => item.estado === "pendiente" && item.uid && item.sectionId);
+          window.ultimoEstadoSolicitudesColaboracion = {
+            coleccion: "solicitudesColaboracion",
+            leidas: snapshot.size,
+            pendientes: solicitudes.length,
+            proyecto: firebaseConfig.projectId,
+            usuario: contexto.user?.email || contexto.user?.uid || ""
+          };
+          return solicitudes;
         } catch (error) {
           window.ultimoErrorCooperacion = { code: error?.code || "", message: error?.message || "No se pudieron cargar las solicitudes." };
           return [];
@@ -4893,6 +4901,13 @@
             [...colaboracionesPendientes.keys()].forEach(uid => {
               if (!mapa.has(uid)) colaboracionesPendientes.delete(uid);
             });
+            window.ultimoEstadoSolicitudesColaboracion = {
+              coleccion: "solicitudesColaboracion",
+              leidas: snapshot.size,
+              pendientes: [...mapa.values()].reduce((total, lista) => total + lista.length, 0),
+              proyecto: firebaseConfig.projectId,
+              usuario: contextoDocenteFirebase().user?.email || contextoDocenteFirebase().user?.uid || ""
+            };
             emitirPanel();
           },
           manejarError
