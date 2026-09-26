@@ -2551,6 +2551,21 @@
         }
       };
 
+      window.obtenerSolicitudesColaboracionDocenteFirebase = async function() {
+        const autorizado = await window.esDocenteAutorizadoFirebase?.();
+        const contexto = contextoDocenteFirebase();
+        if (!autorizado || !contexto.database) return [];
+        try {
+          const snapshot = await getDocs(collection(contexto.database, "solicitudesColaboracion"));
+          return snapshot.docs
+            .map(item => ({ id: item.id, ...item.data() }))
+            .filter(item => item.estado === "pendiente" && item.uid && item.sectionId);
+        } catch (error) {
+          window.ultimoErrorCooperacion = { code: error?.code || "", message: error?.message || "No se pudieron cargar las solicitudes." };
+          return [];
+        }
+      };
+
       window.escucharChatColaborativoFirebase = function(uid, sectionId, alActualizar, opciones = {}) {
         const { user, database, rol } = contextoChatColaborativoFirebase(opciones.rol);
         if (!user || !database || !uid || !sectionId || typeof alActualizar !== "function") {

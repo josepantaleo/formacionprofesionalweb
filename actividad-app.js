@@ -8851,6 +8851,7 @@
           prepararFiltroInformeSocratico();
           renderInformeGrupalSocratico();
           iniciarPanelProfesorTiempoReal();
+          void cargarSolicitudesColaboracionDirectas();
       }
       function cerrarPanelProfesor() {
           document.getElementById('panelProfesorModal').classList.remove('active');
@@ -12067,6 +12068,29 @@
                   </div>
               </article>`;
           }).join('');
+      }
+
+      async function cargarSolicitudesColaboracionDirectas() {
+          const solicitudes = await window.obtenerSolicitudesColaboracionDocenteFirebase?.() || [];
+          if (!solicitudes.length) return;
+          const mapa = new Map((Array.isArray(estudiantesProfesor) ? estudiantesProfesor : [])
+              .map(item => [item.uid || item.id, item]));
+          solicitudes.forEach(item => {
+              const estudiante = mapa.get(item.uid) || {
+                  uid: item.uid,
+                  email: item.solicitadoPor || '',
+                  nombre: item.solicitadoPor || 'Estudiante'
+              };
+              const anteriores = Array.isArray(estudiante.__solicitudesColaboracion)
+                  ? estudiante.__solicitudesColaboracion
+                  : [];
+              if (!anteriores.some(actual => actual.sectionId === item.sectionId)) {
+                  estudiante.__solicitudesColaboracion = [...anteriores, item];
+              }
+              mapa.set(item.uid, estudiante);
+          });
+          estudiantesProfesor = [...mapa.values()];
+          renderSolicitudesColaboracionProfesor(estudiantesProfesor);
       }
 
       async function responderSolicitudColaboracionProfesor(uid, sectionId, aceptar, boton) {
