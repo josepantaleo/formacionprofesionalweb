@@ -2912,7 +2912,7 @@
                                           <button class="student-focus-toggle" type="button" onclick="alternarModoEnfoque('${sec.id}', this)" aria-pressed="false" title="Ocultar temporalmente teoría y ayudas">
                                               <i class="fa-solid fa-expand"></i><span>Enfoque</span>
                                           </button>
-                                          <button class="student-focus-toggle" type="button" id="btn-solicitar-colaboracion-${sec.id}" onclick="solicitarColaboracionEstudiante('${sec.id}')" title="Avisar al docente y solicitar colaboración con tu código">
+                                          <button class="student-focus-toggle student-collaboration-request" type="button" id="btn-solicitar-colaboracion-${sec.id}" onclick="solicitarColaboracionEstudiante('${sec.id}')" title="Avisar al docente y solicitar colaboración con tu código" aria-label="Solicitar ayuda del docente para este código">
                                               <i class="fa-solid fa-hand"></i><span>Solicitar colaboración</span>
                                           </button>
                                       </div>

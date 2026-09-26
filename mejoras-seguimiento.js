@@ -1007,12 +1007,15 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
    modal.__quitarModoCooperacion=modal.__crdtSession.onModoCooperacion?.(modo=>actualizarPausaEditorColaborativo(modal,modo))||null;
    activarChatColaborativoDocente(d.uid,sectionId);
    const modoActual=modal.__crdtSession.getModoCooperacion?.()||{};
-   if(!(modoActual.consentimiento==="aceptado"&&modoActual.activa===true)){
-    const objetivo=`Acompañamiento docente en ${sec?.title||sectionId}: revisar el razonamiento, probar el código y acordar el siguiente paso.`;
-    await modal.__crdtSession.solicitarCooperacion?.(objetivo);
-    salida.textContent="Cooperación activada. Sincronización automática disponible.";
-   }else{
+   const cooperacionAceptada=modoActual.consentimiento==="aceptado"&&modoActual.activa===true;
+   if(cooperacionAceptada){
     salida.textContent="Sincronización automática activa";
+    editor.disabled=false;
+    editor.__setCodeMirrorDisabled?.(false);
+   }else{
+    editor.disabled=true;
+    editor.__setCodeMirrorDisabled?.(true);
+    salida.textContent="Solo lectura hasta que el estudiante acepte la cooperación.";
    }
    salida.className="success";
  }catch(error){
