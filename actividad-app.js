@@ -3459,9 +3459,13 @@
       }
 
       async function solicitarColaboracionEstudiante(sectionId) {
-          const sesion = window.__sesionCRDTEstudianteActiva;
+          let sesion = window.__sesionCRDTEstudianteActiva;
           if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
-              alert('Abrí el editor del desafío y esperá a que la colaboración esté disponible.');
+              await window.iniciarColaboracionCRDTEstudiante?.();
+              sesion = window.__sesionCRDTEstudianteActiva;
+          }
+          if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
+              alert('No se pudo preparar la solicitud de ayuda. Recargá la actividad e intentá nuevamente.');
               return;
           }
           const sec = seccionesData.find(item => item.id === sectionId);
@@ -3480,8 +3484,8 @@
                   solicitadoPor: window.firebaseCurrentUser?.displayName || window.firebaseCurrentUser?.email || 'Estudiante'
               });
               if (!okSolicitud) throw new Error(window.ultimoErrorCooperacion?.message || 'No se pudo registrar la solicitud.');
-              const ok = await sesion.sesion.solicitarCooperacion(motivo).catch(() => true);
-              if (!ok) throw new Error('No se pudo registrar la solicitud.');
+              const ok = await sesion.sesion.solicitarCooperacion(motivo);
+              if (!ok) throw new Error('No se pudo activar el canal de colaboración.');
               const estado = document.getElementById(`estado-colaboracion-${sectionId}`);
               if (estado) {
                   estado.hidden = false;
