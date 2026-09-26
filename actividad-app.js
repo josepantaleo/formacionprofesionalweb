@@ -12575,18 +12575,24 @@
       async function iniciarPanelProfesorTiempoReal() {
           if (profesorUnsubscribe) profesorUnsubscribe();
           try {
-              const { getFirestore, collection, onSnapshot } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
-              // Usamos la instancia Firestore ya inicializada dentro del módulo Firebase.
-              if (!window.__firestorePanel) { document.getElementById('estadoPanelProfesor').textContent='Panel disponible cuando las reglas de Firestore permitan consultar la colección estudiantes.'; }
+              // El módulo actividad-firebase.js ya inicializa Firestore y expone
+              // el listener docente. No se debe importar el SDK una segunda vez:
+              // si falla esa red externa, la bandeja queda sin listener.
               const u=window.firebaseTeacherUser || window.firebaseCurrentUser;
-              if (!u) return;
-              // Solicita la colección mediante un evento al módulo Firebase.
+              if (!u) {
+                  document.getElementById('estadoPanelProfesor').textContent = 'Esperando autenticación docente para abrir la bandeja en tiempo real.';
+                  return;
+              }
               window.__abrirPanelProfesorFirestore?.();
               profesorUnsubscribe = () => {
                   window.__cerrarPanelProfesorFirestore?.();
                   profesorUnsubscribe = null;
               };
-          } catch(e) { document.getElementById('estadoPanelProfesor').textContent='Error al conectar con Firebase: '+e.message; }
+          } catch(e) {
+              document.getElementById('estadoPanelProfesor').textContent='Error al conectar con Firebase: '+e.message;
+              const diagnostico = document.getElementById('diagnosticoSolicitudesColaboracion');
+              if (diagnostico) diagnostico.textContent = `No se pudo iniciar el listener de colaboración: ${e.message}`;
+          }
       }
 
 
