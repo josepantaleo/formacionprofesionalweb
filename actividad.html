@@ -1245,9 +1245,13 @@
     </div>
 
     <div id="alertaColaboracionFlotante" class="collaboration-floating-alert" role="alert" aria-live="assertive" hidden>
-      <button type="button" class="collaboration-floating-alert-main" onclick="abrirPanelProfesor()" aria-label="Abrir solicitudes de colaboración">
-        <i class="fa-solid fa-hand" aria-hidden="true"></i>
-        <span id="textoAlertaColaboracionFlotante">Nueva solicitud de colaboración</span>
+      <button type="button" class="collaboration-floating-alert-main" onclick="abrirPanelProfesor(); marcarAlertaColaboracionAtendida();" aria-label="Abrir solicitudes de colaboración">
+        <span class="collaboration-floating-alert-hand" aria-hidden="true"><i class="fa-solid fa-hand"></i></span>
+        <span class="collaboration-floating-alert-copy">
+          <strong id="tituloAlertaColaboracionFlotante">🖐️ SOLICITUD DE COLABORACIÓN</strong>
+          <span id="textoAlertaColaboracionFlotante">Un estudiante necesita tu ayuda</span>
+        </span>
+        <span id="contadorAlertaColaboracionFlotante" class="collaboration-floating-alert-count">1</span>
       </button>
       <button type="button" class="collaboration-floating-alert-close" onclick="ocultarAlertaColaboracionFlotante()" aria-label="Cerrar aviso">
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>

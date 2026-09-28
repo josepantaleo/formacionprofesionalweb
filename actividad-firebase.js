@@ -1,4 +1,4 @@
-﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
       import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, collectionGroup, query, orderBy, limit, onSnapshot, getDocs, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
       import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
@@ -1624,8 +1624,9 @@
           const modoAnterior = modoCooperacionActual;
           modoCooperacionActual = normalizarModoCooperacion(datos);
           modoCooperacionListeners.forEach(fn => fn({ ...modoCooperacionActual }));
-          const aceptada = modoCooperacionActual.consentimiento === "aceptado" &&
-            modoCooperacionActual.activa;
+          const aceptada = rol === "docente"
+            ? modoCooperacionActual.activa || modoCooperacionActual.consentimiento === "pendiente"
+            : modoCooperacionActual.consentimiento === "aceptado" && modoCooperacionActual.activa;
           if (aceptada) {
             iniciarEscuchaPresencia();
             void actualizarPresencia({}, true);
@@ -1654,8 +1655,9 @@
 
         let ultimaPresenciaPublicada = "";
         const actualizarPresencia = (cursor = {}, forzar = false) => {
-          const cooperacionAceptada = modoCooperacionActual.consentimiento === "aceptado" &&
-            modoCooperacionActual.activa;
+          const cooperacionAceptada = rol === "docente"
+            ? (modoCooperacionActual.activa || modoCooperacionActual.consentimiento === "pendiente")
+            : modoCooperacionActual.consentimiento === "aceptado" && modoCooperacionActual.activa;
           if (!cooperacionAceptada) {
             return deleteDoc(presenciaRef).catch(() => {});
           }

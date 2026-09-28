@@ -19,3 +19,9 @@ Funcionamiento:
 Archivos principales:
 - actividad-app.js: interfaz y formulario docente.
 - actividad-firebase.js: escritura segura en Firestore y autorización docente.
+
+
+CORRECCIÓN 28/09/2026
+El botón 'Modificar datos' ahora se inserta directamente en la columna ACCIONES de cada estudiante. La versión anterior lo buscaba en el último TD de la tabla y podía no mostrarse.
+
+Uso: Actividad.html → Panel docente → ACCIONES → Modificar datos.

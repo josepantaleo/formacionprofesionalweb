@@ -1007,15 +1007,17 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
    modal.__quitarModoCooperacion=modal.__crdtSession.onModoCooperacion?.(modo=>actualizarPausaEditorColaborativo(modal,modo))||null;
    activarChatColaborativoDocente(d.uid,sectionId);
    const modoActual=modal.__crdtSession.getModoCooperacion?.()||{};
-   const cooperacionAceptada=modoActual.consentimiento==="aceptado"&&modoActual.activa===true;
-   if(cooperacionAceptada){
-    salida.textContent="Sincronización automática activa";
+   const accesoDocente=modoActual.consentimiento==="pendiente" || modoActual.consentimiento==="aceptado" || modoActual.activa===true;
+   if(accesoDocente){
+    salida.textContent=modoActual.consentimiento==="aceptado"
+      ? "Sincronización automática activa · cooperación aceptada"
+      : "Acceso docente directo · no requiere autorización del estudiante";
     editor.disabled=false;
     editor.__setCodeMirrorDisabled?.(false);
    }else{
-    editor.disabled=true;
-    editor.__setCodeMirrorDisabled?.(true);
-    salida.textContent="Solo lectura hasta que el estudiante acepte la cooperación.";
+    editor.disabled=false;
+    editor.__setCodeMirrorDisabled?.(false);
+    salida.textContent="Acceso docente directo al desafío";
    }
    salida.className="success";
  }catch(error){

@@ -1671,52 +1671,113 @@
       .new-request-alert.active { display: flex; }
       .collaboration-floating-alert {
         position: fixed;
-        top: 1rem;
-        right: 1rem;
-        z-index: 2200;
+        top: .75rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100000;
         display: flex;
         align-items: stretch;
-        max-width: min(390px, calc(100vw - 2rem));
-        border: 1px solid rgba(56, 189, 248, .62);
-        border-radius: 10px;
+        width: min(680px, calc(100vw - 1.5rem));
+        border: 3px solid #fbbf24;
+        border-radius: 16px;
         overflow: hidden;
-        background: rgba(8, 47, 73, .96);
-        color: #e0f2fe;
-        box-shadow: 0 16px 35px rgba(2, 6, 23, .35);
-        animation: collaborationFloatingIn .22s ease-out, pendingAlertPulse 1.2s ease-in-out 2;
+        background: linear-gradient(135deg, rgba(127,29,29,.98), rgba(120,53,15,.98));
+        color: #fff;
+        box-shadow: 0 18px 55px rgba(0,0,0,.55), 0 0 0 6px rgba(251,191,36,.16), 0 0 34px rgba(251,191,36,.55);
+        animation: collaborationFloatingIn .25s ease-out, collaborationAttention 1.05s ease-in-out infinite;
       }
       .collaboration-floating-alert[hidden] { display: none; }
       .collaboration-floating-alert-main,
       .collaboration-floating-alert-close {
         border: 0;
-        background: transparent;
         color: inherit;
         cursor: pointer;
       }
       .collaboration-floating-alert-main {
-        display: inline-flex;
+        flex: 1;
+        display: flex;
         align-items: center;
-        gap: .6rem;
-        padding: .8rem .9rem;
+        gap: .8rem;
+        min-width: 0;
+        padding: .8rem 1rem;
         text-align: left;
+        background: transparent;
         font: inherit;
-        font-weight: 700;
       }
-      .collaboration-floating-alert-main i { color: #7dd3fc; font-size: 1.1rem; }
+      .collaboration-floating-alert-main:hover { background: rgba(255,255,255,.08); }
+      .collaboration-floating-alert-hand {
+        flex: 0 0 auto;
+        display: grid;
+        place-items: center;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: #fbbf24;
+        color: #451a03;
+        font-size: 1.55rem;
+        box-shadow: 0 0 0 5px rgba(251,191,36,.2);
+        animation: collaborationHandBounce .7s ease-in-out infinite alternate;
+      }
+      .collaboration-floating-alert-copy {
+        display: flex;
+        flex-direction: column;
+        gap: .18rem;
+        min-width: 0;
+      }
+      .collaboration-floating-alert-copy strong {
+        font-size: .98rem;
+        letter-spacing: .02em;
+      }
+      .collaboration-floating-alert-copy span {
+        font-size: .86rem;
+        color: #fef3c7;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .collaboration-floating-alert-count {
+        flex: 0 0 auto;
+        min-width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        padding: 0 .55rem;
+        border-radius: 999px;
+        background: #fff;
+        color: #991b1b;
+        font-weight: 900;
+        font-size: 1rem;
+      }
       .collaboration-floating-alert-close {
-        padding: .55rem .7rem;
-        color: #bae6fd;
+        padding: .55rem .75rem;
+        background: rgba(0,0,0,.15);
+        color: #fde68a;
       }
-      .collaboration-floating-alert-close:hover { background: rgba(125, 211, 252, .12); }
+      .collaboration-floating-alert-close:hover { background: rgba(0,0,0,.3); }
       @keyframes collaborationFloatingIn {
-        from { opacity: 0; transform: translateY(-8px); }
-        to { opacity: 1; transform: translateY(0); }
+        from { opacity: 0; transform: translate(-50%, -18px) scale(.96); }
+        to { opacity: 1; transform: translate(-50%, 0) scale(1); }
       }
-      @keyframes pendingAlertPulse {
-        50% { border-color: #fbbf24; background: rgba(245, 158, 11, .15); }
+      @keyframes collaborationAttention {
+        0%, 100% { box-shadow: 0 18px 55px rgba(0,0,0,.55), 0 0 0 5px rgba(251,191,36,.14), 0 0 28px rgba(251,191,36,.38); }
+        50% { box-shadow: 0 18px 55px rgba(0,0,0,.55), 0 0 0 9px rgba(251,191,36,.24), 0 0 48px rgba(251,191,36,.75); }
+      }
+      @keyframes collaborationHandBounce {
+        from { transform: rotate(-12deg) translateY(2px); }
+        to { transform: rotate(12deg) translateY(-3px); }
+      }
+      @media (max-width: 600px) {
+        .collaboration-floating-alert { top: .45rem; width: calc(100vw - .9rem); }
+        .collaboration-floating-alert-main { padding: .65rem .7rem; gap: .55rem; }
+        .collaboration-floating-alert-hand { width: 44px; height: 44px; font-size: 1.25rem; }
+        .collaboration-floating-alert-copy strong { font-size: .82rem; }
+        .collaboration-floating-alert-copy span { font-size: .75rem; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .collaboration-floating-alert, .collaboration-floating-alert-hand { animation: none; }
       }
     
-       #panelProfesorModal .modal-box{
+      #panelProfesorModal .modal-box{
          width:99vw !important;
          max-width:none !important;
          padding:1rem !important;

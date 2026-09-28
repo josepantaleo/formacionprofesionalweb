@@ -6716,23 +6716,59 @@
           document.getElementById('alertaNuevaSolicitud')?.classList.remove('active');
       }
 
+      let alertaColaboracionActiva = false;
+      let tituloOriginalDocumento = document.title;
+      let intervaloTituloColaboracion = null;
+      let intervaloSonidoColaboracion = null;
+
       function ocultarAlertaColaboracionFlotante() {
           const alerta = document.getElementById('alertaColaboracionFlotante');
           if (alerta) alerta.hidden = true;
+          detenerAtencionColaboracion();
       }
       window.ocultarAlertaColaboracionFlotante = ocultarAlertaColaboracionFlotante;
+
+      function detenerAtencionColaboracion() {
+          alertaColaboracionActiva = false;
+          if (intervaloTituloColaboracion) clearInterval(intervaloTituloColaboracion);
+          if (intervaloSonidoColaboracion) clearInterval(intervaloSonidoColaboracion);
+          intervaloTituloColaboracion = null;
+          intervaloSonidoColaboracion = null;
+          document.title = tituloOriginalDocumento;
+      }
+
+      function marcarAlertaColaboracionAtendida() {
+          ocultarAlertaColaboracionFlotante();
+      }
+      window.marcarAlertaColaboracionAtendida = marcarAlertaColaboracionAtendida;
 
       function mostrarAlertaColaboracionFlotante(solicitudes) {
           if (!solicitudes.length) return;
           const nombres = solicitudes.map(item => item.estudianteNombre || 'Estudiante');
           const texto = solicitudes.length === 1
-              ? `Solicitud de colaboración: ${nombres[0]}`
-              : `${solicitudes.length} solicitudes de colaboración pendientes`;
+              ? `🖐️ ${nombres[0]} solicita colaboración`
+              : `🖐️ ${solicitudes.length} estudiantes solicitan colaboración`;
           const etiqueta = document.getElementById('textoAlertaColaboracionFlotante');
+          const contador = document.getElementById('contadorAlertaColaboracionFlotante');
           const alerta = document.getElementById('alertaColaboracionFlotante');
           if (!etiqueta || !alerta) return;
           etiqueta.textContent = texto;
+          if (contador) contador.textContent = String(solicitudes.length);
           alerta.hidden = false;
+          alertaColaboracionActiva = true;
+          tituloOriginalDocumento = tituloOriginalDocumento || document.title;
+          if (intervaloTituloColaboracion) clearInterval(intervaloTituloColaboracion);
+          let alternarTitulo = false;
+          intervaloTituloColaboracion = setInterval(() => {
+              if (!alertaColaboracionActiva) return;
+              alternarTitulo = !alternarTitulo;
+              document.title = alternarTitulo ? '🖐️ SOLICITUD DE COLABORACIÓN' : tituloOriginalDocumento;
+          }, 900);
+          reproducirSonidoSolicitud();
+          if (intervaloSonidoColaboracion) clearInterval(intervaloSonidoColaboracion);
+          intervaloSonidoColaboracion = setInterval(() => {
+              if (alertaColaboracionActiva && document.hidden) reproducirSonidoSolicitud();
+          }, 12000);
       }
 
       function detectarNuevasSolicitudesColaboracion(datos) {
