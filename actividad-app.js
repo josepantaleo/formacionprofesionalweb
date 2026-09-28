@@ -1,4 +1,4 @@
-﻿// Estructura de Datos de las 19 Secciones con descripciones de desafíos ampliadas y detalladas
+// Estructura de Datos de las 19 Secciones con descripciones de desafíos ampliadas y detalladas
       const VERSION_SCRIPT = (() => {
           try {
               const src = [...document.scripts].find(script => /actividad-app\.js(?:\?|$)/.test(script.src || ""));
@@ -2386,6 +2386,154 @@
           modal.querySelector('#confirmarNuevo').onclick=async()=>{const nombre=n.value.trim(),curso=modal.querySelector('#nuevoCurso').value.trim(),division=modal.querySelector('#nuevoDivision').value.trim().toUpperCase(),turno=modal.querySelector('#nuevoTurno').value;if(!nombre||!curso||!division||!turno){const error=modal.querySelector('#nuevoError');error.textContent='Seleccioná obligatoriamente curso, división y turno.';error.style.display='block';const primerFaltante=!nombre?n:!curso?modal.querySelector('#nuevoCurso'):!division?modal.querySelector('#nuevoDivision'):modal.querySelector('#nuevoTurno');primerFaltante.focus();return;}modal.querySelector('#nuevoError').style.display='none';document.getElementById('studentName').value=nombre;document.getElementById('studentCourse').value=curso;document.getElementById('studentDivision').value=division;document.getElementById('studentTurno').value=turno;setLocalStorage('app_student_name',nombre);setLocalStorage('app_student_course',curso);setLocalStorage('app_student_division',division);setLocalStorage('app_student_turno',turno);const guardado=await guardarIdentificacionFirebase();if(!guardado){const diagnostico=diagnosticarErrorRegistroEstudiante();const error=modal.querySelector('#nuevoError');error.innerHTML=`<strong>${escapeHtml(diagnostico.titulo)}</strong><br>${escapeHtml(diagnostico.detalle)}<br><small>${escapeHtml(diagnostico.accion)}</small>`;error.style.display='block';return;}modal.remove();resolve();};
         });
       }
+
+
+      // Permite al estudiante editar únicamente sus datos de perfil.
+      // El correo de Google no se modifica desde aquí porque pertenece a Firebase Authentication.
+      window.editarMisDatos = function() {
+          const user = window.firebaseCurrentUser;
+          if (!user?.uid) {
+              alert('Primero iniciá sesión con Google.');
+              return;
+          }
+
+          const nombreActual = document.getElementById('studentName')?.value?.trim() || '';
+          const cursoActual = document.getElementById('studentCourse')?.value?.trim() || '';
+          const divisionActual = document.getElementById('studentDivision')?.value?.trim().toUpperCase() || '';
+          const turnoActual = document.getElementById('studentTurno')?.value?.trim() || '';
+
+          const modal = document.createElement('div');
+          modal.className = 'modal-overlay';
+          modal.style.display = 'flex';
+          modal.style.zIndex = '10060';
+          modal.innerHTML = `
+            <div class="modal-box" style="max-width:540px;width:92%;">
+              <h3><i class="fa-solid fa-user-pen"></i> Editar mis datos</h3>
+              <p>Modificá tus datos personales y guardá los cambios.</p>
+
+              <div class="input-group">
+                <label for="editarNombre">Nombre y apellido</label>
+                <input id="editarNombre" type="text" value="${escapeHtml(nombreActual)}" maxlength="100" autocomplete="name">
+              </div>
+
+              <div class="input-group">
+                <label for="editarCurso">Curso</label>
+                <select id="editarCurso">
+                  <option value="">Seleccionar curso</option>
+                  <option>1° Año</option><option>2° Año</option><option>3° Año</option>
+                  <option>4° Año</option><option>5° Año</option><option>6° Año</option><option>7° Año</option>
+                </select>
+              </div>
+
+              <div class="input-group">
+                <label for="editarDivision">División</label>
+                <select id="editarDivision">
+                  <option value="">Seleccionar división</option>
+                  <option>A</option><option>B</option><option>C</option><option>D</option><option>E</option>
+                </select>
+              </div>
+
+              <div class="input-group">
+                <label for="editarTurno">Turno</label>
+                <select id="editarTurno">
+                  <option value="">Seleccionar turno</option>
+                  <option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option>
+                </select>
+              </div>
+
+              <div class="input-group">
+                <label>Correo de la cuenta</label>
+                <input type="email" value="${escapeHtml(user.email || '')}" disabled>
+                <small style="opacity:.75;">El correo pertenece a tu cuenta de Google y no se modifica desde este formulario.</small>
+              </div>
+
+              <div id="editarDatosError" role="alert" style="display:none;color:#fca5a5;margin:.75rem 0;"></div>
+
+              <div class="modal-actions" style="display:flex;gap:.6rem;justify-content:flex-end;flex-wrap:wrap;">
+                <button class="btn btn-secondary" type="button" id="cancelarEditarDatos">Cancelar</button>
+                <button class="btn btn-primary" type="button" id="guardarEditarDatos">
+                  <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
+                </button>
+              </div>
+            </div>`;
+
+          document.body.appendChild(modal);
+
+          const curso = modal.querySelector('#editarCurso');
+          const division = modal.querySelector('#editarDivision');
+          const turno = modal.querySelector('#editarTurno');
+          curso.value = cursoActual;
+          division.value = divisionActual;
+          turno.value = turnoActual;
+
+          const cerrar = () => modal.remove();
+          modal.querySelector('#cancelarEditarDatos').onclick = cerrar;
+
+          modal.addEventListener('click', (event) => {
+              if (event.target === modal) cerrar();
+          });
+
+          const nombre = modal.querySelector('#editarNombre');
+          const error = modal.querySelector('#editarDatosError');
+          const boton = modal.querySelector('#guardarEditarDatos');
+
+          nombre.focus();
+
+          boton.onclick = async () => {
+              const nuevos = {
+                  nombre: nombre.value.trim(),
+                  curso: curso.value.trim(),
+                  division: division.value.trim().toUpperCase(),
+                  turno: turno.value.trim()
+              };
+
+              if (!nuevos.nombre || !nuevos.curso || !nuevos.division || !nuevos.turno) {
+                  error.textContent = 'Completá todos los datos antes de guardar.';
+                  error.style.display = 'block';
+                  return;
+              }
+
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+              error.style.display = 'none';
+
+              try {
+                  // Reutiliza la misma función de guardado y las reglas de Firebase
+                  // que ya utiliza el registro del estudiante.
+                  document.getElementById('studentName').value = nuevos.nombre;
+                  document.getElementById('studentCourse').value = nuevos.curso;
+                  document.getElementById('studentDivision').value = nuevos.division;
+                  document.getElementById('studentTurno').value = nuevos.turno;
+
+                  setLocalStorage('app_student_name', nuevos.nombre);
+                  setLocalStorage('app_student_course', nuevos.curso);
+                  setLocalStorage('app_student_division', nuevos.division);
+                  setLocalStorage('app_student_turno', nuevos.turno);
+
+                  const guardado = await guardarIdentificacionFirebase();
+
+                  if (!guardado) {
+                      error.textContent = 'No se pudieron guardar los cambios en Firebase. Revisá las reglas de Firestore y la conexión.';
+                      error.style.display = 'block';
+                      boton.disabled = false;
+                      boton.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar cambios';
+                      return;
+                  }
+
+                  const encabezado = document.getElementById('firebaseUserName');
+                  if (encabezado) encabezado.textContent = nuevos.nombre;
+
+                  mostrarEstadoFirebase('online', 'Datos personales actualizados correctamente');
+                  cerrar();
+              } catch (e) {
+                  console.error('Error actualizando datos del usuario:', e);
+                  error.textContent = 'Ocurrió un error al actualizar los datos.';
+                  error.style.display = 'block';
+                  boton.disabled = false;
+                  boton.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar cambios';
+              }
+          };
+      };
 
       function bloquearCuentaEstudiante(motivo = '') {
           cuentaEstudianteActiva = false;
