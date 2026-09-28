@@ -10626,6 +10626,122 @@
           </details>`;
       }
 
+      async function editarDatosEstudianteProfesor(indice) {
+          const estudiante = estudiantesProfesor[indice];
+          if (!estudiante?.uid) {
+              alert('No se pudo identificar al estudiante.');
+              return;
+          }
+
+          const datos = estudiante.estudiante || {};
+          const modal = document.createElement('div');
+          modal.className = 'modal-overlay';
+          modal.style.display = 'flex';
+          modal.style.zIndex = '10080';
+
+          modal.innerHTML = `
+              <div class="modal-box" style="max-width:560px;width:94%;">
+                  <h3><i class="fa-solid fa-user-pen"></i> Modificar datos del estudiante</h3>
+                  <p style="color:var(--text-muted);margin:.4rem 0 1rem;">
+                      Esta modificación está disponible únicamente para docentes autorizados.
+                  </p>
+                  <div class="input-group">
+                      <label for="editarNombreEstudiante">Nombre y Apellido</label>
+                      <input id="editarNombreEstudiante" type="text" maxlength="120" value="${escapeHtml(datos.nombre || '')}">
+                  </div>
+                  <div class="input-group">
+                      <label for="editarCursoEstudiante">Curso</label>
+                      <select id="editarCursoEstudiante">
+                          <option value="">Seleccionar curso</option>
+                          ${['1° Año','2° Año','3° Año','4° Año','5° Año','6° Año','7° Año'].map(c =>
+                              `<option value="${escapeHtml(c)}" ${String(datos.curso || '') === c ? 'selected' : ''}>${escapeHtml(c)}</option>`
+                          ).join('')}
+                      </select>
+                  </div>
+                  <div class="input-group">
+                      <label for="editarDivisionEstudiante">División</label>
+                      <select id="editarDivisionEstudiante">
+                          <option value="">Seleccionar división</option>
+                          ${['A','B','C','D','E'].map(d =>
+                              `<option value="${d}" ${String(datos.division || '').toUpperCase() === d ? 'selected' : ''}>${d}</option>`
+                          ).join('')}
+                      </select>
+                  </div>
+                  <div class="input-group">
+                      <label for="editarTurnoEstudiante">Turno</label>
+                      <select id="editarTurnoEstudiante">
+                          <option value="">Seleccionar turno</option>
+                          ${['Mañana','Tarde','Vespertino','Noche'].map(t =>
+                              `<option value="${escapeHtml(t)}" ${String(datos.turno || '') === t ? 'selected' : ''}>${escapeHtml(t)}</option>`
+                          ).join('')}
+                      </select>
+                  </div>
+                  <div id="editarDatosEstudianteError" role="alert"
+                       style="display:none;color:#fca5a5;margin-top:.6rem;"></div>
+                  <div class="modal-actions" style="margin-top:1rem;">
+                      <button class="btn btn-secondary" type="button" id="cancelarEditarDatosEstudiante">Cancelar</button>
+                      <button class="btn btn-primary" type="button" id="guardarEditarDatosEstudiante">
+                          <i class="fa-solid fa-floppy-disk"></i> Guardar cambios
+                      </button>
+                  </div>
+              </div>`;
+
+          document.body.appendChild(modal);
+
+          const cerrar = () => modal.remove();
+          modal.querySelector('#cancelarEditarDatosEstudiante').onclick = cerrar;
+          modal.addEventListener('click', e => {
+              if (e.target === modal) cerrar();
+          });
+
+          modal.querySelector('#guardarEditarDatosEstudiante').onclick = async () => {
+              const nombre = modal.querySelector('#editarNombreEstudiante').value.trim();
+              const curso = modal.querySelector('#editarCursoEstudiante').value.trim();
+              const division = modal.querySelector('#editarDivisionEstudiante').value.trim().toUpperCase();
+              const turno = modal.querySelector('#editarTurnoEstudiante').value.trim();
+              const error = modal.querySelector('#editarDatosEstudianteError');
+              const boton = modal.querySelector('#guardarEditarDatosEstudiante');
+
+              if (!nombre || !curso || !division || !turno) {
+                  error.textContent = 'Completá nombre, curso, división y turno.';
+                  error.style.display = 'block';
+                  return;
+              }
+
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
+              error.style.display = 'none';
+
+              try {
+                  const ok = await window.guardarDatosEstudianteDocenteFirebase?.(
+                      estudiante.uid,
+                      { nombre, curso, division, turno }
+                  );
+
+                  if (!ok) throw new Error('No autorizado o no se pudieron guardar los datos.');
+
+                  estudiante.estudiante = { ...(estudiante.estudiante || {}), nombre, curso, division, turno };
+                  renderPanelProfesor();
+                  modal.remove();
+
+                  if (document.getElementById('detalleEstudianteProfesorModal')?.classList.contains('active')) {
+                      const nuevoIndice = estudiantesProfesor.findIndex(e => e.uid === estudiante.uid);
+                      if (nuevoIndice >= 0) abrirDetalleEstudianteProfesor(nuevoIndice);
+                  }
+
+                  alert('Los datos del estudiante fueron modificados correctamente.');
+              } catch (e) {
+                  console.error('Error modificando datos del estudiante:', e);
+                  error.textContent = 'No se pudieron guardar los cambios. Verificá que tu cuenta sea un docente autorizado y que las reglas de Firestore permitan esta operación.';
+                  error.style.display = 'block';
+                  boton.disabled = false;
+                  boton.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar cambios';
+              }
+          };
+
+          modal.querySelector('#editarNombreEstudiante').focus();
+      }
+
       function abrirDetalleEstudianteProfesor(indice) {
           const d = estudiantesProfesor[indice];
           if (!d) return;
@@ -11001,6 +11117,15 @@
                       </button>
                       <button class="btn btn-secondary" type="button" onclick="alternarDesafiosVisiblesDetalleProfesor(false)">
                           <i class="fa-solid fa-angles-up"></i> Contraer visibles
+                      </button>
+                  </div>
+              </div>
+              <div style="padding:1rem;border:1px solid rgba(56,189,248,.35);border-radius:8px;background:rgba(56,189,248,.06);margin-bottom:1rem">
+                  <strong><i class="fa-solid fa-user-pen"></i> Datos personales</strong>
+                  <div style="margin-top:.35rem;color:var(--text-muted)">El docente puede corregir nombre, curso, división y turno.</div>
+                  <div style="margin-top:.7rem">
+                      <button class="btn btn-primary" type="button" onclick="editarDatosEstudianteProfesor(${indice})">
+                          <i class="fa-solid fa-user-pen"></i> Modificar datos del estudiante
                       </button>
                   </div>
               </div>

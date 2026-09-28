@@ -1536,8 +1536,17 @@
               actualizadoPor: user.email || user.uid
             }, { merge: true });
             await loteFirestore.commit();
+            if (rol === "docente") {
+              const codigoDocente = texto.toString().slice(0, 30000);
+              const guardadoDocente = await window.guardarCodigoColaborativoDocenteFirebase?.(uid, sectionId, codigoDocente);
+              if (guardadoDocente === false) {
+                throw new Error("teacher-code-save-failed");
+              }
+            }
             localStorage.removeItem(colaRespaldoClave);
-            notificar("synced", "Cambios sincronizados");
+            notificar("synced", rol === "docente"
+              ? "Código del estudiante actualizado y sincronizado"
+              : "Cambios sincronizados");
             return true;
           } catch (error) {
             console.error("No se pudo publicar la actualizaciÃ³n CRDT:", error);
@@ -3668,6 +3677,34 @@
           return true;
         } catch (error) {
           console.error("Error guardando el estado de la extensiÃ³n:", error);
+          return false;
+        }
+      };
+
+      window.guardarDatosEstudianteDocenteFirebase = async function(uid, datos) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        if (!user || !database || !uid || !datos) return false;
+
+        try {
+          if (!(await verificarUsuarioDocente(user))) return false;
+
+          const nombre = String(datos.nombre || "").trim().slice(0, 120);
+          const curso = String(datos.curso || "").trim().slice(0, 40);
+          const division = String(datos.division || "").trim().toUpperCase().slice(0, 10);
+          const turno = String(datos.turno || "").trim().slice(0, 30);
+
+          if (!nombre || !curso || !division || !turno) return false;
+
+          await setDoc(doc(database, "estudiantes", uid), {
+            estudiante: { nombre, curso, division, turno },
+            actualizadoEn: serverTimestamp()
+          }, { merge: true });
+
+          return true;
+        } catch (error) {
+          console.error("Error modificando datos del estudiante por docente:", error);
           return false;
         }
       };
