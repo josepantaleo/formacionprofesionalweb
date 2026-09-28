@@ -1,4 +1,4 @@
-﻿// Estructura de Datos de las 19 Secciones con descripciones de desafíos ampliadas y detalladas
+// Estructura de Datos de las 19 Secciones con descripciones de desafíos ampliadas y detalladas
       const VERSION_SCRIPT = (() => {
           try {
               const src = [...document.scripts].find(script => /actividad-app\.js(?:\?|$)/.test(script.src || ""));
@@ -10626,6 +10626,12 @@
           </details>`;
       }
 
+      // ============================================================
+      // DATOS PERSONALES DEL ESTUDIANTE — EDICIÓN DOCENTE
+      // El docente autorizado puede modificar nombre, curso, división y turno.
+      // El guardado se realiza por UID en estudiantes/{uid} y no toca progreso,
+      // respuestas, códigos, notas ni historial del estudiante.
+      // ============================================================
       async function editarDatosEstudianteProfesor(indice) {
           const estudiante = estudiantesProfesor[indice];
           if (!estudiante?.uid) {
@@ -12614,6 +12620,21 @@
                   if (texto.includes('ver todo')) boton.title = 'Ver progreso y detalle completo del estudiante';
                   else if (texto.includes('pausar') || texto.includes('reanudar')) boton.title = 'Pausar o reanudar el cronómetro del estudiante';
               });
+              if (!contenedor.querySelector('.btn-editar-datos-estudiante')) {
+                  const botonEditarDatos = document.createElement('button');
+                  botonEditarDatos.className = 'btn btn-primary btn-editar-datos-estudiante';
+                  botonEditarDatos.type = 'button';
+                  botonEditarDatos.title = 'Modificar nombre, curso, división y turno';
+                  botonEditarDatos.innerHTML = '<i class="fa-solid fa-user-pen"></i> Modificar datos personales';
+                  const filaDatos = contenedor.closest('tr');
+                  const uidDatos = filaDatos?.dataset?.estudianteUid || '';
+                  const registroDatos = uidDatos ? estudiantesProfesor.find(r => String(r.uid || '') === uidDatos) : null;
+                  botonEditarDatos.onclick = () => {
+                      const indiceDatos = registroDatos ? estudiantesProfesor.indexOf(registroDatos) : -1;
+                      if (indiceDatos >= 0) editarDatosEstudianteProfesor(indiceDatos);
+                  };
+                  contenedor.appendChild(botonEditarDatos);
+              }
               if (!contenedor.querySelector('.btn-eliminar-estudiante')) {
                   const botonEliminar = document.createElement('button');
                   botonEliminar.className = 'btn btn-danger btn-eliminar-estudiante';
