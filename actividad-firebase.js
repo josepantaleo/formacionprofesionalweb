@@ -1695,48 +1695,123 @@
              return { ...modoCooperacionActual };
            },
            async solicitarCooperacion(objetivo = "") {
-            if (rol !== "docente" && user.uid !== uid) return false;
-            const descripcion = String(objetivo || "AcompaÃ±amiento docente sobre la actividad actual").trim().slice(0, 500);
-            await setDoc(metaRef, rol === "docente" ? {
-              modoCooperacionActiva: true,
-              edicionCooperativaPausada: false,
-              estadoConsentimiento: "aceptado",
-               objetivoCooperacion: descripcion,
-               solicitadoPor: user.displayName || user.email || "Docente",
-               solicitudEn: serverTimestamp(),
-              respondidoEn: serverTimestamp(),
-              respondidoPor: user.email || user.uid,
-               motivoRechazo: "",
-               actualizadoEn: serverTimestamp(),
-               actualizadoPor: user.email || user.uid
-             } : {
-              modoCooperacionActiva: false,
-              edicionCooperativaPausada: true,
-              estadoConsentimiento: "pendiente",
-              objetivoCooperacion: descripcion,
-              solicitadoPor: user.displayName || user.email || "Estudiante",
-              solicitudEn: serverTimestamp(),
-              respondidoEn: null,
-              respondidoPor: "",
-              motivoRechazo: "",
-              actualizadoEn: serverTimestamp(),
-              actualizadoPor: user.email || user.uid
-             }, { merge: true });
+             if (rol !== "docente" && user.uid !== uid) return false;
+             const descripcion = String(objetivo || "AcompaÃ±amiento docente sobre la actividad actual").trim().slice(0, 500);
+             const solicitudRef = doc(database, "solicitudesColaboracion", `${uid}_${sectionId}`);
+             const historialRef = doc(collection(solicitudRef, "historial"));
+             const solicitanteRol = rol === "docente" ? "docente" : "estudiante";
+             await runTransaction(database, async transaction => {
+               const metaSnapshot = await transaction.get(metaRef);
+               const solicitudSnapshot = await transaction.get(solicitudRef);
+               const meta = metaSnapshot.exists() ? metaSnapshot.data() : {};
+               const solicitud = solicitudSnapshot.exists() ? solicitudSnapshot.data() : {};
+               const estadoActual = meta.estadoConsentimiento || solicitud.estado || "sin_solicitud";
+               if (estadoActual === "pendiente" ||
+                   (estadoActual === "aceptado" && meta.modoCooperacionActiva === true &&
+                    meta.edicionCooperativaPausada === false)) {
+                 throw new Error("Ya existe una solicitud pendiente o una colaboración activa.");
+               }
+               if (!["sin_solicitud", "rechazado", "finalizado"].includes(estadoActual)) {
+                 throw new Error("La colaboración no admite una nueva solicitud en su estado actual.");
+               }
+               const payload = {
+                 id: `${uid}_${sectionId}`,
+                 uid,
+                 sectionId,
+                 objetivo: descripcion,
+                 solicitadoPor: user.displayName || user.email || (rol === "docente" ? "Docente" : "Estudiante"),
+                 solicitanteRol,
+                 solicitudEn: serverTimestamp(),
+                 estado: "pendiente",
+                 respondidoEn: null,
+                 respondidoPor: "",
+                 motivoRechazo: "",
+                 actualizadoEn: serverTimestamp()
+               };
+               transaction.set(solicitudRef, payload, { merge: true });
+               transaction.set(metaRef, {
+                 uid,
+                 sectionId,
+                 modoCooperacionActiva: false,
+                 edicionCooperativaPausada: true,
+                 estadoConsentimiento: "pendiente",
+                 objetivoCooperacion: descripcion,
+                 solicitadoPor: payload.solicitadoPor,
+                 solicitanteRol,
+                 solicitudEn: serverTimestamp(),
+                 respondidoEn: null,
+                 respondidoPor: "",
+                 motivoRechazo: "",
+                 actualizadoEn: serverTimestamp(),
+                 actualizadoPor: user.email || user.uid
+               }, { merge: true });
+               transaction.set(historialRef, {
+                 solicitudId: historialRef.id,
+                 uid,
+                 sectionId,
+                 objetivo: descripcion,
+                 solicitadoPor: payload.solicitadoPor,
+                 solicitanteRol,
+                 solicitudEn: serverTimestamp(),
+                 estado: "pendiente",
+                 respondidoEn: null,
+                 respondidoPor: "",
+                 motivoRechazo: "",
+                 finalizadaEn: null,
+                 registradoEn: serverTimestamp()
+               });
+             });
              return true;
            },
            async responderCooperacion(aceptar, motivo = "") {
              if (rol !== "estudiante" || user.uid !== uid) return false;
              const aceptada = aceptar === true;
-             await setDoc(metaRef, {
-               modoCooperacionActiva: aceptada,
-               edicionCooperativaPausada: !aceptada,
-               estadoConsentimiento: aceptada ? "aceptado" : "rechazado",
-               respondidoEn: serverTimestamp(),
-               respondidoPor: user.email || user.displayName || user.uid,
-               motivoRechazo: aceptada ? "" : String(motivo || "").trim().slice(0, 300),
-               actualizadoEn: serverTimestamp(),
-               actualizadoPor: user.email || user.uid
-             }, { merge: true });
+             const solicitudRef = doc(database, "solicitudesColaboracion", `${uid}_${sectionId}`);
+             const historialRef = doc(collection(solicitudRef, "historial"));
+             await runTransaction(database, async transaction => {
+               const metaSnapshot = await transaction.get(metaRef);
+               const solicitudSnapshot = await transaction.get(solicitudRef);
+               if (!metaSnapshot.exists() ||
+                   metaSnapshot.data().estadoConsentimiento !== "pendiente" ||
+                   metaSnapshot.data().solicitanteRol !== "docente" ||
+                   (solicitudSnapshot.exists() && solicitudSnapshot.data().estado !== "pendiente")) {
+                 throw new Error("La solicitud ya fue respondida o no está dirigida al estudiante.");
+               }
+               const estado = aceptada ? "aceptado" : "rechazado";
+               const rechazo = aceptada ? "" : String(motivo || "").trim().slice(0, 300);
+               transaction.update(metaRef, {
+                 modoCooperacionActiva: aceptada,
+                 edicionCooperativaPausada: !aceptada,
+                 estadoConsentimiento: estado,
+                 respondidoEn: serverTimestamp(),
+                 respondidoPor: user.email || user.displayName || user.uid,
+                 motivoRechazo: rechazo,
+                 actualizadoEn: serverTimestamp(),
+                 actualizadoPor: user.email || user.uid
+               });
+               transaction.update(solicitudRef, {
+                 estado,
+                 respondidoEn: serverTimestamp(),
+                 respondidoPor: user.email || user.displayName || user.uid,
+                 motivoRechazo: rechazo,
+                 actualizadoEn: serverTimestamp()
+               });
+               transaction.set(historialRef, {
+                 solicitudId: historialRef.id,
+                 uid,
+                 sectionId,
+                 objetivo: metaSnapshot.data().objetivoCooperacion || "",
+                 solicitadoPor: metaSnapshot.data().solicitadoPor || "",
+                 solicitanteRol: "docente",
+                 solicitudEn: metaSnapshot.data().solicitudEn || null,
+                 estado,
+                 respondidoEn: serverTimestamp(),
+                 respondidoPor: user.email || user.displayName || user.uid,
+                 motivoRechazo: rechazo,
+                 finalizadaEn: null,
+                 registradoEn: serverTimestamp()
+               });
+             });
              return true;
            },
            async establecerPausaCooperacion(pausada) {
@@ -1750,13 +1825,25 @@
            },
            async finalizarCooperacion() {
              if (rol !== "docente") return false;
-             await setDoc(metaRef, {
-               modoCooperacionActiva: false,
-               edicionCooperativaPausada: true,
-               estadoConsentimiento: "finalizado",
-               actualizadoEn: serverTimestamp(),
-               actualizadoPor: user.email || user.uid
-             }, { merge: true });
+             await runTransaction(database, async transaction => {
+               const snapshot = await transaction.get(metaRef);
+               if (!snapshot.exists() || snapshot.data().estadoConsentimiento !== "aceptado") {
+                 throw new Error("Solo se puede finalizar una colaboración aceptada.");
+               }
+               transaction.update(metaRef, {
+                 modoCooperacionActiva: false,
+                 edicionCooperativaPausada: true,
+                 estadoConsentimiento: "finalizado",
+                 actualizadoEn: serverTimestamp(),
+                 actualizadoPor: user.email || user.uid
+               });
+               const solicitudRef = doc(database, "solicitudesColaboracion", `${uid}_${sectionId}`);
+               transaction.update(solicitudRef, {
+                 estado: "finalizado",
+                 finalizadaEn: serverTimestamp(),
+                 actualizadoEn: serverTimestamp()
+               });
+             });
              return true;
            },
            escucharMensajes(fn) {
@@ -2425,6 +2512,7 @@
                 : "sin_solicitud",
               objetivo: String(datos.objetivoCooperacion || ""),
               solicitadoPor: String(datos.solicitadoPor || ""),
+              solicitanteRol: datos.solicitanteRol === "docente" ? "docente" : "estudiante",
               solicitudEn: datos.solicitudEn || null,
               respondidoEn: datos.respondidoEn || null
             }, null);
@@ -2443,26 +2531,53 @@
         if (!user || !db || !uid || !sectionId || user.uid !== uid) return false;
         try {
           const referencia = doc(db, "estudiantes", uid, "colaboracionCodigo", sectionId);
-          const snapshot = await getDoc(referencia);
-          if (!snapshot.exists() || snapshot.data()?.estadoConsentimiento !== "pendiente") return false;
           const aceptada = aceptar === true;
-          await setDoc(referencia, {
-            modoCooperacionActiva: aceptada,
-            edicionCooperativaPausada: !aceptada,
-            estadoConsentimiento: aceptada ? "aceptado" : "rechazado",
-            respondidoEn: serverTimestamp(),
-            respondidoPor: user.email || user.displayName || user.uid,
-            motivoRechazo: aceptada ? "" : String(motivo || "").trim().slice(0, 300),
-            actualizadoEn: serverTimestamp(),
-            actualizadoPor: user.email || user.uid
-          }, { merge: true });
-          await setDoc(doc(database, "solicitudesColaboracion", `${uid}_${sectionId}`), {
-            estado: aceptada ? "aceptado" : "rechazado",
-            respondidoEn: serverTimestamp(),
-            respondidoPor: user.email || user.displayName || user.uid,
-            motivoRechazo: aceptada ? "" : String(motivo || "").trim().slice(0, 300),
-            actualizadoEn: serverTimestamp()
-          }, { merge: true });
+          const solicitudRef = doc(db, "solicitudesColaboracion", `${uid}_${sectionId}`);
+          const historialRef = doc(collection(solicitudRef, "historial"));
+          await runTransaction(db, async transaction => {
+            const metaSnapshot = await transaction.get(referencia);
+            const solicitudSnapshot = await transaction.get(solicitudRef);
+            if (!metaSnapshot.exists() ||
+                metaSnapshot.data()?.estadoConsentimiento !== "pendiente" ||
+                metaSnapshot.data()?.solicitanteRol !== "docente" ||
+                (solicitudSnapshot.exists() && solicitudSnapshot.data()?.estado !== "pendiente")) {
+              throw new Error("La solicitud ya fue respondida o no está dirigida al estudiante.");
+            }
+            const estado = aceptada ? "aceptado" : "rechazado";
+            const rechazo = aceptada ? "" : String(motivo || "").trim().slice(0, 300);
+            transaction.update(referencia, {
+              modoCooperacionActiva: aceptada,
+              edicionCooperativaPausada: !aceptada,
+              estadoConsentimiento: estado,
+              respondidoEn: serverTimestamp(),
+              respondidoPor: user.email || user.displayName || user.uid,
+              motivoRechazo: rechazo,
+              actualizadoEn: serverTimestamp(),
+              actualizadoPor: user.email || user.uid
+            });
+            transaction.update(solicitudRef, {
+              estado,
+              respondidoEn: serverTimestamp(),
+              respondidoPor: user.email || user.displayName || user.uid,
+              motivoRechazo: rechazo,
+              actualizadoEn: serverTimestamp()
+            });
+            transaction.set(historialRef, {
+              solicitudId: historialRef.id,
+              uid,
+              sectionId,
+              objetivo: metaSnapshot.data()?.objetivoCooperacion || "",
+              solicitadoPor: metaSnapshot.data()?.solicitadoPor || "",
+              solicitanteRol: "docente",
+              solicitudEn: metaSnapshot.data()?.solicitudEn || null,
+              estado,
+              respondidoEn: serverTimestamp(),
+              respondidoPor: user.email || user.displayName || user.uid,
+              motivoRechazo: rechazo,
+              finalizadaEn: null,
+              registradoEn: serverTimestamp()
+            });
+          });
           return true;
         } catch (error) {
           console.error("No se pudo responder la solicitud de cooperacion:", error);
@@ -2483,29 +2598,57 @@
         const contexto = contextoDocenteFirebase();
         const user = contexto?.user || window.firebaseCurrentUser || await window.firebaseAuthReady;
         const database = contexto?.database || db;
-        if (!user || !database || !uid || !sectionId) return false;
+        if (!user || !database || !uid || !sectionId ||
+            !(await verificarUsuarioDocente(user))) return false;
         try {
           const referencia = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId);
-          const snapshot = await getDoc(referencia);
-          if (snapshot.exists() && snapshot.data()?.estadoConsentimiento !== "pendiente") return false;
           const aceptada = aceptar === true;
-          await setDoc(referencia, {
-            modoCooperacionActiva: aceptada,
-            edicionCooperativaPausada: !aceptada,
-            estadoConsentimiento: aceptada ? "aceptado" : "rechazado",
-            respondidoEn: serverTimestamp(),
-            respondidoPor: user.email || user.displayName || user.uid,
-            motivoRechazo: aceptada ? "" : String(motivo || "").trim().slice(0, 300),
-            actualizadoEn: serverTimestamp(),
-            actualizadoPor: user.email || user.uid
-          }, { merge: true });
-          await setDoc(doc(database, "solicitudesColaboracion", `${uid}_${sectionId}`), {
-            estado: aceptada ? "aceptado" : "rechazado",
-            respondidoEn: serverTimestamp(),
-            respondidoPor: user.email || user.displayName || user.uid,
-            motivoRechazo: aceptada ? "" : String(motivo || "").trim().slice(0, 300),
-            actualizadoEn: serverTimestamp()
-          }, { merge: true });
+          const solicitudRef = doc(database, "solicitudesColaboracion", `${uid}_${sectionId}`);
+          const historialRef = doc(collection(solicitudRef, "historial"));
+          await runTransaction(database, async transaction => {
+            const metaSnapshot = await transaction.get(referencia);
+            const solicitudSnapshot = await transaction.get(solicitudRef);
+            if (!metaSnapshot.exists() ||
+                metaSnapshot.data()?.estadoConsentimiento !== "pendiente" ||
+                metaSnapshot.data()?.solicitanteRol !== "estudiante" ||
+                (solicitudSnapshot.exists() && solicitudSnapshot.data()?.estado !== "pendiente")) {
+              throw new Error("La solicitud ya fue respondida o no está dirigida al docente.");
+            }
+            const estado = aceptada ? "aceptado" : "rechazado";
+            const rechazo = aceptada ? "" : String(motivo || "").trim().slice(0, 300);
+            transaction.update(referencia, {
+              modoCooperacionActiva: aceptada,
+              edicionCooperativaPausada: !aceptada,
+              estadoConsentimiento: estado,
+              respondidoEn: serverTimestamp(),
+              respondidoPor: user.email || user.displayName || user.uid,
+              motivoRechazo: rechazo,
+              actualizadoEn: serverTimestamp(),
+              actualizadoPor: user.email || user.uid
+            });
+            transaction.update(solicitudRef, {
+              estado,
+              respondidoEn: serverTimestamp(),
+              respondidoPor: user.email || user.displayName || user.uid,
+              motivoRechazo: rechazo,
+              actualizadoEn: serverTimestamp()
+            });
+            transaction.set(historialRef, {
+              solicitudId: historialRef.id,
+              uid,
+              sectionId,
+              objetivo: metaSnapshot.data()?.objetivoCooperacion || "",
+              solicitadoPor: metaSnapshot.data()?.solicitadoPor || "",
+              solicitanteRol: "estudiante",
+              solicitudEn: metaSnapshot.data()?.solicitudEn || null,
+              estado,
+              respondidoEn: serverTimestamp(),
+              respondidoPor: user.email || user.displayName || user.uid,
+              motivoRechazo: rechazo,
+              finalizadaEn: null,
+              registradoEn: serverTimestamp()
+            });
+          });
           return true;
         } catch (error) {
           console.error("No se pudo responder la solicitud docente de cooperacion:", error);
@@ -2528,19 +2671,70 @@
         const descripcion = String(objetivo || "Necesito ayuda para revisar mi cÃ³digo.").trim().slice(0, 500);
         const id = `${uid}_${sectionId}`;
         try {
-          await setDoc(doc(db, "solicitudesColaboracion", id), {
-            id,
-            uid,
-            sectionId,
-            objetivo: descripcion,
-            solicitadoPor: String(solicitadoPor || user.displayName || user.email || "Estudiante").slice(0, 254),
-            solicitudEn: serverTimestamp(),
-            estado: "pendiente",
-            respondidoEn: null,
-            respondidoPor: "",
-            motivoRechazo: "",
-            actualizadoEn: serverTimestamp()
-          }, { merge: true });
+          const solicitudRef = doc(db, "solicitudesColaboracion", id);
+          const metaRef = doc(db, "estudiantes", uid, "colaboracionCodigo", sectionId);
+          const historialRef = doc(collection(solicitudRef, "historial"));
+          await runTransaction(db, async transaction => {
+            const solicitudSnapshot = await transaction.get(solicitudRef);
+            const metaSnapshot = await transaction.get(metaRef);
+            const solicitud = solicitudSnapshot.exists() ? solicitudSnapshot.data() : {};
+            const meta = metaSnapshot.exists() ? metaSnapshot.data() : {};
+            const estadoActual = meta.estadoConsentimiento || solicitud.estado || "sin_solicitud";
+            if (estadoActual === "pendiente" ||
+                (estadoActual === "aceptado" && meta.modoCooperacionActiva === true &&
+                 meta.edicionCooperativaPausada === false)) {
+              throw new Error("Ya existe una solicitud pendiente o una colaboración activa.");
+            }
+            if (!["sin_solicitud", "rechazado", "finalizado"].includes(estadoActual)) {
+              throw new Error("La colaboración no admite una nueva solicitud en su estado actual.");
+            }
+            const nombre = String(solicitadoPor || user.displayName || user.email || "Estudiante").slice(0, 254);
+            transaction.set(solicitudRef, {
+              id,
+              uid,
+              sectionId,
+              objetivo: descripcion,
+              solicitadoPor: nombre,
+              solicitanteRol: "estudiante",
+              solicitudEn: serverTimestamp(),
+              estado: "pendiente",
+              respondidoEn: null,
+              respondidoPor: "",
+              motivoRechazo: "",
+              actualizadoEn: serverTimestamp()
+            }, { merge: true });
+            transaction.set(metaRef, {
+              uid,
+              sectionId,
+              modoCooperacionActiva: false,
+              edicionCooperativaPausada: true,
+              estadoConsentimiento: "pendiente",
+              objetivoCooperacion: descripcion,
+              solicitadoPor: nombre,
+              solicitanteRol: "estudiante",
+              solicitudEn: serverTimestamp(),
+              respondidoEn: null,
+              respondidoPor: "",
+              motivoRechazo: "",
+              actualizadoEn: serverTimestamp(),
+              actualizadoPor: user.email || user.uid
+            }, { merge: true });
+            transaction.set(historialRef, {
+              solicitudId: historialRef.id,
+              uid,
+              sectionId,
+              objetivo: descripcion,
+              solicitadoPor: nombre,
+              solicitanteRol: "estudiante",
+              solicitudEn: serverTimestamp(),
+              estado: "pendiente",
+              respondidoEn: null,
+              respondidoPor: "",
+              motivoRechazo: "",
+              finalizadaEn: null,
+              registradoEn: serverTimestamp()
+            });
+          });
           return true;
         } catch (error) {
           window.ultimoErrorCooperacion = {
