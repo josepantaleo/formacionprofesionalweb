@@ -12574,6 +12574,29 @@
               const estadoConexionAcciones = `<span class="teacher-actions-online-label"><i class="fa-solid ${etiquetaConexion[1]}"></i> ${etiquetaConexion[0]}${d.__controlEstudiante?.sesionesDuplicadas ? ' · Sesión duplicada' : ''}</span>`;
           return `<tr data-estudiante-uid="${escapeHtml(d.uid || '')}" class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn ${claseAcciones} btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="${tituloAcciones}"><i class="fa-solid fa-sliders"></i><span>Acciones</span>${estadoConexionAcciones}</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}<div class="code-version-badge" style="margin-top:.4rem;font-size:.68rem;padding:.25rem .45rem"><i class="fa-solid fa-code-branch"></i> Script v${escapeHtml(versionScript)}</div>${intentosDesafioHtml}${alertaHtml}${ayudasFilaHtml}${portapapelesFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td>${ultimaReaperturaHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td></tr>`;
               }).join('') || '<tr><td colspan="13" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
+          // BOTÓN VISIBLE: edición de datos personales en la primera columna (Acciones).
+          // La versión anterior intentaba agregarlo al último TD y por eso no aparecía.
+          [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
+              const estudianteFila = rows[posicion];
+              if (!estudianteFila || !fila.dataset.estudianteUid) return;
+              const celdaAcciones = fila.querySelector('.acciones-principales-cell') || fila.children[0];
+              if (!celdaAcciones || celdaAcciones.querySelector('.btn-editar-datos-estudiante-visible')) return;
+              const indiceFila = estudiantesProfesor.indexOf(estudianteFila);
+              if (indiceFila < 0) return;
+              const botonEditar = document.createElement('button');
+              botonEditar.type = 'button';
+              botonEditar.className = 'btn btn-primary btn-editar-datos-estudiante-visible';
+              botonEditar.style.cssText = 'width:100%;margin-top:.45rem;justify-content:flex-start;text-align:left;padding:.5rem .7rem;';
+              botonEditar.title = 'Modificar nombre, curso, división y turno';
+              botonEditar.innerHTML = '<i class="fa-solid fa-user-pen"></i> Modificar datos';
+              botonEditar.addEventListener('click', (evento) => {
+                  evento.preventDefault();
+                  evento.stopPropagation();
+                  editarDatosEstudianteProfesor(indiceFila);
+              });
+              celdaAcciones.appendChild(botonEditar);
+          });
+
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
               if (!estudiante) return;
