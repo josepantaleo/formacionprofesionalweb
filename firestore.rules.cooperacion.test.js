@@ -126,6 +126,19 @@ test("solo un docente autorizado puede aceptar", async () => {
   }));
 });
 
+test("un estudiante no puede responder una solicitud propia", async () => {
+  const db = studentDb();
+  await assertFails(updateDoc(collabRef(db), {
+    estadoConsentimiento: "aceptado",
+    modoCooperacionActiva: true,
+    edicionCooperativaPausada: false,
+    respondidoEn: now,
+    respondidoPor: "alumno@example.com",
+    actualizadoEn: now,
+    actualizadoPor: "alumno@example.com",
+  }));
+});
+
 test("Yjs se rechaza cuando la cooperacion esta pausada", async () => {
   const db = studentDb();
   await assertFails(setDoc(doc(
@@ -212,4 +225,3 @@ test("mensajes y presencia se rechazan fuera de una colaboracion activa", async 
     activoEn: now,
   }));
 });
-
