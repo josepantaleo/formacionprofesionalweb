@@ -2810,10 +2810,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const contexto = contextoDocenteFirebase();
         const user = contexto?.user || window.firebaseCurrentUser || await window.firebaseAuthReady;
         const database = contexto?.database || db;
-        if (!user || !database || !uid || !sectionId ||
-            !(await verificarUsuarioDocente(user))) return false;
+        if (!user || !database || !uid || !sectionId) return false;
         try {
           await user.getIdToken(true);
+          if (!(await verificarUsuarioDocente(user))) {
+            throw new Error("La sesión docente ya no está autorizada. Volvé a iniciar sesión.");
+          }
           const solicitudRef = doc(database, "solicitudesColaboracion", `${uid}_${sectionId}`);
           const metaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId);
           await runTransaction(database, async transaction => {
