@@ -12249,6 +12249,9 @@
                     <button class="btn btn-danger" type="button" onclick="responderSolicitudColaboracionProfesor('${uid}', '${sectionId}', false, this)">
                       <i class="fa-solid fa-xmark"></i> Rechazar
                     </button>
+                    <button class="btn btn-secondary" type="button" onclick="eliminarSolicitudColaboracionProfesor('${uid}', '${sectionId}', this)">
+                      <i class="fa-solid fa-trash-can"></i> Eliminar
+                    </button>
                   </div>
               </article>`;
           }).join('');
@@ -12329,6 +12332,35 @@
           }
       }
       window.responderSolicitudColaboracionProfesor = responderSolicitudColaboracionProfesor;
+
+      async function eliminarSolicitudColaboracionProfesor(uid, sectionId, boton) {
+          if (typeof window.eliminarSolicitudColaboracionDocenteFirebase !== 'function') {
+              alert('La función de eliminación todavía no está disponible. Recargá la página.');
+              return;
+          }
+          if (!confirm('¿Eliminar esta solicitud pendiente? El estudiante podrá volver a solicitar colaboración.')) {
+              return;
+          }
+          const tarjeta = boton?.closest('article');
+          const botones = tarjeta?.querySelectorAll('button');
+          botones?.forEach(item => { item.disabled = true; });
+          try {
+              const ok = await window.eliminarSolicitudColaboracionDocenteFirebase({ uid, sectionId });
+              if (!ok) throw new Error(window.ultimoErrorCooperacion?.message || 'No se pudo eliminar la solicitud.');
+              tarjeta?.remove();
+              const contador = document.getElementById('contadorSolicitudesColaboracion');
+              const actual = Math.max(0, Number(contador?.textContent || 0) - 1);
+              if (contador) contador.textContent = String(actual);
+              const resumen = document.getElementById('resumenSolicitudesColaboracion');
+              if (resumen) resumen.textContent = actual
+                  ? `Hay ${actual} solicitud${actual === 1 ? '' : 'es'} de colaboración pendiente${actual === 1 ? '' : 's'}.`
+                  : 'No hay solicitudes de colaboración pendientes.';
+          } catch (error) {
+              botones?.forEach(item => { item.disabled = false; });
+              alert(error?.message || 'No se pudo eliminar la solicitud.');
+          }
+      }
+      window.eliminarSolicitudColaboracionProfesor = eliminarSolicitudColaboracionProfesor;
 
       function renderPanelProfesor() {
           renderBandejaSolicitudesPendientes();

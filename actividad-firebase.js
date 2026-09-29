@@ -2785,6 +2785,59 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
       };
 
+      // Permite al docente autorizado limpiar una solicitud pendiente atascada.
+      // También devuelve el documento de colaboración a un estado que admite
+      // una nueva solicitud, sin tocar el historial ya registrado.
+      window.eliminarSolicitudColaboracionDocenteFirebase = async function({
+        uid,
+        sectionId
+      } = {}) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto?.user || window.firebaseCurrentUser || await window.firebaseAuthReady;
+        const database = contexto?.database || db;
+        if (!user || !database || !uid || !sectionId ||
+            !(await verificarUsuarioDocente(user))) return false;
+        try {
+          const solicitudRef = doc(database, "solicitudesColaboracion", `${uid}_${sectionId}`);
+          const metaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId);
+          await runTransaction(database, async transaction => {
+            const solicitudSnapshot = await transaction.get(solicitudRef);
+            const metaSnapshot = await transaction.get(metaRef);
+            const solicitud = solicitudSnapshot.exists() ? solicitudSnapshot.data() : {};
+            const meta = metaSnapshot.exists() ? metaSnapshot.data() : {};
+            const estado = solicitud.estado || meta.estadoConsentimiento || "sin_solicitud";
+            if (estado !== "pendiente") {
+              throw new Error("La solicitud ya no está pendiente.");
+            }
+            if (solicitudSnapshot.exists()) transaction.delete(solicitudRef);
+            if (metaSnapshot.exists()) {
+              transaction.update(metaRef, {
+                modoCooperacionActiva: false,
+                edicionCooperativaPausada: true,
+                estadoConsentimiento: "sin_solicitud",
+                objetivoCooperacion: "",
+                solicitadoPor: "",
+                solicitanteRol: "",
+                solicitudEn: null,
+                respondidoEn: null,
+                respondidoPor: "",
+                motivoRechazo: "",
+                actualizadoEn: serverTimestamp(),
+                actualizadoPor: user.email || user.uid
+              });
+            }
+          });
+          return true;
+        } catch (error) {
+          console.error("No se pudo eliminar la solicitud de cooperacion:", error);
+          window.ultimoErrorCooperacion = {
+            code: error?.code || "",
+            message: error?.message || "No se pudo eliminar la solicitud."
+          };
+          return false;
+        }
+      };
+
       window.escucharChatColaborativoFirebase = function(uid, sectionId, alActualizar, opciones = {}) {
         const { user, database, rol } = contextoChatColaborativoFirebase(opciones.rol);
         if (!user || !database || !uid || !sectionId || typeof alActualizar !== "function") {
@@ -5255,4 +5308,3 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           if(remotos.length===19) window.dispatchEvent(new CustomEvent('desafios-profesor-data',{detail:remotos}));
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
-
