@@ -12338,7 +12338,7 @@
               alert('La función de eliminación todavía no está disponible. Recargá la página.');
               return;
           }
-          if (!confirm('¿Eliminar esta solicitud pendiente? El estudiante podrá volver a solicitar colaboración.')) {
+          if (!confirm('¿Eliminar esta solicitud de colaboración? El estudiante podrá volver a solicitarla.')) {
               return;
           }
           const tarjeta = boton?.closest('article');

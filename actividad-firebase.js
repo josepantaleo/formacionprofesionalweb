@@ -2806,8 +2806,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             const solicitud = solicitudSnapshot.exists() ? solicitudSnapshot.data() : {};
             const meta = metaSnapshot.exists() ? metaSnapshot.data() : {};
             const estado = solicitud.estado || meta.estadoConsentimiento || "sin_solicitud";
-            if (estado !== "pendiente") {
-              throw new Error("La solicitud ya no está pendiente.");
+            // El docente puede limpiar solicitudes en cualquier estado. Si no existe
+            // solicitud directa, no se permite borrar metadatos ajenos o vacíos.
+            if (!solicitudSnapshot.exists() && !metaSnapshot.exists()) {
+              throw new Error("No se encontró la solicitud de colaboración.");
             }
             if (solicitudSnapshot.exists()) transaction.delete(solicitudRef);
             if (metaSnapshot.exists()) {
