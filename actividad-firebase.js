@@ -2813,6 +2813,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         if (!user || !database || !uid || !sectionId ||
             !(await verificarUsuarioDocente(user))) return false;
         try {
+          await user.getIdToken(true);
           const solicitudRef = doc(database, "solicitudesColaboracion", `${uid}_${sectionId}`);
           const metaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId);
           await runTransaction(database, async transaction => {
@@ -2847,7 +2848,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           });
           return true;
         } catch (error) {
-          console.error("No se pudo eliminar la solicitud de cooperacion:", error);
+          console.error("No se pudo eliminar la solicitud de cooperacion:", {
+            code: error?.code || "",
+            message: error?.message || "",
+            uid,
+            sectionId
+          });
           window.ultimoErrorCooperacion = {
             code: error?.code || "",
             message: error?.message || "No se pudo eliminar la solicitud."
@@ -2863,6 +2869,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!user || !db || !uid || !sectionId || user.uid !== uid) return false;
         try {
+          await user.getIdToken(true);
           const solicitudRef = doc(db, "solicitudesColaboracion", `${uid}_${sectionId}`);
           const metaRef = doc(db, "estudiantes", uid, "colaboracionCodigo", sectionId);
           await runTransaction(db, async transaction => {
@@ -2897,7 +2904,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           });
           return true;
         } catch (error) {
-          console.error("No se pudo cancelar la solicitud de cooperacion:", error);
+          console.error("No se pudo cancelar la solicitud de cooperacion:", {
+            code: error?.code || "",
+            message: error?.message || "",
+            uid,
+            sectionId
+          });
           window.ultimoErrorCooperacion = {
             code: error?.code || "",
             message: error?.message || "No se pudo cancelar la solicitud."
