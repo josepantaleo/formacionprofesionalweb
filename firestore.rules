@@ -908,7 +908,8 @@ service cloud.firestore {
     }
 
     match /estudiantes/{uid}/auditoriaPortapapeles/{eventoId} {
-      allow get, list: if isTeacher();
+      allow get, list: if isTeacher() ||
+        (signedIn() && resource.data.uid == request.auth.uid);
       allow create: if ownsDocument(uid) &&
         request.resource.data.keys().hasAll([
           'id',
@@ -1507,6 +1508,7 @@ service cloud.firestore {
              'respondidoEn',
              'respondidoPor',
              'motivoRechazo',
+             'solicitanteRol',
              'respuestaEstudianteEn'
           ]) &&
           request.resource.data.uid == uid &&
@@ -1533,6 +1535,7 @@ service cloud.firestore {
            request.resource.data.get('objetivoCooperacion', '').size() <= 500 &&
            request.resource.data.get('solicitadoPor', '') is string &&
            request.resource.data.get('solicitadoPor', '').size() <= 254 &&
+           request.resource.data.get('solicitanteRol', '') in ['', 'estudiante', 'docente'] &&
            (
              request.resource.data.get('solicitudEn', request.time) == null ||
              request.resource.data.get('solicitudEn', request.time) is timestamp
@@ -1584,6 +1587,7 @@ service cloud.firestore {
                   'estadoConsentimiento',
                   'objetivoCooperacion',
                   'solicitadoPor',
+                  'solicitanteRol',
                   'solicitudEn',
                   'respondidoEn',
                   'respondidoPor',
@@ -1612,6 +1616,7 @@ service cloud.firestore {
                   'estadoConsentimiento',
                   'objetivoCooperacion',
                   'solicitadoPor',
+                  'solicitanteRol',
                   'solicitudEn',
                   'respondidoEn',
                   'respondidoPor',
@@ -1634,6 +1639,17 @@ service cloud.firestore {
                   'actualizadoPor',
                   'edicionCooperativaPausada'
                 ])
+              ) ||
+              (
+                resource.data.get('estadoConsentimiento', 'sin_solicitud') in [
+                  'sin_solicitud', 'pendiente', 'aceptado', 'rechazado', 'finalizado'
+                ] &&
+                request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                  'actualizadoEn',
+                  'actualizadoPor'
+                ]) &&
+                request.resource.data.actualizadoPor == authenticatedEmail() &&
+                request.resource.data.actualizadoEn == request.time
               ) ||
               (
                 request.resource.data.estadoConsentimiento == 'finalizado' &&
@@ -1699,6 +1715,7 @@ service cloud.firestore {
               'estadoConsentimiento',
               'objetivoCooperacion',
               'solicitadoPor',
+              'solicitanteRol',
               'solicitudEn',
               'respondidoEn',
               'respondidoPor',
@@ -1727,6 +1744,7 @@ service cloud.firestore {
               'estadoConsentimiento',
               'objetivoCooperacion',
               'solicitadoPor',
+              'solicitanteRol',
               'solicitudEn',
               'respondidoEn',
               'respondidoPor',
@@ -1747,6 +1765,7 @@ service cloud.firestore {
           (
             isActiveStudent(uid) &&
             resource.data.get('estadoConsentimiento', 'sin_solicitud') == 'pendiente' &&
+            resource.data.get('solicitanteRol', '') == 'docente' &&
             request.resource.data.get('actualizadoPor', '') == authenticatedEmail() &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
               'actualizadoEn',
@@ -1832,17 +1851,7 @@ service cloud.firestore {
           ) &&
           (
             request.resource.data.rol == 'docente'
-              ? (
-                  get(
-                    /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-                  ).data.get('estadoConsentimiento', 'sin_solicitud') == 'aceptado' &&
-                  get(
-                    /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-                  ).data.get('modoCooperacionActiva', false) == true &&
-                  get(
-                    /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-                  ).data.get('edicionCooperativaPausada', false) == false
-                )
+              ? isTeacher()
               : (
                   get(
                     /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
@@ -1864,7 +1873,8 @@ service cloud.firestore {
       // Presencia y posicin de seleccin de los participantes conectados.
       match /presencia/{clienteId} {
         function collaborationPresenceEnabled() {
-          return exists(
+          return isTeacher() || (
+            exists(
               /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
             ) &&
             get(
@@ -1872,7 +1882,8 @@ service cloud.firestore {
             ).data.get('estadoConsentimiento', 'sin_solicitud') == 'aceptado' &&
             get(
               /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-            ).data.get('modoCooperacionActiva', false) == true;
+            ).data.get('modoCooperacionActiva', false) == true
+          );
         }
 
         function validCollaborationPresence() {
@@ -2053,7 +2064,13 @@ service cloud.firestore {
           request.resource.data.rol in ['estudiante', 'docente'] &&
           (
             request.resource.data.rol == 'estudiante'
-              ? isActiveStudent(uid)
+              ? (isActiveStudent(uid) && exists(
+                  /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
+                ) && get(
+                  /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
+                ).data.get('estadoConsentimiento', 'sin_solicitud') == 'aceptado' && get(
+                  /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
+                ).data.get('modoCooperacionActiva', false) == true)
               : isTeacher()
           ) &&
           request.resource.data.autorUid == request.auth.uid &&
@@ -2181,6 +2198,7 @@ service cloud.firestore {
             'respondidoEn',
             'respondidoPor',
             'motivoRechazo',
+            'finalizadaEn',
             'actualizadoEn'
           ]) &&
           data.id == solicitudId &&
@@ -2192,7 +2210,7 @@ service cloud.firestore {
           data.objetivo.size() <= 500 &&
           data.solicitadoPor is string &&
           data.solicitadoPor.size() <= 254 &&
-          data.solicitanteRol == 'estudiante' &&
+          data.solicitanteRol in ['estudiante', 'docente'] &&
           data.solicitudEn is timestamp &&
           data.estado in ['pendiente', 'aceptado', 'rechazado', 'finalizado'] &&
           (
@@ -2203,33 +2221,77 @@ service cloud.firestore {
           data.respondidoPor.size() <= 254 &&
           data.motivoRechazo is string &&
           data.motivoRechazo.size() <= 300 &&
+          (!data.keys().hasAny(['finalizadaEn']) || data.get('finalizadaEn', null) == null || data.get('finalizadaEn', null) is timestamp) &&
           data.actualizadoEn is timestamp;
       }
 
-      allow get, list: if isTeacher();
+      allow get, list: if isTeacher() ||
+        (signedIn() && resource.data.uid == request.auth.uid);
 
-      allow create: if isActiveStudent(request.resource.data.uid) &&
-        validSolicitudId() &&
+      allow create: if validSolicitudId() &&
         solicitudBaseValida(request.resource.data) &&
         request.resource.data.estado == 'pendiente' &&
         request.resource.data.respondidoEn == null &&
         request.resource.data.respondidoPor == '' &&
         request.resource.data.motivoRechazo == '' &&
+        request.resource.data.finalizadaEn == null &&
         request.resource.data.solicitudEn == request.time &&
-        request.resource.data.actualizadoEn == request.time;
-
-      allow update: if isTeacher() &&
-        solicitudBaseValida(request.resource.data) &&
-        request.resource.data.uid == resource.data.uid &&
-        request.resource.data.sectionId == resource.data.sectionId &&
-        resource.data.estado == 'pendiente' &&
-        request.resource.data.estado in ['aceptado', 'rechazado'] &&
-        request.resource.data.respondidoEn == request.time &&
-        request.resource.data.respondidoPor == authenticatedEmail() &&
         request.resource.data.actualizadoEn == request.time &&
-        request.resource.data.solicitudEn == resource.data.solicitudEn;
+        (
+          (
+            request.resource.data.solicitanteRol == 'estudiante' &&
+            isActiveStudent(request.resource.data.uid) &&
+            request.resource.data.uid == request.auth.uid
+          ) ||
+          (
+            request.resource.data.solicitanteRol == 'docente' &&
+            isTeacher()
+          )
+        );
 
-      allow delete: if isTeacher() ||
+      allow update: if
+        (
+          isTeacher() &&
+          solicitudBaseValida(request.resource.data) &&
+          request.resource.data.uid == resource.data.uid &&
+          request.resource.data.sectionId == resource.data.sectionId &&
+          request.resource.data.solicitudEn == resource.data.solicitudEn &&
+          (
+            (
+              resource.data.estado == 'pendiente' &&
+              request.resource.data.estado in ['aceptado', 'rechazado'] &&
+              request.resource.data.respondidoEn == request.time &&
+              request.resource.data.respondidoPor == authenticatedEmail() &&
+              request.resource.data.actualizadoEn == request.time
+            ) ||
+            (
+              resource.data.estado == 'aceptado' &&
+              request.resource.data.estado == 'finalizado' &&
+              request.resource.data.finalizadaEn == request.time &&
+              request.resource.data.actualizadoEn == request.time &&
+              request.resource.data.respondidoEn == resource.data.respondidoEn &&
+              request.resource.data.respondidoPor == resource.data.respondidoPor
+            )
+          )
+        ) ||
+        (
+          isActiveStudent(resource.data.uid) &&
+          resource.data.uid == request.auth.uid &&
+          resource.data.solicitanteRol == 'docente' &&
+          resource.data.estado == 'pendiente' &&
+          solicitudBaseValida(request.resource.data) &&
+          request.resource.data.uid == resource.data.uid &&
+          request.resource.data.sectionId == resource.data.sectionId &&
+          request.resource.data.solicitanteRol == 'docente' &&
+          request.resource.data.solicitudEn == resource.data.solicitudEn &&
+          request.resource.data.estado in ['aceptado', 'rechazado'] &&
+          request.resource.data.respondidoEn == request.time &&
+          request.resource.data.respondidoPor == authenticatedEmail() &&
+          request.resource.data.actualizadoEn == request.time
+        );
+
+      allow delete: if
+        (isTeacher() && resource.data.estado == 'pendiente') ||
         (isActiveStudent(resource.data.uid) &&
          resource.data.uid == request.auth.uid &&
          resource.data.estado == 'pendiente');

@@ -12217,7 +12217,9 @@
               const items = Array.isArray(estudiante?.__solicitudesColaboracion)
                   ? estudiante.__solicitudesColaboracion
                   : [];
-              items.forEach(item => solicitudes.push({
+              // La bandeja activa nunca debe mostrar estados históricos.
+              items.filter(item => String(item?.estado || '') === 'pendiente')
+                  .forEach(item => solicitudes.push({
                   ...item,
                   estudianteNombre: estudiante.nombre || estudiante.displayName || estudiante.email || 'Estudiante',
                   estudianteEmail: estudiante.email || '',
@@ -12230,6 +12232,11 @@
               return fechaB - fechaA;
           });
           contador.textContent = String(solicitudes.length);
+          const botonEliminarPendientes = document.getElementById('btnEliminarSolicitudesColaboracionPendientes');
+          if (botonEliminarPendientes) {
+              botonEliminarPendientes.hidden = solicitudes.length === 0;
+              botonEliminarPendientes.disabled = false;
+          }
           if (diagnostico) {
               const auth = window.estadoAutorizacionDocente || {};
               const usuario = window.firebaseTeacherUser || window.firebaseCurrentUser;
@@ -12394,6 +12401,52 @@
           }
       }
       window.eliminarSolicitudColaboracionProfesor = eliminarSolicitudColaboracionProfesor;
+
+      async function eliminarSolicitudesColaboracionPendientes() {
+          if (typeof window.obtenerSolicitudesColaboracionDocenteFirebase !== 'function' ||
+              typeof window.eliminarSolicitudColaboracionDocenteFirebase !== 'function') {
+              alert('La función de solicitudes todavía no está disponible. Recargá la página.');
+              return;
+          }
+          const solicitudes = await window.obtenerSolicitudesColaboracionDocenteFirebase() || [];
+          const pendientes = solicitudes.filter(item => item && item.estado === 'pendiente' && item.uid && item.sectionId);
+          if (!pendientes.length) {
+              renderSolicitudesColaboracionProfesor(estudiantesProfesor);
+              return;
+          }
+          if (!confirm(`¿Eliminar ${pendientes.length} solicitud${pendientes.length === 1 ? '' : 'es'} pendiente${pendientes.length === 1 ? '' : 's'}? Esta acción limpiará también el estado de cooperación de cada estudiante.`)) {
+              return;
+          }
+          const boton = document.getElementById('btnEliminarSolicitudesColaboracionPendientes');
+          if (boton) boton.disabled = true;
+          let eliminadas = 0;
+          for (const solicitud of pendientes) {
+              try {
+                  const ok = await window.eliminarSolicitudColaboracionDocenteFirebase({
+                      uid: solicitud.uid,
+                      sectionId: solicitud.sectionId
+                  });
+                  if (ok) eliminadas += 1;
+              } catch (_) {}
+          }
+          // Reconstruir la bandeja desde Firestore para evitar tarjetas fantasma.
+          estudiantesProfesor = (Array.isArray(estudiantesProfesor) ? estudiantesProfesor : []).map(estudiante => ({
+              ...estudiante,
+              __solicitudesColaboracion: (Array.isArray(estudiante.__solicitudesColaboracion)
+                  ? estudiante.__solicitudesColaboracion
+                  : []).filter(item => !pendientes.some(p => p.uid === item.uid && p.sectionId === item.sectionId))
+          }));
+          await cargarSolicitudesColaboracionDirectas();
+          const resumen = document.getElementById('resumenSolicitudesColaboracion');
+          if (resumen && eliminadas) {
+              resumen.textContent = `${eliminadas} solicitud${eliminadas === 1 ? '' : 'es'} pendiente${eliminadas === 1 ? '' : 's'} eliminada${eliminadas === 1 ? '' : 's'}.`;
+          }
+      }
+      window.eliminarSolicitudesColaboracionPendientes = eliminarSolicitudesColaboracionPendientes;
+      const botonEliminarSolicitudesPendientes = document.getElementById('btnEliminarSolicitudesColaboracionPendientes');
+      if (botonEliminarSolicitudesPendientes) {
+          botonEliminarSolicitudesPendientes.addEventListener('click', eliminarSolicitudesColaboracionPendientes);
+      }
 
       function renderPanelProfesor() {
           renderBandejaSolicitudesPendientes();

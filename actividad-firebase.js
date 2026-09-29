@@ -1625,7 +1625,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           modoCooperacionActual = normalizarModoCooperacion(datos);
           modoCooperacionListeners.forEach(fn => fn({ ...modoCooperacionActual }));
           const aceptada = rol === "docente"
-            ? modoCooperacionActual.activa || modoCooperacionActual.consentimiento === "pendiente"
+            ? true
             : modoCooperacionActual.consentimiento === "aceptado" && modoCooperacionActual.activa;
           if (aceptada) {
             iniciarEscuchaPresencia();
@@ -1636,7 +1636,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           }
           if (
             aceptada &&
-            !modoCooperacionActual.pausada &&
+            (rol === "docente" || !modoCooperacionActual.pausada) &&
             (modoAnterior.pausada || modoAnterior.consentimiento !== "aceptado") &&
             cola.length
           ) {
@@ -1656,7 +1656,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         let ultimaPresenciaPublicada = "";
         const actualizarPresencia = (cursor = {}, forzar = false) => {
           const cooperacionAceptada = rol === "docente"
-            ? (modoCooperacionActual.activa || modoCooperacionActual.consentimiento === "pendiente")
+            ? true
             : modoCooperacionActual.consentimiento === "aceptado" && modoCooperacionActual.activa;
           if (!cooperacionAceptada) {
             return deleteDoc(presenciaRef).catch(() => {});
@@ -1737,6 +1737,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
                  respondidoEn: null,
                  respondidoPor: "",
                  motivoRechazo: "",
+                 finalizadaEn: null,
                  actualizadoEn: serverTimestamp()
                };
                transaction.set(solicitudRef, payload, { merge: true });
@@ -2712,6 +2713,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               respondidoEn: null,
               respondidoPor: "",
               motivoRechazo: "",
+              finalizadaEn: null,
               actualizadoEn: serverTimestamp()
             }, { merge: true });
             transaction.set(metaRef, {
@@ -2768,9 +2770,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
         try {
           const snapshot = await getDocs(collection(contexto.database, "solicitudesColaboracion"));
-          const solicitudes = snapshot.docs
+          const solicitudesTodas = snapshot.docs
             .map(item => ({ id: item.id, ...item.data() }))
             .filter(item => item.uid && item.sectionId);
+          // La bandeja docente solo debe mostrar solicitudes realmente pendientes.
+          // Las aceptadas/rechazadas/finalizadas quedan fuera de la bandeja activa.
+          const solicitudes = solicitudesTodas.filter(item => item.estado === "pendiente");
           window.ultimoEstadoSolicitudesColaboracion = {
             coleccion: "solicitudesColaboracion",
             leidas: snapshot.size,
@@ -2808,6 +2813,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             const estado = solicitud.estado || meta.estadoConsentimiento || "sin_solicitud";
             if (!solicitudSnapshot.exists() && !metaSnapshot.exists()) {
               throw new Error("No existe la solicitud indicada.");
+            }
+            if (solicitudSnapshot.exists() && estado !== "pendiente") {
+              throw new Error("Solo se pueden eliminar solicitudes pendientes.");
             }
             if (solicitudSnapshot.exists()) transaction.delete(solicitudRef);
             if (metaSnapshot.exists()) {
