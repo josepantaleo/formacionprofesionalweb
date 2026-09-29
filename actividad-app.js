@@ -12,6 +12,30 @@
       const escapeHtml = window.appUtils?.escapeHtml || (value => String(value ?? "").replace(/[&<>'"]/g, char => ({
           "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
       }[char])));
+      window.mostrarToastAplicacion = window.mostrarToastAplicacion || function (mensaje, tipo = "info") {
+          const anterior = document.getElementById("toastAplicacion");
+          anterior?.remove();
+          const toast = document.createElement("div");
+          toast.id = "toastAplicacion";
+          toast.setAttribute("role", "status");
+          toast.setAttribute("aria-live", "polite");
+          toast.textContent = String(mensaje || "");
+          Object.assign(toast.style, {
+              position: "fixed",
+              right: "1rem",
+              bottom: "1rem",
+              zIndex: "100003",
+              maxWidth: "min(92vw, 420px)",
+              padding: ".75rem 1rem",
+              borderRadius: "8px",
+              color: "#fff",
+              background: tipo === "error" ? "#991b1b" : (tipo === "success" ? "#166534" : "#1e3a8a"),
+              boxShadow: "0 10px 30px rgba(0,0,0,.25)",
+              font: "600 .9rem/1.35 system-ui, sans-serif"
+          });
+          document.body.appendChild(toast);
+          window.setTimeout(() => toast.remove(), 5000);
+      };
       function portapapelesDocentePermitido() {
           const body = document.body;
           return Boolean(
@@ -3462,12 +3486,24 @@
       }
 
       async function solicitarColaboracionEstudiante(sectionId) {
+          const boton = document.getElementById(`btn-solicitar-colaboracion-${sectionId}`);
+          if (boton?.disabled || boton?.dataset.busy === 'true') return;
+          const liberarBotonSolicitud = () => {
+              if (!boton) return;
+              boton.disabled = false;
+              delete boton.dataset.busy;
+          };
+          if (boton) {
+              boton.disabled = true;
+              boton.dataset.busy = 'true';
+          }
           let sesion = window.__sesionCRDTEstudianteActiva;
           if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
               await window.iniciarColaboracionCRDTEstudiante?.();
               sesion = window.__sesionCRDTEstudianteActiva;
           }
           if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
+              liberarBotonSolicitud();
               alert('No se pudo preparar la solicitud de ayuda. Recargá la actividad e intentá nuevamente.');
               return;
           }
@@ -3476,9 +3512,10 @@
               `¿Qué necesitás revisar con el docente en "${sec?.title || 'este desafío'}"?`,
               'Necesito ayuda para revisar mi código.'
           );
-          if (motivo === null) return;
-          const boton = document.getElementById(`btn-solicitar-colaboracion-${sectionId}`);
-          if (boton) boton.disabled = true;
+          if (motivo === null) {
+              liberarBotonSolicitud();
+              return;
+          }
           try {
               const okSolicitud = await window.registrarSolicitudColaboracionFirebase?.({
                   uid: window.firebaseCurrentUser?.uid,
@@ -3495,7 +3532,7 @@
               const cancelar = document.getElementById(`btn-cancelar-colaboracion-${sectionId}`);
               if (cancelar) cancelar.hidden = false;
           } catch (error) {
-              if (boton) boton.disabled = false;
+              liberarBotonSolicitud();
               const estado = document.getElementById(`estado-colaboracion-${sectionId}`);
               if (estado) {
                   estado.hidden = false;
@@ -12330,6 +12367,11 @@
       }
 
       async function responderSolicitudColaboracionProfesor(uid, sectionId, aceptar, boton) {
+          if (boton?.disabled || boton?.dataset.busy === 'true') return;
+          if (boton) {
+              boton.disabled = true;
+              boton.dataset.busy = 'true';
+          }
           if (typeof window.responderCooperacionDocenteFirebase !== 'function') {
               alert('La función de colaboración docente todavía no está disponible. Recargá la página.');
               return;
@@ -12337,12 +12379,18 @@
           let motivo = '';
           if (!aceptar) {
               const respuesta = prompt('Motivo del rechazo (opcional):', '');
-              if (respuesta === null) return;
+              if (respuesta === null) {
+                  if (boton) {
+                      boton.disabled = false;
+                      delete boton.dataset.busy;
+                  }
+                  return;
+              }
               motivo = respuesta;
           }
           const tarjeta = boton?.closest('article');
           const botones = tarjeta?.querySelectorAll('button');
-          botones?.forEach(item => { item.disabled = true; });
+          botones?.forEach(item => { item.disabled = true; item.dataset.busy = 'true'; });
           try {
               const ok = await window.responderCooperacionDocenteFirebase({
                   uid,
@@ -12367,7 +12415,7 @@
                   }
               }
           } catch (error) {
-              botones?.forEach(item => { item.disabled = false; });
+              botones?.forEach(item => { item.disabled = false; delete item.dataset.busy; });
               alert(error?.message || 'No se pudo actualizar la solicitud.');
           }
       }

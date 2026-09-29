@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
-      import { getFirestore, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, collectionGroup, query, orderBy, limit, onSnapshot, getDocs, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+      import { getFirestore, enableIndexedDbPersistence, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, collectionGroup, query, orderBy, limit, onSnapshot, getDocs, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
       import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
       import { getAI, getTemplateGenerativeModel, getGenerativeModel, GoogleAIBackend } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-ai.js";
       import * as Y from "https://cdn.jsdelivr.net/npm/yjs@13.6.31/+esm";
@@ -123,11 +123,21 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
         auth = getAuth(app);
         db = getFirestore(app);
+        enableIndexedDbPersistence(db).catch(error => {
+          if (error?.code !== "failed-precondition" && error?.code !== "unimplemented") {
+            console.warn("No se pudo activar la persistencia offline de Firestore:", error);
+          }
+        });
         googleProvider = new GoogleAuthProvider();
         googleProvider.setCustomParameters({ prompt: "select_account" });
         const teacherApp = initializeApp(firebaseConfig, "teacherAuthorization");
         teacherAuth = getAuth(teacherApp);
         teacherDb = getFirestore(teacherApp);
+        enableIndexedDbPersistence(teacherDb).catch(error => {
+          if (error?.code !== "failed-precondition" && error?.code !== "unimplemented") {
+            console.warn("No se pudo activar la persistencia offline docente:", error);
+          }
+        });
         teacherProvider = new GoogleAuthProvider();
         teacherProvider.setCustomParameters({ prompt: "select_account" });
         teacherPersistenceReady = setPersistence(teacherAuth, browserSessionPersistence).catch(error => {
