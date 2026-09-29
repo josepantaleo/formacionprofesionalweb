@@ -2770,7 +2770,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           const snapshot = await getDocs(collection(contexto.database, "solicitudesColaboracion"));
           const solicitudes = snapshot.docs
             .map(item => ({ id: item.id, ...item.data() }))
-            .filter(item => item.estado === "pendiente" && item.uid && item.sectionId);
+            .filter(item => item.uid && item.sectionId);
           window.ultimoEstadoSolicitudesColaboracion = {
             coleccion: "solicitudesColaboracion",
             leidas: snapshot.size,
@@ -2785,9 +2785,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
       };
 
-      // Permite al docente autorizado limpiar una solicitud pendiente atascada.
-      // También devuelve el documento de colaboración a un estado que admite
-      // una nueva solicitud, sin tocar el historial ya registrado.
+      // Elimina una solicitud de colaboración y deja la metadata preparada
+      // para una nueva solicitud. El docente puede limpiar cualquier estado;
+      // el estudiante solamente su propia solicitud pendiente.
       window.eliminarSolicitudColaboracionDocenteFirebase = async function({
         uid,
         sectionId
@@ -2806,10 +2806,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             const solicitud = solicitudSnapshot.exists() ? solicitudSnapshot.data() : {};
             const meta = metaSnapshot.exists() ? metaSnapshot.data() : {};
             const estado = solicitud.estado || meta.estadoConsentimiento || "sin_solicitud";
-            // El docente puede limpiar solicitudes en cualquier estado. Si no existe
-            // solicitud directa, no se permite borrar metadatos ajenos o vacíos.
             if (!solicitudSnapshot.exists() && !metaSnapshot.exists()) {
-              throw new Error("No se encontró la solicitud de colaboración.");
+              throw new Error("No existe la solicitud indicada.");
             }
             if (solicitudSnapshot.exists()) transaction.delete(solicitudRef);
             if (metaSnapshot.exists()) {
@@ -2835,6 +2833,56 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           window.ultimoErrorCooperacion = {
             code: error?.code || "",
             message: error?.message || "No se pudo eliminar la solicitud."
+          };
+          return false;
+        }
+      };
+
+      window.eliminarSolicitudColaboracionEstudianteFirebase = async function({
+        uid,
+        sectionId
+      } = {}) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db || !uid || !sectionId || user.uid !== uid) return false;
+        try {
+          const solicitudRef = doc(db, "solicitudesColaboracion", `${uid}_${sectionId}`);
+          const metaRef = doc(db, "estudiantes", uid, "colaboracionCodigo", sectionId);
+          await runTransaction(db, async transaction => {
+            const solicitudSnapshot = await transaction.get(solicitudRef);
+            const metaSnapshot = await transaction.get(metaRef);
+            if (!solicitudSnapshot.exists()) {
+              throw new Error("No existe una solicitud para eliminar.");
+            }
+            const solicitud = solicitudSnapshot.data() || {};
+            const meta = metaSnapshot.exists() ? (metaSnapshot.data() || {}) : {};
+            const estado = solicitud.estado || meta.estadoConsentimiento || "sin_solicitud";
+            if (estado !== "pendiente") {
+              throw new Error("Solo se puede cancelar una solicitud pendiente.");
+            }
+            transaction.delete(solicitudRef);
+            if (metaSnapshot.exists()) {
+              transaction.update(metaRef, {
+                modoCooperacionActiva: false,
+                edicionCooperativaPausada: true,
+                estadoConsentimiento: "sin_solicitud",
+                objetivoCooperacion: "",
+                solicitadoPor: "",
+                solicitanteRol: "",
+                solicitudEn: null,
+                respondidoEn: null,
+                respondidoPor: "",
+                motivoRechazo: "",
+                actualizadoEn: serverTimestamp(),
+                actualizadoPor: user.email || user.uid
+              });
+            }
+          });
+          return true;
+        } catch (error) {
+          console.error("No se pudo cancelar la solicitud de cooperacion:", error);
+          window.ultimoErrorCooperacion = {
+            code: error?.code || "",
+            message: error?.message || "No se pudo cancelar la solicitud."
           };
           return false;
         }

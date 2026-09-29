@@ -2918,6 +2918,9 @@
                                       </div>
                                   </div>
                                   <div id="estado-colaboracion-${sec.id}" role="status" aria-live="polite" hidden style="margin:.45rem 0;color:#bae6fd;font-size:.8rem;"></div>
+                                  <button type="button" class="btn btn-secondary" id="btn-cancelar-colaboracion-${sec.id}" onclick="cancelarColaboracionEstudiante('${sec.id}', this)" hidden style="margin-bottom:.55rem">
+                                      <i class="fa-solid fa-trash-can"></i> Cancelar solicitud de colaboración
+                                  </button>
                                   <div class="student-ai-editor-actions" aria-label="Ayuda de programación con IA">
                                       <button type="button" data-ai-editor-action class="student-ai-editor-action" onclick="solicitarAyudaEditor('${sec.id}', 'consigna', this)" ${isFinalized ? 'disabled' : ''} title="Organizar la consigna antes de programar">
                                           <i class="fa-solid fa-list-ol"></i><span>Planificar</span>
@@ -3489,6 +3492,8 @@
                   estado.hidden = false;
                   estado.textContent = 'Solicitud enviada al docente. Queda pendiente de atención.';
               }
+              const cancelar = document.getElementById(`btn-cancelar-colaboracion-${sectionId}`);
+              if (cancelar) cancelar.hidden = false;
           } catch (error) {
               if (boton) boton.disabled = false;
               const estado = document.getElementById(`estado-colaboracion-${sectionId}`);
@@ -3502,6 +3507,32 @@
           }
       }
       window.solicitarColaboracionEstudiante = solicitarColaboracionEstudiante;
+
+      async function cancelarColaboracionEstudiante(sectionId, boton) {
+          const uid = window.firebaseCurrentUser?.uid;
+          if (!uid || typeof window.eliminarSolicitudColaboracionEstudianteFirebase !== 'function') {
+              alert('La función de cancelación todavía no está disponible. Recargá la actividad.');
+              return;
+          }
+          if (!confirm('¿Cancelar esta solicitud de colaboración? Podrás volver a solicitar ayuda después.')) return;
+          if (boton) boton.disabled = true;
+          try {
+              const ok = await window.eliminarSolicitudColaboracionEstudianteFirebase({ uid, sectionId });
+              if (!ok) throw new Error(window.ultimoErrorCooperacion?.message || 'No se pudo cancelar la solicitud.');
+              const estado = document.getElementById(`estado-colaboracion-${sectionId}`);
+              if (estado) {
+                  estado.hidden = false;
+                  estado.textContent = 'Solicitud cancelada. Podés volver a solicitar colaboración cuando lo necesites.';
+              }
+              const solicitar = document.getElementById(`btn-solicitar-colaboracion-${sectionId}`);
+              if (solicitar) solicitar.disabled = false;
+              if (boton) boton.hidden = true;
+          } catch (error) {
+              if (boton) boton.disabled = false;
+              alert(error?.message || 'No se pudo cancelar la solicitud.');
+          }
+      }
+      window.cancelarColaboracionEstudiante = cancelarColaboracionEstudiante;
 
       function solicitarAccionProfesor(accion) {
           tipoAccionModal = accion;
@@ -12217,11 +12248,11 @@
               diagnostico.style.color = auth.autorizado === true ? 'var(--text-muted)' : '#fca5a5';
           }
           resumen.textContent = solicitudes.length
-              ? `Hay ${solicitudes.length} solicitud${solicitudes.length === 1 ? '' : 'es'} de colaboración pendiente${solicitudes.length === 1 ? '' : 's'}.`
-              : 'No hay solicitudes de colaboración pendientes.';
+              ? `Hay ${solicitudes.length} solicitud${solicitudes.length === 1 ? '' : 'es'} de colaboración registradas.`
+              : 'No hay solicitudes de colaboración registradas.';
           if (!solicitudes.length) {
               const detalleError = window.ultimoErrorCooperacion?.message;
-              lista.innerHTML = `<p style="color:var(--text-muted);margin:0">No hay solicitudes de colaboración pendientes.${detalleError ? ` <span style="color:#fca5a5">(${escapar(detalleError)})</span>` : ''}</p>`;
+              lista.innerHTML = `<p style="color:var(--text-muted);margin:0">No hay solicitudes de colaboración registradas.${detalleError ? ` <span style="color:#fca5a5">(${escapar(detalleError)})</span>` : ''}</p>`;
               return;
           }
           lista.innerHTML = solicitudes.map(item => {
@@ -12229,6 +12260,8 @@
               const fechaTexto = fecha ? fecha.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : 'Fecha no disponible';
               const titulo = item.sectionTitle || item.sectionName || item.sectionId || 'Desafío sin título';
               const motivo = item.objetivoCooperacion || item.motivo || 'El estudiante solicita revisar su código.';
+              const estadoSolicitud = String(item.estado || 'pendiente');
+              const esPendiente = estadoSolicitud === 'pendiente';
               const uid = escapar(item.uid || item.estudianteId);
               const sectionId = escapar(item.sectionId);
               return `<article class="pending-request-card" style="border-color:rgba(56,189,248,.38)">
@@ -12239,16 +12272,16 @@
                     </strong>
                     <time datetime="${fecha ? fecha.toISOString() : ''}" style="color:var(--text-muted);font-size:.76rem">${escapar(fechaTexto)}</time>
                   </div>
-                  <div style="margin-top:.35rem;color:#bae6fd;font-weight:700">${escapar(titulo)}</div>
+                  <div style="margin-top:.35rem;color:#bae6fd;font-weight:700">${escapar(titulo)} · Estado: ${escapar(estadoSolicitud)}</div>
                   <p style="margin:.45rem 0 0;color:var(--text-muted);font-size:.84rem">${escapar(motivo)}</p>
                   ${item.estudianteEmail ? `<div style="margin-top:.35rem;color:var(--text-muted);font-size:.76rem">${escapar(item.estudianteEmail)}</div>` : ''}
                   <div style="display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.65rem">
-                    <button class="btn btn-success" type="button" onclick="responderSolicitudColaboracionProfesor('${uid}', '${sectionId}', true, this)">
+                    ${esPendiente ? `<button class="btn btn-success" type="button" onclick="responderSolicitudColaboracionProfesor('${uid}', '${sectionId}', true, this)">
                       <i class="fa-solid fa-check"></i> Aceptar
                     </button>
                     <button class="btn btn-danger" type="button" onclick="responderSolicitudColaboracionProfesor('${uid}', '${sectionId}', false, this)">
                       <i class="fa-solid fa-xmark"></i> Rechazar
-                    </button>
+                    </button>` : ''}
                     <button class="btn btn-secondary" type="button" onclick="eliminarSolicitudColaboracionProfesor('${uid}', '${sectionId}', this)">
                       <i class="fa-solid fa-trash-can"></i> Eliminar
                     </button>
@@ -12319,7 +12352,7 @@
                   const resumen = document.getElementById('resumenSolicitudesColaboracion');
               if (resumen) resumen.textContent = actual
                       ? `Hay ${actual} solicitud${actual === 1 ? '' : 'es'} de colaboración pendiente${actual === 1 ? '' : 's'}.`
-                      : 'No hay solicitudes de colaboración pendientes.';
+                      : 'No hay solicitudes de colaboración registradas.';
                   if (aceptar && typeof window.abrirEditorColaborativoProfesor === 'function') {
                       window.setTimeout(() => {
                           window.abrirEditorColaborativoProfesor(uid, sectionId);
@@ -12338,7 +12371,7 @@
               alert('La función de eliminación todavía no está disponible. Recargá la página.');
               return;
           }
-          if (!confirm('¿Eliminar esta solicitud de colaboración? El estudiante podrá volver a solicitarla.')) {
+          if (!confirm('¿Eliminar esta solicitud de colaboración? Se limpiará también su estado de colaboración y podrá volver a solicitarla.')) {
               return;
           }
           const tarjeta = boton?.closest('article');
@@ -12354,7 +12387,7 @@
               const resumen = document.getElementById('resumenSolicitudesColaboracion');
               if (resumen) resumen.textContent = actual
                   ? `Hay ${actual} solicitud${actual === 1 ? '' : 'es'} de colaboración pendiente${actual === 1 ? '' : 's'}.`
-                  : 'No hay solicitudes de colaboración pendientes.';
+                  : 'No hay solicitudes de colaboración registradas.';
           } catch (error) {
               botones?.forEach(item => { item.disabled = false; });
               alert(error?.message || 'No se pudo eliminar la solicitud.');
