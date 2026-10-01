@@ -1,6 +1,6 @@
-﻿rules_version = '2';
+rules_version = '2';
 
-// Actualizado el 29 de septiembre de 2026.
+// Actualizado el 5 de septiembre de 2026.
 // Incluye auditora segura, mensajera, colaboracin CRDT, presencia y aportes.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -1566,10 +1566,26 @@ service cloud.firestore {
       allow get, list: if ownsDocument(uid) || isTeacher();
       allow create: if (isActiveStudent(uid) || isTeacher()) &&
         validCollaborationDocument() &&
-        request.resource.data.get('modoCooperacionActiva', false) == false &&
-        request.resource.data.get('edicionCooperativaPausada', false) == false &&
-        request.resource.data.get('estadoConsentimiento', 'sin_solicitud') ==
-          'sin_solicitud';
+        (
+          (
+            request.resource.data.get('modoCooperacionActiva', false) == false &&
+            request.resource.data.get('edicionCooperativaPausada', false) == false &&
+            request.resource.data.get('estadoConsentimiento', 'sin_solicitud') == 'sin_solicitud'
+          ) ||
+          (
+            isActiveStudent(uid) &&
+            request.resource.data.get('modoCooperacionActiva', false) == false &&
+            request.resource.data.get('edicionCooperativaPausada', false) == true &&
+            request.resource.data.get('estadoConsentimiento', 'sin_solicitud') == 'pendiente' &&
+            request.resource.data.get('solicitanteRol', '') == 'estudiante' &&
+            request.resource.data.get('objetivoCooperacion', '').size() > 0 &&
+            request.resource.data.get('solicitudEn', null) == request.time &&
+            request.resource.data.get('respondidoEn', null) == null &&
+            request.resource.data.get('respondidoPor', '') == '' &&
+            request.resource.data.get('motivoRechazo', '') == '' &&
+            request.resource.data.get('actualizadoPor', '') == authenticatedEmail()
+          )
+        );
       allow update: if (isActiveStudent(uid) || isTeacher()) &&
         validCollaborationDocument() &&
         request.resource.data.uid == resource.data.uid &&
@@ -1743,6 +1759,34 @@ service cloud.firestore {
           ) ||
           (
             isActiveStudent(uid) &&
+            resource.data.get('estadoConsentimiento', 'sin_solicitud') in ['sin_solicitud', 'rechazado', 'finalizado'] &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'actualizadoEn',
+              'actualizadoPor',
+              'modoCooperacionActiva',
+              'edicionCooperativaPausada',
+              'estadoConsentimiento',
+              'objetivoCooperacion',
+              'solicitadoPor',
+              'solicitanteRol',
+              'solicitudEn',
+              'respondidoEn',
+              'respondidoPor',
+              'motivoRechazo'
+            ]) &&
+            request.resource.data.estadoConsentimiento == 'pendiente' &&
+            request.resource.data.modoCooperacionActiva == false &&
+            request.resource.data.edicionCooperativaPausada == true &&
+            request.resource.data.get('solicitanteRol', '') == 'estudiante' &&
+            request.resource.data.get('objetivoCooperacion', '').size() > 0 &&
+            request.resource.data.get('solicitudEn', null) == request.time &&
+            request.resource.data.respondidoEn == null &&
+            request.resource.data.respondidoPor == '' &&
+            request.resource.data.motivoRechazo == '' &&
+            request.resource.data.get('actualizadoPor', '') == authenticatedEmail()
+          ) ||
+          (
+            isActiveStudent(uid) &&
             resource.data.get('estadoConsentimiento', 'sin_solicitud') == 'pendiente' &&
             request.resource.data.diff(resource.data).affectedKeys().hasOnly([
               'actualizadoEn',
@@ -1769,6 +1813,34 @@ service cloud.firestore {
             request.resource.data.motivoRechazo == '' &&
             request.resource.data.get('actualizadoPor', '') == authenticatedEmail() &&
             request.resource.data.actualizadoEn == request.time
+          ) ||
+          (
+            isActiveStudent(uid) &&
+            resource.data.get('estadoConsentimiento', 'sin_solicitud') in ['sin_solicitud', 'rechazado', 'finalizado'] &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'actualizadoEn',
+              'actualizadoPor',
+              'modoCooperacionActiva',
+              'edicionCooperativaPausada',
+              'estadoConsentimiento',
+              'objetivoCooperacion',
+              'solicitadoPor',
+              'solicitanteRol',
+              'solicitudEn',
+              'respondidoEn',
+              'respondidoPor',
+              'motivoRechazo'
+            ]) &&
+            request.resource.data.estadoConsentimiento == 'pendiente' &&
+            request.resource.data.modoCooperacionActiva == false &&
+            request.resource.data.edicionCooperativaPausada == true &&
+            request.resource.data.get('solicitanteRol', '') == 'estudiante' &&
+            request.resource.data.get('objetivoCooperacion', '').size() > 0 &&
+            request.resource.data.get('solicitudEn', null) == request.time &&
+            request.resource.data.respondidoEn == null &&
+            request.resource.data.respondidoPor == '' &&
+            request.resource.data.motivoRechazo == '' &&
+            request.resource.data.get('actualizadoPor', '') == authenticatedEmail()
           ) ||
           (
             isActiveStudent(uid) &&

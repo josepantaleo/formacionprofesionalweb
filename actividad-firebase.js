@@ -1,4 +1,4 @@
-﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
       import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
       import { getFirestore, enableIndexedDbPersistence, doc, getDoc, setDoc, deleteDoc, serverTimestamp, collection, collectionGroup, query, orderBy, limit, onSnapshot, getDocs, increment, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
       import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app-check.js";
@@ -2735,7 +2735,7 @@
       } = {}) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!user || !db || !uid || user.uid !== uid || !sectionId) return false;
-        const descripcion = String(objetivo || "Necesito ayuda para revisar mi cÃƒ³digo.").trim().slice(0, 500);
+        const descripcion = String(objetivo || "Necesito ayuda para revisar mi c\u00f3digo.").trim().slice(0, 500);
         const id = `${uid}_${sectionId}`;
         try {
           const solicitudRef = doc(db, "solicitudesColaboracion", id);

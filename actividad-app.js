@@ -1,4 +1,4 @@
-﻿// Estructura de Datos de las 19 Secciones con descripciones de desafíos ampliadas y detalladas
+// Estructura de Datos de las 19 Secciones con descripciones de desafíos ampliadas y detalladas
       const VERSION_SCRIPT = (() => {
           try {
               const src = [...document.scripts].find(script => /actividad-app\.js(?:\?|$)/.test(script.src || ""));
@@ -14,7 +14,38 @@
       }[char])));
       const repararCaracteresVisibles = valor => {
           let texto = String(valor ?? "");
+          const decodificarUtf8MalInterpretado = entrada => {
+              let actual = entrada;
+              for (let intento = 0; intento < 4 && /[ÃÂâ]/.test(actual); intento++) {
+                  try {
+                      const bytes = Uint8Array.from([...actual].map(caracter => {
+                          const codigo = caracter.codePointAt(0);
+                          return codigo <= 0xff ? codigo : (codigo & 0xff);
+                      }));
+                      const decodificado = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+                      if (!decodificado || decodificado === actual) break;
+                      actual = decodificado;
+                  } catch (_) {
+                      break;
+                  }
+              }
+              return actual;
+          };
           const reemplazos = [
+              ["\u00c3\u0192\u00c2", "\u00c3"], ["\u00c3\u0192", "\u00c3"],
+              ["\u00c3\u201a", "\u00c2"], ["\u00c3\u00a2", "\u00e2"],
+              ["\u00c3\u00a1", "\u00e1"], ["\u00c3\u00a9", "\u00e9"],
+              ["\u00c3\u00ad", "\u00ed"], ["\u00c3\u00b3", "\u00f3"],
+              ["\u00c3\u00ba", "\u00fa"], ["\u00c3\u00b1", "\u00f1"],
+              ["\u00c3\u00bc", "\u00fc"], ["\u00c3\u0161", "\u00da"],
+              ["\u00c3\u201c", "\u00d3"], ["\u00c3\u2030", "\u00c9"],
+              ["\u00c3\u008d", "\u00cd"], ["\u00c3\u2018", "\u00d1"],
+              ["\u00c2\u00b7", "\u00b7"], ["\u00c2\u00bf", "\u00bf"],
+              ["\u00c2\u00a1", "\u00a1"], ["\u00c2\u00b0", "\u00b0"],
+              ["\u00e2\u20ac\u201c", "\u201c"], ["\u00e2\u20ac\u009d", "\u201d"],
+              ["\u00e2\u20ac\u2122", "\u2019"], ["\u00e2\u20ac\u2014", "\u2014"],
+              ["\u00e2\u20ac\u201c", "\u2013"], ["\u00e2\u20ac\u00a6", "\u2026"],
+              ["\u00e2\u2020\u2019", "\u2192"], ["\u00e2\u2030\u00a5", "\u2265"],
               ["ÃƒÂ", "Ã"], ["Ãƒ", "Ã"], ["Â", ""],
               ["Ã¡", "á"], ["Ã©", "é"], ["Ã­", "í"], ["Ã³", "ó"], ["Ãº", "ú"],
               ["Ã±", "ñ"], ["Ã¼", "ü"], ["Ã", "Á"], ["Ã‰", "É"], ["Ã", "Í"],
@@ -35,7 +66,7 @@
                   texto = texto.split(incorrecto).join(correcto);
               });
           }
-          return texto;
+          return decodificarUtf8MalInterpretado(texto);
       };
       window.repararCaracteresVisibles = repararCaracteresVisibles;
       (() => {
@@ -12571,7 +12602,7 @@
               }
           } catch (error) {
               botones?.forEach(item => { item.disabled = false; delete item.dataset.busy; });
-              alert(error?.message || 'No se pudo actualizar la solicitud.');
+              alert(`Solicitud ${aceptar ? 'aceptada' : 'rechazada'}: ${error?.code ? `[${error.code}] ` : ''}${error?.message || 'No se pudo actualizar la solicitud.'}`);
           }
       }
       window.responderSolicitudColaboracionProfesor = responderSolicitudColaboracionProfesor;
@@ -12600,7 +12631,7 @@
                   : 'No hay solicitudes de colaboración registradas.';
           } catch (error) {
               botones?.forEach(item => { item.disabled = false; });
-              alert(error?.message || 'No se pudo eliminar la solicitud.');
+              alert(`Eliminación de solicitud: ${error?.code ? `[${error.code}] ` : ''}${error?.message || 'No se pudo eliminar la solicitud.'}`);
           }
       }
       window.eliminarSolicitudColaboracionProfesor = eliminarSolicitudColaboracionProfesor;
@@ -12623,6 +12654,7 @@
           const boton = document.getElementById('btnEliminarSolicitudesColaboracionPendientes');
           if (boton) boton.disabled = true;
           let eliminadas = 0;
+          const fallidas = [];
           for (const solicitud of pendientes) {
               try {
                   const ok = await window.eliminarSolicitudColaboracionDocenteFirebase({
@@ -12630,7 +12662,10 @@
                       sectionId: solicitud.sectionId
                   });
                   if (ok) eliminadas += 1;
-              } catch (_) {}
+                  else fallidas.push(`${solicitud.uid}/${solicitud.sectionId}: ${window.ultimoErrorCooperacion?.code || 'error'} ${window.ultimoErrorCooperacion?.message || 'sin detalle'}`);
+              } catch (error) {
+                  fallidas.push(`${solicitud.uid}/${solicitud.sectionId}: ${error?.code || 'error'} ${error?.message || 'sin detalle'}`);
+              }
           }
           // Reconstruir la bandeja desde Firestore para evitar tarjetas fantasma.
           estudiantesProfesor = (Array.isArray(estudiantesProfesor) ? estudiantesProfesor : []).map(estudiante => ({
@@ -12641,8 +12676,13 @@
           }));
           await cargarSolicitudesColaboracionDirectas();
           const resumen = document.getElementById('resumenSolicitudesColaboracion');
-          if (resumen && eliminadas) {
-              resumen.textContent = `${eliminadas} solicitud${eliminadas === 1 ? '' : 'es'} pendiente${eliminadas === 1 ? '' : 's'} eliminada${eliminadas === 1 ? '' : 's'}.`;
+          if (resumen) {
+              const detalleFallos = fallidas.length
+                  ? ` Fallaron ${fallidas.length}: ${fallidas.slice(0, 3).join(' | ')}`
+                  : '';
+              resumen.textContent = eliminadas
+                  ? `${eliminadas} solicitud${eliminadas === 1 ? '' : 'es'} pendiente${eliminadas === 1 ? '' : 's'} eliminada${eliminadas === 1 ? '' : 's'}.${detalleFallos}`
+                  : `No se eliminó ninguna solicitud.${detalleFallos}`;
           }
       }
       window.eliminarSolicitudesColaboracionPendientes = eliminarSolicitudesColaboracionPendientes;
