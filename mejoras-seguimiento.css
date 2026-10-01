@@ -4435,6 +4435,42 @@ body.teacher-light-mode .teacher-filter-group h4{
 .teacher-student-grade-bar.is-automatic{fill:#38bdf8}
 .teacher-student-grade-bar.is-teacher{fill:#f59e0b}
 .teacher-student-grade-bar:hover{filter:brightness(1.18)}
+.teacher-student-grade-item.is-navigable{
+  cursor:pointer;
+  outline:none;
+}
+.teacher-student-grade-hit-target{
+  fill:transparent;
+  pointer-events:all;
+}
+.teacher-student-grade-item.is-navigable:hover .teacher-student-grade-bar,
+.teacher-student-grade-item.is-navigable:focus-visible .teacher-student-grade-bar{
+  filter:brightness(1.2);
+}
+.teacher-student-grade-item.is-navigable:hover text,
+.teacher-student-grade-item.is-navigable:focus-visible text{
+  fill:#f8fafc;
+  font-weight:800;
+}
+.teacher-student-grade-item.is-navigable:focus-visible .teacher-student-grade-hit-target{
+  fill:rgba(56,189,248,.12);
+  stroke:#7dd3fc;
+  stroke-width:2;
+}
+.teacher-student-grade-key-item.is-navigable{
+  cursor:pointer;
+}
+.teacher-student-grade-key-item.is-navigable:focus-visible{
+  outline:2px solid #38bdf8;
+  outline-offset:2px;
+}
+.teacher-activity.is-chart-selected{
+  animation:teacherChartSelection 1.8s ease-out;
+}
+@keyframes teacherChartSelection{
+  0%,35%{box-shadow:0 0 0 3px rgba(56,189,248,.82),0 0 28px rgba(56,189,248,.3)}
+  100%{box-shadow:none}
+}
 .teacher-student-grade-value{
   font-size:9px!important;
   font-weight:900;

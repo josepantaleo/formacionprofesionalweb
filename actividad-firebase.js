@@ -44,7 +44,7 @@
 
       // ============================================================
       // PEGA AQUÃƒÂ LA CONFIGURACIÃƒâ€œN DE TU PROYECTO FIREBASE
-      // Firebase Console -> ConfiguraciÃƒÂ³n del proyecto -> Tus apps -> Web
+      // Firebase Console -> ConfiguraciÃƒ³n del proyecto -> Tus apps -> Web
       // ============================================================
   const firebaseConfig = {
     apiKey: "AIzaSyA9Xvz6_NoyWIcl2gU2rLYsNzj_6uwB3hA",
@@ -57,7 +57,7 @@
   };
 
       // Esta clave identifica el sitio ante reCAPTCHA Enterprise y es pÃƒÂºblica.
-      // No pegues aquÃƒÂ­ claves de Gemini, Vertex AI, cuentas de servicio ni secretos.
+      // No pegues aquÃƒ­ claves de Gemini, Vertex AI, cuentas de servicio ni secretos.
       const APP_CHECK_RECAPTCHA_ENTERPRISE_SITE_KEY = "6Ld7l5stAAAAABjs2OrNxeDMaKZ6oAGERjopw3U9";
       const FIREBASE_AI_TEMPLATE_ID = "tutor-javascript-ipem146-v1-0-0";
       const FIREBASE_AI_MODEL_NAME = "gemini-2.5-flash";
@@ -70,7 +70,7 @@
         }
       })();
       window.VERSION_SCRIPT_FIREBASE = VERSION_SCRIPT;
-      // VersiÃƒÂ³n funcional del cÃƒÂ³digo que se sube y se revisa en ambos modos.
+      // VersiÃƒ³n funcional del cÃƒ³digo que se sube y se revisa en ambos modos.
       const VERSION_CODIGO_SUBIDO = "1.0";
       window.VERSION_CODIGO_SUBIDO = VERSION_CODIGO_SUBIDO;
 
@@ -84,7 +84,7 @@
       window.PRIMARY_TEACHER_ADMIN_EMAIL = PRIMARY_TEACHER_ADMIN_EMAIL;
       window.INITIAL_TEACHER_EMAILS = INITIAL_TEACHER_EMAILS;
       // La lista visible se actualiza desde Firestore. El administrador principal
-      // queda fijo como raÃƒÂ­z de confianza para recuperar y gestionar accesos.
+      // queda fijo como raÃƒ­z de confianza para recuperar y gestionar accesos.
       window.TEACHER_EMAILS = TEACHER_EMAILS;
       let auth = null, db = null, googleProvider = null;
       let teacherAuth = null, teacherDb = null, teacherProvider = null;
@@ -103,7 +103,7 @@
               isTokenAutoRefreshEnabled: true
             });
           } catch (error) {
-            console.warn("Firebase App Check no pudo inicializarse; se continuarÃƒÂ¡ sin bloquear el acceso.", error);
+            console.warn("Firebase App Check no pudo inicializarse; se continuarÃƒ¡ sin bloquear el acceso.", error);
             window.firebaseAppCheckError = error?.message || String(error);
           }
           try {
@@ -118,7 +118,7 @@
               }
             });
           } catch (error) {
-            console.warn("Firebase AI Logic no pudo inicializarse; se usarÃƒÂ¡ el tutor local.", error);
+            console.warn("Firebase AI Logic no pudo inicializarse; se usarÃƒ¡ el tutor local.", error);
           }
         }
         auth = getAuth(app);
@@ -161,11 +161,11 @@
       window.firebaseAIRealConfigurada = Boolean(firebaseAITemplateModel || firebaseAIDirectModel);
       window.consultarTutorIAFirebase = async function(payload = {}) {
         if (!firebaseAITemplateModel && !firebaseAIDirectModel) {
-          throw new Error("Firebase AI Logic todavÃƒÂ­a no estÃƒÂ¡ configurado.");
+          throw new Error("Firebase AI Logic todavÃƒ­a no estÃƒ¡ configurado.");
         }
         const user = auth?.currentUser;
         if (!user) {
-          throw new Error("El estudiante debe iniciar sesiÃƒÂ³n para consultar la IA.");
+          throw new Error("El estudiante debe iniciar sesiÃƒ³n para consultar la IA.");
         }
         const textoSeguro = (valor, limite) => String(valor || "").slice(0, limite);
         const parametros = {
@@ -181,15 +181,15 @@
         const instrucciones = [
           "Sos un tutor de JavaScript para estudiantes de nivel secundario.",
           "RespondÃƒÂ© en espaÃƒÂ±ol rioplatense, con tono claro y respetuoso.",
-          "AyudÃƒÂ¡ con pistas progresivas; no entregues la soluciÃƒÂ³n completa ni cÃƒÂ³digo listo para copiar.",
-          "UsÃƒÂ¡ el diagnÃƒÂ³stico local y el cÃƒÂ³digo del estudiante para seÃƒÂ±alar un ÃƒÂºnico prÃƒÂ³ximo paso verificable.",
-          `MÃƒÂ³dulo: ${parametros.nombreModulo}`,
+          "AyudÃƒ¡ con pistas progresivas; no entregues la soluciÃƒ³n completa ni cÃƒ³digo listo para copiar.",
+          "UsÃƒ¡ el diagnÃƒ³stico local y el cÃƒ³digo del estudiante para seÃƒÂ±alar un ÃƒÂºnico prÃƒ³ximo paso verificable.",
+          `MÃƒ³dulo: ${parametros.nombreModulo}`,
           `Consigna: ${parametros.consigna}`,
           `Modo: ${parametros.modo}`,
           `Pregunta: ${parametros.pregunta}`,
-          `CÃƒÂ³digo del estudiante:\n${parametros.codigo}`,
+          `CÃƒ³digo del estudiante:\n${parametros.codigo}`,
           `Conceptos esperados: ${parametros.conceptos}`,
-          `DiagnÃƒÂ³stico local: ${parametros.diagnosticoLocal}`,
+          `DiagnÃƒ³stico local: ${parametros.diagnosticoLocal}`,
           `Historial reciente:\n${parametros.historialReciente}`
         ].join("\n\n");
         const response = firebaseAITemplateModel
@@ -201,7 +201,7 @@
           response?.candidates?.[0]?.content?.parts?.map(p => p?.text || "").join("") ||
           ""
         ).trim();
-        if (!texto) throw new Error("La IA no devolviÃƒÂ³ una respuesta utilizable.");
+        if (!texto) throw new Error("La IA no devolviÃƒ³ una respuesta utilizable.");
         return texto;
       };
 
@@ -292,7 +292,7 @@
           };
           return autorizado;
         } catch (error) {
-          console.warn("No se pudo verificar la autorizaciÃƒÂ³n docente:", error);
+          console.warn("No se pudo verificar la autorizaciÃƒ³n docente:", error);
           window.estadoAutorizacionDocente = {
             autorizado: false,
             correo: correoNormalizado(user),
@@ -328,14 +328,14 @@
             const estado = window.estadoAutorizacionDocente || {};
             alert(estado.correoVerificado === false
               ? "La cuenta seleccionada no tiene el correo verificado y no puede autorizarse como docente."
-              : `La cuenta ${estado.correo || 'seleccionada'} no estÃƒÂ¡ autorizada como docente.`);
+              : `La cuenta ${estado.correo || 'seleccionada'} no estÃƒ¡ autorizada como docente.`);
             return false;
           }
           window.firebaseTeacherUser = credential.user;
           window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: credential.user }));
           return true;
         } catch (error) {
-          console.error("Error de autorizaciÃƒÂ³n docente:", error);
+          console.error("Error de autorizaciÃƒ³n docente:", error);
           if (error?.code !== "auth/popup-closed-by-user") {
             alert(mensajeErrorAutenticacion(error, "autorizar la cuenta docente"));
           }
@@ -345,7 +345,7 @@
 
       window.cerrarAutorizacionDocenteFirebase = async function() {
         if (!teacherAuth?.currentUser) {
-          alert("No hay una autorizaciÃƒÂ³n docente temporal activa.");
+          alert("No hay una autorizaciÃƒ³n docente temporal activa.");
           return false;
         }
         try {
@@ -362,8 +362,8 @@
           window.dispatchEvent(new CustomEvent("firebase-teacher-auth-changed", { detail: null }));
           return true;
         } catch (error) {
-          console.error("Error cerrando la autorizaciÃƒÂ³n docente:", error);
-          alert("No se pudo cerrar la autorizaciÃƒÂ³n docente temporal.");
+          console.error("Error cerrando la autorizaciÃƒ³n docente:", error);
+          alert("No se pudo cerrar la autorizaciÃƒ³n docente temporal.");
           return false;
         }
       };
@@ -412,7 +412,7 @@
           const referencia = doc(database, "docentesAutorizados", email);
           const existente = await getDoc(referencia);
           if (existente.exists()) continue;
-          const nombre = email === PRIMARY_TEACHER_ADMIN_EMAIL ? "AdministraciÃƒÂ³n institucional" : "Docente autorizado";
+          const nombre = email === PRIMARY_TEACHER_ADMIN_EMAIL ? "AdministraciÃƒ³n institucional" : "Docente autorizado";
           const nuevo = {
             email,
             nombre,
@@ -674,8 +674,8 @@
             window.__programacionDocentePanel = panel;
           }
           if (window.__programacionDocentePanel) {
-            const estado = { pendiente: "Pendiente", en_curso: "En curso", revisar: "Revisar", completada: "Completada" }[programacion?.estado] || "Sin programaciÃƒÂ³n";
-            window.__programacionDocentePanel.innerHTML = programacion ? `<div style="display:flex;justify-content:space-between;gap:.5rem;align-items:center"><strong><i class="fa-solid fa-clipboard-list"></i> ProgramaciÃƒÂ³n docente</strong><span style="font-size:.7rem;color:#7dd3fc">${estado}</span></div><h3 style="margin:.55rem 0 .35rem;font-size:1rem">${String(programacion.titulo || "Actividad asignada").replace(/[<>&"]/g, "")}</h3><p style="margin:0;white-space:pre-wrap;font-size:.78rem;line-height:1.45">${String(programacion.instrucciones || "").replace(/[<>&"]/g, "")}</p>${programacion.fechaEntrega ? `<small style="display:block;margin-top:.55rem;color:#fbbf24"><i class="fa-solid fa-calendar"></i> Entrega: ${String(programacion.fechaEntrega).replace(/[<>&"]/g, "")}</small>` : ""}<div id="comentariosDocenteEstudiantePanel" style="margin-top:.75rem;padding-top:.65rem;border-top:1px solid rgba(148,163,184,.2)"><strong style="display:block;font-size:.75rem;color:#bae6fd;margin-bottom:.4rem"><i class="fa-solid fa-comments"></i> Comentarios del docente</strong><div id="comentariosDocenteEstudianteLista"><small style="color:#94a3b8">Cargando comentarios...</small></div></div>` : "";
+            const estado = { pendiente: "Pendiente", en_curso: "En curso", revisar: "Revisar", completada: "Completada" }[programacion?.estado] || "Sin programaciÃƒ³n";
+            window.__programacionDocentePanel.innerHTML = programacion ? `<div style="display:flex;justify-content:space-between;gap:.5rem;align-items:center"><strong><i class="fa-solid fa-clipboard-list"></i> ProgramaciÃƒ³n docente</strong><span style="font-size:.7rem;color:#7dd3fc">${estado}</span></div><h3 style="margin:.55rem 0 .35rem;font-size:1rem">${String(programacion.titulo || "Actividad asignada").replace(/[<>&"]/g, "")}</h3><p style="margin:0;white-space:pre-wrap;font-size:.78rem;line-height:1.45">${String(programacion.instrucciones || "").replace(/[<>&"]/g, "")}</p>${programacion.fechaEntrega ? `<small style="display:block;margin-top:.55rem;color:#fbbf24"><i class="fa-solid fa-calendar"></i> Entrega: ${String(programacion.fechaEntrega).replace(/[<>&"]/g, "")}</small>` : ""}<div id="comentariosDocenteEstudiantePanel" style="margin-top:.75rem;padding-top:.65rem;border-top:1px solid rgba(148,163,184,.2)"><strong style="display:block;font-size:.75rem;color:#bae6fd;margin-bottom:.4rem"><i class="fa-solid fa-comments"></i> Comentarios del docente</strong><div id="comentariosDocenteEstudianteLista"><small style="color:#94a3b8">Cargando comentarios...</small></div></div>` : "";
             window.__programacionDocentePanel.hidden = !programacion;
           }
           window.dispatchEvent(new CustomEvent("estado-cuenta-estudiante", {
@@ -752,9 +752,9 @@
               const texto = String(item.texto || "").replace(/[<>&"]/g, "");
               const autor = String(item.autor || "Docente").replace(/[<>&"]/g, "");
               const fecha = item.creadoEn?.toDate ? item.creadoEn.toDate().toLocaleString("es-AR") : "Ahora";
-              return `<article style="padding:.45rem .5rem;margin-top:.35rem;border-radius:6px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.16)"><p style="margin:0;font-size:.73rem;line-height:1.4;white-space:pre-wrap">${texto}</p><small style="display:block;margin-top:.25rem;color:#94a3b8;font-size:.6rem">${autor} Ã‚Â· ${fecha}</small></article>`;
+              return `<article style="padding:.45rem .5rem;margin-top:.35rem;border-radius:6px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.16)"><p style="margin:0;font-size:.73rem;line-height:1.4;white-space:pre-wrap">${texto}</p><small style="display:block;margin-top:.25rem;color:#94a3b8;font-size:.6rem">${autor} Ã‚· ${fecha}</small></article>`;
             }).join("")
-          : '<small style="color:#94a3b8">TodavÃƒÂ­a no hay comentarios.</small>';
+          : '<small style="color:#94a3b8">TodavÃƒ­a no hay comentarios.</small>';
       });
 
       window.iniciarClaseFirebase = async function() {
@@ -775,7 +775,7 @@
           return true;
         } catch (error) {
           console.error("Error iniciando la clase:", error);
-          alert("No se pudo iniciar la clase. VerificÃƒÂ¡ las reglas de Firestore.");
+          alert("No se pudo iniciar la clase. VerificÃƒ¡ las reglas de Firestore.");
           return false;
         }
       };
@@ -783,7 +783,7 @@
       window.finalizarClaseFirebase = async function(omitirConfirmacion = false) {
         const autorizado = await window.autorizarDocenteFirebase?.();
         if (!autorizado) return false;
-        if (!omitirConfirmacion && !confirm("Se bloquearÃƒÂ¡n las actividades y se detendrÃƒÂ¡n los cronÃƒÂ³metros de todos los estudiantes conectados. Ã‚Â¿Finalizar la clase?")) {
+        if (!omitirConfirmacion && !confirm("Se bloquearÃƒ¡n las actividades y se detendrÃƒ¡n los cronÃƒ³metros de todos los estudiantes conectados. Ã‚¿Finalizar la clase?")) {
           return false;
         }
         const { user, database } = contextoDocenteFirebase();
@@ -801,7 +801,7 @@
           return true;
         } catch (error) {
           console.error("Error finalizando la clase:", error);
-          alert("No se pudo finalizar la clase. VerificÃƒÂ¡ las reglas de Firestore.");
+          alert("No se pudo finalizar la clase. VerificÃƒ¡ las reglas de Firestore.");
           return false;
         }
       };
@@ -815,7 +815,7 @@
           const referencia = doc(database, "controlClase", idClaseActual());
           const estadoActual = await getDoc(referencia);
           if (!estadoActual.exists() || estadoActual.data()?.iniciada !== true) {
-            alert("Primero iniciÃƒÂ¡ la clase. DespuÃƒÂ©s podrÃƒÂ¡s pausar, continuar o reiniciar los cronÃƒÂ³metros.");
+            alert("Primero iniciÃƒ¡ la clase. DespuÃƒÂ©s podrÃƒ¡s pausar, continuar o reiniciar los cronÃƒ³metros.");
             return false;
           }
           const payload = {
@@ -833,19 +833,19 @@
           await setDoc(referencia, payload, { merge: true });
           return true;
         } catch (error) {
-          console.error("Error controlando los cronÃƒÂ³metros:", error);
-          alert("No se pudo actualizar el cronÃƒÂ³metro. VerificÃƒÂ¡ las reglas de Firestore.");
+          console.error("Error controlando los cronÃƒ³metros:", error);
+          alert("No se pudo actualizar el cronÃƒ³metro. VerificÃƒ¡ las reglas de Firestore.");
           return false;
         }
       };
 
       window.iniciarSesionGoogle = async function() {
         if (!firebaseConfigured) {
-          alert("Firebase todavÃƒÂ­a no estÃƒÂ¡ configurado. Reemplaza los valores REEMPLAZAR_ en la configuraciÃƒÂ³n del archivo.");
+          alert("Firebase todavÃƒ­a no estÃƒ¡ configurado. Reemplaza los valores REEMPLAZAR_ en la configuraciÃƒ³n del archivo.");
           return;
         }
         if (window.location.protocol === "file:") {
-          alert("Esta pÃƒÂ¡gina estÃƒÂ¡ abierta como archivo local. Para ingresar con Google, abrila desde:\n\nhttp://localhost:5500/actividad.html");
+          alert("Esta pÃƒ¡gina estÃƒ¡ abierta como archivo local. Para ingresar con Google, abrila desde:\n\nhttp://localhost:5500/actividad.html");
           return;
         }
         try {
@@ -876,10 +876,10 @@
           await Promise.all(sesionesActivas);
         } catch (error) {
           console.error("Error cerrando las sesiones de Firebase:", error);
-          alert("No se pudo cerrar la sesiÃƒÂ³n completamente. Intenta nuevamente.");
+          alert("No se pudo cerrar la sesiÃƒ³n completamente. Intenta nuevamente.");
           return;
         }
-        // El estado local estÃƒÂ¡ aislado por UID. No se comparte con otra cuenta.
+        // El estado local estÃƒ¡ aislado por UID. No se comparte con otra cuenta.
         // Firebase conserva el avance definitivo en Firestore.
         localStorage.removeItem('firebase_active_uid');
         firebaseStorageUid = null;
@@ -911,7 +911,7 @@
             await setDoc(ref, { ...recuperacion, actualizadoEn: serverTimestamp() }, { merge: true });
             Object.assign(datos, recuperacion);
           } catch (error) {
-            console.warn("No se pudo recuperar automÃƒÂ¡ticamente el perfil antiguo:", error);
+            console.warn("No se pudo recuperar automÃƒ¡ticamente el perfil antiguo:", error);
           }
         }
         return datos;
@@ -922,7 +922,7 @@
         if (!user) {
           window.ultimoErrorGuardadoFirebase = {
             code: "auth-required",
-            message: "No hay una sesiÃƒÂ³n autenticada.",
+            message: "No hay una sesiÃƒ³n autenticada.",
             projectId: firebaseConfig.projectId
           };
           return false;
@@ -930,7 +930,7 @@
         if (!db) {
           window.ultimoErrorGuardadoFirebase = {
             code: "firebase-not-initialized",
-            message: "Firestore no estÃƒÂ¡ inicializado.",
+            message: "Firestore no estÃƒ¡ inicializado.",
             projectId: firebaseConfig.projectId
           };
           return false;
@@ -1094,7 +1094,7 @@
           const snapshot = await getDocs(query(referencia, orderBy("fechaEpoch", "desc"), limit(Math.min(200, Math.max(1, Number(limite) || 100)))));
           return snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
         } catch (error) {
-          console.warn("No se pudo cargar la auditorÃƒÂ­a de portapapeles:", error);
+          console.warn("No se pudo cargar la auditorÃƒ­a de portapapeles:", error);
           return [];
         }
       };
@@ -1137,7 +1137,7 @@
       }
       window.mostrarAlertaMensajeRecibido = mostrarAlertaMensajeRecibido;
 
-      // SeÃƒÂ±al liviana e independiente del progreso y del cÃƒÂ³digo completo.
+      // SeÃƒÂ±al liviana e independiente del progreso y del cÃƒ³digo completo.
       // Permite que el panel docente detecte al estudiante aunque no haya un guardado pendiente.
       window.actualizarControlEstudianteFirebase = async function(estado = {}) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
@@ -1239,7 +1239,7 @@
             error: error?.code || error?.message || "Error de presencia",
             ultimoLatido: Date.now()
           });
-          console.warn("No se pudo actualizar la seÃƒÂ±al de conexiÃƒÂ³n del estudiante:", error);
+          console.warn("No se pudo actualizar la seÃƒÂ±al de conexiÃƒ³n del estudiante:", error);
           return false;
         }
       };
@@ -1365,7 +1365,7 @@
           }, { merge: true });
           return true;
         } catch (error) {
-          console.error("No se pudo guardar el cÃƒÂ³digo colaborativo:", error);
+          console.error("No se pudo guardar el cÃƒ³digo colaborativo:", error);
           return false;
         }
       };
@@ -1438,16 +1438,16 @@
               ? estudiante.data()?.estadoCuenta
               : "sin_registro";
             if (estadoCuenta !== "activo") {
-              return `Firestore rechazÃƒÂ³ la decisiÃƒÂ³n porque la cuenta figura como "${estadoCuenta || "pendiente"}". El docente debe aprobar o reactivar la cuenta.`;
+              return `Firestore rechazÃƒ³ la decisiÃƒ³n porque la cuenta figura como "${estadoCuenta || "pendiente"}". El docente debe aprobar o reactivar la cuenta.`;
             }
           } catch (_) {}
-          return "Firestore rechazÃƒÂ³ la decisiÃƒÂ³n. Las reglas publicadas no coinciden con esta versiÃƒÂ³n: publicÃƒÂ¡ el archivo reglas.txt actualizado en Firebase.";
+          return "Firestore rechazÃƒ³ la decisiÃƒ³n. Las reglas publicadas no coinciden con esta versiÃƒ³n: publicÃƒ¡ el archivo reglas.txt actualizado en Firebase.";
         }
         if (codigo.includes("unavailable") || codigo.includes("network") || navigator.onLine === false) {
-          return "No hay conexiÃƒÂ³n con Firebase. VerificÃƒÂ¡ Internet e intentÃƒÂ¡ nuevamente.";
+          return "No hay conexiÃƒ³n con Firebase. VerificÃƒ¡ Internet e intentÃƒ¡ nuevamente.";
         }
         const detalle = String(error?.message || codigo || "error desconocido").slice(0, 240);
-        return `No se pudo registrar la decisiÃƒÂ³n: ${detalle}`;
+        return `No se pudo registrar la decisiÃƒ³n: ${detalle}`;
       }
 
       async function iniciarSesionCodigoCRDT({ uid, sectionId, codigoInicial = "", rol = "estudiante" }) {
@@ -1586,14 +1586,14 @@
             }
             localStorage.removeItem(colaRespaldoClave);
             notificar("synced", rol === "docente"
-              ? "CÃ³digo del estudiante actualizado y sincronizado"
+              ? "Código del estudiante actualizado y sincronizado"
               : "Cambios sincronizados");
             return true;
           } catch (error) {
-            console.error("No se pudo publicar la actualizaciÃƒÂ³n CRDT:", error);
+            console.error("No se pudo publicar la actualizaciÃƒ³n CRDT:", error);
             cola.unshift(lote);
             persistirColaPendiente();
-            notificar("error", "Cambios pendientes; se reintentarÃƒÂ¡n");
+            notificar("error", "Cambios pendientes; se reintentarÃƒ¡n");
             return false;
           }
          };
@@ -1621,7 +1621,7 @@
           });
         }, error => {
           console.error("Error escuchando actualizaciones CRDT:", error);
-          notificar("error", "ConexiÃƒÂ³n colaborativa interrumpida");
+          notificar("error", "ConexiÃƒ³n colaborativa interrumpida");
         });
 
         let detenerPresencia = null;
@@ -1689,7 +1689,7 @@
           metaRef,
           snapshot => notificarModoCooperacion(snapshot.exists() ? snapshot.data() : {}),
           error => {
-            console.error("Error escuchando el modo de cooperaciÃƒÂ³n:", error);
+            console.error("Error escuchando el modo de cooperaciÃƒ³n:", error);
             notificar("error", "No se pudo consultar el consentimiento");
           }
         );
@@ -1770,10 +1770,10 @@
                if (estadoActual === "pendiente" ||
                    (estadoActual === "aceptado" && meta.modoCooperacionActiva === true &&
                     meta.edicionCooperativaPausada === false)) {
-                 throw new Error("Ya existe una solicitud pendiente o una colaboraciÃ³n activa.");
+                 throw new Error("Ya existe una solicitud pendiente o una colaboración activa.");
                }
                if (!["sin_solicitud", "rechazado", "finalizado"].includes(estadoActual)) {
-                 throw new Error("La colaboraciÃ³n no admite una nueva solicitud en su estado actual.");
+                 throw new Error("La colaboración no admite una nueva solicitud en su estado actual.");
                }
                const payload = {
                  id: `${uid}_${sectionId}`,
@@ -1842,7 +1842,7 @@
                    metaSnapshot.data().estadoConsentimiento !== "pendiente" ||
                    metaSnapshot.data().solicitanteRol !== "docente" ||
                    (solicitudSnapshot.exists() && solicitudSnapshot.data().estado !== "pendiente")) {
-                 throw new Error("La solicitud ya fue respondida o no estÃ¡ dirigida al estudiante.");
+                 throw new Error("La solicitud ya fue respondida o no está dirigida al estudiante.");
                }
                const estado = aceptada ? "aceptado" : "rechazado";
                const rechazo = aceptada ? "" : String(motivo || "").trim().slice(0, 300);
@@ -1895,7 +1895,7 @@
              await runTransaction(database, async transaction => {
                const snapshot = await transaction.get(metaRef);
                if (!snapshot.exists() || snapshot.data().estadoConsentimiento !== "aceptado") {
-                 throw new Error("Solo se puede finalizar una colaboraciÃ³n aceptada.");
+                 throw new Error("Solo se puede finalizar una colaboración aceptada.");
                }
                transaction.update(metaRef, {
                  modoCooperacionActiva: false,
@@ -1997,7 +1997,7 @@
           }
         };
         sesionesCodigoCRDT.set(clave, sesion);
-        notificar("synced", "ColaboraciÃƒÂ³n activa");
+        notificar("synced", "ColaboraciÃƒ³n activa");
         return sesion;
       }
 
@@ -2029,7 +2029,7 @@
           const iconoCambio = document.createElement("i");
           iconoCambio.className = `fa-solid ${esDocente ? "fa-chalkboard-user" : "fa-user-graduate"}`;
           const textoCambio = document.createElement("span");
-          textoCambio.textContent = `Cambio de ${esDocente ? "docente" : "alumno"}${nombre ? ` Ã‚Â· ${String(nombre).split("@")[0]}` : ""}`;
+          textoCambio.textContent = `Cambio de ${esDocente ? "docente" : "alumno"}${nombre ? ` Ã‚· ${String(nombre).split("@")[0]}` : ""}`;
           autorCambioElemento.replaceChildren(iconoCambio, textoCambio);
           textarea.classList.add(esDocente ? "crdt-change-teacher" : "crdt-change-student");
           temporizadorAutorCambio = setTimeout(() => {
@@ -2097,7 +2097,7 @@
         const presenciaElemento = document.createElement("span");
         presenciaElemento.className = "collaboration-presence";
         presenciaElemento.setAttribute("aria-live", "polite");
-        presenciaElemento.setAttribute("aria-label", "Participantes del modo cooperaciÃƒÂ³n");
+        presenciaElemento.setAttribute("aria-label", "Participantes del modo cooperaciÃƒ³n");
         if (estadoElemento) {
           estadoElemento.insertAdjacentElement("afterend", presenciaElemento);
         } else {
@@ -2121,11 +2121,11 @@
             persona.className = `collaboration-presence-person${item.inactivo ? " is-idle" : ""}`;
             const nombre = item.propio ? "Vos" : String(item.nombre || "Participante");
             const rol = item.rol === "docente" ? "Docente" : "Estudiante";
-            persona.title = `${nombre} Ã‚Â· ${rol} Ã‚Â· ${item.inactivo ? "seÃƒÂ±al demorada" : "en lÃƒÂ­nea"}`;
+            persona.title = `${nombre} Ã‚· ${rol} Ã‚· ${item.inactivo ? "seÃƒÂ±al demorada" : "en lÃƒ­nea"}`;
             const punto = document.createElement("i");
             punto.className = "fa-solid fa-circle";
             const etiqueta = document.createElement("span");
-            etiqueta.textContent = `${nombre} Ã‚Â· ${rol}`;
+            etiqueta.textContent = `${nombre} Ã‚· ${rol}`;
             persona.append(punto, etiqueta);
             presenciaElemento.appendChild(persona);
           });
@@ -2142,7 +2142,7 @@
         chatElemento.className = "collaboration-chat";
         chatElemento.innerHTML = `
           <button class="collaboration-chat-toggle" type="button" aria-expanded="false">
-            <span><i class="fa-solid fa-comments"></i> Mensajes de cooperaciÃƒÂ³n</span>
+            <span><i class="fa-solid fa-comments"></i> Mensajes de cooperaciÃƒ³n</span>
             <span>
               <span class="collaboration-chat-unread" hidden>0</span>
               <i class="fa-solid fa-chevron-down"></i>
@@ -2153,7 +2153,7 @@
             <div class="collaboration-chat-quick"></div>
             <div class="collaboration-chat-tools">
               <button class="collaboration-chat-tool collaboration-chat-cite" type="button" title="Citar el texto seleccionado en el editor">
-                <i class="fa-solid fa-code"></i><span>Citar lÃƒÂ­neas</span>
+                <i class="fa-solid fa-code"></i><span>Citar lÃƒ­neas</span>
               </button>
               <button class="collaboration-chat-tool collaboration-chat-sound" type="button" aria-pressed="false" title="Activar sonido para mensajes nuevos">
                 <i class="fa-solid fa-volume-xmark"></i><span>Sonido</span>
@@ -2164,13 +2164,13 @@
               <button type="button" aria-label="Quitar cita" title="Quitar cita"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form class="collaboration-chat-composer">
-              <textarea maxlength="600" rows="2" placeholder="EscribÃƒÂ­ un mensaje sobre esta actividadÃ¢â‚¬Â¦" aria-label="Mensaje de cooperaciÃƒÂ³n"></textarea>
+              <textarea maxlength="600" rows="2" placeholder="EscribÃƒ­ un mensaje sobre esta actividadÃ¢â‚¬Â¦" aria-label="Mensaje de cooperaciÃƒ³n"></textarea>
               <button class="btn btn-primary collaboration-chat-send" type="submit" title="Enviar mensaje" aria-label="Enviar mensaje">
                 <i class="fa-solid fa-paper-plane"></i>
               </button>
             </form>
             <div class="collaboration-chat-footer">
-              <span class="collaboration-chat-status">Enter para enviar Ã‚Â· Shift+Enter para nueva lÃƒÂ­nea</span>
+              <span class="collaboration-chat-status">Enter para enviar Ã‚· Shift+Enter para nueva lÃƒ­nea</span>
               <span class="collaboration-chat-counter">0/600</span>
             </div>
           </div>`;
@@ -2253,7 +2253,7 @@
           cantidadNoLeidos = 0;
           actualizarNoLeidos();
           void sesion.actualizarEstadoMensajes(mensajesActuales, true).catch(error => {
-            console.error("No se pudieron marcar los mensajes como leÃƒÂ­dos:", error);
+            console.error("No se pudieron marcar los mensajes como leÃƒ­dos:", error);
           });
         };
         const revisarVisibilidadChat = () => {
@@ -2285,7 +2285,7 @@
           if (!mensajes.length) {
             const vacio = document.createElement("div");
             vacio.className = "collaboration-chat-empty";
-            vacio.textContent = "TodavÃƒÂ­a no hay mensajes en esta actividad.";
+            vacio.textContent = "TodavÃƒ­a no hay mensajes en esta actividad.";
             chatMensajes.appendChild(vacio);
             return;
           }
@@ -2313,8 +2313,8 @@
               const lineaInicio = Math.max(1, Number(mensaje.cita.lineaInicio) || 1);
               const lineaFin = Math.max(lineaInicio, Number(mensaje.cita.lineaFin) || lineaInicio);
               citaTitulo.textContent = lineaInicio === lineaFin
-                ? `LÃƒÂ­nea ${lineaInicio}`
-                : `LÃƒÂ­neas ${lineaInicio}-${lineaFin}`;
+                ? `LÃƒ­nea ${lineaInicio}`
+                : `LÃƒ­neas ${lineaInicio}-${lineaFin}`;
               const citaTexto = document.createElement("span");
               citaTexto.textContent = String(mensaje.cita.texto || "");
               cita.append(citaTitulo, citaTexto);
@@ -2328,7 +2328,7 @@
               const entregado = Boolean(mensaje[campoEntregado]);
               const estado = document.createElement("div");
               estado.className = `collaboration-chat-message-status${leido ? " is-read" : ""}`;
-              estado.innerHTML = `<i class="fa-solid ${leido ? "fa-check-double" : entregado ? "fa-check-double" : "fa-check"}"></i><span>${leido ? "LeÃƒÂ­do" : entregado ? "Entregado" : "Enviado"}</span>`;
+              estado.innerHTML = `<i class="fa-solid ${leido ? "fa-check-double" : entregado ? "fa-check-double" : "fa-check"}"></i><span>${leido ? "LeÃƒ­do" : entregado ? "Entregado" : "Enviado"}</span>`;
               elemento.appendChild(estado);
             }
             chatMensajes.appendChild(elemento);
@@ -2384,14 +2384,14 @@
           const lineaFin = lineaInicio + codigo.slice(inicio, fin).split("\n").length - 1;
           const textoCitado = codigo.slice(inicio, fin).trimEnd().slice(0, 1200);
           if (!textoCitado) {
-            mostrarEstadoChat("SeleccionÃƒÂ¡ una lÃƒÂ­nea de cÃƒÂ³digo para citar", "is-error");
+            mostrarEstadoChat("SeleccionÃƒ¡ una lÃƒ­nea de cÃƒ³digo para citar", "is-error");
             textarea.focus();
             return;
           }
           citaPendiente = { lineaInicio, lineaFin, texto: textoCitado };
           chatCitaTitulo.textContent = lineaInicio === lineaFin
-            ? `Citando lÃƒÂ­nea ${lineaInicio}`
-            : `Citando lÃƒÂ­neas ${lineaInicio}-${lineaFin}`;
+            ? `Citando lÃƒ­nea ${lineaInicio}`
+            : `Citando lÃƒ­neas ${lineaInicio}-${lineaFin}`;
           chatCitaCodigo.textContent = textoCitado;
           chatCita.hidden = false;
           chatEntrada.focus();
@@ -2410,8 +2410,8 @@
         });
 
         const respuestasRapidas = sesion.rol === "docente"
-          ? ["RevisÃƒÂ¡ esta lÃƒÂ­nea", "ProbÃƒÂ¡ nuevamente", "EstÃƒÂ¡ correcto", "Explicame esta parte"]
-          : ["Necesito ayuda", "Ya lo corregÃƒÂ­", "Ã‚Â¿EstÃƒÂ¡ bien asÃƒÂ­?", "No entiendo el error"];
+          ? ["RevisÃƒ¡ esta lÃƒ­nea", "ProbÃƒ¡ nuevamente", "EstÃƒ¡ correcto", "Explicame esta parte"]
+          : ["Necesito ayuda", "Ya lo corregÃƒ­", "Ã‚¿EstÃƒ¡ bien asÃƒ­?", "No entiendo el error"];
         respuestasRapidas.forEach(textoRapido => {
           const boton = document.createElement("button");
           boton.type = "button";
@@ -2437,7 +2437,7 @@
           const contenido = chatEntrada.value.trim();
           if (!contenido || chatEnviar.disabled) return;
           if (Date.now() - ultimoEnvioMensaje < 800) {
-            mostrarEstadoChat("EsperÃƒÂ¡ un momento antes de enviar otro mensaje", "is-error");
+            mostrarEstadoChat("EsperÃƒ¡ un momento antes de enviar otro mensaje", "is-error");
             return;
           }
           ultimoEnvioMensaje = Date.now();
@@ -2452,7 +2452,7 @@
             mostrarEstadoChat("Mensaje enviado");
           } catch (error) {
             console.error("No se pudo enviar el mensaje colaborativo:", error);
-            mostrarEstadoChat("No se pudo enviar. IntentÃƒÂ¡ nuevamente.", "is-error");
+            mostrarEstadoChat("No se pudo enviar. IntentÃƒ¡ nuevamente.", "is-error");
           } finally {
             chatEnviar.disabled = false;
             chatEntrada.disabled = false;
@@ -2504,7 +2504,7 @@
         if (activa?.uid === user.uid && activa.sectionId === sec.id && activa.sesion) return;
         if (activa?.sesion) {
           const cerrada = await activa.sesion.destroy().catch(error => {
-            console.warn("No se pudo cerrar la sesiÃƒÂ³n cooperativa anterior:", error);
+            console.warn("No se pudo cerrar la sesiÃƒ³n cooperativa anterior:", error);
             return false;
           });
           if (cerrada === false) {
@@ -2530,7 +2530,7 @@
           window.__sesionCRDTEstudianteActiva = { uid: user.uid, sectionId: sec.id, textarea, sesion };
         } catch (error) {
           console.error(`No se pudo iniciar CRDT en ${sec.id}:`, error);
-          if (estado) estado.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ColaboraciÃƒÂ³n no disponible';
+          if (estado) estado.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ColaboraciÃƒ³n no disponible';
         }
       };
       window.addEventListener("seccion-estudiante-cambiada", () => {
@@ -2608,7 +2608,7 @@
                 metaSnapshot.data()?.estadoConsentimiento !== "pendiente" ||
                 metaSnapshot.data()?.solicitanteRol !== "docente" ||
                 (solicitudSnapshot.exists() && solicitudSnapshot.data()?.estado !== "pendiente")) {
-              throw new Error("La solicitud ya fue respondida o no estÃ¡ dirigida al estudiante.");
+              throw new Error("La solicitud ya fue respondida o no está dirigida al estudiante.");
             }
             const estado = aceptada ? "aceptado" : "rechazado";
             const rechazo = aceptada ? "" : String(motivo || "").trim().slice(0, 300);
@@ -2679,7 +2679,7 @@
                 metaSnapshot.data()?.estadoConsentimiento !== "pendiente" ||
                 metaSnapshot.data()?.solicitanteRol !== "estudiante" ||
                 (solicitudSnapshot.exists() && solicitudSnapshot.data()?.estado !== "pendiente")) {
-              throw new Error("La solicitud ya fue respondida o no estÃ¡ dirigida al docente.");
+              throw new Error("La solicitud ya fue respondida o no está dirigida al docente.");
             }
             const estado = aceptada ? "aceptado" : "rechazado";
             const rechazo = aceptada ? "" : String(motivo || "").trim().slice(0, 300);
@@ -2735,7 +2735,7 @@
       } = {}) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!user || !db || !uid || user.uid !== uid || !sectionId) return false;
-        const descripcion = String(objetivo || "Necesito ayuda para revisar mi cÃƒÂ³digo.").trim().slice(0, 500);
+        const descripcion = String(objetivo || "Necesito ayuda para revisar mi cÃƒ³digo.").trim().slice(0, 500);
         const id = `${uid}_${sectionId}`;
         try {
           const solicitudRef = doc(db, "solicitudesColaboracion", id);
@@ -2759,10 +2759,10 @@
             if (estadoActual === "pendiente" ||
                 (estadoActual === "aceptado" && meta.modoCooperacionActiva === true &&
                  meta.edicionCooperativaPausada === false)) {
-              throw new Error("Ya existe una solicitud pendiente o una colaboraciÃ³n activa.");
+              throw new Error("Ya existe una solicitud pendiente o una colaboración activa.");
             }
             if (!["sin_solicitud", "rechazado", "finalizado"].includes(estadoActual)) {
-              throw new Error("La colaboraciÃ³n no admite una nueva solicitud en su estado actual.");
+              throw new Error("La colaboración no admite una nueva solicitud en su estado actual.");
             }
             const nombre = String(solicitadoPor || user.displayName || user.email || "Estudiante").slice(0, 254);
             transaction.set(solicitudRef, {
@@ -2833,7 +2833,7 @@
         if (!autorizado || !contexto.database) {
           window.ultimoErrorCooperacion = {
             code: "teacher-not-ready",
-            message: "La autorizaciÃ³n docente todavÃ­a no estÃ¡ lista."
+            message: "La autorización docente todavía no está lista."
           };
           return [];
         }
@@ -2859,7 +2859,7 @@
         }
       };
 
-      // Elimina una solicitud de colaboraciÃ³n y deja la metadata preparada
+      // Elimina una solicitud de colaboración y deja la metadata preparada
       // para una nueva solicitud. El docente puede limpiar cualquier estado;
       // el estudiante solamente su propia solicitud pendiente.
       window.eliminarSolicitudColaboracionDocenteFirebase = async function({
@@ -2873,7 +2873,7 @@
         try {
           await user.getIdToken(true);
           if (!(await verificarUsuarioDocente(user))) {
-            throw new Error("La sesiÃ³n docente ya no estÃ¡ autorizada. VolvÃ© a iniciar sesiÃ³n.");
+            throw new Error("La sesión docente ya no está autorizada. Volvé a iniciar sesión.");
           }
           const solicitudRef = doc(database, "solicitudesColaboracion", `${uid}_${sectionId}`);
           const metaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId);
@@ -3194,7 +3194,7 @@
         const autorizado = await window.autorizarDocenteFirebase?.();
         if (!autorizado || !uid || !sectionId) return { ok: false, error: "Docente no autorizado." };
         const { database } = contextoDocenteFirebase();
-        if (!database) return { ok: false, error: "Firebase no estÃƒÂ¡ disponible." };
+        if (!database) return { ok: false, error: "Firebase no estÃƒ¡ disponible." };
         try {
           const referencia = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes");
           const snapshot = await getDocs(referencia);
@@ -3210,7 +3210,7 @@
           return { ok: true, eliminados };
         } catch (error) {
           console.error("No se pudo vaciar el chat cooperativo:", error);
-          return { ok: false, error: error?.message || "Firebase rechazÃƒÂ³ la eliminaciÃƒÂ³n." };
+          return { ok: false, error: error?.message || "Firebase rechazÃƒ³ la eliminaciÃƒ³n." };
         }
       };
 
@@ -3245,7 +3245,7 @@
           }, { merge: true });
           return true;
         } catch (error) {
-          console.error("No se pudo guardar la programaciÃƒÂ³n docente:", error);
+          console.error("No se pudo guardar la programaciÃƒ³n docente:", error);
           return false;
         }
       };
@@ -3294,7 +3294,7 @@
           const snap = await getDocs(collection(database, "estudiantes", uid, "historialProgramacionDocente"));
           return snap.docs.map(item => ({ id: item.id, ...item.data() })).sort((a, b) => (b.guardadoEn?.toMillis?.() || 0) - (a.guardadoEn?.toMillis?.() || 0));
         } catch (error) {
-          console.error("No se pudo cargar el historial de programaciÃƒÂ³n:", error);
+          console.error("No se pudo cargar el historial de programaciÃƒ³n:", error);
           return [];
         }
       };
@@ -3371,7 +3371,7 @@
         if (!user || !database || !uid || !revision) return false;
         try {
           if (!(await verificarUsuarioDocente(user))) {
-            window.ultimoErrorRevisionDocente = { code: "teacher-not-authorized", message: "La cuenta no estÃƒÂ¡ autorizada como docente." };
+            window.ultimoErrorRevisionDocente = { code: "teacher-not-authorized", message: "La cuenta no estÃƒ¡ autorizada como docente." };
             return false;
           }
           const estudianteRef = doc(database, "estudiantes", uid);
@@ -3465,7 +3465,7 @@
           });
           return true;
         } catch (error) {
-          console.error("Error guardando revisiÃƒÂ³n docente:", error);
+          console.error("Error guardando revisiÃƒ³n docente:", error);
           window.ultimoErrorRevisionDocente = { code: error?.code || "", message: error?.message || "Error desconocido" };
           return false;
         }
@@ -3480,7 +3480,7 @@
           if (!(await verificarUsuarioDocente(user))) {
             window.ultimoErrorNotaDesafioDocente = {
               code: "teacher-not-authorized",
-              message: "La cuenta no estÃƒÂ¡ autorizada como docente."
+              message: "La cuenta no estÃƒ¡ autorizada como docente."
             };
             return false;
           }
@@ -3506,7 +3506,7 @@
             if (cambio.restaurar === true) {
               delete notasDocente[sectionId];
               valorNuevo = Number.isFinite(notaAutomatica) ? notaAutomatica : null;
-              motivoNuevo = motivoNuevo || "RestauraciÃƒÂ³n de la calificaciÃƒÂ³n automÃƒÂ¡tica";
+              motivoNuevo = motivoNuevo || "RestauraciÃƒ³n de la calificaciÃƒ³n automÃƒ¡tica";
             } else {
               const nota = Number(cambio.nota);
               if (!Number.isFinite(nota) || nota < 0 || nota > 10) {
@@ -3564,7 +3564,7 @@
           });
           return true;
         } catch (error) {
-          console.error("Error guardando nota docente del desafÃƒÂ­o:", error);
+          console.error("Error guardando nota docente del desafÃƒ­o:", error);
           window.ultimoErrorNotaDesafioDocente = {
             code: error?.code || "",
             message: error?.message || "Error desconocido"
@@ -3650,7 +3650,7 @@
               return fechaB - fechaA;
             });
         } catch (error) {
-          console.error("Error consultando historial de notas por desafÃƒÂ­o:", error);
+          console.error("Error consultando historial de notas por desafÃƒ­o:", error);
           window.ultimoErrorHistorialNotasDesafios = {
             code: error?.code || "",
             message: error?.message || "Error desconocido"
@@ -3719,7 +3719,7 @@
           });
           return true;
         } catch (error) {
-          console.error("Error guardando la configuraciÃƒÂ³n de seguimiento:", error);
+          console.error("Error guardando la configuraciÃƒ³n de seguimiento:", error);
           return false;
         }
       };
@@ -3786,7 +3786,7 @@
           });
           return true;
         } catch (error) {
-          console.error("Error guardando la rÃƒÂºbrica socrÃƒÂ¡tica:", error);
+          console.error("Error guardando la rÃƒÂºbrica socrÃƒ¡tica:", error);
           return false;
         }
       };
@@ -3833,7 +3833,7 @@
             id: `mensaje-${planSeguro.id}`,
             tipo: "refuerzo",
             asunto: `Plan de refuerzo: ${planSeguro.contenido}`,
-            texto: `${planSeguro.indicaciones}\n\nActividad de comprobaciÃƒÂ³n: ${planSeguro.actividadObjetivoTitulo}${planSeguro.fechaLimite ? `\nFecha lÃƒÂ­mite: ${planSeguro.fechaLimite}` : ""}`,
+            texto: `${planSeguro.indicaciones}\n\nActividad de comprobaciÃƒ³n: ${planSeguro.actividadObjetivoTitulo}${planSeguro.fechaLimite ? `\nFecha lÃƒ­mite: ${planSeguro.fechaLimite}` : ""}`,
             recibido: false,
             leido: false,
             creadoEn: new Date().toISOString(),
@@ -3877,7 +3877,7 @@
           }, { merge: true });
           return true;
         } catch (error) {
-          console.error("Error guardando el estado de la extensiÃƒÂ³n:", error);
+          console.error("Error guardando el estado de la extensiÃƒ³n:", error);
           return false;
         }
       };
@@ -3975,7 +3975,7 @@
             documentosAsociadosEliminados += documentos.length;
           }
 
-          // colaboracionCodigo contiene subcolecciones propias por secciÃƒÂ³n.
+          // colaboracionCodigo contiene subcolecciones propias por secciÃƒ³n.
           rutaEnProceso = `estudiantes/${uid}/colaboracionCodigo`;
           const colaboracion = await getDocs(collection(database, "estudiantes", uid, "colaboracionCodigo"));
           for (const seccion of colaboracion.docs) {
@@ -4043,7 +4043,7 @@
         if (!autorizado) {
           window.ultimoErrorReinicioSalidas = {
             code: "teacher-not-authorized",
-            message: "No hay una sesiÃƒÂ³n docente autorizada activa."
+            message: "No hay una sesiÃƒ³n docente autorizada activa."
           };
           return false;
         }
@@ -4072,13 +4072,13 @@
               }, { merge: true });
               window.ultimoErrorReinicioSalidas = {
                 code: "diagnostic-minimal-write-ok",
-                message: "La escritura mÃƒÂ­nima funcionÃƒÂ³; la regla rechazÃƒÂ³ reinicioSalidas o actualizadoEn.",
+                message: "La escritura mÃƒ­nima funcionÃƒ³; la regla rechazÃƒ³ reinicioSalidas o actualizadoEn.",
                 email: user?.email || "",
                 emailVerified: user?.emailVerified === true
               };
               return true;
             } catch (errorMinimo) {
-              console.error("TambiÃƒÂ©n fallÃƒÂ³ la escritura mÃƒÂ­nima del contador:", errorMinimo);
+              console.error("TambiÃƒÂ©n fallÃƒ³ la escritura mÃƒ­nima del contador:", errorMinimo);
               window.ultimoErrorReinicioSalidas = {
                 code: errorMinimo?.code || "",
                 message: errorMinimo?.message || "",
@@ -4126,7 +4126,7 @@
           }, { merge: true });
           return true;
         } catch (error) {
-          console.error("Error controlando el cronÃƒÂ³metro individual:", error);
+          console.error("Error controlando el cronÃƒ³metro individual:", error);
           return false;
         }
       };
@@ -4248,7 +4248,7 @@
           }, { merge: true });
           return true;
         } catch (error) {
-          console.error("Error guardando la configuraciÃƒÂ³n Jitsi:", error);
+          console.error("Error guardando la configuraciÃƒ³n Jitsi:", error);
           return false;
         }
       };
@@ -4261,7 +4261,7 @@
           const snapshot = await getDoc(doc(database, "controlClase", idClaseActual(), "configuracion", "jitsi"));
           return snapshot.exists() ? snapshot.data() : null;
         } catch (error) {
-          console.error("Error cargando la configuraciÃƒÂ³n Jitsi:", error);
+          console.error("Error cargando la configuraciÃƒ³n Jitsi:", error);
           return null;
         }
       };
@@ -4276,7 +4276,7 @@
             if (!snapshot.exists()) return;
             window.dispatchEvent(new CustomEvent("jitsi-configuracion-remota", { detail: snapshot.data() }));
           },
-          error => console.error("Error escuchando configuraciÃƒÂ³n Jitsi:", error)
+          error => console.error("Error escuchando configuraciÃƒ³n Jitsi:", error)
         );
       };
       const JITSI_HISTORY_ENABLED = false;
@@ -4340,7 +4340,7 @@
           return [];
         }
         if (!(await verificarUsuarioDocente(user))) {
-          window.ultimoErrorHistorialJitsi = { code: "not-authorized", message: "La cuenta actual no estÃƒÂ¡ autorizada como docente o el correo no estÃƒÂ¡ verificado." };
+          window.ultimoErrorHistorialJitsi = { code: "not-authorized", message: "La cuenta actual no estÃƒ¡ autorizada como docente o el correo no estÃƒ¡ verificado." };
           return [];
         }
         try {
@@ -4408,7 +4408,7 @@
         const user = contexto.user || await window.firebaseAuthReady;
         const database = contexto.database;
         if (!user || !database) {
-          return { ok: false, error: "No hay una sesiÃƒÂ³n administrativa activa." };
+          return { ok: false, error: "No hay una sesiÃƒ³n administrativa activa." };
         }
         if (!usuarioEsAdministradorPrincipal(user)) {
           return { ok: false, error: "Solo el administrador principal puede revisar y eliminar este historial." };
@@ -4438,10 +4438,10 @@
         const user = contexto.user || await window.firebaseAuthReady;
         const database = contexto.database;
         if (!user || !database) {
-          return { ok: false, eliminadas: 0, error: "No hay una sesiÃƒÂ³n administrativa activa." };
+          return { ok: false, eliminadas: 0, error: "No hay una sesiÃƒ³n administrativa activa." };
         }
         if (!usuarioEsAdministradorPrincipal(user)) {
-          return { ok: false, eliminadas: 0, error: "Solo el administrador principal puede ejecutar esta operaciÃƒÂ³n." };
+          return { ok: false, eliminadas: 0, error: "Solo el administrador principal puede ejecutar esta operaciÃƒ³n." };
         }
         const rutas = [...new Set(
           (Array.isArray(documentos) ? documentos : [])
@@ -4479,14 +4479,14 @@
               auditoriaRegistrada: true
             };
           } catch (errorAuditoria) {
-            console.error("El historial Jitsi se eliminÃƒÂ³, pero fallÃƒÂ³ la auditorÃƒÂ­a administrativa:", errorAuditoria);
+            console.error("El historial Jitsi se eliminÃƒ³, pero fallÃƒ³ la auditorÃƒ­a administrativa:", errorAuditoria);
             return {
               ok: true,
               eliminadas,
               claseId: "*",
               operacionId,
               auditoriaRegistrada: false,
-              advertencia: errorAuditoria?.message || "No se pudo registrar la auditorÃƒÂ­a."
+              advertencia: errorAuditoria?.message || "No se pudo registrar la auditorÃƒ­a."
             };
           }
         } catch (error) {
@@ -4495,7 +4495,7 @@
             ok: false,
             eliminadas,
             code: error?.code || "unknown",
-            error: error?.message || "No se pudo completar la eliminaciÃƒÂ³n definitiva."
+            error: error?.message || "No se pudo completar la eliminaciÃƒ³n definitiva."
           };
         }
       };
@@ -4504,7 +4504,7 @@
         const user = contexto.user || await window.firebaseAuthReady;
         const database = contexto.database;
         if (!user || !database || !usuarioEsAdministradorPrincipal(user)) {
-          return { ok: false, eliminadas: 0, error: "Solo el administrador principal puede ejecutar esta operaciÃƒÂ³n." };
+          return { ok: false, eliminadas: 0, error: "Solo el administrador principal puede ejecutar esta operaciÃƒ³n." };
         }
         let eliminadas = 0;
         try {
@@ -4541,7 +4541,7 @@
           }, { merge: true });
           return true;
         } catch (error) {
-          console.error("Error registrando participaciÃƒÂ³n Jitsi:", error);
+          console.error("Error registrando participaciÃƒ³n Jitsi:", error);
           return false;
         }
       };
@@ -4710,7 +4710,7 @@
             tituloOrigen: texto(evento.tituloOrigen, 300),
             seccionOrigen: texto(evento.seccionOrigen, 120),
             seccionTitulo: texto(evento.seccionTitulo, 200),
-            tituloDestino: texto(evento.tituloDestino || "Sin tÃƒÂ­tulo", 300),
+            tituloDestino: texto(evento.tituloDestino || "Sin tÃƒ­tulo", 300),
             dominioDestino: texto(evento.dominioDestino || "desconocido", 120),
             salidaEn,
             regresoEn,
@@ -4835,7 +4835,7 @@
               return fechaB - fechaA;
             });
         } catch (error) {
-          console.error("Error consultando auditorÃƒÂ­a de revisiones:", error);
+          console.error("Error consultando auditorÃƒ­a de revisiones:", error);
           return [];
         }
       };
@@ -4909,7 +4909,7 @@
           await lote.commit();
           return true;
         } catch (error) {
-          console.error("Error guardando revisiÃƒÂ³n de pestaÃƒÂ±a:", error);
+          console.error("Error guardando revisiÃƒ³n de pestaÃƒÂ±a:", error);
           window.ultimoErrorRevisionPestana = { code: error?.code || "", message: error?.message || "" };
           return false;
         }
@@ -4921,7 +4921,7 @@
         if (!autorizado) {
           window.ultimoErrorMensajeDocente = {
             code: "docente-no-autorizado",
-            message: "No se pudo validar una sesiÃƒÂ³n docente autorizada."
+            message: "No se pudo validar una sesiÃƒ³n docente autorizada."
           };
           return { ok: false, enviados: 0 };
         }
@@ -4932,7 +4932,7 @@
         if (!user || !database || !destinatarios.length) {
           window.ultimoErrorMensajeDocente = {
             code: "destinatarios-no-disponibles",
-            message: "No hay una sesiÃƒÂ³n Firebase o destinatarios vÃƒÂ¡lidos."
+            message: "No hay una sesiÃƒ³n Firebase o destinatarios vÃƒ¡lidos."
           };
           return { ok: false, enviados: 0 };
         }
@@ -4949,7 +4949,7 @@
         if (!contenido) {
           window.ultimoErrorMensajeDocente = {
             code: "mensaje-vacio",
-            message: "El contenido del mensaje estÃƒÂ¡ vacÃƒÂ­o."
+            message: "El contenido del mensaje estÃƒ¡ vacÃƒ­o."
           };
           return { ok: false, enviados: 0 };
         }
@@ -5042,7 +5042,7 @@
           }, { merge: true });
           return true;
         } catch (error) {
-          console.error("Error confirmando la recepciÃƒÂ³n del mensaje:", error);
+          console.error("Error confirmando la recepciÃƒ³n del mensaje:", error);
           return false;
         }
       };
@@ -5392,7 +5392,7 @@
       
       // ============================================================
       // DESAFÃƒÂOS EDITABLES EN FIREBASE
-      // ColecciÃƒÂ³n: desafios / Documentos: sec-1 ... sec-19
+      // ColecciÃƒ³n: desafios / Documentos: sec-1 ... sec-19
       // ============================================================
       window.cargarDesafiosFirebase = async function() {
         if (!db) return null;
