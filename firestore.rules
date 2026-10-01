@@ -1,4 +1,4 @@
-rules_version = '2';
+﻿rules_version = '2';
 
 // Actualizado el 5 de septiembre de 2026.
 // Incluye auditora segura, mensajera, colaboracin CRDT, presencia y aportes.
@@ -120,6 +120,8 @@ service cloud.firestore {
         'pantallaBloqueadaSeccion',
         'codigos',
         'tiemposRestantes',
+        'pausasModulos',
+        'pausaGlobal',
         'finalizadas',
         'historialResultados',
         'chatIA',
@@ -389,6 +391,8 @@ service cloud.firestore {
         'eventosSalidasPestana',
         'codigos',
         'tiemposRestantes',
+        'pausasModulos',
+        'pausaGlobal',
         'finalizadas',
         'historialResultados',
         'chatIA',
@@ -619,6 +623,10 @@ service cloud.firestore {
             )
           )
         ) &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['pausasModulos']) ||
+          request.resource.data.pausasModulos is map) &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['pausaGlobal']) ||
+          request.resource.data.pausaGlobal is bool) &&
         request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(studentMutableFields());
     }
@@ -2565,3 +2573,5 @@ service cloud.firestore {
     }
   }
 }
+
+

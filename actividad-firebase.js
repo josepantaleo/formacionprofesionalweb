@@ -1726,6 +1726,15 @@
                const solicitudSnapshot = await transaction.get(solicitudRef);
                const meta = metaSnapshot.exists() ? metaSnapshot.data() : {};
                const solicitud = solicitudSnapshot.exists() ? solicitudSnapshot.data() : {};
+               const estudianteSnapshot = await transaction.get(doc(database, "estudiantes", uid));
+               const codigoBase = estudianteSnapshot.exists()
+                 ? String(estudianteSnapshot.data()?.codigos?.[sectionId] || "")
+                 : "";
+               const semillaInicial = () => {
+                 const temporal = new Y.Doc();
+                 temporal.getText("codigo").insert(0, codigoBase);
+                 return bytesABase64(Y.encodeStateAsUpdate(temporal));
+               };
                const estadoActual = meta.estadoConsentimiento || solicitud.estado || "sin_solicitud";
                if (estadoActual === "pendiente" ||
                    (estadoActual === "aceptado" && meta.modoCooperacionActiva === true &&
@@ -1752,6 +1761,11 @@
                };
                transaction.set(solicitudRef, payload, { merge: true });
                transaction.set(metaRef, {
+                 ...(metaSnapshot.exists() ? {} : {
+                   semilla: semillaInicial(),
+                   creadoEn: serverTimestamp(),
+                   creadoPor: user.email || user.uid
+                 }),
                  uid,
                  sectionId,
                  modoCooperacionActiva: false,
@@ -2701,6 +2715,15 @@
             const metaSnapshot = await transaction.get(metaRef);
             const solicitud = solicitudSnapshot.exists() ? solicitudSnapshot.data() : {};
             const meta = metaSnapshot.exists() ? metaSnapshot.data() : {};
+            const estudianteSnapshot = await transaction.get(doc(db, "estudiantes", uid));
+            const codigoBase = estudianteSnapshot.exists()
+              ? String(estudianteSnapshot.data()?.codigos?.[sectionId] || "")
+              : "";
+            const semillaInicial = () => {
+              const temporal = new Y.Doc();
+              temporal.getText("codigo").insert(0, codigoBase);
+              return bytesABase64(Y.encodeStateAsUpdate(temporal));
+            };
             const estadoActual = meta.estadoConsentimiento || solicitud.estado || "sin_solicitud";
             if (estadoActual === "pendiente" ||
                 (estadoActual === "aceptado" && meta.modoCooperacionActiva === true &&
@@ -2727,7 +2750,12 @@
               actualizadoEn: serverTimestamp()
             }, { merge: true });
             transaction.set(metaRef, {
-              uid,
+              ...(metaSnapshot.exists() ? {} : {
+                   semilla: semillaInicial(),
+                   creadoEn: serverTimestamp(),
+                   creadoPor: user.email || user.uid
+                 }),
+                 uid,
               sectionId,
               modoCooperacionActiva: false,
               edicionCooperativaPausada: true,
@@ -5395,4 +5423,7 @@
           if(remotos.length===19) window.dispatchEvent(new CustomEvent('desafios-profesor-data',{detail:remotos}));
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
+
+
+
 
