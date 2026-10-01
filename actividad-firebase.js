@@ -5030,23 +5030,26 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             return { ok: false, enviados: 0 };
           }
         }
-      };
-
-      window.marcarMensajeDocenteRecibidoFirebase = async function(mensajeId) {
+      };      window.marcarMensajeDocenteRecibidoFirebase = async function(mensajeId) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!user || !db || !mensajeId) return false;
         try {
+          await user.getIdToken();
           await setDoc(doc(db, "estudiantes", user.uid, "mensajesDocente", mensajeId), {
             recibido: true,
             recibidoEn: serverTimestamp()
           }, { merge: true });
+          window.ultimoErrorMensajeDocenteEstudiante = null;
           return true;
         } catch (error) {
-          console.error("Error confirmando la recepciÃƒ³n del mensaje:", error);
+          console.error("Error confirmando la recepción del mensaje:", error);
+          window.ultimoErrorMensajeDocenteEstudiante = {
+            code: error?.code || "",
+            message: error?.message || "No se pudo confirmar la recepción del mensaje."
+          };
           return false;
         }
       };
-
       window.escucharMensajesDocenteEstudianteFirebase = async function() {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!user || !db) return;
@@ -5074,13 +5077,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }, error => {
           console.error("Error escuchando mensajes del docente:", error);
         });
-      };
-
-      window.marcarMensajeDocenteLeidoFirebase = async function(mensaje = {}) {
+      };      window.marcarMensajeDocenteLeidoFirebase = async function(mensaje = {}) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         const mensajeId = typeof mensaje === "string" ? mensaje : mensaje?.id;
-        if (!user || !db || !mensajeId) return false;
+        if (!user || !db || !mensajeId) {
+          window.ultimoErrorMensajeDocenteEstudiante = {
+            code: "mensaje/sesion-no-disponible",
+            message: "No hay una sesión de estudiante disponible para confirmar el mensaje."
+          };
+          return false;
+        }
         try {
+          await user.getIdToken();
           const cambios = {
             leido: true,
             leidoEn: serverTimestamp()
@@ -5090,13 +5098,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             cambios.recibidoEn = serverTimestamp();
           }
           await setDoc(doc(db, "estudiantes", user.uid, "mensajesDocente", mensajeId), cambios, { merge: true });
+          window.ultimoErrorMensajeDocenteEstudiante = null;
           return true;
         } catch (error) {
           console.error("Error confirmando la lectura del mensaje:", error);
+          window.ultimoErrorMensajeDocenteEstudiante = {
+            code: error?.code || "",
+            message: error?.message || "No se pudo confirmar la lectura del mensaje."
+          };
           return false;
         }
       };
-
       window.marcarMensajeDocenteCompatibleFirebase = async function(mensaje = {}, estado = "recibido") {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!user || !db || !mensaje?.id || mensaje.estudianteUid !== user.uid) return false;

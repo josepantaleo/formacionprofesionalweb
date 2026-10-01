@@ -9257,8 +9257,23 @@
           document.getElementById('btnLimpiarFiltrosProfesor')?.focus({ preventScroll: true });
       }
 
+      function obtenerFinalizadasEfectivasEstudiante(d = {}) {
+          const declaradas = d?.finalizadas && typeof d.finalizadas === 'object' ? d.finalizadas : {};
+          const resultados = d?.historialResultados && typeof d.historialResultados === 'object' ? d.historialResultados : {};
+          const notasDocente = d?.notasDesafiosDocente && typeof d.notasDesafiosDocente === 'object' ? d.notasDesafiosDocente : {};
+          const finalizadas = { ...declaradas };
+          seccionesData.forEach(sec => {
+              const ajuste = notasDocente[sec.id] || {};
+              const notaDocente = ajuste.nota === null || ajuste.nota === undefined || ajuste.nota === '' ? NaN : Number(ajuste.nota);
+              const resultado = resultados[sec.id] || {};
+              const notaAutomatica = Number(resultado.notaFinal ?? resultado.notaIA);
+              if (Number.isFinite(notaDocente) || Number.isFinite(notaAutomatica)) finalizadas[sec.id] = true;
+          });
+          return finalizadas;
+      }
+
       function calcularProgresoEstudiante(d) {
-          const finalizadas = d.finalizadas || {};
+          const finalizadas = obtenerFinalizadasEfectivasEstudiante(d);
           const total = seccionesData.length || 1;
           const completadasValidas = seccionesData.filter(sec => finalizadas[sec.id] === true).length;
           return Math.round((completadasValidas / total) * 100);
@@ -9275,7 +9290,7 @@
       }
       function obtenerNotasDesafiosFinalizadosEstudiante(d) {
           const historial = d?.historialResultados || {};
-          const finalizadas = d?.finalizadas || {};
+          const finalizadas = obtenerFinalizadasEfectivasEstudiante(d);
           return seccionesData.reduce((notas, sec) => {
               if (finalizadas[sec.id] !== true) return notas;
               const nota = obtenerNotaDesafioEstudiante(d, sec.id, historial[sec.id] || {});
@@ -9305,14 +9320,15 @@
       }
       function obtenerDetallePromedioEstudiante(d) {
           const historial = d.historialResultados || {};
+          const finalizadas = obtenerFinalizadasEfectivasEstudiante(d);
           const actividades = seccionesData.map(sec => {
               const resultado = historial[sec.id] || {};
               const valor = obtenerNotaDesafioEstudiante(d, sec.id, resultado);
               return {
                   id: sec.id,
                   titulo: sec.title,
-                  finalizada: d?.finalizadas?.[sec.id] === true,
-                  nota: d?.finalizadas?.[sec.id] === true && Number.isFinite(valor) ? valor : null
+                  finalizada: finalizadas[sec.id] === true,
+                  nota: finalizadas[sec.id] === true && Number.isFinite(valor) ? valor : null
               };
           });
           const evaluadas = actividades.filter(x => x.nota !== null);
@@ -9329,7 +9345,7 @@
           const idsValidos = new Set(seccionesData.map(sec => sec.id));
           const idControl = idsValidos.has(control.seccionActiva) ? control.seccionActiva : '';
           const idGuardado = idsValidos.has(d?.seccionActiva) ? d.seccionActiva : '';
-          const finalizadas = d?.finalizadas || {};
+          const finalizadas = obtenerFinalizadasEfectivasEstudiante(d);
           const siguiente = seccionesData.find(sec => finalizadas[sec.id] !== true) || null;
           const id = idControl || idGuardado || siguiente?.id || '';
           const desafio = seccionesData.find(sec => sec.id === id) || null;
@@ -9525,7 +9541,7 @@
                   titulo: sec.title || `Desafío ${indice + 1}`,
                   automatica: limitarNota(resultado.notaFinal ?? resultado.notaIA),
                   docente: limitarNota(notasDocente[sec.id]?.nota),
-                  finalizada: d?.finalizadas?.[sec.id] === true,
+                  finalizada: finalizadas[sec.id] === true,
                   actual: sec.id === desafioActual.id
               };
           });
@@ -11047,7 +11063,7 @@
           const chatIA = d.chatIA || {};
           const codigos = d.codigos || {};
           const tiempos = d.tiemposRestantes || {};
-          const finalizadas = d.finalizadas || {};
+          const finalizadas = obtenerFinalizadasEfectivasEstudiante(d);
           const intentosDesafio = d.intentosDesafio && typeof d.intentosDesafio === 'object'
               ? d.intentosDesafio
               : {};
@@ -13373,7 +13389,7 @@
           const doc = new jsPDF();
           const e = d.estudiante || {};
           const historial = d.historialResultados || {};
-          const finalizadas = d.finalizadas || {};
+          const finalizadas = obtenerFinalizadasEfectivasEstudiante(d);
           const notasDocente = d.notasDesafiosDocente || {};
           const nombre = e.nombre || d.nombreGoogle || d.email || 'Estudiante';
           let y = 18;
@@ -13515,7 +13531,7 @@
           };
           const contarSituacionDesafios = d => {
               const historial = d.historialResultados || {};
-              const finalizadas = d.finalizadas || {};
+              const finalizadas = obtenerFinalizadasEfectivasEstudiante(d);
               return seccionesData.reduce((resumen, sec) => {
                   const resultado = historial[sec.id] || {};
                   const evaluacion = resultado.evaluacionCodigo || {};
@@ -13600,7 +13616,7 @@
               y = 18;
               const e = d.estudiante || {};
               const historial = d.historialResultados || {};
-              const finalizadas = d.finalizadas || {};
+              const finalizadas = obtenerFinalizadasEfectivasEstudiante(d);
               const notasDocente = d.notasDesafiosDocente || {};
               const revision = d.revisionSalidas || {};
               const eventos = Array.isArray(d.eventosSalidasPestana) ? d.eventosSalidasPestana : [];
@@ -14131,7 +14147,7 @@
           const graficoDocenteEstudiante = renderGraficoNotasDesafiosEstudiante({
               historialResultados,
               notasDesafiosDocente,
-              finalizadas: actividadesFinalizadas,
+              finalizadas: obtenerFinalizadasEfectivasEstudiante({ historialResultados, notasDesafiosDocente, finalizadas: actividadesFinalizadas }),
               seccionActiva: seccionActivaActual || '',
               __controlEstudiante: {
                   seccionActiva: seccionActivaActual || '',
