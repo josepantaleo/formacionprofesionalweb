@@ -807,10 +807,13 @@ function activarChatColaborativoDocente(uid,sectionId){
 }
 function renderPresenciaEditorColaborativo(modal,participantes=[]){
  const aviso=modal?.querySelector("#editorColaborativoPresencia");if(!aviso)return;
+ const accesoDocente=modal.dataset.rolColaborativo==="docente";
  const pausada=modal.dataset.edicionCooperativaPausada==="true",consentimiento=modal.dataset.consentimientoCooperativo||"sin_solicitud",uidDocente=uidSesionColaborativa("docente"),activos=(participantes||[]).filter(item=>item?.autorUid);
  const escribiendo=activos.filter(item=>item.escribiendo===true&&item.autorUid!==uidDocente);
  actualizarEstadoCursoCooperativo(modal,consentimiento==="aceptado"?(pausada?"paused":modal.__crdtSession?"active":"waiting"):consentimiento==="finalizado"||consentimiento==="rechazado"?"closed":"waiting");
  aviso.className=`teacher-collab-presence${pausada?" is-paused":escribiendo.length?" is-typing":""}`;
+ if(accesoDocente && pausada && consentimiento==="aceptado"){aviso.innerHTML='<i class="fa-solid fa-pause"></i><span>Edición pausada por el docente.</span>';return;}
+ if(accesoDocente){aviso.innerHTML=`<i class="fa-solid fa-chalkboard-user"></i><span>Acceso docente directo${activos.length?` · ${activos.length} participante${activos.length===1?"":"s"} conectado${activos.length===1?"":"s"}`:""}.</span>`;return;}
  if(consentimiento==="pendiente"){aviso.innerHTML='<i class="fa-solid fa-arrows-rotate"></i><span>Preparando la cooperación.</span>';return;}
  if(consentimiento==="rechazado"){aviso.innerHTML='<i class="fa-solid fa-circle-xmark"></i><span>La cooperación no está activa.</span>';return;}
  if(consentimiento==="finalizado"){aviso.innerHTML='<i class="fa-solid fa-circle-stop"></i><span>La cooperación fue finalizada.</span>';return;}
@@ -837,15 +840,21 @@ function actualizarEstadoCursoCooperativo(modal,estado="waiting"){
 }
 function actualizarPausaEditorColaborativo(modal,modo={}){
  if(!modal)return;
- const pausada=modo.pausada===true,aceptada=modo.consentimiento==="aceptado"&&modo.activa===true,pendiente=modo.consentimiento==="pendiente";
+ const accesoDocente=modal.dataset.rolColaborativo==="docente";
+ const pausada=modo.pausada===true;
+ const pausaAplicada=pausada && (!accesoDocente || modo.consentimiento==="aceptado" || modo.activa===true);
+ const aceptada=accesoDocente || (modo.consentimiento==="aceptado"&&modo.activa===true);
+ const pendiente=!accesoDocente && modo.consentimiento==="pendiente";
  modal.dataset.edicionCooperativaPausada=String(pausada===true);
  modal.dataset.consentimientoCooperativo=modo.consentimiento||"sin_solicitud";
  const boton=modal.querySelector("#pausarEdicionCooperativa"),editor=modal.querySelector("#editorColaborativoCodigo");
- if(boton){boton.disabled=!aceptada;boton.innerHTML=`<i class="fa-solid ${pausada?"fa-play":"fa-pause"}"></i> ${pausada?"Reanudar edición":"Pausar edición"}`;boton.className=`btn ${pausada?"btn-success":"btn-warning"}`;boton.setAttribute("aria-pressed",String(pausada===true));}
- if(editor){const bloqueado=!aceptada||pausada;editor.disabled=bloqueado;editor.__setCodeMirrorDisabled?.(bloqueado);}
+ if(boton){boton.disabled=accesoDocente ? modo.consentimiento!=="aceptado" : !aceptada;boton.innerHTML=`<i class="fa-solid ${pausaAplicada?"fa-play":"fa-pause"}"></i> ${pausaAplicada?"Reanudar edición":"Pausar edición"}`;boton.className=`btn ${pausaAplicada?"btn-success":"btn-warning"}`;boton.setAttribute("aria-pressed",String(pausaAplicada));}
+ if(editor){editor.disabled=pausaAplicada;editor.__setCodeMirrorDisabled?.(pausaAplicada);}
  const estado=modal.querySelector("#editorColaborativoEstado");
  if(estado){
-  estado.textContent=pendiente?"Solicitud enviada · esperando aceptación":aceptada?(pausada?"Cooperación activa · edición pausada":"Cooperación activa · edición compartida habilitada"):modo.consentimiento==="rechazado"?"El estudiante rechazó la solicitud":modo.consentimiento==="finalizado"?"Cooperación finalizada":"Preparando cooperación";
+  estado.textContent=accesoDocente
+   ? (pausaAplicada?"Acceso docente directo · edición pausada":"Acceso docente directo · no requiere autorización del estudiante")
+   : pendiente?"Solicitud enviada · esperando aceptación":aceptada?(pausada?"Cooperación activa · edición pausada":"Cooperación activa · edición compartida habilitada"):modo.consentimiento==="rechazado"?"El estudiante rechazó la solicitud":modo.consentimiento==="finalizado"?"Cooperación finalizada":"Preparando cooperación";
  }
  renderPresenciaEditorColaborativo(modal,modal.__participantesColaborativos||[]);
 }
@@ -979,7 +988,7 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
  asegurarEditorColaborativoDocente();
  const modal=document.getElementById("editorColaborativoDocenteModal"),sec=(typeof seccionesData!=="undefined"?seccionesData:[]).find(x=>x.id===sectionId),codigo=d.codigos?.[sectionId]||d.historialResultados?.[sectionId]?.codigo||"";
  const editor=document.getElementById("editorColaborativoCodigo"),estado=document.getElementById("editorColaborativoEstado"),salida=document.getElementById("editorColaborativoGuardado");
- modal.dataset.uid=d.uid;modal.dataset.sectionId=sectionId;modal.dataset.studentIndex=String(indice);
+ modal.dataset.uid=d.uid;modal.dataset.sectionId=sectionId;modal.dataset.studentIndex=String(indice);modal.dataset.rolColaborativo="docente";
  actualizarEstadoCursoCooperativo(modal,"waiting");
  document.getElementById("editorColaborativoAlumno").textContent=`${d.estudiante?.nombre||d.nombreGoogle||d.email||"Estudiante"} · ${sec?.title||sectionId}`;
  editor.value=codigo;editor.__syncCodeMirror?.(codigo);editor.disabled=true;editor.__setCodeMirrorDisabled?.(true);
@@ -1007,18 +1016,13 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
    modal.__quitarModoCooperacion=modal.__crdtSession.onModoCooperacion?.(modo=>actualizarPausaEditorColaborativo(modal,modo))||null;
    activarChatColaborativoDocente(d.uid,sectionId);
    const modoActual=modal.__crdtSession.getModoCooperacion?.()||{};
-   const accesoDocente=modoActual.consentimiento==="pendiente" || modoActual.consentimiento==="aceptado" || modoActual.activa===true;
-   if(accesoDocente){
-    salida.textContent=modoActual.consentimiento==="aceptado"
-      ? "Sincronización automática activa · cooperación aceptada"
-      : "Acceso docente directo · no requiere autorización del estudiante";
-    editor.disabled=false;
-    editor.__setCodeMirrorDisabled?.(false);
-   }else{
-    editor.disabled=false;
-    editor.__setCodeMirrorDisabled?.(false);
-    salida.textContent="Acceso docente directo al desafío";
-   }
+   actualizarPausaEditorColaborativo(modal,modoActual);
+   salida.textContent=modal.dataset.edicionCooperativaPausada==="true" && modoActual.consentimiento==="aceptado"
+    ? "Acceso docente directo · edición pausada"
+    : "Acceso docente directo · cambios sincronizados automáticamente";
+   const edicionPausada=modal.dataset.edicionCooperativaPausada==="true" && modoActual.consentimiento==="aceptado";
+   editor.disabled=edicionPausada;
+   editor.__setCodeMirrorDisabled?.(edicionPausada);
    salida.className="success";
  }catch(error){
   actualizarEstadoCursoCooperativo(modal,"error");
