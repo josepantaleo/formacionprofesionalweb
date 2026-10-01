@@ -936,14 +936,44 @@
           return false;
         }
         try {
+          if (typeof user.reload === "function") {
+            await user.reload();
+          }
+          await user.getIdToken(true);
+          const usuarioActual = window.firebaseCurrentUser || user;
+          if (usuarioActual.emailVerified !== true) {
+            const error = new Error("La cuenta de Google todavía no tiene el correo verificado.");
+            error.code = "auth/email-not-verified";
+            throw error;
+          }
           const ref = doc(db, "estudiantes", user.uid);
+          const existente = await getDoc(ref);
+          if (existente.exists()) {
+            const datosExistentes = existente.data() || {};
+            if (datosExistentes.uid && datosExistentes.uid !== user.uid) {
+              const error = new Error("El documento del estudiante pertenece a otro UID.");
+              error.code = "student/uid-mismatch";
+              throw error;
+            }
+            if (datosExistentes.email && usuarioActual.email &&
+                datosExistentes.email.toLowerCase() !== usuarioActual.email.toLowerCase()) {
+              const error = new Error("El correo del documento no coincide con la cuenta actual.");
+              error.code = "student/email-mismatch";
+              throw error;
+            }
+            if (datosExistentes.emailVerificado === true && usuarioActual.emailVerified !== true) {
+              const error = new Error("El token actual no confirma el correo verificado.");
+              error.code = "auth/email-claim-stale";
+              throw error;
+            }
+          }
           await setDoc(ref, {
             ...payload,
             uid: user.uid,
-            email: user.email || "",
-            emailVerificado: user.emailVerified === true,
-            nombreGoogle: user.displayName || "",
-            fotoGoogle: user.photoURL || "",
+            email: usuarioActual.email || "",
+            emailVerificado: usuarioActual.emailVerified === true,
+            nombreGoogle: usuarioActual.displayName || "",
+            fotoGoogle: usuarioActual.photoURL || "",
             actualizadoEn: serverTimestamp()
           }, { merge: true });
           return true;
@@ -956,6 +986,7 @@
             uid: user.uid,
             email: user.email || '',
             emailVerified: user.emailVerified === true,
+            payloadKeys: Object.keys(payload || {}),
             operation: "create-or-update-student"
           };
           return false;
@@ -5423,6 +5454,7 @@
           if(remotos.length===19) window.dispatchEvent(new CustomEvent('desafios-profesor-data',{detail:remotos}));
         }, err => window.dispatchEvent(new CustomEvent('desafios-firebase-error',{detail:err.message})));
       };
+
 
 
 
