@@ -10432,7 +10432,11 @@
               ? p.correctas
               : opciones.map((op,i)=>(op?.correcta === true || op?.c === true) ? i : null).filter(i=>i !== null);
           const esAbierta = p?.formato === "abierta" || (p?.tipo === "SOCRÁTICA" && Boolean(p?.respuestaTexto));
-          const esCorrecta = esAbierta
+          const esAbiertaEfectiva = esAbierta
+              || String(p?.formato || "").toLowerCase().includes("socr")
+              || String(p?.tipo || "").toLowerCase().includes("socr")
+              || typeof p?.respuestaTexto === "string";
+          const esCorrecta = esAbiertaEfectiva
               ? p?.nivel === "completa"
               : JSON.stringify([...seleccionadas].sort((a,b)=>a-b)) === JSON.stringify([...correctas].sort((a,b)=>a-b));
           const nivel = p?.nivel || (esCorrecta ? "completa" : "incorrecta");
@@ -10448,7 +10452,7 @@
                   ${escapeHtml(p?.categoria || p?.tipo || 'ANÁLISIS')} ·
                   <strong style="color:${colorNivel}">${escapeHtml(etiquetaNivel)} · ${Number(p?.puntos || 0).toFixed(2)}/1,00</strong>
               </div>
-              ${esAbierta ? `
+              ${esAbiertaEfectiva ? `
                   <div class="teacher-socratic-response">
                       <small>Respuesta del estudiante</small>
                       <p>${escapeHtml(p?.respuestaTexto || 'Sin respuesta escrita')}</p>
