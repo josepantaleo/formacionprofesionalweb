@@ -9528,6 +9528,7 @@
       function renderGraficoNotasDesafiosEstudiante(d) {
           const historial = d?.historialResultados || {};
           const notasDocente = d?.notasDesafiosDocente || {};
+          const finalizadas = obtenerFinalizadasEfectivasEstudiante(d);
           const desafioActual = obtenerDesafioActualEstudiante(d);
           const limitarNota = valor => {
               const numero = valor === null || valor === undefined || valor === '' ? NaN : Number(valor);
@@ -14734,6 +14735,5 @@
       // Exponer explícitamente las acciones docentes usadas por botones dinámicos.
       window.abrirAccionesEstudiante = abrirAccionesEstudiante;
       window.abrirDetalleEstudianteProfesor = abrirDetalleEstudianteProfesor;
-
 
 
