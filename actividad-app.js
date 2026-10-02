@@ -9732,6 +9732,16 @@
               <div class="teacher-student-grade-key">${datos.map(item => `<span class="teacher-student-grade-key-item is-navigable ${item.actual ? 'is-current' : ''}" data-grade-finalizada="${item.finalizada}" data-grade-docente="${item.docente !== null}" role="button" tabindex="0" aria-label="Abrir ${escapeHtml(item.titulo)}" title="Abrir ${escapeHtml(item.titulo)}" onclick="abrirDesafioDesdeGraficoNotasEstudiante('${escapeHtml(item.id)}', this)" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); abrirDesafioDesdeGraficoNotasEstudiante('${escapeHtml(item.id)}', this); }"><b>D${item.indice}</b> ${escapeHtml(item.titulo)}</span>`).join('')}</div>
           </section>`;
       }
+      function irAlGraficoNotasEstudiante(boton = null) {
+          const grafico = document.querySelector('#detalleEstudianteProfesorContenido .teacher-student-grade-chart');
+          if (!grafico) return;
+          grafico.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          window.setTimeout(() => {
+              grafico.querySelector('button, [tabindex]')?.focus({ preventScroll: true });
+          }, 320);
+          boton?.blur?.();
+      }
+      window.irAlGraficoNotasEstudiante = irAlGraficoNotasEstudiante;
       function formatearTiempoProfesor(segundos) {
           const total = Math.max(0, Number(segundos) || 0);
           const minutos = Math.floor(total / 60);
@@ -11484,6 +11494,9 @@
                    <div class="teacher-detail-stat"><small>Ãšltima actualización</small><strong>${escapeHtml(fecha)}</strong></div>
                </div>
                ${graficoNotasDesafios}
+               <button type="button" class="teacher-floating-chart-button" onclick="irAlGraficoNotasEstudiante(this)" title="Ir al gráfico de notas">
+                   <i class="fa-solid fa-chart-column"></i><span>Ir al gráfico</span>
+               </button>
                <div class="teacher-detail-toolbar">
                   <div class="teacher-detail-toolbar-title">
                       <strong><i class="fa-solid fa-layer-group"></i> Desafíos del informe</strong>

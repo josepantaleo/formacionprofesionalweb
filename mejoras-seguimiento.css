@@ -4257,6 +4257,41 @@ body.teacher-light-mode .teacher-filter-group h4{
   border-radius:8px;
   background:rgba(15,23,42,.38);
 }
+.teacher-floating-chart-button{
+  position:fixed;
+  right:1.25rem;
+  bottom:1.25rem;
+  z-index:9005;
+  display:inline-flex;
+  align-items:center;
+  gap:.4rem;
+  min-height:42px;
+  padding:.65rem .8rem;
+  border:1px solid rgba(56,189,248,.65);
+  border-radius:999px;
+  background:#0284c7;
+  color:#fff;
+  box-shadow:0 10px 28px rgba(2,132,199,.35);
+  cursor:pointer;
+  font-weight:800;
+}
+.teacher-floating-chart-button:hover{
+  background:#0369a1;
+}
+body.teacher-light-mode .teacher-floating-chart-button{
+  background:#0369a1;
+  border-color:#075985;
+}
+@media(max-width:600px){
+  .teacher-floating-chart-button{
+    right:.65rem;
+    bottom:.65rem;
+    padding:.65rem;
+  }
+  .teacher-floating-chart-button span{
+    display:none;
+  }
+}
 .teacher-student-grade-chart>header{
   display:flex;
   align-items:flex-start;
@@ -4306,6 +4341,15 @@ body.teacher-light-mode .teacher-filter-group h4{
   justify-content:space-between;
   gap:.6rem;
   margin-bottom:.55rem;
+  position:sticky;
+  top:0;
+  z-index:12;
+  padding:.55rem .6rem;
+  border:1px solid rgba(56,189,248,.28);
+  border-radius:7px;
+  background:rgba(15,23,42,.96);
+  box-shadow:0 8px 18px rgba(2,6,23,.28);
+  backdrop-filter:blur(8px);
 }
 .teacher-student-grade-filters{
   display:flex;
@@ -4561,6 +4605,11 @@ body.teacher-light-mode .teacher-student-grade-filters button.is-reset{
   border-color:#f59e0b;
   background:#fffbeb;
   color:#92400e;
+}
+body.teacher-light-mode .teacher-student-grade-filter-bar{
+  background:rgba(248,250,252,.97);
+  border-color:#7dd3fc;
+  box-shadow:0 8px 18px rgba(71,85,105,.18);
 }
 @media(max-width:980px){
   .teacher-grade-charts{grid-template-columns:minmax(0,1fr)}
