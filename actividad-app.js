@@ -1,4 +1,4 @@
-// Estructura de Datos de las 19 Secciones con descripciones de desafÃ­os ampliadas y detalladas
+// Estructura de Datos de las 19 Secciones con descripciones de desafíos ampliadas y detalladas
       const VERSION_SCRIPT = (() => {
           try {
               const src = [...document.scripts].find(script => /actividad-app\.js(?:\?|$)/.test(script.src || ""));
@@ -16,7 +16,7 @@
           let texto = String(valor ?? "");
           const decodificarUtf8MalInterpretado = entrada => {
               let actual = entrada;
-              for (let intento = 0; intento < 4 && /[ÃƒÃ‚Ã¢]/.test(actual); intento++) {
+              for (let intento = 0; intento < 4 && /[ÃÂâ]/.test(actual); intento++) {
                   try {
                       const bytes = Uint8Array.from([...actual].map(caracter => {
                           const codigo = caracter.codePointAt(0);
@@ -46,20 +46,20 @@
               ["\u00e2\u20ac\u2122", "\u2019"], ["\u00e2\u20ac\u2014", "\u2014"],
               ["\u00e2\u20ac\u201c", "\u2013"], ["\u00e2\u20ac\u00a6", "\u2026"],
               ["\u00e2\u2020\u2019", "\u2192"], ["\u00e2\u2030\u00a5", "\u2265"],
-              ["ÃƒÆ’Ã‚", "Ãƒ"], ["ÃƒÆ’", "Ãƒ"], ["Ã‚", ""],
-              ["ÃƒÂ¡", "Ã¡"], ["ÃƒÂ©", "Ã©"], ["ÃƒÂ­", "Ã­"], ["ÃƒÂ³", "Ã³"], ["ÃƒÂº", "Ãº"],
-              ["ÃƒÂ±", "Ã±"], ["ÃƒÂ¼", "Ã¼"], ["ÃƒÂ", "Ã"], ["Ãƒâ€°", "Ã‰"], ["ÃƒÂ", "Ã"],
-              ["Ãƒâ€œ", "Ã“"], ["ÃƒÅ¡", "Ãš"], ["Ãƒâ€˜", "Ã‘"], ["ÃƒÅ“", "Ãœ"],
-              ["Ã¢â‚¬Å“", "â€œ"], ["Ã¢â‚¬Â", "â€"], ["Ã¢â‚¬Ëœ", "â€˜"], ["Ã¢â‚¬â„¢", "â€™"],
-              ["Ã¢â‚¬â€", "â€”"], ["Ã¢â‚¬â€œ", "â€“"], ["Ã¢â‚¬Â¦", "â€¦"], ["Ã¢â€ â€™", "â†’"],
-              ["Ã¢â€°Â¥", "â‰¥"], ["Ã¢â€°Â¤", "â‰¤"], ["Ã¢Å¡Â Ã¯Â¸Â", "âš ï¸"], ["Ã¢Å¡Â ", "âš "],
-              ["Ã¢Å“â€¦", "âœ…"], ["Ã¢ÂÅ’", "âŒ"], ["Ã¢Ëœâ€˜", "â˜‘"], ["Ã¢ËœÂ", "â˜"],
-              ["Ã¢ÂÂ°", "â°"], ["Ã¢ÂÂ¸", "â¸"], ["Ã¢â€“Â¶", "â–¶"], ["Ã¢â€žÂ¹Ã¯Â¸Â", "â„¹ï¸"],
-              ["Ã¢â€¢Â", "â•"], ["Ãƒâ€”", "Ã—"], ["ÃƒÂ·", "Ã·"], ["ÃƒÅ¡lt", "Ãšlt"],
-              ["ÃƒÅ¡", "Ãš"], ["Ãƒâ€œ", "Ã“"], ["Ãƒâ€°", "Ã‰"], ["ÃƒÂ", "Ã"], ["Ãƒâ€˜", "Ã‘"],
-              ["Ãƒâ€šÂ¿", "Â¿"], ["Ã‚Â¿", "Â¿"], ["Ãƒâ€šÂ¡", "Â¡"], ["Ã‚Â¡", "Â¡"],
-              ["Ãƒâ€šÂ·", "Â·"], ["Ã‚Â·", "Â·"], ["Ã‚Â°", "Â°"], ["N.Ã‚Âº", "N.Âº"],
-              ["ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦", "â€¦"], ["Ã¢â€šÂ¬Ã‚Â¦", "â€¦"]
+              ["ÃƒÂ", "Ã"], ["Ãƒ", "Ã"], ["Â", ""],
+              ["Ã¡", "á"], ["Ã©", "é"], ["Ã­", "í"], ["Ã³", "ó"], ["Ãº", "ú"],
+              ["Ã±", "ñ"], ["Ã¼", "ü"], ["Ã", "Á"], ["Ã‰", "É"], ["Ã", "Í"],
+              ["Ã“", "Ó"], ["Ãš", "Ú"], ["Ã‘", "Ñ"], ["Ãœ", "Ü"],
+              ["â€œ", "“"], ["â€", "”"], ["â€˜", "‘"], ["â€™", "’"],
+              ["â€”", "—"], ["â€“", "–"], ["â€¦", "…"], ["â†’", "→"],
+              ["â‰¥", "≥"], ["â‰¤", "≤"], ["âš ï¸", "⚠️"], ["âš ", "⚠"],
+              ["âœ…", "✅"], ["âŒ", "❌"], ["â˜‘", "☑"], ["â˜", "☐"],
+              ["â°", "⏰"], ["â¸", "⏸"], ["â–¶", "▶"], ["â„¹ï¸", "ℹ️"],
+              ["â•", "═"], ["Ã—", "×"], ["Ã·", "÷"], ["Ãšlt", "Últ"],
+              ["Ãš", "Ú"], ["Ã“", "Ó"], ["Ã‰", "É"], ["Ã", "Í"], ["Ã‘", "Ñ"],
+              ["Ã‚¿", "¿"], ["Â¿", "¿"], ["Ã‚¡", "¡"], ["Â¡", "¡"],
+              ["Ã‚·", "·"], ["Â·", "·"], ["Â°", "°"], ["N.Âº", "N.º"],
+              ["Ã¢â‚¬Â¦", "…"], ["â‚¬Â¦", "…"]
           ];
           for (let ronda = 0; ronda < 3; ronda++) {
               reemplazos.forEach(([incorrecto, correcto]) => {
@@ -146,7 +146,7 @@
       }
       window.portapapelesDocentePermitido = portapapelesDocentePermitido;
       function actualizarEtiquetasVersionScript() {
-          const texto = `VersiÃ³n del script Â· v${VERSION_SCRIPT}`;
+          const texto = `Versión del script · v${VERSION_SCRIPT}`;
           document.querySelectorAll("#versionCodigoEstudiante, #versionCodigoDocente").forEach(elemento => {
               elemento.title = texto;
               elemento.innerHTML = `<i class="fa-solid fa-code-branch"></i> ${texto}`;
@@ -158,20 +158,20 @@
           {
               id: "sec-1",
               icon: "fa-terminal",
-              title: "1. IntroducciÃ³n a JS",
+              title: "1. Introducción a JS",
               theory: "JavaScript es el lenguaje que le da vida a la web interactiva.",
-              exerciseTitle: "DesafÃ­o Escolar: Cartelera Digital del IPEM 146",
-              exerciseDesc: "DiseÃ±a un script interactivo para la pantalla de bienvenida del IPEM 146. DeberÃ¡s declarar variables utilizando palabras clave adecuadas para almacenar tu nombre de alumno y una frase motivadora orientada al aprendizaje tÃ©cnico. Luego, genera una variable para la fecha actual e imprime en la consola un encabezado oficial con formato llamativo mediante mÃºltiples llamadas a console.log().",
+              exerciseTitle: "Desafío Escolar: Cartelera Digital del IPEM 146",
+              exerciseDesc: "Diseña un script interactivo para la pantalla de bienvenida del IPEM 146. Deberás declarar variables utilizando palabras clave adecuadas para almacenar tu nombre de alumno y una frase motivadora orientada al aprendizaje técnico. Luego, genera una variable para la fecha actual e imprime en la consola un encabezado oficial con formato llamativo mediante múltiples llamadas a console.log().",
               initialCode: `// 1. Declarar variables para tu nombre y el mensaje motivador\n// 2. Usar console.log()`,
-              aiSolution: `const nombreEstudiante = "Lucas";\nconst frase = "Â¡El esfuerzo de hoy es el Ã©xito de maÃ±ana!";\nconsole.log("=== CARTELERA IPEM 146 ===");\nconsole.log("Alumno: " + nombreEstudiante);\nconsole.log("Mensaje: " + frase);\nconsole.log("Fecha: " + new Date().toLocaleDateString());`
+              aiSolution: `const nombreEstudiante = "Lucas";\nconst frase = "¡El esfuerzo de hoy es el éxito de mañana!";\nconsole.log("=== CARTELERA IPEM 146 ===");\nconsole.log("Alumno: " + nombreEstudiante);\nconsole.log("Mensaje: " + frase);\nconsole.log("Fecha: " + new Date().toLocaleDateString());`
           },
           {
               id: "sec-2",
               icon: "fa-cube",
               title: "2. Variables (let, const, var)",
               theory: "Usa 'const' para valores fijos y 'let' para variables que cambian.",
-              exerciseTitle: "DesafÃ­o Escolar: Calculadora de Gastos del Recreo",
-              exerciseDesc: "Desarrolla el mÃ³dulo de cobro e inventario para la cantina escolar. Debes definir constantes (const) para establecer los precios unitarios e inmutables de las empanadas y gaseosas, y variables modificables (let) para registrar la cantidad exacta de productos comprados en un recreo. Realiza la operaciÃ³n matemÃ¡tica correspondiente para hallar el costo total e imprime un recibo detallado en la consola.",
+              exerciseTitle: "Desafío Escolar: Calculadora de Gastos del Recreo",
+              exerciseDesc: "Desarrolla el módulo de cobro e inventario para la cantina escolar. Debes definir constantes (const) para establecer los precios unitarios e inmutables de las empanadas y gaseosas, y variables modificables (let) para registrar la cantidad exacta de productos comprados en un recreo. Realiza la operación matemática correspondiente para hallar el costo total e imprime un recibo detallado en la consola.",
               initialCode: `// 1. Define constantes y variables let\n// 2. Calcula el total gastado`,
               aiSolution: `const PRECIO_EMPANADA = 350;\nconst PRECIO_GASEOSA = 400;\nlet empanadasCompradas = 3;\nlet gaseosasCompradas = 1;\nlet totalGastado = (PRECIO_EMPANADA * empanadasCompradas) + (PRECIO_GASEOSA * gaseosasCompradas);\nconsole.log("Total gastado en cantina: $" + totalGastado);`
           },
@@ -180,58 +180,58 @@
               icon: "fa-font",
               title: "3. Tipos de Datos",
               theory: "String, Number, Boolean, Undefined y Null.",
-              exerciseTitle: "DesafÃ­o Escolar: Registro Ficha MÃ©dica EducaciÃ³n FÃ­sica",
-              exerciseDesc: "Crea el sistema de fichas mÃ©dicas para las clases de educaciÃ³n fÃ­sica. Declara 4 variables con distintos tipos de datos primitivos en JavaScript (un String para el nombre del alumno, un Number para la edad, un Boolean para el apto mÃ©dico y un valor Null para las observaciones mÃ©dicas pendientes). Luego, muestra en consola cada valor junto con la verificaciÃ³n explÃ­cita de su tipo utilizando el operador typeof.",
+              exerciseTitle: "Desafío Escolar: Registro Ficha Médica Educación Física",
+              exerciseDesc: "Crea el sistema de fichas médicas para las clases de educación física. Declara 4 variables con distintos tipos de datos primitivos en JavaScript (un String para el nombre del alumno, un Number para la edad, un Boolean para el apto médico y un valor Null para las observaciones médicas pendientes). Luego, muestra en consola cada valor junto con la verificación explícita de su tipo utilizando el operador typeof.",
               initialCode: `// 1. Crea las 4 variables\n// 2. Imprime valor y typeof`,
-              aiSolution: `let nombreAlumno = "SofÃ­a";\nlet edad = 16;\nlet aptoMedico = true;\nlet observaciones = null;\nconsole.log(nombreAlumno, typeof nombreAlumno);\nconsole.log(edad, typeof edad);\nconsole.log(aptoMedico, typeof aptoMedico);\nconsole.log(observaciones, typeof observaciones);`
+              aiSolution: `let nombreAlumno = "Sofía";\nlet edad = 16;\nlet aptoMedico = true;\nlet observaciones = null;\nconsole.log(nombreAlumno, typeof nombreAlumno);\nconsole.log(edad, typeof edad);\nconsole.log(aptoMedico, typeof aptoMedico);\nconsole.log(observaciones, typeof observaciones);`
           },
           {
               id: "sec-4",
               icon: "fa-calculator",
               title: "4. Operadores",
-              theory: "AritmÃ©ticos, comparaciÃ³n y lÃ³gicos.",
-              exerciseTitle: "DesafÃ­o Escolar: Sistema de Calificaciones y Asistencia",
-              exerciseDesc: "Escribe un algoritmo automatizado de acreditaciÃ³n acadÃ©mica. Declara variables numÃ©ricas para representar la calificaciÃ³n final obtenida por un alumno y el porcentaje total de asistencia registrado en el ciclo lectivo. Utiliza operadores de comparaciÃ³n y el operador lÃ³gico AND (&&) para evaluar si el estudiante cumple con ambas condiciones mÃ­nimas para aprobar (nota >= 6 y asistencia >= 75%), imprimiendo un booleano indicativo en la consola.",
-              initialCode: `// 1. Declara notas y asistencia\n// 2. Usa operador lÃ³gico &&`,
-              aiSolution: `let notaFinal = 8;\nlet porcentajeAsistencia = 80;\nlet apruebaMateria = (notaFinal >= 6) && (porcentajeAsistencia >= 75);\nconsole.log("Â¿Aprueba la materia?: " + apruebaMateria);`
+              theory: "Aritméticos, comparación y lógicos.",
+              exerciseTitle: "Desafío Escolar: Sistema de Calificaciones y Asistencia",
+              exerciseDesc: "Escribe un algoritmo automatizado de acreditación académica. Declara variables numéricas para representar la calificación final obtenida por un alumno y el porcentaje total de asistencia registrado en el ciclo lectivo. Utiliza operadores de comparación y el operador lógico AND (&&) para evaluar si el estudiante cumple con ambas condiciones mínimas para aprobar (nota >= 6 y asistencia >= 75%), imprimiendo un booleano indicativo en la consola.",
+              initialCode: `// 1. Declara notas y asistencia\n// 2. Usa operador lógico &&`,
+              aiSolution: `let notaFinal = 8;\nlet porcentajeAsistencia = 80;\nlet apruebaMateria = (notaFinal >= 6) && (porcentajeAsistencia >= 75);\nconsole.log("¿Aprueba la materia?: " + apruebaMateria);`
           },
           {
               id: "sec-5",
               icon: "fa-code-branch",
               title: "5. Condicionales",
               theory: "Estructuras if, else if y else.",
-              exerciseTitle: "DesafÃ­o Escolar: Clasificador de Beca Estudiantil",
-              exerciseDesc: "DiseÃ±a la lÃ³gica institucional para la asignaciÃ³n de estÃ­mulos y becas educativas. Utilizando estructuras condicionales compuestas (if, else if, else), toma como entrada la variable del promedio acadÃ©mico general de un alumno y clasifÃ­calo automÃ¡ticamente en una de las cuatro categorÃ­as oficiales: 'Beca Excelencia Total' (>= 9), 'Beca Parcial' (>= 7), 'MenciÃ³n de Honor sin beca' (>= 6) o 'Refuerzo PedagÃ³gico requerido' (< 6).",
+              exerciseTitle: "Desafío Escolar: Clasificador de Beca Estudiantil",
+              exerciseDesc: "Diseña la lógica institucional para la asignación de estímulos y becas educativas. Utilizando estructuras condicionales compuestas (if, else if, else), toma como entrada la variable del promedio académico general de un alumno y clasifícalo automáticamente en una de las cuatro categorías oficiales: 'Beca Excelencia Total' (>= 9), 'Beca Parcial' (>= 7), 'Mención de Honor sin beca' (>= 6) o 'Refuerzo Pedagógico requerido' (< 6).",
               initialCode: `// 1. Declara promedio\n// 2. Usa if / else if`,
-              aiSolution: `let promedio = 8.5;\nif (promedio >= 9) {\n    console.log("Beca Excelencia Total");\n} else if (promedio >= 7) {\n    console.log("Beca Parcial");\n} else if (promedio >= 6) {\n    console.log("MenciÃ³n de Honor sin beca");\n} else {\n    console.log("Refuerzo PedagÃ³gico requerido");\n}`
+              aiSolution: `let promedio = 8.5;\nif (promedio >= 9) {\n    console.log("Beca Excelencia Total");\n} else if (promedio >= 7) {\n    console.log("Beca Parcial");\n} else if (promedio >= 6) {\n    console.log("Mención de Honor sin beca");\n} else {\n    console.log("Refuerzo Pedagógico requerido");\n}`
           },
           {
               id: "sec-6",
               icon: "fa-gears",
               title: "6. Funciones",
-              theory: "Bloques reutilizables con parÃ¡metros y retorno.",
-              exerciseTitle: "DesafÃ­o Escolar: Conversor de Moneda para Viaje de Egresados",
-              exerciseDesc: "Crea una funciÃ³n modular reutilizable llamada 'calcularAhorroEgresados' que reciba dos parÃ¡metros numÃ©ricos: la cantidad de pesos argentinos acumulados en el fondo comÃºn y la cotizaciÃ³n vigente del dÃ³lar. La funciÃ³n debe retornar un mensaje especificando el valor equivalente en dÃ³lares y evaluar mediante un condicional interno si se alcanzÃ³ la meta requerida de USD 500, o de lo contrario, informar el monto faltante.",
-              initialCode: `// 1. Define la funciÃ³n\n// 2. Retorna dÃ³lares y meta`,
-              aiSolution: `function calcularAhorroEgresados(pesosAhorrados, cotizacionDolar) {\n    let dolares = pesosAhorrados / cotizacionDolar;\n    let meta = 500;\n    if (dolares >= meta) {\n        return "Â¡Meta alcanzada! Tienes USD " + dolares.toFixed(2);\n    } else {\n        return "Faltan USD " + (meta - dolares).toFixed(2) + " para la meta.";\n    }\n}\nconsole.log(calcularAhorroEgresados(600000, 1200));`
+              theory: "Bloques reutilizables con parámetros y retorno.",
+              exerciseTitle: "Desafío Escolar: Conversor de Moneda para Viaje de Egresados",
+              exerciseDesc: "Crea una función modular reutilizable llamada 'calcularAhorroEgresados' que reciba dos parámetros numéricos: la cantidad de pesos argentinos acumulados en el fondo común y la cotización vigente del dólar. La función debe retornar un mensaje especificando el valor equivalente en dólares y evaluar mediante un condicional interno si se alcanzó la meta requerida de USD 500, o de lo contrario, informar el monto faltante.",
+              initialCode: `// 1. Define la función\n// 2. Retorna dólares y meta`,
+              aiSolution: `function calcularAhorroEgresados(pesosAhorrados, cotizacionDolar) {\n    let dolares = pesosAhorrados / cotizacionDolar;\n    let meta = 500;\n    if (dolares >= meta) {\n        return "¡Meta alcanzada! Tienes USD " + dolares.toFixed(2);\n    } else {\n        return "Faltan USD " + (meta - dolares).toFixed(2) + " para la meta.";\n    }\n}\nconsole.log(calcularAhorroEgresados(600000, 1200));`
           },
           {
               id: "sec-7",
               icon: "fa-layer-group",
               title: "7. Arrays",
-              theory: "ColecciÃ³n ordenada indexada desde 0.",
-              exerciseTitle: "DesafÃ­o Escolar: GestiÃ³n de Libros Prestados",
-              exerciseDesc: "Crea un sistema de control para la Biblioteca Escolar. Inicializa un arreglo (array) con tres tÃ­tulos de libros disponibles. Utiliza el mÃ©todo .push() para incorporar un nuevo libro al final de la lista de prÃ©stamos y el mÃ©todo .shift() para simular la devoluciÃ³n y entrega del primer libro solicitado. Finalmente, imprime el nombre del libro prestado, la longitud del arreglo con .length y la lista actualizada en consola.",
+              theory: "Colección ordenada indexada desde 0.",
+              exerciseTitle: "Desafío Escolar: Gestión de Libros Prestados",
+              exerciseDesc: "Crea un sistema de control para la Biblioteca Escolar. Inicializa un arreglo (array) con tres títulos de libros disponibles. Utiliza el método .push() para incorporar un nuevo libro al final de la lista de préstamos y el método .shift() para simular la devolución y entrega del primer libro solicitado. Finalmente, imprime el nombre del libro prestado, la longitud del arreglo con .length y la lista actualizada en consola.",
               initialCode: `// 1. Crea array\n// 2. Usa push y shift`,
-              aiSolution: `let libros = ["MatemÃ¡tica", "Historia", "Literatura"];\nlibros.push("FÃ­sica");\nlet devuelto = libros.shift();\nconsole.log("Libro devuelto: " + devuelto);\nconsole.log("Total libros actuales: " + libros.length, libros);`
+              aiSolution: `let libros = ["Matemática", "Historia", "Literatura"];\nlibros.push("Física");\nlet devuelto = libros.shift();\nconsole.log("Libro devuelto: " + devuelto);\nconsole.log("Total libros actuales: " + libros.length, libros);`
           },
           {
               id: "sec-8",
               icon: "fa-rotate",
               title: "8. Bucles",
               theory: "Bucles for y while.",
-              exerciseTitle: "DesafÃ­o Escolar: Generador de Fixture",
-              exerciseDesc: "Construye el organizador del fixture para el Torneo Intercolegial. Almacena en un arreglo los nombres de 4 equipos deportivos del IPEM 146. Utiliza bucles 'for' anidados para iterar sobre la estructura y generar todos los cruces posibles de partidos 'todos contra todos', incluyendo una validaciÃ³n que garantice que ningÃºn equipo sea emparejado a jugar contra sÃ­ mismo.",
+              exerciseTitle: "Desafío Escolar: Generador de Fixture",
+              exerciseDesc: "Construye el organizador del fixture para el Torneo Intercolegial. Almacena en un arreglo los nombres de 4 equipos deportivos del IPEM 146. Utiliza bucles 'for' anidados para iterar sobre la estructura y generar todos los cruces posibles de partidos 'todos contra todos', incluyendo una validación que garantice que ningún equipo sea emparejado a jugar contra sí mismo.",
               initialCode: `// 1. Crea array de 4 equipos\n// 2. Cruza con for anidado`,
               aiSolution: `let equipos = ["Equipo A", "Equipo B", "Equipo C", "Equipo D"];\nfor (let i = 0; i < equipos.length; i++) {\n    for (let j = 0; j < equipos.length; j++) {\n        if (i !== j) {\n            console.log(equipos[i] + " vs " + equipos[j]);\n        }\n    }\n}`
           },
@@ -239,39 +239,39 @@
               id: "sec-9",
               icon: "fa-id-card",
               title: "9. Objetos Literales",
-              theory: "Propiedades clave-valor y mÃ©todos.",
-              exerciseTitle: "DesafÃ­o Escolar: Perfil de Estudiante",
-              exerciseDesc: "Modela la Ficha Digital del Alumno utilizando Objetos Literales en JavaScript. Define un objeto 'alumno' que contenga propiedades para su nombre completo, curso y un arreglo de calificaciones. Agrega un mÃ©todo interno llamado 'obtenerEstado()' que utilice la palabra clave 'this' para iterar/promediar las notas y devolver una cadena con el resumen acadÃ©mico, curso y estado de regularidad.",
-              initialCode: `// 1. Declara objeto y mÃ©todo`,
-              aiSolution: `let alumno = {\n    nombre: "Juan PÃ©rez",\n    curso: "5to A",\n    notas: [8, 9, 7],\n    obtenerEstado: function() {\n        let suma = this.notas.reduce((a, b) => a + b, 0);\n        let prom = suma / this.notas.length;\n        return this.nombre + " (" + this.curso + ") - Promedio: " + prom.toFixed(1) + " [Regular]";\n    }\n};\nconsole.log(alumno.obtenerEstado());`
+              theory: "Propiedades clave-valor y métodos.",
+              exerciseTitle: "Desafío Escolar: Perfil de Estudiante",
+              exerciseDesc: "Modela la Ficha Digital del Alumno utilizando Objetos Literales en JavaScript. Define un objeto 'alumno' que contenga propiedades para su nombre completo, curso y un arreglo de calificaciones. Agrega un método interno llamado 'obtenerEstado()' que utilice la palabra clave 'this' para iterar/promediar las notas y devolver una cadena con el resumen académico, curso y estado de regularidad.",
+              initialCode: `// 1. Declara objeto y método`,
+              aiSolution: `let alumno = {\n    nombre: "Juan Pérez",\n    curso: "5to A",\n    notas: [8, 9, 7],\n    obtenerEstado: function() {\n        let suma = this.notas.reduce((a, b) => a + b, 0);\n        let prom = suma / this.notas.length;\n        return this.nombre + " (" + this.curso + ") - Promedio: " + prom.toFixed(1) + " [Regular]";\n    }\n};\nconsole.log(alumno.obtenerEstado());`
           },
           {
               id: "sec-10",
               icon: "fa-filter",
               title: "10. Arrays Avanzados",
               theory: ".map(), .filter(), .reduce()",
-              exerciseTitle: "DesafÃ­o Escolar: AuditorÃ­a de Inventario",
-              exerciseDesc: "Realiza una auditorÃ­a tÃ©cnica del laboratorio de computaciÃ³n. Crea un arreglo con varios objetos que representen computadoras (con ID, memoria RAM en GB y estado). Utiliza el mÃ©todo de orden superior .filter() para obtener una lista exclusiva de las PC en estado 'mantenimiento', y combina los mÃ©todos .filter() y .reduce() para calcular la cantidad total de memoria RAM operativa en uso.",
+              exerciseTitle: "Desafío Escolar: Auditoría de Inventario",
+              exerciseDesc: "Realiza una auditoría técnica del laboratorio de computación. Crea un arreglo con varios objetos que representen computadoras (con ID, memoria RAM en GB y estado). Utiliza el método de orden superior .filter() para obtener una lista exclusiva de las PC en estado 'mantenimiento', y combina los métodos .filter() y .reduce() para calcular la cantidad total de memoria RAM operativa en uso.",
               initialCode: `// 1. Array de objetos\n// 2. filter y reduce`,
               aiSolution: `let comps = [\n    { id: 1, ram: 8, estado: "operativa" },\n    { id: 2, ram: 16, estado: "mantenimiento" },\n    { id: 3, ram: 8, estado: "operativa" }\n];\nlet mantenimiento = comps.filter(c => c.estado === "mantenimiento");\nlet ramTotal = comps.filter(c => c.estado === "operativa").reduce((acc, c) => acc + c.ram, 0);\nconsole.log("En mantenimiento:", mantenimiento);\nconsole.log("RAM Operativa Total:", ramTotal + "GB");`
           },
           {
               id: "sec-11",
               icon: "fa-quote-left",
-              title: "11. MÃ©todos de Strings",
+              title: "11. Métodos de Strings",
               theory: ".trim(), .toLowerCase(), .replace()",
-              exerciseTitle: "DesafÃ­o Escolar: Generador de Mails",
-              exerciseDesc: "Desarrolla el normalizador de correos institucionales de la escuela. DiseÃ±a la funciÃ³n 'generarCorreo' que reciba como parÃ¡metro una cadena de texto con el nombre y apellido del estudiante (la cual puede contener espacios vacÃ­os indeseados o mayÃºsculas). Aplica la combinaciÃ³n de .trim(), .toLowerCase() y expresiones regulares con .replace() para formatear el texto en 'nombre.apellido' y concatenar el dominio '@ipem146.edu.ar'.",
-              initialCode: `// 1. FunciÃ³n mail institucional`,
-              aiSolution: `function generarCorreo(nombreCompleto) {\n    let limpio = nombreCompleto.trim().toLowerCase().replace(/\\s+/g, '.');\n    return limpio + "@ipem146.edu.ar";\n}\nconsole.log(generarCorreo("  Lucas Emanuel GonzÃ¡lez  "));`
+              exerciseTitle: "Desafío Escolar: Generador de Mails",
+              exerciseDesc: "Desarrolla el normalizador de correos institucionales de la escuela. Diseña la función 'generarCorreo' que reciba como parámetro una cadena de texto con el nombre y apellido del estudiante (la cual puede contener espacios vacíos indeseados o mayúsculas). Aplica la combinación de .trim(), .toLowerCase() y expresiones regulares con .replace() para formatear el texto en 'nombre.apellido' y concatenar el dominio '@ipem146.edu.ar'.",
+              initialCode: `// 1. Función mail institucional`,
+              aiSolution: `function generarCorreo(nombreCompleto) {\n    let limpio = nombreCompleto.trim().toLowerCase().replace(/\\s+/g, '.');\n    return limpio + "@ipem146.edu.ar";\n}\nconsole.log(generarCorreo("  Lucas Emanuel González  "));`
           },
           {
               id: "sec-12",
               icon: "fa-bullseye",
-              title: "12. Scope y Ãmbito",
-              theory: "Global, funciÃ³n y bloque (let/const).",
-              exerciseTitle: "DesafÃ­o Escolar: Sistema de ContraseÃ±a",
-              exerciseDesc: "Crea una demostraciÃ³n prÃ¡ctica sobre la visibilidad de variables (Scope) en el sistema de seguridad directivo. Declara una variable de Ã¡mbito global para indicar el usuario activo y crea una funciÃ³n de validaciÃ³n que defina internamente variables de bloque (dentro de un bloque 'if/else') usando 'let'. Muestra en consola la diferencia entre acceder a variables globales y el comportamiento del scope restringido de bloque.",
+              title: "12. Scope y Ámbito",
+              theory: "Global, función y bloque (let/const).",
+              exerciseTitle: "Desafío Escolar: Sistema de Contraseña",
+              exerciseDesc: "Crea una demostración práctica sobre la visibilidad de variables (Scope) en el sistema de seguridad directivo. Declara una variable de ámbito global para indicar el usuario activo y crea una función de validación que defina internamente variables de bloque (dentro de un bloque 'if/else') usando 'let'. Muestra en consola la diferencia entre acceder a variables globales y el comportamiento del scope restringido de bloque.",
               initialCode: `// 1. Variable global y de bloque`,
               aiSolution: `let usuarioActivo = "Profesor";\nfunction validarPin(pin) {\n    if (pin === 1234) {\n        let accesoConcedido = true;\n        console.log(usuarioActivo + ": Acceso Autorizado =", accesoConcedido);\n    } else {\n        let accesoConcedido = false;\n        console.log("Acceso Denegado");\n    }\n}\nvalidarPin(1234);`
           },
@@ -279,29 +279,29 @@
               id: "sec-13",
               icon: "fa-laptop-code",
               title: "13. DOM (Document Object Model)",
-              theory: "Ãrbol de objetos HTML.",
-              exerciseTitle: "DesafÃ­o Escolar: Dynamic DOM Banner",
-              exerciseDesc: "Simula la manipulaciÃ³n de la interfaz web institucional mediante el DOM. Crea una funciÃ³n 'actualizarAnuncio' que altere las propiedades de un objeto simulaciÃ³n 'mockElement' (modificando las propiedades 'innerText', 'style.color' y 'style.backgroundColor'). La funciÃ³n debe recibir el mensaje del anuncio y un booleano de urgencia para colorear el cartel dinÃ¡micamente segÃºn la prioridad del aviso.",
-              initialCode: `// Objeto DOM simulado\nconst mockElement = { innerText: "", style: { color: "", backgroundColor: "" } };\n// 1. FunciÃ³n actualizar`,
-              aiSolution: `const mockElement = { innerText: "", style: { color: "", backgroundColor: "" } };\nfunction actualizarAnuncio(mensaje, urgente) {\n    mockElement.innerText = mensaje;\n    if (urgente) {\n        mockElement.style.color = "white";\n        mockElement.style.backgroundColor = "red";\n    } else {\n        mockElement.style.color = "black";\n        mockElement.style.backgroundColor = "yellow";\n    }\n}\nactualizarAnuncio("SuspensiÃ³n de clases por mantenimiento", true);\nconsole.log(mockElement);`
+              theory: "Árbol de objetos HTML.",
+              exerciseTitle: "Desafío Escolar: Dynamic DOM Banner",
+              exerciseDesc: "Simula la manipulación de la interfaz web institucional mediante el DOM. Crea una función 'actualizarAnuncio' que altere las propiedades de un objeto simulación 'mockElement' (modificando las propiedades 'innerText', 'style.color' y 'style.backgroundColor'). La función debe recibir el mensaje del anuncio y un booleano de urgencia para colorear el cartel dinámicamente según la prioridad del aviso.",
+              initialCode: `// Objeto DOM simulado\nconst mockElement = { innerText: "", style: { color: "", backgroundColor: "" } };\n// 1. Función actualizar`,
+              aiSolution: `const mockElement = { innerText: "", style: { color: "", backgroundColor: "" } };\nfunction actualizarAnuncio(mensaje, urgente) {\n    mockElement.innerText = mensaje;\n    if (urgente) {\n        mockElement.style.color = "white";\n        mockElement.style.backgroundColor = "red";\n    } else {\n        mockElement.style.color = "black";\n        mockElement.style.backgroundColor = "yellow";\n    }\n}\nactualizarAnuncio("Suspensión de clases por mantenimiento", true);\nconsole.log(mockElement);`
           },
           {
               id: "sec-14",
               icon: "fa-wpforms",
               title: "14. Formularios y Eventos",
               theory: "Captura de interacciones y validaciones.",
-              exerciseTitle: "DesafÃ­o Escolar: Validador de InscripciÃ³n",
-              exerciseDesc: "Desarrolla el motor de validaciÃ³n para los formularios de inscripciÃ³n a los talleres extracurriculares. Escribe la funciÃ³n 'validarInscripcion(nombre, edad)' que verifique si el nombre ingresado tiene al menos 3 caracteres de longitud y si la edad es igual o mayor a 12 aÃ±os. La funciÃ³n debe almacenar los mensajes de falla en un array de errores o devolver una confirmaciÃ³n exitosa si la informaciÃ³n es vÃ¡lida.",
+              exerciseTitle: "Desafío Escolar: Validador de Inscripción",
+              exerciseDesc: "Desarrolla el motor de validación para los formularios de inscripción a los talleres extracurriculares. Escribe la función 'validarInscripcion(nombre, edad)' que verifique si el nombre ingresado tiene al menos 3 caracteres de longitud y si la edad es igual o mayor a 12 años. La función debe almacenar los mensajes de falla en un array de errores o devolver una confirmación exitosa si la información es válida.",
               initialCode: `// 1. Validar nombre y edad`,
-              aiSolution: `function validarInscripcion(nombre, edad) {\n    let errores = [];\n    if (nombre.length < 3) errores.push("Nombre muy corto.");\n    if (edad < 12) errores.push("Debe ser mayor de 12 aÃ±os.");\n    if (errores.length > 0) return "Errores: " + errores.join(" ");\n    return "Â¡InscripciÃ³n exitosa!";\n}\nconsole.log(validarInscripcion("Ana", 14));`
+              aiSolution: `function validarInscripcion(nombre, edad) {\n    let errores = [];\n    if (nombre.length < 3) errores.push("Nombre muy corto.");\n    if (edad < 12) errores.push("Debe ser mayor de 12 años.");\n    if (errores.length > 0) return "Errores: " + errores.join(" ");\n    return "¡Inscripción exitosa!";\n}\nconsole.log(validarInscripcion("Ana", 14));`
           },
           {
               id: "sec-15",
               icon: "fa-database",
               title: "15. LocalStorage y Persistencia",
               theory: "Almacenamiento clave-valor local.",
-              exerciseTitle: "DesafÃ­o Escolar: Guardado de Tema",
-              exerciseDesc: "Simula el sistema de almacenamiento persistente en el navegador para recordar las preferencias del estudiante. Implementa un objeto que simule el comportamiento de 'LocalStorage' junto a las funciones 'guardarPref(clave, valor)' y 'obtenerPref(clave)'. Guarda la configuraciÃ³n del tema de la interfaz (por ejemplo, 'tema': 'oscuro') y recupera la informaciÃ³n posteriormente demostrando la persistenia de datos.",
+              exerciseTitle: "Desafío Escolar: Guardado de Tema",
+              exerciseDesc: "Simula el sistema de almacenamiento persistente en el navegador para recordar las preferencias del estudiante. Implementa un objeto que simule el comportamiento de 'LocalStorage' junto a las funciones 'guardarPref(clave, valor)' y 'obtenerPref(clave)'. Guarda la configuración del tema de la interfaz (por ejemplo, 'tema': 'oscuro') y recupera la información posteriormente demostrando la persistenia de datos.",
               initialCode: `const mockLocalStorage = {};\n// 1. Funciones de storage`,
               aiSolution: `const mockLocalStorage = {};\nfunction guardarPref(clave, valor) {\n    mockLocalStorage[clave] = valor;\n}\nfunction obtenerPref(clave) {\n    return mockLocalStorage[clave];\n}\nguardarPref("tema", "oscuro");\nconsole.log("Tema recuperado:", obtenerPref("tema"));`
           },
@@ -310,125 +310,125 @@
               icon: "fa-code",
               title: "16. JSON y Fetch API",
               theory: "JSON.parse y consumo de datos.",
-              exerciseTitle: "DesafÃ­o Escolar: PeticiÃ³n de Clima",
-              exerciseDesc: "Procesa la respuesta enviada por un servicio meteorolÃ³gico remoto para planificar una salida de campo del IPEM 146. Convierte una cadena de texto en formato JSON simulada mediante el mÃ©todo 'JSON.parse()'. Examina el objeto de JavaScript resultante evaluando la probabilidad de lluvia y muestra un reporte determinando si la excursiÃ³n educativa se confirma o se suspende.",
+              exerciseTitle: "Desafío Escolar: Petición de Clima",
+              exerciseDesc: "Procesa la respuesta enviada por un servicio meteorológico remoto para planificar una salida de campo del IPEM 146. Convierte una cadena de texto en formato JSON simulada mediante el método 'JSON.parse()'. Examina el objeto de JavaScript resultante evaluando la probabilidad de lluvia y muestra un reporte determinando si la excursión educativa se confirma o se suspende.",
               initialCode: `const jsonRespuestaServidor = '...';\n// 1. JSON.parse`,
-              aiSolution: `const jsonRespuestaServidor = '{"ciudad": "CÃ³rdoba", "temperatura": 24, "clima": "Soleado", "lluviaProbabilidad": 5}';\nlet datos = JSON.parse(jsonRespuestaServidor);\nif (datos.lluviaProbabilidad < 20) {\n    console.log("Clima " + datos.clima + ". Â¡ExcursiÃ³n confirmada!");\n} else {\n    console.log("Se suspende por lluvia.");\n}`
+              aiSolution: `const jsonRespuestaServidor = '{"ciudad": "Córdoba", "temperatura": 24, "clima": "Soleado", "lluviaProbabilidad": 5}';\nlet datos = JSON.parse(jsonRespuestaServidor);\nif (datos.lluviaProbabilidad < 20) {\n    console.log("Clima " + datos.clima + ". ¡Excursión confirmada!");\n} else {\n    console.log("Se suspende por lluvia.");\n}`
           },
           {
               id: "sec-17",
               icon: "fa-triangle-exclamation",
               title: "17. Manejo de Errores (try...catch)",
               theory: "try, catch y throw new Error.",
-              exerciseTitle: "DesafÃ­o Escolar: Validador de Notas",
-              exerciseDesc: "Construye un sistema robusto de carga de calificaciones a prueba de fallos. Crea la funciÃ³n 'registrarNota(nota)' envuelta en un bloque 'try...catch...finally'. Si el usuario ingresa un nÃºmero fuera del rango permitido de notas (1 al 10), genera un error intencional utilizando 'throw new Error()', captura la excepciÃ³n para informar al usuario de manera segura y ejecuta la clÃ¡usula 'finally' indicando el fin del proceso.",
+              exerciseTitle: "Desafío Escolar: Validador de Notas",
+              exerciseDesc: "Construye un sistema robusto de carga de calificaciones a prueba de fallos. Crea la función 'registrarNota(nota)' envuelta en un bloque 'try...catch...finally'. Si el usuario ingresa un número fuera del rango permitido de notas (1 al 10), genera un error intencional utilizando 'throw new Error()', captura la excepción para informar al usuario de manera segura y ejecuta la cláusula 'finally' indicando el fin del proceso.",
               initialCode: `// 1. try...catch con throw`,
-              aiSolution: `function registrarNota(nota) {\n    try {\n        if (nota < 1 || nota > 10) {\n            throw new Error("Nota fuera de rango vÃ¡lido (1-10).");\n        }\n        console.log("Nota registrada correctamente: " + nota);\n    } catch (err) {\n        console.log("[ERROR CAPTURADO]: " + err.message);\n    } finally {\n        console.log("Proceso de registro finalizado.");\n    }\n}\nregistrarNota(12);`
+              aiSolution: `function registrarNota(nota) {\n    try {\n        if (nota < 1 || nota > 10) {\n            throw new Error("Nota fuera de rango válido (1-10).");\n        }\n        console.log("Nota registrada correctamente: " + nota);\n    } catch (err) {\n        console.log("[ERROR CAPTURADO]: " + err.message);\n    } finally {\n        console.log("Proceso de registro finalizado.");\n    }\n}\nregistrarNota(12);`
           },
           {
               id: "sec-18",
               icon: "fa-bolt",
               title: "18. Eventos de Avanzada",
-              theory: "Despachadores y gestiÃ³n concurrente.",
-              exerciseTitle: "DesafÃ­o Escolar: Teclado de Turnos",
-              exerciseDesc: "Crea un administrador concurrente para la reserva de turnos en el laboratorio informÃ¡tico. Utiliza una clase orientada a objetos llamada 'SalaInformatica' que contenga un mÃ©todo 'reservarCompu(alumno, pc)'. Cada vez que un alumno reserve un equipo, captura la hora del sistema en tiempo real utilizando 'toLocaleTimeString()' y guarda la solicitud en un arreglo cronolÃ³gico imprimiendo el detalle en la consola.",
-              initialCode: `// 1. SimulaciÃ³n de turnos con timestamp`,
+              theory: "Despachadores y gestión concurrente.",
+              exerciseTitle: "Desafío Escolar: Teclado de Turnos",
+              exerciseDesc: "Crea un administrador concurrente para la reserva de turnos en el laboratorio informático. Utiliza una clase orientada a objetos llamada 'SalaInformatica' que contenga un método 'reservarCompu(alumno, pc)'. Cada vez que un alumno reserve un equipo, captura la hora del sistema en tiempo real utilizando 'toLocaleTimeString()' y guarda la solicitud en un arreglo cronológico imprimiendo el detalle en la consola.",
+              initialCode: `// 1. Simulación de turnos con timestamp`,
               aiSolution: `class SalaInformatica {\n    constructor() { this.reservas = []; }\n    reservarCompu(alumno, pc) {\n        let timestamp = new Date().toLocaleTimeString();\n        this.reservas.push({ alumno, pc, timestamp });\n        console.log("PC " + pc + " reservada por " + alumno + " a las " + timestamp);\n    }\n}\nlet sala = new SalaInformatica();\nsala.reservarCompu("Lucas", 5);`
           },
           {
               id: "sec-19",
               icon: "fa-flag-checkered",
               title: "19. Proyecto Integrador Final",
-              theory: "IntegraciÃ³n completa de conceptos.",
+              theory: "Integración completa de conceptos.",
               exerciseTitle: "PROYECTO FINAL: Centro de Estudiantes",
-              exerciseDesc: "Desarrolla el sistema de gestiÃ³n integral para la administraciÃ³n del Centro de Estudiantes del IPEM 146. Construye un objeto 'centroEstudiantes' que contenga una colecciÃ³n de proyectos institucionales (cada uno con su nombre, presupuesto solicitado y estado de aprobaciÃ³n). Incorpora el mÃ©todo 'generarReporte()' que combine mÃ©todos modernos de arreglos (.filter() y .reduce()) para computar el presupuesto total requerido de las iniciativas aprobadas e imprimir la liquidaciÃ³n oficial.",
+              exerciseDesc: "Desarrolla el sistema de gestión integral para la administración del Centro de Estudiantes del IPEM 146. Construye un objeto 'centroEstudiantes' que contenga una colección de proyectos institucionales (cada uno con su nombre, presupuesto solicitado y estado de aprobación). Incorpora el método 'generarReporte()' que combine métodos modernos de arreglos (.filter() y .reduce()) para computar el presupuesto total requerido de las iniciativas aprobadas e imprimir la liquidación oficial.",
               initialCode: `// PROYECTO FINAL\n// 1. centroEstudiantes`,
               aiSolution: `let centroEstudiantes = {\n    proyectos: [\n        { nombre: "Torneo Ajedrez", presupuesto: 15000, aprobado: true },\n        { nombre: "Pintar mural", presupuesto: 25000, aprobado: true },\n        { nombre: "Comprar red voley", presupuesto: 40000, aprobado: false }\n    ],\n    generarReporte: function() {\n        let aprobados = this.proyectos.filter(p => p.aprobado);\n        let totalPresupuesto = aprobados.reduce((acc, p) => acc + p.presupuesto, 0);\n        console.log("Proyectos Aprobados:", aprobados.length);\n        console.log("Presupuesto Total Requerido: $" + totalPresupuesto);\n    }\n};\ncentroEstudiantes.generarReporte();`
           }
       ];
-      // Fuente editable externa: desafios.js. Si no estÃ¡ disponible, usa la copia integrada.
+      // Fuente editable externa: desafios.js. Si no está disponible, usa la copia integrada.
       let seccionesData = (Array.isArray(window.DESAFIOS_DATA) && window.DESAFIOS_DATA.length === 19)
           ? window.DESAFIOS_DATA
           : seccionesDataBase;
 
       const SITIO_APOYO_URL = "https://josepantaleo.github.io/formacionprofesionalweb/";
       const ayudasPalabrasClave = {
-          "diseÃ±a": "PlanificÃ¡ la soluciÃ³n y escribÃ­ el cÃ³digo que cumpla el objetivo indicado.",
-          "crea": "ConstruÃ­ en tu cÃ³digo el elemento que pide la consigna.",
-          "desarrolla": "ArmÃ¡ una soluciÃ³n completa siguiendo las condiciones indicadas.",
-          "construye": "CreÃ¡ paso a paso la estructura o el programa solicitado.",
-          "escribe": "RedactÃ¡ las instrucciones de JavaScript necesarias.",
-          "deberÃ¡s": "Indica una acciÃ³n obligatoria que debe aparecer en tu resoluciÃ³n.",
-          "debes": "Indica una acciÃ³n obligatoria que debe aparecer en tu resoluciÃ³n.",
-          "define": "CreÃ¡ el elemento indicado y asignale sus caracterÃ­sticas iniciales.",
-          "declara": "CreÃ¡ una variable e indicÃ¡ su nombre antes de utilizarla.",
+          "diseña": "Planificá la solución y escribí el código que cumpla el objetivo indicado.",
+          "crea": "Construí en tu código el elemento que pide la consigna.",
+          "desarrolla": "Armá una solución completa siguiendo las condiciones indicadas.",
+          "construye": "Creá paso a paso la estructura o el programa solicitado.",
+          "escribe": "Redactá las instrucciones de JavaScript necesarias.",
+          "deberás": "Indica una acción obligatoria que debe aparecer en tu resolución.",
+          "debes": "Indica una acción obligatoria que debe aparecer en tu resolución.",
+          "define": "Creá el elemento indicado y asignale sus características iniciales.",
+          "declara": "Creá una variable e indicá su nombre antes de utilizarla.",
           "declarar": "Crear una variable e indicar su nombre antes de utilizarla.",
-          "definir": "Establecer el nombre, el valor o el comportamiento que tendrÃ¡ un elemento.",
-          "inicializa": "Crear una variable, arreglo u objeto asignÃ¡ndole su primer valor.",
-          "utiliza": "Aplicar en tu cÃ³digo el recurso indicado por la consigna.",
-          "usa": "AplicÃ¡ en tu cÃ³digo el recurso indicado por la consigna.",
-          "realiza": "EjecutÃ¡ la operaciÃ³n o el procedimiento solicitado.",
-          "implementar": "Escribir y poner en funcionamiento la lÃ³gica solicitada.",
-          "implementa": "EscribÃ­ y ponÃ© en funcionamiento la lÃ³gica solicitada.",
-          "validar": "Comprobar que un dato o una condiciÃ³n cumpla las reglas indicadas.",
-          "verifica": "ComprobÃ¡ que el dato o resultado cumpla la condiciÃ³n solicitada.",
-          "evaluar": "Comprobar una condiciÃ³n para obtener un resultado verdadero o falso.",
-          "evalÃºa": "ComprobÃ¡ la condiciÃ³n indicada y utilizÃ¡ el resultado obtenido.",
-          "examina": "RevisÃ¡ los datos o propiedades indicados antes de decidir el resultado.",
+          "definir": "Establecer el nombre, el valor o el comportamiento que tendrá un elemento.",
+          "inicializa": "Crear una variable, arreglo u objeto asignándole su primer valor.",
+          "utiliza": "Aplicar en tu código el recurso indicado por la consigna.",
+          "usa": "Aplicá en tu código el recurso indicado por la consigna.",
+          "realiza": "Ejecutá la operación o el procedimiento solicitado.",
+          "implementar": "Escribir y poner en funcionamiento la lógica solicitada.",
+          "implementa": "Escribí y poné en funcionamiento la lógica solicitada.",
+          "validar": "Comprobar que un dato o una condición cumpla las reglas indicadas.",
+          "verifica": "Comprobá que el dato o resultado cumpla la condición solicitada.",
+          "evaluar": "Comprobar una condición para obtener un resultado verdadero o falso.",
+          "evalúa": "Comprobá la condición indicada y utilizá el resultado obtenido.",
+          "examina": "Revisá los datos o propiedades indicados antes de decidir el resultado.",
           "calcular": "Realizar las operaciones necesarias y guardar o mostrar el resultado.",
-          "calcula": "RealizÃ¡ las operaciones necesarias y guardÃ¡ o mostrÃ¡ el resultado.",
+          "calcula": "Realizá las operaciones necesarias y guardá o mostrá el resultado.",
           "convertir": "Transformar un dato de un formato o tipo a otro.",
-          "convierte": "TransformÃ¡ el dato del formato de origen al formato solicitado.",
+          "convierte": "Transformá el dato del formato de origen al formato solicitado.",
           "almacenar": "Guardar un valor en una variable, arreglo, objeto o almacenamiento.",
-          "almacena": "GuardÃ¡ el valor en la estructura indicada por la consigna.",
+          "almacena": "Guardá el valor en la estructura indicada por la consigna.",
           "recuperar": "Leer nuevamente un dato que fue guardado anteriormente.",
-          "recupera": "LeÃ© nuevamente un dato que fue guardado anteriormente.",
+          "recupera": "Leé nuevamente un dato que fue guardado anteriormente.",
           "mostrar": "Presentar el resultado para que pueda verse.",
-          "muestra": "PresentÃ¡ el resultado para que pueda verse.",
+          "muestra": "Presentá el resultado para que pueda verse.",
           "imprimir": "Enviar el resultado a la consola mediante console.log().",
-          "imprime": "MostrÃ¡ el resultado en la consola mediante console.log().",
+          "imprime": "Mostrá el resultado en la consola mediante console.log().",
           "generar": "Construir el resultado solicitado a partir de los datos disponibles.",
-          "genera": "ConstruÃ­ el resultado solicitado a partir de los datos disponibles.",
-          "incorpora": "AgregÃ¡ el elemento o comportamiento solicitado a la soluciÃ³n.",
-          "agrega": "SumÃ¡ el elemento indicado a la estructura existente.",
-          "aplica": "UsÃ¡ el mÃ©todo, operador o procedimiento indicado sobre los datos.",
-          "guarda": "ConservÃ¡ el dato en la variable o estructura indicada.",
-          "simula": "RepresentÃ¡ el comportamiento pedido sin depender de un sistema externo real.",
-          "retornar": "Devolver un resultado desde una funciÃ³n usando return.",
-          "funciÃ³n": "Bloque reutilizable de instrucciones. DebÃ©s definirlo y luego llamarlo.",
-          "function": "Palabra de JavaScript utilizada para declarar una funciÃ³n.",
-          "parÃ¡metros": "Datos que una funciÃ³n recibe entre parÃ©ntesis para poder trabajar.",
+          "genera": "Construí el resultado solicitado a partir de los datos disponibles.",
+          "incorpora": "Agregá el elemento o comportamiento solicitado a la solución.",
+          "agrega": "Sumá el elemento indicado a la estructura existente.",
+          "aplica": "Usá el método, operador o procedimiento indicado sobre los datos.",
+          "guarda": "Conservá el dato en la variable o estructura indicada.",
+          "simula": "Representá el comportamiento pedido sin depender de un sistema externo real.",
+          "retornar": "Devolver un resultado desde una función usando return.",
+          "función": "Bloque reutilizable de instrucciones. Debés definirlo y luego llamarlo.",
+          "function": "Palabra de JavaScript utilizada para declarar una función.",
+          "parámetros": "Datos que una función recibe entre paréntesis para poder trabajar.",
           "const": "Declara una variable cuyo valor no debe reasignarse.",
           "let": "Declara una variable cuyo valor puede cambiar.",
-          "var": "Forma antigua de declarar variables; tiene alcance de funciÃ³n.",
+          "var": "Forma antigua de declarar variables; tiene alcance de función.",
           "array": "Lista ordenada de valores. En JavaScript se escribe entre corchetes.",
           "arreglo": "Lista ordenada de valores. En JavaScript se escribe entre corchetes.",
           "objeto": "Estructura que agrupa datos mediante propiedades de tipo clave y valor.",
-          "if": "Ejecuta un bloque solamente cuando la condiciÃ³n es verdadera.",
-          "else if": "Permite comprobar otra condiciÃ³n cuando la anterior no se cumpliÃ³.",
+          "if": "Ejecuta un bloque solamente cuando la condición es verdadera.",
+          "else if": "Permite comprobar otra condición cuando la anterior no se cumplió.",
           "else": "Ejecuta una alternativa cuando las condiciones anteriores son falsas.",
-          "if/else": "Estructura que permite elegir entre dos caminos segÃºn una condiciÃ³n.",
+          "if/else": "Estructura que permite elegir entre dos caminos según una condición.",
           "for": "Bucle usado para repetir instrucciones una cantidad controlada de veces.",
-          "while": "Bucle que repite instrucciones mientras una condiciÃ³n sea verdadera.",
-          "class": "Plantilla para crear objetos con propiedades y mÃ©todos compartidos.",
+          "while": "Bucle que repite instrucciones mientras una condición sea verdadera.",
+          "class": "Plantilla para crear objetos con propiedades y métodos compartidos.",
           "consola": "Zona donde se muestran resultados y mensajes del programa.",
-          "console.log()": "InstrucciÃ³n para mostrar valores o mensajes en la consola.",
-          "dom": "RepresentaciÃ³n de los elementos HTML que JavaScript puede consultar y modificar.",
+          "console.log()": "Instrucción para mostrar valores o mensajes en la consola.",
+          "dom": "Representación de los elementos HTML que JavaScript puede consultar y modificar.",
           "scope": "Zona del programa donde una variable existe y puede utilizarse.",
           "localstorage": "Almacenamiento del navegador que conserva datos entre recargas.",
-          "filter()": "Crea un nuevo arreglo conservando solo los elementos que cumplen una condiciÃ³n.",
-          "reduce()": "Recorre un arreglo y combina sus valores en un Ãºnico resultado.",
+          "filter()": "Crea un nuevo arreglo conservando solo los elementos que cumplen una condición.",
+          "reduce()": "Recorre un arreglo y combina sus valores en un único resultado.",
           "push()": "Agrega un elemento al final de un arreglo.",
           "shift()": "Quita y devuelve el primer elemento de un arreglo.",
           "trim()": "Elimina espacios innecesarios al principio y al final de un texto.",
-          "tolowercase()": "Convierte todas las letras de un texto a minÃºsculas.",
+          "tolowercase()": "Convierte todas las letras de un texto a minúsculas.",
           "replace()": "Reemplaza una parte de un texto por otro contenido.",
           "json.parse()": "Convierte una cadena escrita en formato JSON en un valor de JavaScript.",
           "tolocaletimestring()": "Obtiene la hora local con un formato legible.",
           "innertext": "Propiedad utilizada para leer o cambiar el texto visible de un elemento.",
           "style.color": "Propiedad que permite cambiar el color del texto de un elemento.",
           "style.backgroundcolor": "Propiedad que permite cambiar el color de fondo de un elemento.",
-          "try...catch...finally": "Estructura para intentar una operaciÃ³n, capturar errores y ejecutar una acciÃ³n final.",
+          "try...catch...finally": "Estructura para intentar una operación, capturar errores y ejecutar una acción final.",
           "throw new error()": "Crea intencionalmente un error para que pueda ser capturado y tratado."
       };
 
@@ -437,20 +437,20 @@
           "declara": 'Ejemplo general: const escuela = "IPEM 146";',
           "definir": 'Ejemplo general: const limite = 10;',
           "define": 'Ejemplo general: let estado = "activo";',
-          "const": 'Ejemplo general: const curso = "5Â° AÃ±o";',
+          "const": 'Ejemplo general: const curso = "5° Año";',
           "let": "Ejemplo general: let contador = 0;",
           "var": 'Ejemplo general: var mensaje = "Hola";',
           "function": "Ejemplo general: function saludar(nombre) { return `Hola ${nombre}`; }",
-          "funciÃ³n": "Ejemplo general: function duplicar(numero) { return numero * 2; }",
-          "parÃ¡metros": "Ejemplo general: function sumar(a, b) { return a + b; }",
+          "función": "Ejemplo general: function duplicar(numero) { return numero * 2; }",
+          "parámetros": "Ejemplo general: function sumar(a, b) { return a + b; }",
           "retornar": "Ejemplo general: return resultado;",
           "array": 'Ejemplo general: const colores = ["azul", "verde"];',
           "arreglo": "Ejemplo general: const numeros = [2, 4, 6];",
-          "objeto": 'Ejemplo general: const libro = { titulo: "ProgramaciÃ³n", disponible: true };',
+          "objeto": 'Ejemplo general: const libro = { titulo: "Programación", disponible: true };',
           "if": 'Ejemplo general: if (edad >= 18) { console.log("Mayor"); }',
           "else if": 'Ejemplo general: else if (nota >= 6) { console.log("Aprobado"); }',
           "else": 'Ejemplo general: else { console.log("Revisar"); }',
-          "if/else": "Ejemplo general: if (condicion) { /* opciÃ³n A */ } else { /* opciÃ³n B */ }",
+          "if/else": "Ejemplo general: if (condicion) { /* opción A */ } else { /* opción B */ }",
           "for": "Ejemplo general: for (let i = 0; i < 3; i++) { console.log(i); }",
           "while": "Ejemplo general: while (contador < 3) { contador++; }",
           "class": "Ejemplo general: class Persona { constructor(nombre) { this.nombre = nombre; } }",
@@ -469,9 +469,9 @@
           "style.backgroundcolor": 'Ejemplo general: elemento.style.backgroundColor = "yellow";',
           "localstorage": 'Ejemplo general: localStorage.setItem("tema", "oscuro");',
           "dom": 'Ejemplo general: const titulo = document.querySelector("h1");',
-          "scope": "Ejemplo general: una variable declarada dentro de un bloque solo se usa allÃ­.",
+          "scope": "Ejemplo general: una variable declarada dentro de un bloque solo se usa allí.",
           "try...catch...finally": "Ejemplo general: try { ejecutar(); } catch (error) { console.log(error); } finally { cerrar(); }",
-          "throw new error()": 'Ejemplo general: throw new Error("Dato invÃ¡lido");',
+          "throw new error()": 'Ejemplo general: throw new Error("Dato inválido");',
           "calcular": "Ejemplo general: const total = precio * cantidad;",
           "calcula": "Ejemplo general: const promedio = suma / cantidad;",
           "mostrar": 'Ejemplo general: console.log("Dato:", dato);',
@@ -481,21 +481,21 @@
           "almacenar": "Ejemplo general: let resultado = operacion;",
           "almacena": "Ejemplo general: const registro = { nombre, curso };",
           "validar": "Ejemplo general: const esValido = valor > 0;",
-          "verifica": "Ejemplo general: if (texto.length >= 3) { /* vÃ¡lido */ }"
+          "verifica": "Ejemplo general: if (texto.length >= 3) { /* válido */ }"
       };
 
       const palabrasAccion = new Set([
-          "diseÃ±a", "crea", "desarrolla", "construye", "escribe", "deberÃ¡s", "debes",
+          "diseña", "crea", "desarrolla", "construye", "escribe", "deberás", "debes",
           "define", "definir", "declara", "declarar", "inicializa", "utiliza", "usa",
           "realiza", "implementar", "implementa", "validar", "verifica", "evaluar",
-          "evalÃºa", "examina", "calcular", "calcula", "convertir", "convierte",
+          "evalúa", "examina", "calcular", "calcula", "convertir", "convierte",
           "almacenar", "almacena", "recuperar", "recupera", "mostrar", "muestra",
           "imprimir", "imprime", "generar", "genera", "incorpora", "agrega",
           "aplica", "guarda", "simula", "retornar"
       ]);
 
       const palabrasConcepto = new Set([
-          "function", "funciÃ³n", "parÃ¡metros", "class", "array", "arreglo", "objeto",
+          "function", "función", "parámetros", "class", "array", "arreglo", "objeto",
           "dom", "scope", "consola", "const", "let", "var", "if", "else if", "else",
           "if/else", "for", "while", "localstorage"
       ]);
@@ -505,16 +505,16 @@
           if (palabrasAccion.has(clave)) return "action";
           if (palabrasConcepto.has(clave)) return "concept";
           if (/[().]/.test(clave) || clave.startsWith("style.")) return "tool";
-          if (/resultado|condici[oÃ³]n|total|promedio|booleano|mensaje|reporte/.test(clave)) return "result";
+          if (/resultado|condici[oó]n|total|promedio|booleano|mensaje|reporte/.test(clave)) return "result";
           return "concept";
       }
 
       function etiquetaCategoriaPalabra(categoria) {
           return {
-              action: "AcciÃ³n que tenÃ©s que realizar",
+              action: "Acción que tenés que realizar",
               concept: "Concepto de JavaScript",
-              tool: "MÃ©todo o herramienta",
-              result: "CondiciÃ³n o resultado esperado"
+              tool: "Método o herramienta",
+              result: "Condición o resultado esperado"
           }[categoria] || "Concepto importante";
       }
 
@@ -522,15 +522,15 @@
           const clave = normalizarTerminoAyuda(termino);
           if (ejemplosPalabrasClave[clave]) return ejemplosPalabrasClave[clave];
           if (categoria === "action") {
-              return `Ejemplo general: aplicÃ¡ la acciÃ³n Ã¢â‚¬Å“${termino}Ã¢â‚¬Â sobre datos de prueba antes de resolver el caso del desafÃ­o.`;
+              return `Ejemplo general: aplicá la acción â€œ${termino}â€ sobre datos de prueba antes de resolver el caso del desafío.`;
           }
           if (categoria === "tool") {
-              return `Ejemplo general: probÃ¡ ${termino} con un valor sencillo y observÃ¡ quÃ© resultado produce.`;
+              return `Ejemplo general: probá ${termino} con un valor sencillo y observá qué resultado produce.`;
           }
           if (categoria === "result") {
               return 'Ejemplo general: console.log("Resultado:", resultado);';
           }
-          return `Ejemplo general: creÃ¡ una prueba pequeÃ±a que utilice ${termino} y verificÃ¡ su funcionamiento.`;
+          return `Ejemplo general: creá una prueba pequeña que utilice ${termino} y verificá su funcionamiento.`;
       }
 
       function normalizarTerminoAyuda(termino) {
@@ -544,7 +544,7 @@
           if (String(explicacion || "").trim()) return String(explicacion).trim();
           const clave = normalizarTerminoAyuda(termino);
           return ayudasPalabrasClave[clave]
-              || `Es una acciÃ³n o un concepto central de la consigna. IdentificÃ¡ dÃ³nde aplicarlo y comprobÃ¡ que aparezca claramente en tu soluciÃ³n.`;
+              || `Es una acción o un concepto central de la consigna. Identificá dónde aplicarlo y comprobá que aparezca claramente en tu solución.`;
       }
 
       function escaparAtributoAyuda(valor) {
@@ -571,12 +571,12 @@
               "style\\.backgroundColor", "LocalStorage", "DOM", "Scope", "try\\.\\.\\.catch\\.\\.\\.finally",
               "throw new Error\\(\\)", "if/else", "if", "else if", "else", "for", "while",
               "function", "class", "const", "let", "var", "array", "arreglo", "objeto",
-              "funci[oÃ³]n", "par[aÃ¡]metros", "retornar", "declarar", "inicializa",
+              "funci[oó]n", "par[aá]metros", "retornar", "declarar", "inicializa",
               "utiliza", "implementar", "validar", "calcular", "convertir", "almacenar",
               "recuperar", "mostrar", "imprimir", "evaluar", "generar", "consola",
-              "diseÃ±a", "crea", "desarrolla", "construye", "escribe", "deber[aÃ¡]s",
+              "diseña", "crea", "desarrolla", "construye", "escribe", "deber[aá]s",
               "debes", "define", "declara", "usa", "realiza", "implementa", "verifica",
-              "eval[uÃº]a", "examina", "calcula", "convierte", "almacena", "recupera",
+              "eval[uú]a", "examina", "calcula", "convierte", "almacena", "recupera",
               "muestra", "imprime", "genera", "incorpora", "agrega", "aplica", "guarda", "simula",
               "resultado", "costo total", "promedio", "mensaje", "reporte", "booleano",
               "condiciones", "lista actualizada"
@@ -658,7 +658,7 @@
                       })
                   : [];
           } catch (_) {
-              return texto.split(/[,;\nÃ¢â‚¬Â¢]+/).map(x => ({
+              return texto.split(/[,;\nâ€¢]+/).map(x => ({
                   termino: x.replace(/^[-*\d.\s]+/, "").trim(),
                   explicacion: ""
               }));
@@ -696,7 +696,7 @@
               const local = JSON.parse(getLocalStorage(`ayudas_comprension_${sectionId}`) || "null");
               if (local && typeof local === "object") ayudasComprension[sectionId] = local;
           } catch (_) {
-              // Si el dato local quedÃ³ incompleto, se crea un registro nuevo.
+              // Si el dato local quedó incompleto, se crea un registro nuevo.
           }
       }
 
@@ -730,11 +730,11 @@
               pasos.push(fragmento.replace(/[.]\s*$/, ""));
           });
           if (pasos.length < 2) {
-              pasos.push("IdentificÃ¡ los datos, variables o estructuras que solicita la consigna");
-              pasos.push("AplicÃ¡ los conceptos del mÃ³dulo para construir la soluciÃ³n");
+              pasos.push("Identificá los datos, variables o estructuras que solicita la consigna");
+              pasos.push("Aplicá los conceptos del módulo para construir la solución");
           }
           if (!pasos.some(paso => /probar|verificar|ejecutar/i.test(paso))) {
-              pasos.push("EjecutÃ¡ el cÃ³digo y verificÃ¡ que el resultado coincida con lo solicitado");
+              pasos.push("Ejecutá el código y verificá que el resultado coincida con lo solicitado");
           }
           return pasos.slice(0, 6);
       }
@@ -745,13 +745,13 @@
               ...(Array.isArray(sec?.objetivosPedagogicos) ? sec.objetivosPedagogicos : [])
           ].map(item => String(item).trim()).filter(Boolean).slice(0, 3);
           const items = [
-              "IdentifiquÃ© quÃ© datos, variables o estructuras necesito.",
-              "RealicÃ© todas las acciones indicadas en la consigna.",
+              "Identifiqué qué datos, variables o estructuras necesito.",
+              "Realicé todas las acciones indicadas en la consigna.",
               terminos.length
-                  ? `IncluÃ­ los conceptos principales: ${terminos.join(", ")}.`
-                  : "ApliquÃ© los conceptos de JavaScript trabajados en este mÃ³dulo.",
-              "MostrÃ© o devolvÃ­ el resultado en el lugar solicitado.",
-              "EjecutÃ© el cÃ³digo y revisÃ© que no tenga errores."
+                  ? `Incluí los conceptos principales: ${terminos.join(", ")}.`
+                  : "Apliqué los conceptos de JavaScript trabajados en este módulo.",
+              "Mostré o devolví el resultado en el lugar solicitado.",
+              "Ejecuté el código y revisé que no tenga errores."
           ];
           return items;
       }
@@ -760,10 +760,10 @@
           const pasos = generarPasosConsigna(sec);
           const objetivo = pasos[0].replace(/[.]\s*$/, "");
           return {
-              pregunta: "Â¿CuÃ¡l de estas opciones describe mejor cÃ³mo comenzar este desafÃ­o?",
+              pregunta: "¿Cuál de estas opciones describe mejor cómo comenzar este desafío?",
               opciones: [
                   objetivo,
-                  "Copiar una soluciÃ³n completa sin analizar la consigna.",
+                  "Copiar una solución completa sin analizar la consigna.",
                   "Modificar valores al azar sin identificar el objetivo del programa."
               ],
               correcta: 0
@@ -819,7 +819,7 @@
           if (!seleccionado || !feedback) {
               if (feedback) {
                   feedback.className = "comprehension-feedback active incorrect";
-                  feedback.textContent = "SeleccionÃ¡ una opciÃ³n antes de verificar.";
+                  feedback.textContent = "Seleccioná una opción antes de verificar.";
               }
               return;
           }
@@ -832,8 +832,8 @@
           registro.verificacion.ultimaFecha = new Date().toISOString();
           feedback.className = `comprehension-feedback active ${correcta ? "correct" : "incorrect"}`;
           feedback.innerHTML = correcta
-              ? '<i class="fa-solid fa-circle-check"></i> ComprensiÃ³n verificada. Ya podÃ©s usar los pasos y la lista de control para resolver.'
-              : '<i class="fa-solid fa-circle-info"></i> RevisÃ¡ las acciones destacadas y abrÃ­ la consigna en pasos antes de volver a intentar.';
+              ? '<i class="fa-solid fa-circle-check"></i> Comprensión verificada. Ya podés usar los pasos y la lista de control para resolver.'
+              : '<i class="fa-solid fa-circle-info"></i> Revisá las acciones destacadas y abrí la consigna en pasos antes de volver a intentar.';
           guardarRegistroAyuda(sectionId);
       }
 
@@ -869,8 +869,8 @@
                   const correcta = registro.verificacion.correcta === true;
                   feedback.className = `comprehension-feedback active ${correcta ? "correct" : "incorrect"}`;
                   feedback.textContent = correcta
-                      ? "ComprensiÃ³n verificada anteriormente."
-                      : "La Ãºltima respuesta no fue correcta. RevisÃ¡ los pasos e intentÃ¡ nuevamente.";
+                      ? "Comprensión verificada anteriormente."
+                      : "La última respuesta no fue correcta. Revisá los pasos e intentá nuevamente.";
               }
           }
           actualizarProgresoChecklist(sectionId);
@@ -948,14 +948,14 @@
           if (!descripcion) return;
           const locales = palabrasClaveLocales(sec);
           descripcion.innerHTML = resaltarPalabrasClaveIA(sec.exerciseDesc, locales);
-          if (estado) estado.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Palabras clave sugeridas por el desafÃ­o';
+          if (estado) estado.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> Palabras clave sugeridas por el desafío';
           if (!window.firebaseAIRealConfigurada || typeof window.consultarTutorIAFirebase !== "function" || !window.firebaseCurrentUser) return;
           try {
-              if (estado) estado.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> La IA estÃ¡ identificando las acciones y conceptos principales...';
+              if (estado) estado.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> La IA está identificando las acciones y conceptos principales...';
               const respuesta = await window.consultarTutorIAFirebase({
                   nombreModulo: sec.title || sec.id,
                   consigna: sec.exerciseDesc || "",
-                  pregunta: "IdentificÃ¡ entre 6 y 14 palabras o frases clave que ayuden a comprender quÃ© debe hacer el estudiante. DevolvÃ© Ãºnicamente un array JSON de objetos con las propiedades termino y explicacion. La explicaciÃ³n debe ser breve, clara, orientada a la acciÃ³n y no debe resolver el ejercicio.",
+                  pregunta: "Identificá entre 6 y 14 palabras o frases clave que ayuden a comprender qué debe hacer el estudiante. Devolvé únicamente un array JSON de objetos con las propiedades termino y explicacion. La explicación debe ser breve, clara, orientada a la acción y no debe resolver el ejercicio.",
                   modo: "identificar_palabras_clave",
                   conceptos: locales.join(", ")
               });
@@ -1007,7 +1007,7 @@
                       actualizarControlesDesafio(sec.id);
                   }
                   const consola = document.getElementById(`console-${sec.id}`);
-                  if (consola && consola.textContent.includes('Actividad finalizada')) consola.textContent = '// EjecutÃ¡ el cÃ³digo para ver aquÃ­ los resultados o errores.';
+                  if (consola && consola.textContent.includes('Actividad finalizada')) consola.textContent = '// Ejecutá el código para ver aquí los resultados o errores.';
               }
           });
           actualizarProgreso();
@@ -1078,9 +1078,9 @@
               <div class="student-teacher-grade-icon"><i class="fa-solid fa-chalkboard-user"></i></div>
               <div class="student-teacher-grade-content">
                   <strong>Nota corregida por tu docente: ${detalle.nota.toFixed(1)}/10</strong>
-                  <span>CalificaciÃ³n automÃ¡tica anterior: ${detalle.notaAutomatica !== null ? `${detalle.notaAutomatica}/10` : 'sin calificaciÃ³n automÃ¡tica'}.</span>
-                  ${detalle.ajuste?.motivo ? `<span><b>ObservaciÃ³n:</b> ${escapeHtml(detalle.ajuste.motivo)}</span>` : ''}
-                  <small>${escapeHtml(detalle.ajuste?.modificadaPor || 'Docente autorizado')}${fecha ? ` Â· ${escapeHtml(fecha)}` : ''}</small>
+                  <span>Calificación automática anterior: ${detalle.notaAutomatica !== null ? `${detalle.notaAutomatica}/10` : 'sin calificación automática'}.</span>
+                  ${detalle.ajuste?.motivo ? `<span><b>Observación:</b> ${escapeHtml(detalle.ajuste.motivo)}</span>` : ''}
+                  <small>${escapeHtml(detalle.ajuste?.modificadaPor || 'Docente autorizado')}${fecha ? ` · ${escapeHtml(fecha)}` : ''}</small>
               </div>`;
           const textoEvaluacion = document.getElementById(`ai-text-${sectionId}`);
           if (textoEvaluacion) {
@@ -1106,7 +1106,7 @@
           renderInformeVisualEstudiante();
       });
 
-      // Control de CronÃ³metros por MÃ³dulo (40 minutos = 2400 segundos)
+      // Control de Cronómetros por Módulo (40 minutos = 2400 segundos)
       const TIEMPO_MAXIMO_SEGUNDOS = 2400;
       const UMBRAL_REVISION_DIEZ_MINUTOS = 600;
       const UMBRAL_REVISION_CINCO_MINUTOS = 300;
@@ -1203,7 +1203,7 @@
           const rubricaGuardadaLocal = JSON.parse(localStorage.getItem("rubrica_socratica_docente") || "null");
           if (rubricaGuardadaLocal) aplicarRubricaSocratica(rubricaGuardadaLocal);
       } catch (e) {
-          console.warn("No se pudo recuperar la rÃºbrica socrÃ¡tica local:", e);
+          console.warn("No se pudo recuperar la rúbrica socrática local:", e);
       }
       let ignorarSalidasHasta = Date.now() + 5000;
       let ultimoEventoVisibilidad = 0;
@@ -1231,12 +1231,12 @@
               editor.dataset.cooperationLocked = String(Boolean(bloqueoCooperacion));
           }
           const bloqueado = (
-              (editor.dataset.cooperationLocked === "true" && !window.firebaseTeacherUser) ||
+              editor.dataset.cooperationLocked === "true" ||
               !cuentaEstudianteActiva ||
               !claseHabilitada ||
               pantallaBloqueada ||
               Boolean(actividadesFinalizadas[sectionId]) ||
-               Boolean(modulosPausados[sectionId]) && !window.firebaseTeacherUser
+              Boolean(modulosPausados[sectionId])
           );
           editor.disabled = bloqueado;
           editor.__setCodeMirrorDisabled?.(bloqueado);
@@ -1272,7 +1272,7 @@
           delete avisosTiempoEstudiante[sectionId];
           if (!conservarHistorial) delete historialResultados[sectionId];
 
-          // Una reapertura inicia un nuevo intento con cÃ³digo limpio y 40 minutos.
+          // Una reapertura inicia un nuevo intento con código limpio y 40 minutos.
           const editor = document.getElementById(`editor-${sectionId}`);
           if (editor) {
               editor.value = sec.initialCode || '';
@@ -1289,7 +1289,7 @@
           removeLocalStorage(`pausa_${sectionId}`);
 
           const consola = document.getElementById(`console-${sectionId}`);
-          if (consola) consola.textContent = '// EjecutÃ¡ el cÃ³digo para ver aquÃ­ los resultados o errores.';
+          if (consola) consola.textContent = '// Ejecutá el código para ver aquí los resultados o errores.';
           document.getElementById(`ai-feedback-${sectionId}`)?.classList.remove('active');
           document.getElementById(`time-review-alert-${sectionId}`)?.setAttribute('hidden', '');
           const estado = document.getElementById(`editor-state-${sectionId}`);
@@ -1304,7 +1304,7 @@
           actualizarControlesDesafio(sectionId);
           actualizarMetricasEditor(sectionId);
           actualizarDisplayTiempo(sectionId);
-          actualizarEstadoEditorEstudiante(sectionId, "idle", "DesafÃ­o habilitado para un nuevo intento");
+          actualizarEstadoEditorEstudiante(sectionId, "idle", "Desafío habilitado para un nuevo intento");
       }
 
       function enviarLatidoConexionEstudiante(forzar = false) {
@@ -1339,12 +1339,12 @@
               intervaloConexionEstudiante = null;
               return;
           }
-          // Marca la presencia apenas Firebase confirma el inicio de sesiÃ³n.
+          // Marca la presencia apenas Firebase confirma el inicio de sesión.
           iniciarLatidoConexionEstudiante();
-          // Reintento breve por si Firestore todavÃ­a estaba inicializando.
+          // Reintento breve por si Firestore todavía estaba inicializando.
           setTimeout(() => enviarLatidoConexionEstudiante(true), 1200);
       });
-      // Recupera la sesiÃ³n ya resuelta aunque el evento de autenticaciÃ³n haya
+      // Recupera la sesión ya resuelta aunque el evento de autenticación haya
       // ocurrido antes de registrar este listener.
       if (window.firebaseCurrentUser) {
           iniciarLatidoConexionEstudiante();
@@ -1589,7 +1589,7 @@
               botonJustificar.style.display = eventosSalidasPestana.length ? 'inline-flex' : 'none';
           }
           if (inmediato && window.guardarSalidasPestanaFirebase) {
-              mostrarEstadoFirebase('saving', 'Guardando cambio de pestaÃ±a...');
+              mostrarEstadoFirebase('saving', 'Guardando cambio de pestaña...');
               const ok = await window.guardarSalidasPestanaFirebase(
                   totalSalidasPestana,
                   JSON.parse(JSON.stringify(eventosSalidasPestana)),
@@ -1602,7 +1602,7 @@
               );
               mostrarEstadoFirebase(
                   ok ? 'online' : 'offline',
-                  ok ? 'Cambios de pestaÃ±a guardados' : `No se guardÃ³ el cambio de pestaÃ±a${window.ultimoErrorSalidasPestana?.code ? ` (${window.ultimoErrorSalidasPestana.code})` : ''}`
+                  ok ? 'Cambios de pestaña guardados' : `No se guardó el cambio de pestaña${window.ultimoErrorSalidasPestana?.code ? ` (${window.ultimoErrorSalidasPestana.code})` : ''}`
               );
               if (ok) removeLocalStorage('app_pending_tab_sync');
               else setLocalStorage('app_pending_tab_sync', 'true');
@@ -1678,7 +1678,7 @@
           }
           if (getLocalStorage('app_pending_lock_notice') === 'true') {
               removeLocalStorage('app_pending_lock_notice');
-              alert(`Se registraron ${LIMITE_SALIDAS_PARA_BLOQUEO} salidas. La actividad quedÃ³ bloqueada y requiere autorizaciÃ³n docente.`);
+              alert(`Se registraron ${LIMITE_SALIDAS_PARA_BLOQUEO} salidas. La actividad quedó bloqueada y requiere autorización docente.`);
           }
       }
 
@@ -1693,7 +1693,7 @@
 
           window.addEventListener('blur', () => {
               clearTimeout(temporizadorPerdidaFoco);
-              // Abrir el popup de la extensiÃ³n o un diÃ¡logo del navegador produce blur
+              // Abrir el popup de la extensión o un diálogo del navegador produce blur
               // sin abandonar la actividad. Solo visibilitychange contabiliza una salida.
           });
 
@@ -1733,8 +1733,8 @@
           if (claseHabilitada) {
               overlay?.classList.add('hidden');
               if (mensaje) mensaje.textContent = datos.iniciadaPor
-                  ? `Clase iniciada por ${datos.iniciadaPor}. Ya podÃ©s comenzar.`
-                  : "La clase fue habilitada. Ya podÃ©s comenzar.";
+                  ? `Clase iniciada por ${datos.iniciadaPor}. Ya podés comenzar.`
+                  : "La clase fue habilitada. Ya podés comenzar.";
               if (seccionActivaActual && cronometroDesafioIniciado(seccionActivaActual)) {
                   iniciarCronometro(seccionActivaActual);
               }
@@ -1742,8 +1742,8 @@
               overlay?.classList.remove('hidden');
               if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
               if (mensaje) mensaje.textContent = datos.finalizadaPor
-                  ? `La clase fue finalizada por ${datos.finalizadaPor}. Las actividades estÃ¡n bloqueadas.`
-                  : "El docente habilitarÃ¡ las actividades con Ctrl + Alt + C. MantenÃ© esta pestaÃ±a abierta.";
+                  ? `La clase fue finalizada por ${datos.finalizadaPor}. Las actividades están bloqueadas.`
+                  : "El docente habilitará las actividades con Ctrl + Alt + C. Mantené esta pestaña abierta.";
               Object.keys(cronometrosActivos).forEach(id => {
                   if (cronometrosActivos[id]) clearInterval(cronometrosActivos[id]);
                   cronometrosActivos[id] = null;
@@ -1821,7 +1821,7 @@
           const iniciada = await window.iniciarClaseFirebase?.();
           if (boton) boton.disabled = false;
           if (!iniciada) {
-              if (estado) estado.textContent = 'No se pudo iniciar. VerificÃ¡ que las reglas de Firestore estÃ©n publicadas.';
+              if (estado) estado.textContent = 'No se pudo iniciar. Verificá que las reglas de Firestore estén publicadas.';
               return;
           }
           aplicarEstadoInicioClase(true, {
@@ -1841,7 +1841,7 @@
           aplicarEstadoInicioClase(false, {
               finalizadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || 'docente autorizado'
           });
-          if (estado) estado.textContent = 'Clase finalizada. Las actividades de los alumnos estÃ¡n bloqueadas.';
+          if (estado) estado.textContent = 'Clase finalizada. Las actividades de los alumnos están bloqueadas.';
           alert('Clase finalizada. Todos los estudiantes volvieron al estado de espera.');
       }
 
@@ -1859,30 +1859,30 @@
       async function controlarCronometrosTodosDesdeInterfaz(accion, boton = null) {
           const configuracion = {
               pausar: {
-                  pregunta: 'Â¿Pausar los cronÃ³metros y la ediciÃ³n de todos los estudiantes?',
-                  estado: 'Pausando los cronÃ³metros de todos...',
-                  resultado: 'CronÃ³metros pausados para todos los estudiantes.'
+                  pregunta: '¿Pausar los cronómetros y la edición de todos los estudiantes?',
+                  estado: 'Pausando los cronómetros de todos...',
+                  resultado: 'Cronómetros pausados para todos los estudiantes.'
               },
               reanudar: {
-                  pregunta: 'Â¿Continuar los cronÃ³metros y habilitar la ediciÃ³n para todos los estudiantes?',
-                  estado: 'Continuando los cronÃ³metros de todos...',
-                  resultado: 'CronÃ³metros y ediciÃ³n habilitados para todos los estudiantes.'
+                  pregunta: '¿Continuar los cronómetros y habilitar la edición para todos los estudiantes?',
+                  estado: 'Continuando los cronómetros de todos...',
+                  resultado: 'Cronómetros y edición habilitados para todos los estudiantes.'
               },
               reiniciar: {
-                  pregunta: 'Â¿Reiniciar a 40:00 los cronÃ³metros de los mÃ³dulos activos para todos los estudiantes?\n\nNo se borrarÃ¡n cÃ³digos, respuestas ni calificaciones.',
-                  estado: 'Reiniciando a 40:00 los cronÃ³metros de todos...',
-                  resultado: 'CronÃ³metros reiniciados a 40:00 para todos los estudiantes.'
+                  pregunta: '¿Reiniciar a 40:00 los cronómetros de los módulos activos para todos los estudiantes?\n\nNo se borrarán códigos, respuestas ni calificaciones.',
+                  estado: 'Reiniciando a 40:00 los cronómetros de todos...',
+                  resultado: 'Cronómetros reiniciados a 40:00 para todos los estudiantes.'
               }
           }[accion];
           if (!configuracion) return;
           if (accion === 'pausar' && cronometrosPausadosPorDocente) {
               actualizarBotonPausaCronometros();
-              alert('Los cronÃ³metros de todos los estudiantes ya estÃ¡n pausados.');
+              alert('Los cronómetros de todos los estudiantes ya están pausados.');
               return;
           }
           if (accion === 'reanudar' && !cronometrosPausadosPorDocente) {
               actualizarBotonPausaCronometros();
-              alert('Los cronÃ³metros de todos los estudiantes ya estÃ¡n activos.');
+              alert('Los cronómetros de todos los estudiantes ya están activos.');
               return;
           }
           if (!confirm(configuracion.pregunta)) return;
@@ -1894,7 +1894,7 @@
           try {
               const ok = await window.controlarCronometrosFirebase?.(accion);
               if (!ok) {
-                  if (estado) estado.textContent = 'No se pudieron actualizar los cronÃ³metros. VerificÃ¡ que la clase estÃ© iniciada.';
+                  if (estado) estado.textContent = 'No se pudieron actualizar los cronómetros. Verificá que la clase esté iniciada.';
                   return;
               }
               if (accion === 'pausar' || accion === 'reanudar') {
@@ -1924,10 +1924,10 @@
 
       async function cerrarAccesoDocenteTemporal() {
           if (!window.firebaseTeacherUser) {
-              alert("No hay una autorizaciÃ³n docente temporal activa.");
+              alert("No hay una autorización docente temporal activa.");
               return;
           }
-          if (!confirm("Se cerrarÃ¡n el panel y las herramientas docentes. La cuenta del estudiante continuarÃ¡ abierta. Â¿Continuar?")) {
+          if (!confirm("Se cerrarán el panel y las herramientas docentes. La cuenta del estudiante continuará abierta. ¿Continuar?")) {
               return;
           }
           cerrarPanelProfesor();
@@ -1937,7 +1937,7 @@
           const cerrado = await window.cerrarAutorizacionDocenteFirebase?.();
           if (cerrado) {
               await actualizarVisibilidadDocente();
-              alert("AutorizaciÃ³n docente temporal cerrada. La sesiÃ³n del estudiante continÃºa activa.");
+              alert("Autorización docente temporal cerrada. La sesión del estudiante continúa activa.");
           }
       }
 
@@ -1961,7 +1961,7 @@
           setLocalStorage('app_last_tab_reset', datos.id);
           const contador = document.getElementById('blurCount');
           if (contador) contador.innerText = '0';
-          alert('El docente reiniciÃ³ el contador de cambios de pestaÃ±a. El historial detallado permanece registrado.');
+          alert('El docente reinició el contador de cambios de pestaña. El historial detallado permanece registrado.');
       });
       window.addEventListener('control-cronometro-individual', event => {
           ultimoControlCronometroIndividual = event.detail || {};
@@ -2029,7 +2029,7 @@
           const el = document.getElementById('firebaseSaveStatus');
           if (!el) return;
           el.className = `firebase-status ${tipo}`;
-          el.textContent = `Ã¢â€”Â ${texto}`;
+          el.textContent = `â— ${texto}`;
       }
 
       
@@ -2037,8 +2037,8 @@
           const valor = String(valorCurso || '').trim();
           if (!valor) return { curso: '', division: '' };
 
-          // Acepta formatos antiguos: "6TO A", "6TO - A", "5Â° AÃ±o A", "5Â° AÃ±o 'A'"
-          const m = valor.match(/^(.*?)(?:\s*[-Ã¢â‚¬â€œÃ¢â‚¬â€]?\s*['"]?([A-Za-z])['"]?)$/);
+          // Acepta formatos antiguos: "6TO A", "6TO - A", "5° Año A", "5° Año 'A'"
+          const m = valor.match(/^(.*?)(?:\s*[-â€“â€”]?\s*['"]?([A-Za-z])['"]?)$/);
           if (m && m[2] && m[1].trim()) {
               return { curso: m[1].trim(), division: m[2].toUpperCase() };
           }
@@ -2047,7 +2047,7 @@
 
       async function guardarIdentificacionFirebase() {
           // El alta inicial ocurre antes de activar la cuenta de estudiante.
-          // Basta con tener una sesiÃ³n autenticada y el puente de Firebase.
+          // Basta con tener una sesión autenticada y el puente de Firebase.
           if (!window.firebaseCurrentUser || typeof window.guardarProgresoFirebase !== 'function') return false;
           const nombre = document.getElementById('studentName')?.value.trim() || '';
           const curso = document.getElementById('studentCourse')?.value.trim() || '';
@@ -2074,7 +2074,7 @@
               if (ok) mostrarEstadoFirebase('online', 'Datos del estudiante guardados en Firebase');
               return ok;
           } catch (e) {
-              console.error('Error guardando identificaciÃ³n:', e);
+              console.error('Error guardando identificación:', e);
               return false;
           }
       }
@@ -2099,21 +2099,21 @@
           if (!diagnostico) return;
           const hora = datos.ultimoLatido
               ? new Date(datos.ultimoLatido).toLocaleTimeString("es-AR")
-              : "sin seÃ±al";
+              : "sin señal";
           const estado = datos.presenciaEnviada
-              ? (datos.estadoConexion === "segundo_plano" ? "Segundo plano" : "En lÃ­nea")
-              : (datos.estadoConexion === "sin_conexion" ? "Sin Internet" : "ConexiÃ³n inestable");
+              ? (datos.estadoConexion === "segundo_plano" ? "Segundo plano" : "En línea")
+              : (datos.estadoConexion === "sin_conexion" ? "Sin Internet" : "Conexión inestable");
           diagnostico.className = `firebase-status ${datos.presenciaEnviada ? "online" : "offline"}`;
-          diagnostico.textContent = `Presencia: ${estado} Â· ${hora}`;
+          diagnostico.textContent = `Presencia: ${estado} · ${hora}`;
           diagnostico.title = [
-              `SesiÃ³n: ${String(datos.sesionId || "").slice(0, 8) || "sin identificar"}`,
+              `Sesión: ${String(datos.sesionId || "").slice(0, 8) || "sin identificar"}`,
               `Perfil: ${datos.perfilEncontrado ? "encontrado" : "pendiente"}`,
               `Fallos consecutivos: ${Number(datos.fallosConsecutivos || 0)}`,
               datos.error ? `Error: ${datos.error}` : "",
-              datos.sesionesDuplicadas ? "Hay otra sesiÃ³n reciente con esta cuenta." : ""
+              datos.sesionesDuplicadas ? "Hay otra sesión reciente con esta cuenta." : ""
           ].filter(Boolean).join("\n");
           if (datos.sesionesDuplicadas) {
-              diagnostico.textContent += " Â· Otra sesiÃ³n activa";
+              diagnostico.textContent += " · Otra sesión activa";
           }
       });
       window.addEventListener("load", () => {
@@ -2131,22 +2131,22 @@
           if (!user.emailVerified) {
               return {
                   titulo: 'Correo no verificado',
-                  detalle: `La cuenta ${user.email || 'actual'} todavÃ­a no figura como verificada en Google.`,
-                  accion: 'VerificÃ¡ el correo, cerrÃ¡ sesiÃ³n y volvÃ© a ingresar antes de guardar los datos.'
+                  detalle: `La cuenta ${user.email || 'actual'} todavía no figura como verificada en Google.`,
+                  accion: 'Verificá el correo, cerrá sesión y volvé a ingresar antes de guardar los datos.'
               };
           }
           if (codigo === 'auth-required') {
               return {
-                  titulo: 'SesiÃ³n vencida',
-                  detalle: 'No hay una sesiÃ³n autenticada disponible para guardar el estudiante.',
-                  accion: 'CerrÃ¡ esta ventana e ingresÃ¡ nuevamente con Google.'
+                  titulo: 'Sesión vencida',
+                  detalle: 'No hay una sesión autenticada disponible para guardar el estudiante.',
+                  accion: 'Cerrá esta ventana e ingresá nuevamente con Google.'
               };
           }
           if (codigo === 'firebase-not-initialized') {
               return {
-                  titulo: 'Firestore no estÃ¡ inicializado',
-                  detalle: `La aplicaciÃ³n no pudo conectarse al proyecto ${error.projectId || 'Firebase'}.`,
-                  accion: 'RevisÃ¡ la configuraciÃ³n de Firebase y que la pÃ¡gina se abra desde un servidor web.'
+                  titulo: 'Firestore no está inicializado',
+                  detalle: `La aplicación no pudo conectarse al proyecto ${error.projectId || 'Firebase'}.`,
+                  accion: 'Revisá la configuración de Firebase y que la página se abra desde un servidor web.'
               };
           }
           if (codigo === 'permission-denied' || codigo === 'failed-precondition') {
@@ -2159,20 +2159,20 @@
               if (documentoExistenteIncompleto) {
                   return {
                       titulo: 'Documento existente incompleto',
-                      detalle: 'Firestore encontrÃ³ un registro previo de este UID, pero no tiene todos los campos necesarios para actualizarlo.',
-                      accion: 'El administrador debe completar o eliminar ese documento en estudiantes/{uid}; despuÃ©s intentÃ¡ nuevamente.'
+                      detalle: 'Firestore encontró un registro previo de este UID, pero no tiene todos los campos necesarios para actualizarlo.',
+                      accion: 'El administrador debe completar o eliminar ese documento en estudiantes/{uid}; después intentá nuevamente.'
                   };
               }
               return {
                   titulo: 'Reglas de Firestore no coinciden',
-                  detalle: `Firestore rechazÃ³ la operaciÃ³n en ${error.projectId || 'el proyecto configurado'}.`,
-                  accion: 'PublicÃ¡ la versiÃ³n actualizada de REGLAS.TXT en ese mismo proyecto y verificÃ¡ que el correo estÃ© verificado.'
+                  detalle: `Firestore rechazó la operación en ${error.projectId || 'el proyecto configurado'}.`,
+                  accion: 'Publicá la versión actualizada de REGLAS.TXT en ese mismo proyecto y verificá que el correo esté verificado.'
               };
           }
           return {
               titulo: 'No se pudo guardar',
-              detalle: error.message || 'Firebase devolviÃ³ un error no identificado.',
-              accion: 'RevisÃ¡ la conexiÃ³n y la consola de Firebase para obtener el detalle tÃ©cnico.'
+              detalle: error.message || 'Firebase devolvió un error no identificado.',
+              accion: 'Revisá la conexión y la consola de Firebase para obtener el detalle técnico.'
           };
       }
 
@@ -2221,7 +2221,7 @@
           firebaseSaveGeneration += 1;
           if (firebaseSaveInProgress) {
               firebaseSavePending = true;
-              mostrarEstadoFirebase('saving', 'Cambios pendientes de sincronizaciÃ³n...');
+              mostrarEstadoFirebase('saving', 'Cambios pendientes de sincronización...');
               return;
           }
           clearTimeout(firebaseSaveTimer);
@@ -2232,7 +2232,7 @@
           const campos = [
               ['studentName', 'nombre y apellido'],
               ['studentCourse', 'curso'],
-              ['studentDivision', 'divisiÃ³n'],
+              ['studentDivision', 'división'],
               ['studentTurno', 'turno']
           ];
           const faltantes = campos.filter(([id]) => !String(document.getElementById(id)?.value || '').trim());
@@ -2243,7 +2243,7 @@
           if (!faltantes.length) return true;
           if (mostrarAviso) {
               const nombres = faltantes.map(([, nombre]) => nombre).join(', ');
-              alert(`CompletÃ¡ los siguientes datos antes de continuar: ${nombres}.`);
+              alert(`Completá los siguientes datos antes de continuar: ${nombres}.`);
               document.getElementById(faltantes[0][0])?.focus();
           }
           return false;
@@ -2290,8 +2290,8 @@
               return ok;
           } catch (e) {
               console.error(e);
-              mostrarEstadoFirebase('offline', e?.code === 'auth/email-not-verified' ? 'Correo no verificado' : 'Error de conexiÃ³n');
-              actualizarTodosEstadosChatIA('error', 'Error de conexiÃ³n');
+              mostrarEstadoFirebase('offline', e?.code === 'auth/email-not-verified' ? 'Correo no verificado' : 'Error de conexión');
+              actualizarTodosEstadosChatIA('error', 'Error de conexión');
               return false;
           } finally {
               firebaseSaveInProgress = false;
@@ -2402,7 +2402,7 @@
 
           let divisionFirebase = estudiante.division || '';
 
-          // Compatibilidad con avances antiguos que guardaban "Curso y DivisiÃ³n"
+          // Compatibilidad con avances antiguos que guardaban "Curso y División"
           // en un solo campo.
           if (!divisionFirebase && estudiante.curso) {
               const separado = extraerCursoYDivision(estudiante.curso);
@@ -2505,13 +2505,13 @@
           const modal=document.createElement('div');
           modal.className='modal-overlay';
           modal.style.display='flex';
-          // El alta se abre mientras el overlay de autenticaciÃ³n sigue visible.
+          // El alta se abre mientras el overlay de autenticación sigue visible.
           // Debe quedar por encima para que el estudiante pueda completar los datos.
           modal.style.zIndex='10050';
           const textoRegistro = esNuevoRegistro
-              ? "Primera vez con este correo. CompletÃ¡ tus datos para comenzar."
-              : "Este correo ya estÃ¡ registrado. CompletÃ¡ los datos faltantes para continuar.";
-          modal.innerHTML=`<div class="modal-box" style="max-width:520px;width:92%;"><h3>Ã°Å¸â€˜Â¨Ã¢â‚¬ÂÃ°Å¸Å½â€œ Datos del estudiante</h3><p>Primera vez con este correo. CompletÃ¡ tus datos para comenzar.</p><div class="input-group"><label>Nombre y Apellido</label><input id="nuevoNombre" type="text" required></div><div class="input-group"><label>Curso</label><select id="nuevoCurso" required><option value="">Seleccionar curso</option><option>1Â° AÃ±o</option><option>2Â° AÃ±o</option><option>3Â° AÃ±o</option><option>4Â° AÃ±o</option><option>5Â° AÃ±o</option><option>6Â° AÃ±o</option><option>7Â° AÃ±o</option></select></div><div class="input-group"><label>DivisiÃ³n</label><select id="nuevoDivision" required><option value="">Seleccionar divisiÃ³n</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option></select></div><div class="input-group"><label>Turno</label><select id="nuevoTurno" required><option value="">Seleccionar turno</option><option>MaÃ±ana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select></div><div id="nuevoError" role="alert" style="display:none;color:#fca5a5">SeleccionÃ¡ obligatoriamente curso, divisiÃ³n y turno.</div><div class="modal-actions"><button class="btn btn-primary" id="confirmarNuevo" type="button">Comenzar actividad</button></div></div>`;
+              ? "Primera vez con este correo. Completá tus datos para comenzar."
+              : "Este correo ya está registrado. Completá los datos faltantes para continuar.";
+          modal.innerHTML=`<div class="modal-box" style="max-width:520px;width:92%;"><h3>ðŸ‘¨â€ðŸŽ“ Datos del estudiante</h3><p>Primera vez con este correo. Completá tus datos para comenzar.</p><div class="input-group"><label>Nombre y Apellido</label><input id="nuevoNombre" type="text" required></div><div class="input-group"><label>Curso</label><select id="nuevoCurso" required><option value="">Seleccionar curso</option><option>1° Año</option><option>2° Año</option><option>3° Año</option><option>4° Año</option><option>5° Año</option><option>6° Año</option><option>7° Año</option></select></div><div class="input-group"><label>División</label><select id="nuevoDivision" required><option value="">Seleccionar división</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option></select></div><div class="input-group"><label>Turno</label><select id="nuevoTurno" required><option value="">Seleccionar turno</option><option>Mañana</option><option>Tarde</option><option>Vespertino</option><option>Noche</option></select></div><div id="nuevoError" role="alert" style="display:none;color:#fca5a5">Seleccioná obligatoriamente curso, división y turno.</div><div class="modal-actions"><button class="btn btn-primary" id="confirmarNuevo" type="button">Comenzar actividad</button></div></div>`;
           const descripcionRegistro = modal.querySelector(".modal-box > p");
           if (descripcionRegistro) descripcionRegistro.textContent = textoRegistro;
           document.body.appendChild(modal);
@@ -2524,7 +2524,7 @@
           const primerCampoVacio = [n, modal.querySelector('#nuevoCurso'), modal.querySelector('#nuevoDivision'), modal.querySelector('#nuevoTurno')]
               .find(campo => !String(campo?.value || '').trim());
           (primerCampoVacio || n).focus();
-          modal.querySelector('#confirmarNuevo').onclick=async()=>{const nombre=n.value.trim(),curso=modal.querySelector('#nuevoCurso').value.trim(),division=modal.querySelector('#nuevoDivision').value.trim().toUpperCase(),turno=modal.querySelector('#nuevoTurno').value;if(!nombre||!curso||!division||!turno){const error=modal.querySelector('#nuevoError');error.textContent='SeleccionÃ¡ obligatoriamente curso, divisiÃ³n y turno.';error.style.display='block';const primerFaltante=!nombre?n:!curso?modal.querySelector('#nuevoCurso'):!division?modal.querySelector('#nuevoDivision'):modal.querySelector('#nuevoTurno');primerFaltante.focus();return;}modal.querySelector('#nuevoError').style.display='none';document.getElementById('studentName').value=nombre;document.getElementById('studentCourse').value=curso;document.getElementById('studentDivision').value=division;document.getElementById('studentTurno').value=turno;setLocalStorage('app_student_name',nombre);setLocalStorage('app_student_course',curso);setLocalStorage('app_student_division',division);setLocalStorage('app_student_turno',turno);const guardado=await guardarIdentificacionFirebase();if(!guardado){const diagnostico=diagnosticarErrorRegistroEstudiante();const error=modal.querySelector('#nuevoError');error.innerHTML=`<strong>${escapeHtml(diagnostico.titulo)}</strong><br>${escapeHtml(diagnostico.detalle)}<br><small>${escapeHtml(diagnostico.accion)}</small>`;error.style.display='block';return;}modal.remove();resolve();};
+          modal.querySelector('#confirmarNuevo').onclick=async()=>{const nombre=n.value.trim(),curso=modal.querySelector('#nuevoCurso').value.trim(),division=modal.querySelector('#nuevoDivision').value.trim().toUpperCase(),turno=modal.querySelector('#nuevoTurno').value;if(!nombre||!curso||!division||!turno){const error=modal.querySelector('#nuevoError');error.textContent='Seleccioná obligatoriamente curso, división y turno.';error.style.display='block';const primerFaltante=!nombre?n:!curso?modal.querySelector('#nuevoCurso'):!division?modal.querySelector('#nuevoDivision'):modal.querySelector('#nuevoTurno');primerFaltante.focus();return;}modal.querySelector('#nuevoError').style.display='none';document.getElementById('studentName').value=nombre;document.getElementById('studentCourse').value=curso;document.getElementById('studentDivision').value=division;document.getElementById('studentTurno').value=turno;setLocalStorage('app_student_name',nombre);setLocalStorage('app_student_course',curso);setLocalStorage('app_student_division',division);setLocalStorage('app_student_turno',turno);const guardado=await guardarIdentificacionFirebase();if(!guardado){const diagnostico=diagnosticarErrorRegistroEstudiante();const error=modal.querySelector('#nuevoError');error.innerHTML=`<strong>${escapeHtml(diagnostico.titulo)}</strong><br>${escapeHtml(diagnostico.detalle)}<br><small>${escapeHtml(diagnostico.accion)}</small>`;error.style.display='block';return;}modal.remove();resolve();};
         });
       }
 
@@ -2549,9 +2549,9 @@
           const mensaje = document.getElementById('firebaseAuthMessage');
           if (mensaje) {
               mensaje.innerHTML =
-                  '<strong>Cuenta inactiva.</strong><br>Tu acceso fue dado de baja por la instituciÃ³n. ' +
+                  '<strong>Cuenta inactiva.</strong><br>Tu acceso fue dado de baja por la institución. ' +
                   (motivo ? `Motivo: ${escapeHtml(motivo)}.<br>` : '') +
-                  'Conservamos tu historial acadÃ©mico. ConsultÃ¡ con el equipo docente para reactivar la cuenta.';
+                  'Conservamos tu historial académico. Consultá con el equipo docente para reactivar la cuenta.';
           }
           const loginButton = overlay?.querySelector('.btn-google');
           if (loginButton) loginButton.disabled = true;
@@ -2578,12 +2578,12 @@
           if (titulo) titulo.textContent = estado === 'rechazado' ? 'Acceso rechazado' : 'Solicitud pendiente';
           if (mensaje) {
               mensaje.innerHTML = estado === 'rechazado'
-                  ? '<strong>El docente rechazÃ³ tu solicitud de acceso.</strong><br>' +
+                  ? '<strong>El docente rechazó tu solicitud de acceso.</strong><br>' +
                     (motivo ? `Motivo: ${escapeHtml(motivo)}.<br>` : '') +
-                    'ConsultÃ¡ con el equipo docente si necesitÃ¡s solicitar una revisiÃ³n.'
+                    'Consultá con el equipo docente si necesitás solicitar una revisión.'
                   : '<strong>Tu registro fue enviado correctamente.</strong><br>' +
                     'Un docente debe aceptar tu cuenta antes de que puedas comenzar las actividades. ' +
-                    'Esta pantalla se actualizarÃ¡ automÃ¡ticamente cuando se apruebe el acceso.';
+                    'Esta pantalla se actualizará automáticamente cuando se apruebe el acceso.';
           }
           const loginButton = overlay?.querySelector('.btn-google');
           if (loginButton) loginButton.style.display = 'none';
@@ -2601,7 +2601,7 @@
                       Nombre: ${escapeHtml(datos.nombre || 'Sin completar')}<br>
                       Correo: ${escapeHtml(window.firebaseCurrentUser?.email || 'Sin correo')}<br>
                       Curso: ${escapeHtml(datos.curso || 'Sin completar')}<br>
-                      DivisiÃ³n: ${escapeHtml(datos.division || 'Sin completar')}<br>
+                      División: ${escapeHtml(datos.division || 'Sin completar')}<br>
                       Turno: ${escapeHtml(datos.turno || 'Sin completar')}
                   </div>`);
           }
@@ -2631,11 +2631,11 @@
               `<option ${actualValor === valor ? 'selected' : ''}>${valor}</option>`).join('');
           modal.innerHTML = `<div class="modal-box" style="max-width:520px;width:92%">
               <h3><i class="fa-solid fa-user-pen"></i> ${reenviar ? 'Corregir y reenviar solicitud' : 'Corregir datos enviados'}</h3>
-              <p>${reenviar ? 'El rechazo anterior quedarÃ¡ guardado como antecedente.' : 'La solicitud conservarÃ¡ su fecha original.'}</p>
+              <p>${reenviar ? 'El rechazo anterior quedará guardado como antecedente.' : 'La solicitud conservará su fecha original.'}</p>
               <div class="input-group"><label>Nombre y apellido</label><input id="corregirNombre" value="${escapeHtml(actual.nombre || window.firebaseCurrentUser?.displayName || '')}"></div>
-              <div class="input-group"><label>Curso</label><select id="corregirCurso"><option value="">Seleccionar curso</option>${opciones(['1Â° AÃ±o','2Â° AÃ±o','3Â° AÃ±o','4Â° AÃ±o','5Â° AÃ±o','6Â° AÃ±o','7Â° AÃ±o'], actual.curso)}</select></div>
-              <div class="input-group"><label>DivisiÃ³n</label><select id="corregirDivision"><option value="">Seleccionar divisiÃ³n</option>${opciones(['A','B','C','D','E'], actual.division)}</select></div>
-              <div class="input-group"><label>Turno</label><select id="corregirTurno"><option value="">Seleccionar turno</option>${opciones(['MaÃ±ana','Tarde','Vespertino','Noche'], actual.turno)}</select></div>
+              <div class="input-group"><label>Curso</label><select id="corregirCurso"><option value="">Seleccionar curso</option>${opciones(['1° Año','2° Año','3° Año','4° Año','5° Año','6° Año','7° Año'], actual.curso)}</select></div>
+              <div class="input-group"><label>División</label><select id="corregirDivision"><option value="">Seleccionar división</option>${opciones(['A','B','C','D','E'], actual.division)}</select></div>
+              <div class="input-group"><label>Turno</label><select id="corregirTurno"><option value="">Seleccionar turno</option>${opciones(['Mañana','Tarde','Vespertino','Noche'], actual.turno)}</select></div>
               <div id="corregirSolicitudError" role="alert" style="display:none;color:#fca5a5;margin-bottom:.7rem"></div>
               <div class="modal-actions">
                   <button class="btn btn-secondary" type="button" id="cancelarCorreccionSolicitud">Cancelar</button>
@@ -2653,7 +2653,7 @@
               };
               const error = modal.querySelector('#corregirSolicitudError');
               if (Object.values(estudiante).some(valor => !valor)) {
-                  error.textContent = 'CompletÃ¡ nombre, curso, divisiÃ³n y turno.';
+                  error.textContent = 'Completá nombre, curso, división y turno.';
                   error.style.display = 'block';
                   return;
               }
@@ -2661,7 +2661,7 @@
               boton.disabled = true;
               const ok = await window.actualizarSolicitudEstudianteFirebase?.(estudiante, reenviar);
               if (!ok) {
-                  error.textContent = 'No se pudieron guardar los cambios. RevisÃ¡ la conexiÃ³n y los permisos.';
+                  error.textContent = 'No se pudieron guardar los cambios. Revisá la conexión y los permisos.';
                   error.style.display = 'block';
                   boton.disabled = false;
                   return;
@@ -2688,8 +2688,8 @@
           if (titulo) titulo.textContent = 'Tu acceso fue aprobado';
           if (mensaje) {
               mensaje.innerHTML =
-                  '<strong>El docente aceptÃ³ tu solicitud.</strong><br>' +
-                  'Ya podÃ©s ingresar a las actividades.' +
+                  '<strong>El docente aceptó tu solicitud.</strong><br>' +
+                  'Ya podés ingresar a las actividades.' +
                   (detalle.aprobadoPor ? `<br><small>Aprobado por: ${escapeHtml(detalle.aprobadoPor)}</small>` : '');
           }
           document.getElementById('btnCorregirSolicitudEstudiante')?.remove();
@@ -2718,17 +2718,17 @@
           if (window.location.protocol === 'file:' && localFileNotice) localFileNotice.style.display = 'block';
           if (window.firebaseConfigured === false) {
               if (warning) warning.style.display = 'block';
-              document.getElementById('firebaseAuthMessage').innerText = 'La configuraciÃ³n de Firebase estÃ¡ incompleta. RevisÃ¡ los valores REEMPLAZAR_ en actividad-firebase.js.';
+              document.getElementById('firebaseAuthMessage').innerText = 'La configuración de Firebase está incompleta. Revisá los valores REEMPLAZAR_ en actividad-firebase.js.';
               return;
           }
           if (typeof window.firebaseConfigured === 'undefined') {
               if (warning) {
                   warning.style.display = 'block';
                   warning.textContent = window.location.protocol === 'file:'
-                      ? 'Firebase no se pudo cargar porque la pÃ¡gina estÃ¡ abierta como archivo local. UsÃ¡ http:// o https://.'
-                      : 'No se pudo cargar actividad-firebase.js. VerificÃ¡ que el archivo exista y que la versiÃ³n coincida con actividad.html.';
+                      ? 'Firebase no se pudo cargar porque la página está abierta como archivo local. Usá http:// o https://.'
+                      : 'No se pudo cargar actividad-firebase.js. Verificá que el archivo exista y que la versión coincida con actividad.html.';
               }
-              document.getElementById('firebaseAuthMessage').innerText = 'El mÃ³dulo de Firebase no se cargÃ³. No es un problema de credenciales: revisÃ¡ la ruta del archivo, la consola del navegador y abrÃ­ la pÃ¡gina mediante http:// o https://.';
+              document.getElementById('firebaseAuthMessage').innerText = 'El módulo de Firebase no se cargó. No es un problema de credenciales: revisá la ruta del archivo, la consola del navegador y abrí la página mediante http:// o https://.';
               return;
           }
 
@@ -2737,16 +2737,16 @@
               overlay.classList.remove('hidden');
               return;
           }
-          // FIX CRÃƒÂTICO PARA CAMBIO DE CUENTA:
+          // FIX CRÃTICO PARA CAMBIO DE CUENTA:
           // si entra otro UID en el mismo navegador, nunca debemos reutilizar
-          // el cachÃ© local del estudiante anterior. Firebase es la fuente de verdad.
-          // Desde aquÃ­ TODAS las claves locales pertenecen al UID actual.
+          // el caché local del estudiante anterior. Firebase es la fuente de verdad.
+          // Desde aquí TODAS las claves locales pertenecen al UID actual.
           // Los datos de otras cuentas permanecen aislados por su propia clave.
           firebaseStorageUid = user.uid;
           migrarTimersLegacy(user.uid);
           localStorage.setItem('firebase_active_uid', user.uid);
 
-          // La configuraciÃ³n docente de desafÃ­os tiene prioridad sobre la copia local.
+          // La configuración docente de desafíos tiene prioridad sobre la copia local.
           if (typeof window.cargarDesafiosFirebase === 'function') {
               const remotos = await window.cargarDesafiosFirebase();
               if (Array.isArray(remotos) && remotos.length === 19) {
@@ -2769,7 +2769,7 @@
               datosFirebase.estudiante.turno);
           if (!datosFirebase || !perfilFirebaseCompleto) {
               // Un UID eliminado o un registro incompleto vuelve al alta:
-              // primero completa sus datos y queda pendiente de aprobaciÃ³n.
+              // primero completa sus datos y queda pendiente de aprobación.
               const esNuevoRegistro = !datosFirebase;
               if (esNuevoRegistro) limpiarTemporizadoresNuevaCuenta(user.uid);
               await solicitarDatosNuevoEstudiante(esNuevoRegistro, datosFirebase);
@@ -2828,7 +2828,7 @@
           document.getElementById('firebaseUserName').textContent = user.displayName || 'Estudiante';
           document.getElementById('firebaseUserEmail').textContent = user.email || '';
 
-          // Si el estudiante actual no tenÃ­a documento en Firebase, arrancamos
+          // Si el estudiante actual no tenía documento en Firebase, arrancamos
           // limpio y usamos solamente sus datos de Google.
           document.getElementById('studentName').value = getLocalStorage('app_student_name') || user.displayName || '';
           document.getElementById('studentCourse').value = getLocalStorage('app_student_course') || '';
@@ -2892,8 +2892,8 @@
                   bloquearCuentaPorAprobacion(estadoCuentaEstudiante);
                   return;
               }
-              // Una cuenta activa con perfil incompleto continÃºa normalmente
-              // despuÃ©s de guardar los datos que faltaban.
+              // Una cuenta activa con perfil incompleto continúa normalmente
+              // después de guardar los datos que faltaban.
               setTimeout(() => guardarIdentificacionFirebase(), 300);
           } else {
               setTimeout(() => guardarIdentificacionFirebase(), 300);
@@ -2951,7 +2951,7 @@
 
                   <div class="module-timer-bar">
                       <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted);">
-                          <i class="fa-solid fa-clock"></i> Tiempo disponible (MÃ¡x. 40 min):
+                          <i class="fa-solid fa-clock"></i> Tiempo disponible (Máx. 40 min):
                       </div>
                       <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
                           <span class="timer-display" id="timer-display-${sec.id}">40:00</span>
@@ -2972,7 +2972,7 @@
 
                   <div class="pause-banner" id="pause-banner-${sec.id}">
                       <i class="fa-solid fa-circle-pause" style="font-size: 1.2rem;"></i>
-                      <span><strong>MÃƒâ€œDULO PAUSADO POR EL PROFESOR:</strong> El cronÃ³metro y la ediciÃ³n de cÃ³digo han sido suspendidos temporalmente.</span>
+                      <span><strong>MÃ“DULO PAUSADO POR EL PROFESOR:</strong> El cronómetro y la edición de código han sido suspendidos temporalmente.</span>
                   </div>
 
                   <div class="theory-box">
@@ -2985,14 +2985,14 @@
                       <div class="exercise-ai-status" id="exercise-ai-status-${sec.id}" aria-live="polite">
                           <i class="fa-solid fa-wand-magic-sparkles"></i> Preparando palabras clave...
                       </div>
-                      <div class="keyword-legend" aria-label="CategorÃ­as de palabras clave">
-                          <span><i style="background:#38bdf8"></i> AcciÃ³n</span>
+                      <div class="keyword-legend" aria-label="Categorías de palabras clave">
+                          <span><i style="background:#38bdf8"></i> Acción</span>
                           <span><i style="background:#c084fc"></i> Concepto</span>
-                          <span><i style="background:#34d399"></i> MÃ©todo o herramienta</span>
+                          <span><i style="background:#34d399"></i> Método o herramienta</span>
                           <span><i style="background:#facc15"></i> Resultado esperado</span>
                       </div>
                       <div class="keyword-help-panel" id="keyword-help-${sec.id}" tabindex="-1" aria-live="polite">
-                          SeleccionÃ¡ una palabra resaltada para ver quÃ© significa y quÃ© acciÃ³n te pide realizar.
+                          Seleccioná una palabra resaltada para ver qué significa y qué acción te pide realizar.
                       </div>
                       <div class="comprehension-tools">
                           <div class="comprehension-panel">
@@ -3006,7 +3006,7 @@
                           </div>
 
                           <div class="comprehension-panel">
-                              <h4><i class="fa-solid fa-circle-question"></i> VerificaciÃ³n de comprensiÃ³n</h4>
+                              <h4><i class="fa-solid fa-circle-question"></i> Verificación de comprensión</h4>
                               <p style="margin:0 0 .6rem;color:var(--text-muted);font-size:.84rem">
                                   ${escaparAtributoAyuda(generarVerificacionComprension(sec).pregunta)}
                               </p>
@@ -3032,45 +3032,45 @@
                       </button>
 
                       <div class="code-playground">
-                          <div class="student-workflow-guide" aria-label="Pasos para resolver el desafÃ­o">
-                              <span><strong>1</strong> LeÃ© la consigna</span>
-                              <span><strong>2</strong> ProgramÃ¡ una parte</span>
-                              <span><strong>3</strong> EjecutÃ¡ y revisÃ¡</span>
-                              <span><strong>4</strong> PedÃ­ una pista si la necesitÃ¡s</span>
+                          <div class="student-workflow-guide" aria-label="Pasos para resolver el desafío">
+                              <span><strong>1</strong> Leé la consigna</span>
+                              <span><strong>2</strong> Programá una parte</span>
+                              <span><strong>3</strong> Ejecutá y revisá</span>
+                              <span><strong>4</strong> Pedí una pista si la necesitás</span>
                           </div>
                           <div class="student-coding-workspace ${tutorMinimizado ? 'tutor-minimized' : ''}">
                               <section class="student-code-column" aria-label="Editor y consola">
                                   <div class="student-code-toolbar">
                                       <div>
-                                          <strong><i class="fa-solid fa-code"></i> Tu soluciÃ³n</strong>
-                                          <span id="editor-metrics-${sec.id}">0 lÃ­neas Â· 0 caracteres</span>
+                                          <strong><i class="fa-solid fa-code"></i> Tu solución</strong>
+                                          <span id="editor-metrics-${sec.id}">0 líneas · 0 caracteres</span>
                                       </div>
                                       <div class="student-code-toolbar-actions">
                                           <span class="student-editor-state ${isFinalized ? 'success' : 'idle'}" id="editor-state-${sec.id}">
                                               <i class="fa-solid ${isFinalized ? 'fa-circle-check' : 'fa-pen'}"></i>
                                               ${isFinalized ? 'Actividad entregada' : 'Listo para programar'}
                                           </span>
-                                          <button class="student-focus-toggle" type="button" onclick="alternarModoEnfoque('${sec.id}', this)" aria-pressed="false" title="Ocultar temporalmente teorÃ­a y ayudas">
+                                          <button class="student-focus-toggle" type="button" onclick="alternarModoEnfoque('${sec.id}', this)" aria-pressed="false" title="Ocultar temporalmente teoría y ayudas">
                                               <i class="fa-solid fa-expand"></i><span>Enfoque</span>
                                           </button>
-                                          <button class="student-focus-toggle student-collaboration-request" type="button" id="btn-solicitar-colaboracion-${sec.id}" onclick="solicitarColaboracionEstudiante('${sec.id}')" title="Avisar al docente y solicitar colaboraciÃ³n con tu cÃ³digo" aria-label="Solicitar ayuda del docente para este cÃ³digo">
-                                              <i class="fa-solid fa-hand"></i><span>Solicitar colaboraciÃ³n</span>
+                                          <button class="student-focus-toggle student-collaboration-request" type="button" id="btn-solicitar-colaboracion-${sec.id}" onclick="solicitarColaboracionEstudiante('${sec.id}')" title="Avisar al docente y solicitar colaboración con tu código" aria-label="Solicitar ayuda del docente para este código">
+                                              <i class="fa-solid fa-hand"></i><span>Solicitar colaboración</span>
                                           </button>
                                       </div>
                                   </div>
                                   <div id="estado-colaboracion-${sec.id}" role="status" aria-live="polite" hidden style="margin:.45rem 0;color:#bae6fd;font-size:.8rem;"></div>
                                   <button type="button" class="btn btn-secondary" id="btn-cancelar-colaboracion-${sec.id}" onclick="cancelarColaboracionEstudiante('${sec.id}', this)" hidden style="margin-bottom:.55rem">
-                                      <i class="fa-solid fa-trash-can"></i> Cancelar solicitud de colaboraciÃ³n
+                                      <i class="fa-solid fa-trash-can"></i> Cancelar solicitud de colaboración
                                   </button>
-                                  <div class="student-ai-editor-actions" aria-label="Ayuda de programaciÃ³n con IA">
+                                  <div class="student-ai-editor-actions" aria-label="Ayuda de programación con IA">
                                       <button type="button" data-ai-editor-action class="student-ai-editor-action" onclick="solicitarAyudaEditor('${sec.id}', 'consigna', this)" ${isFinalized ? 'disabled' : ''} title="Organizar la consigna antes de programar">
                                           <i class="fa-solid fa-list-ol"></i><span>Planificar</span>
                                       </button>
-                                      <button type="button" data-ai-editor-action class="student-ai-editor-action" onclick="solicitarAyudaEditor('${sec.id}', 'error', this)" ${isFinalized ? 'disabled' : ''} title="Analizar el error de la Ãºltima ejecuciÃ³n">
+                                      <button type="button" data-ai-editor-action class="student-ai-editor-action" onclick="solicitarAyudaEditor('${sec.id}', 'error', this)" ${isFinalized ? 'disabled' : ''} title="Analizar el error de la última ejecución">
                                           <i class="fa-solid fa-bug"></i><span>Explicar error</span>
                                       </button>
-                                      <button type="button" data-ai-editor-action class="student-ai-editor-action" onclick="solicitarAyudaEditor('${sec.id}', 'revisar', this)" ${isFinalized ? 'disabled' : ''} title="Revisar el cÃ³digo actual sin mostrar la soluciÃ³n">
-                                          <i class="fa-solid fa-magnifying-glass-code"></i><span>Revisar cÃ³digo</span>
+                                      <button type="button" data-ai-editor-action class="student-ai-editor-action" onclick="solicitarAyudaEditor('${sec.id}', 'revisar', this)" ${isFinalized ? 'disabled' : ''} title="Revisar el código actual sin mostrar la solución">
+                                          <i class="fa-solid fa-magnifying-glass-code"></i><span>Revisar código</span>
                                       </button>
                                       <button type="button" data-ai-editor-action class="student-ai-editor-action" onclick="solicitarAyudaEditor('${sec.id}', 'ejemplo', this)" ${isFinalized ? 'disabled' : ''} title="Proponer datos para probar el programa">
                                           <i class="fa-solid fa-flask"></i><span>Crear prueba</span>
@@ -3080,19 +3080,19 @@
                                   <div class="editor-container">
                                   <div class="editor-header">
                                       <span><i class="fa-solid fa-file-code"></i> Editor JavaScript</span>
-                                      <span title="Editor profesional con resaltado, autocompletado y nÃºmeros de lÃ­nea">CodeMirror 6 Â· JavaScript</span>
+                                      <span title="Editor profesional con resaltado, autocompletado y números de línea">CodeMirror 6 · JavaScript</span>
                                   </div>
                                   <div class="student-editor-restriction-notice" role="note">
                                       <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
-                                      <span>Copiar, cortar y pegar estÃ¡n deshabilitados para estudiantes. Cada intento queda registrado para revisiÃ³n docente.</span>
+                                      <span>Copiar, cortar y pegar están deshabilitados para estudiantes. Cada intento queda registrado para revisión docente.</span>
                                   </div>
-                                  <label class="sr-only" for="editor-${sec.id}">CÃ³digo para ${sec.title}</label>
-                                      <textarea id="editor-${sec.id}" class="code-editor" aria-label="CÃ³digo para ${sec.title}" spellcheck="false" autocapitalize="off" autocomplete="off" ${isFinalized ? 'disabled' : ''}>${savedCode}</textarea>
+                                  <label class="sr-only" for="editor-${sec.id}">Código para ${sec.title}</label>
+                                      <textarea id="editor-${sec.id}" class="code-editor" aria-label="Código para ${sec.title}" spellcheck="false" autocapitalize="off" autocomplete="off" ${isFinalized ? 'disabled' : ''}>${savedCode}</textarea>
                                   </div>
 
                                   <div class="student-run-actions">
                                       <button class="btn btn-primary student-run-primary" id="btn-run-${sec.id}" onclick="ejecutarCodigo('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
-                                          <i class="fa-solid fa-play"></i> Ejecutar cÃ³digo
+                                          <i class="fa-solid fa-play"></i> Ejecutar código
                                       </button>
                                       <button class="btn btn-preview" id="btn-preview-${sec.id}" onclick="previsualizarNotaIA('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
                                           <i class="fa-solid fa-star-half-stroke"></i> Nota previa (${3 - contadorPrevisualizaciones[sec.id]})
@@ -3100,7 +3100,7 @@
                                       <button class="btn btn-ai" id="btn-ai-${sec.id}" onclick="resolverYCompararIA('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
                                           <i class="fa-solid fa-flag-checkered"></i> Entregar y comparar
                                       </button>
-                                      <button class="btn btn-secondary" id="btn-reset-${sec.id}" onclick="restablecerCodigo('${sec.id}')" ${isFinalized ? 'disabled' : ''} title="Volver al cÃ³digo inicial">
+                                      <button class="btn btn-secondary" id="btn-reset-${sec.id}" onclick="restablecerCodigo('${sec.id}')" ${isFinalized ? 'disabled' : ''} title="Volver al código inicial">
                                           <i class="fa-solid fa-rotate-left"></i> Restablecer
                                       </button>
                                   </div>
@@ -3108,35 +3108,35 @@
                                   <div class="student-console-panel">
                                       <div class="student-console-header">
                                           <strong><i class="fa-solid fa-terminal"></i> Consola</strong>
-                                          <small>Resultado de la Ãºltima ejecuciÃ³n</small>
+                                          <small>Resultado de la última ejecución</small>
                                       </div>
-                                      <div class="console-output" id="console-${sec.id}" role="status" aria-live="polite">${isFinalized ? '// Actividad finalizada y bloqueada.' : '// EjecutÃ¡ el cÃ³digo para ver aquÃ­ los resultados o errores.'}</div>
+                                      <div class="console-output" id="console-${sec.id}" role="status" aria-live="polite">${isFinalized ? '// Actividad finalizada y bloqueada.' : '// Ejecutá el código para ver aquí los resultados o errores.'}</div>
                                   </div>
                               </section>
 
-                              <button class="btn tutor-popup-trigger" type="button" onclick="alternarTutorProgramacion('${sec.id}')" aria-controls="ai-chat-${sec.id}" aria-expanded="${String(!tutorMinimizado)}"><i class="fa-solid fa-graduation-cap"></i><span>Tutor de programaciÃ³n</span><small>Ayuda guiada</small></button>
-                              <aside class="student-ai-column ${tutorMinimizado ? 'is-minimized' : ''}" aria-label="Tutor de programaciÃ³n" role="dialog" aria-modal="true" aria-hidden="${String(tutorMinimizado)}">
+                              <button class="btn tutor-popup-trigger" type="button" onclick="alternarTutorProgramacion('${sec.id}')" aria-controls="ai-chat-${sec.id}" aria-expanded="${String(!tutorMinimizado)}"><i class="fa-solid fa-graduation-cap"></i><span>Tutor de programación</span><small>Ayuda guiada</small></button>
+                              <aside class="student-ai-column ${tutorMinimizado ? 'is-minimized' : ''}" aria-label="Tutor de programación" role="dialog" aria-modal="true" aria-hidden="${String(tutorMinimizado)}">
                                   <div class="ai-chat-box" id="ai-chat-${sec.id}">
                                       <div class="ai-chat-header">
-                                          <div class="ai-chat-title"><i class="fa-solid fa-graduation-cap"></i><span>Tutor de programaciÃ³n</span></div>
+                                          <div class="ai-chat-title"><i class="fa-solid fa-graduation-cap"></i><span>Tutor de programación</span></div>
                                           <div class="ai-chat-header-actions">
                                               <div class="ai-chat-status">
                                                   <span class="ai-chat-note">${window.firebaseAIRealConfigurada ? "IA segura conectada" : "Tutor local activo"}</span>
                                                   <span class="ai-chat-sync saved" id="ai-chat-sync-${sec.id}"><i class="fa-solid fa-cloud"></i> Sincronizado</span>
                                               </div>
-                                              <button class="ai-chat-minimize" type="button" onclick="alternarTutorProgramacion('${sec.id}', this)" aria-expanded="${String(!tutorMinimizado)}" title="Cerrar Tutor de programaciÃ³n">
+                                              <button class="ai-chat-minimize" type="button" onclick="alternarTutorProgramacion('${sec.id}', this)" aria-expanded="${String(!tutorMinimizado)}" title="Cerrar Tutor de programación">
                                                   <i class="fa-solid fa-xmark"></i>
-                                                  <span class="sr-only">Cerrar Tutor de programaciÃ³n</span>
+                                                  <span class="sr-only">Cerrar Tutor de programación</span>
                                               </button>
                                           </div>
                                       </div>
-                                      <div class="student-ai-principle"><i class="fa-solid fa-shield-halved"></i> Te guÃ­a con pistas y preguntas. No entrega la soluciÃ³n completa.</div>
+                                      <div class="student-ai-principle"><i class="fa-solid fa-shield-halved"></i> Te guía con pistas y preguntas. No entrega la solución completa.</div>
                                       <div class="ai-chat-messages" id="ai-chat-messages-${sec.id}" aria-live="polite"></div>
                                       <div class="ai-chat-quick-actions">
                                           <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'pista')"><i class="fa-solid fa-lightbulb"></i> Nueva pista</button>
                                           <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'siguiente')"><i class="fa-solid fa-forward"></i> Siguiente paso</button>
                                           <button class="btn btn-chat-primary" type="button" onclick="pedirPistaIA('${sec.id}', 'casos')"><i class="fa-solid fa-vial"></i> Casos de prueba</button>
-                                          <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'linea')"><i class="fa-solid fa-list-ol"></i> Error por lÃ­nea</button>
+                                          <button class="btn btn-secondary" type="button" onclick="pedirPistaIA('${sec.id}', 'linea')"><i class="fa-solid fa-list-ol"></i> Error por línea</button>
                                           <button class="btn btn-chat-danger" type="button" onclick="limpiarChatIA('${sec.id}')"><i class="fa-solid fa-trash-can"></i> Limpiar</button>
                                       </div>
                                       <div class="student-ai-hint-levels" aria-label="Nivel de pista progresiva">
@@ -3146,7 +3146,7 @@
                                           <button type="button" data-ai-editor-action onclick="pedirPistaIA('${sec.id}', 'pista3')">3</button>
                                       </div>
                                       <form class="ai-chat-composer" onsubmit="enviarMensajeIA(event, '${sec.id}')">
-                                          <input class="ai-chat-input" id="ai-chat-input-${sec.id}" maxlength="240" autocomplete="off" placeholder="PreguntÃ¡ sobre tu cÃ³digo o el error..." aria-label="Pregunta a la IA sobre ${sec.title}" ${isFinalized ? 'disabled' : ''}>
+                                          <input class="ai-chat-input" id="ai-chat-input-${sec.id}" maxlength="240" autocomplete="off" placeholder="Preguntá sobre tu código o el error..." aria-label="Pregunta a la IA sobre ${sec.title}" ${isFinalized ? 'disabled' : ''}>
                                           <button class="btn btn-ai" type="submit" ${isFinalized ? 'disabled' : ''} title="Enviar consulta"><i class="fa-solid fa-paper-plane"></i><span>Enviar</span></button>
                                       </form>
                                   </div>
@@ -3154,14 +3154,14 @@
                           </div>
 
                           <div class="ai-feedback-box ${isFinalized ? 'active' : ''}" id="ai-feedback-${sec.id}">
-                              <div class="ai-header"><i class="fa-solid fa-wand-magic-sparkles"></i> EvaluaciÃ³n automÃ¡tica orientativa</div>
+                              <div class="ai-header"><i class="fa-solid fa-wand-magic-sparkles"></i> Evaluación automática orientativa</div>
                               <div class="ai-comparison-grid">
                                   <div class="ai-column">
-                                      <h4><i class="fa-solid fa-user-graduate"></i> Tu CÃ³digo Entregado</h4>
+                                      <h4><i class="fa-solid fa-user-graduate"></i> Tu Código Entregado</h4>
                                       <pre id="ai-student-code-${sec.id}">${savedCode}</pre>
                                   </div>
                                   <div class="ai-column">
-                                      <h4><i class="fa-solid fa-robot"></i> SoluciÃ³n de referencia</h4>
+                                      <h4><i class="fa-solid fa-robot"></i> Solución de referencia</h4>
                                       <pre id="ai-ideal-code-${sec.id}">${sec.aiSolution}</pre>
                                   </div>
                               </div>
@@ -3170,12 +3170,12 @@
                               <div class="analyst-box" id="analyst-${sec.id}">
                                   <div class="analyst-header">
                                       <i class="fa-solid fa-user-check"></i>
-                                      Analista de Viabilidad y Excelencia Ã¢â‚¬â€ RESPONDE AHORA
+                                      Analista de Viabilidad y Excelencia â€” RESPONDE AHORA
                                   </div>
                                   <div style="margin-bottom:0.8rem;color:#cbd5e1;line-height:1.45;">
-                                      Ã°Å¸Â¤â€“ Al pulsar <strong>IA</strong>, estas preguntas se habilitan para responder.
-                                      EstÃ¡n basadas en <strong>tu cÃ³digo</strong>, en la <strong>soluciÃ³n de la IA</strong>
-                                      y en la <strong>comparaciÃ³n entre ambos</strong>. Algunas tienen mÃ¡s de una respuesta correcta.
+                                      ðŸ¤– Al pulsar <strong>IA</strong>, estas preguntas se habilitan para responder.
+                                      Están basadas en <strong>tu código</strong>, en la <strong>solución de la IA</strong>
+                                      y en la <strong>comparación entre ambos</strong>. Algunas tienen más de una respuesta correcta.
                                   </div>
                                   <div class="analyst-score" id="analyst-score-${sec.id}">
                                       <span class="analyst-badge" id="viability-${sec.id}">Viabilidad: pendiente</span>
@@ -3220,7 +3220,7 @@
               iniciarCronometro(seccionActivaActual);
           }
 
-          // Restaurar en pantalla las pausas individuales despuÃ©s de reconstruir las tarjetas.
+          // Restaurar en pantalla las pausas individuales después de reconstruir las tarjetas.
           seccionesData.forEach(sec => {
               if (!modulosPausados[sec.id]) return;
               const btnPause = document.getElementById(`btn-pause-${sec.id}`);
@@ -3248,13 +3248,13 @@
           bloquearCopiaYPegado();
           actualizarProgreso();
 
-          // Autoguardado de respaldo: captura tambiÃ©n cambios que no pasan por localStorage.
+          // Autoguardado de respaldo: captura también cambios que no pasan por localStorage.
           clearInterval(window.__firebaseAutoSaveInterval);
           window.__firebaseAutoSaveInterval = setInterval(() => {
               if (document.visibilityState !== 'hidden' && firebaseSaveDirty) guardarAhoraFirebase();
           }, 180000);
       window.addEventListener('beforeunload', () => {
-              // El Ãºltimo estado queda ademÃ¡s en localStorage; Firebase se actualiza con el debounce normal.
+              // El último estado queda además en localStorage; Firebase se actualiza con el debounce normal.
               programarGuardadoFirebase();
           });
 
@@ -3266,11 +3266,11 @@
       function abrirJustificacionUltimaSalida() {
           const evento = [...eventosSalidasPestana].reverse().find(x => !x.justificacion);
           if (!evento) {
-              alert('No hay cambios de pestaÃ±a pendientes de justificaciÃ³n.');
+              alert('No hay cambios de pestaña pendientes de justificación.');
               return;
           }
           document.getElementById('justificarSalidaDescripcion').textContent =
-              `Evento ${evento.numero}, actividad ${evento.seccion || 'sin identificar'}, duraciÃ³n ${evento.duracionSegundos ?? 'en curso'} segundos.`;
+              `Evento ${evento.numero}, actividad ${evento.seccion || 'sin identificar'}, duración ${evento.duracionSegundos ?? 'en curso'} segundos.`;
           document.getElementById('motivoJustificacionSalida').value = '';
           document.getElementById('detalleJustificacionSalida').value = '';
           document.getElementById('justificarSalidaModal').dataset.eventoId = evento.id;
@@ -3286,7 +3286,7 @@
           const motivo = document.getElementById('motivoJustificacionSalida').value;
           const detalle = document.getElementById('detalleJustificacionSalida').value.trim();
           if (!evento || !motivo || !detalle) {
-              alert('SeleccionÃ¡ un motivo y escribÃ­ una explicaciÃ³n.');
+              alert('Seleccioná un motivo y escribí una explicación.');
               return;
           }
           evento.justificacion = {
@@ -3297,7 +3297,7 @@
           setLocalStorage('app_tab_events', JSON.stringify(eventosSalidasPestana));
           cerrarJustificacionSalida();
           programarGuardadoFirebase();
-          alert('La justificaciÃ³n quedÃ³ registrada para revisiÃ³n docente.');
+          alert('La justificación quedó registrada para revisión docente.');
       }
 
       function obtenerSeccionSeleccionadaVisualmente() {
@@ -3352,7 +3352,7 @@
           if (floating && floatingValue && floatingModule && sectionId === seccionSeleccionada) {
               floatingValue.textContent = displayStr;
               const sec = seccionesData.find(item => item.id === sectionId);
-              floatingModule.textContent = sec ? sec.title : 'DesafÃ­o activo';
+              floatingModule.textContent = sec ? sec.title : 'Desafío activo';
               floating.classList.toggle('is-warning', segs <= 600 && segs > 120);
               floating.classList.toggle('is-danger', segs <= 120);
           }
@@ -3395,38 +3395,38 @@
               .map(item => item.nombre)
               .slice(0, 2);
 
-          if (lineas > 0 && !esPlantilla) fortalezas.push(`Ya escribiste ${lineas} lÃ­nea${lineas === 1 ? "" : "s"} Ãºtil${lineas === 1 ? "" : "es"}.`);
-          if (evaluacion.sintaxis?.valida && !esPlantilla) fortalezas.push("La sintaxis es vÃ¡lida.");
-          if (evaluacion.ejecucion?.ok) fortalezas.push("La Ãºltima ejecuciÃ³n terminÃ³ sin errores.");
+          if (lineas > 0 && !esPlantilla) fortalezas.push(`Ya escribiste ${lineas} línea${lineas === 1 ? "" : "s"} útil${lineas === 1 ? "" : "es"}.`);
+          if (evaluacion.sintaxis?.valida && !esPlantilla) fortalezas.push("La sintaxis es válida.");
+          if (evaluacion.ejecucion?.ok) fortalezas.push("La última ejecución terminó sin errores.");
           if (evaluacion.fortalezas?.length) fortalezas.push(evaluacion.fortalezas[0]);
           if (!fortalezas.length) fortalezas.push("Ya comenzaste a trabajar en el editor.");
 
-          if (esPlantilla) paraRevisar.push("ReemplazÃ¡ la plantilla por instrucciones propias.");
-          else if (!evaluacion.sintaxis?.valida) paraRevisar.push("CorregÃ­ primero el error de sintaxis seÃ±alado por la consola.");
-          else if (historial.exito === false) paraRevisar.push("RevisÃ¡ el Ãºltimo error y ejecutÃ¡ nuevamente.");
-          if (conceptosPendientes.length) paraRevisar.push(`ComprobÃ¡ que aparezcan: ${conceptosPendientes.join(", ")}.`);
-          if (evaluacion.ejecucion?.ok && evaluacion.metricas?.comportamiento < 0.8) paraRevisar.push("ContrastÃ¡ la salida con lo que pide la consigna.");
-          if (!evaluacion.ejecucion?.intentada) pendiente.push("TodavÃ­a falta ejecutar y verificar el cÃ³digo.");
-          if (evaluacion.criterios?.some(c => c.estado !== "cumplido")) pendiente.push("Hay criterios de evaluaciÃ³n que aÃºn no muestran evidencia suficiente.");
+          if (esPlantilla) paraRevisar.push("Reemplazá la plantilla por instrucciones propias.");
+          else if (!evaluacion.sintaxis?.valida) paraRevisar.push("Corregí primero el error de sintaxis señalado por la consola.");
+          else if (historial.exito === false) paraRevisar.push("Revisá el último error y ejecutá nuevamente.");
+          if (conceptosPendientes.length) paraRevisar.push(`Comprobá que aparezcan: ${conceptosPendientes.join(", ")}.`);
+          if (evaluacion.ejecucion?.ok && evaluacion.metricas?.comportamiento < 0.8) paraRevisar.push("Contrastá la salida con lo que pide la consigna.");
+          if (!evaluacion.ejecucion?.intentada) pendiente.push("Todavía falta ejecutar y verificar el código.");
+          if (evaluacion.criterios?.some(c => c.estado !== "cumplido")) pendiente.push("Hay criterios de evaluación que aún no muestran evidencia suficiente.");
           if (!pendiente.length && conceptosPendientes.length) pendiente.push("Falta completar al menos un concepto solicitado.");
-          if (!pendiente.length && !actividadesFinalizadas[sectionId]) pendiente.push("RealizÃ¡ una revisiÃ³n final antes de entregar.");
+          if (!pendiente.length && !actividadesFinalizadas[sectionId]) pendiente.push("Realizá una revisión final antes de entregar.");
 
           const prioridades = [];
-          if (!evaluacion.ejecucion?.intentada || evaluacion.ejecucion?.ok === false) prioridades.push("EjecutÃ¡ el cÃ³digo y corregÃ­ el primer error que aparezca.");
-          if (conceptosPendientes.length) prioridades.push(`CompletÃ¡ la parte relacionada con ${conceptosPendientes[0]}.`);
-          prioridades.push("ComparÃ¡ la salida con la consigna y entregÃ¡ solo cuando hayas verificado lo esencial.");
+          if (!evaluacion.ejecucion?.intentada || evaluacion.ejecucion?.ok === false) prioridades.push("Ejecutá el código y corregí el primer error que aparezca.");
+          if (conceptosPendientes.length) prioridades.push(`Completá la parte relacionada con ${conceptosPendientes[0]}.`);
+          prioridades.push("Compará la salida con la consigna y entregá solo cuando hayas verificado lo esencial.");
 
           const maxRecomendaciones = prioridades.slice(0, 3);
           const minutos = Math.max(1, Math.ceil(segundosRestantes / 60));
           return {
               minutos,
               fortalezas: fortalezas.slice(0, 3),
-              paraRevisar: (paraRevisar.length ? paraRevisar : ["RevisÃ¡ nombres, datos de entrada y salida esperada."]).slice(0, 3),
-              pendiente: (pendiente.length ? pendiente : ["CompletÃ¡ una Ãºltima prueba antes de finalizar."]).slice(0, 2),
+              paraRevisar: (paraRevisar.length ? paraRevisar : ["Revisá nombres, datos de entrada y salida esperada."]).slice(0, 3),
+              pendiente: (pendiente.length ? pendiente : ["Completá una última prueba antes de finalizar."]).slice(0, 2),
               prioridades: maxRecomendaciones,
               pista: conceptosPendientes.length
-                  ? `Preguntate: Â¿quÃ© dato o instrucciÃ³n demostrarÃ­a claramente "${conceptosPendientes[0]}"?`
-                  : "SeparÃ¡ el problema en entrada, procesamiento y salida; verificÃ¡ una parte por vez.",
+                  ? `Preguntate: ¿qué dato o instrucción demostraría claramente "${conceptosPendientes[0]}"?`
+                  : "Separá el problema en entrada, procesamiento y salida; verificá una parte por vez.",
               evaluacion
           };
       }
@@ -3443,22 +3443,22 @@
           if (tipo === "uno") {
               alertBox.className = "time-review-alert is-urgent";
               alertBox.innerHTML = `
-                  <div class="time-review-alert-heading"><span aria-hidden="true">Ã¢ÂÂ°</span><strong>Â¡ÃƒÅ¡ltimo minuto!</strong><span class="time-review-alert-time">${String(Math.floor(segundos / 60)).padStart(2, "0")}:${String(segundos % 60).padStart(2, "0")}</span></div>
-                  <p>Antes de entregar, revisÃ¡ rÃ¡pidamente:</p>
-                  <ul>${renderizarListaRevision(["Que el cÃ³digo ejecute sin errores.", "Que la salida responda a la consigna.", "Que hayas completado la parte principal del desafÃ­o."])}</ul>
-                  <p class="time-review-priority">Enfocate en completar lo indispensable y corregir el error mÃ¡s importante.</p>`;
+                  <div class="time-review-alert-heading"><span aria-hidden="true">â°</span><strong>¡Ãšltimo minuto!</strong><span class="time-review-alert-time">${String(Math.floor(segundos / 60)).padStart(2, "0")}:${String(segundos % 60).padStart(2, "0")}</span></div>
+                  <p>Antes de entregar, revisá rápidamente:</p>
+                  <ul>${renderizarListaRevision(["Que el código ejecute sin errores.", "Que la salida responda a la consigna.", "Que hayas completado la parte principal del desafío."])}</ul>
+                  <p class="time-review-priority">Enfocate en completar lo indispensable y corregir el error más importante.</p>`;
           } else {
               alertBox.className = "time-review-alert is-warning";
               alertBox.innerHTML = `
-                  <div class="time-review-alert-heading"><span aria-hidden="true">Ã¢ÂÂ°</span><strong>Te quedan aproximadamente ${revision.minutos} minutos.</strong><span class="time-review-alert-time">${String(Math.floor(segundos / 60)).padStart(2, "0")}:${String(segundos % 60).padStart(2, "0")}</span></div>
+                  <div class="time-review-alert-heading"><span aria-hidden="true">â°</span><strong>Te quedan aproximadamente ${revision.minutos} minutos.</strong><span class="time-review-alert-time">${String(Math.floor(segundos / 60)).padStart(2, "0")}:${String(segundos % 60).padStart(2, "0")}</span></div>
                   <div class="time-review-grid">
-                    <section><h4>Ã¢Å“â€¦ Lo que ya lograste</h4><ul>${renderizarListaRevision(revision.fortalezas)}</ul></section>
-                    <section><h4>Ã¢Å¡Â Ã¯Â¸Â Para revisar</h4><ul>${renderizarListaRevision(revision.paraRevisar)}</ul></section>
-                    <section><h4>Ã°Å¸â€Â´ Pendiente</h4><ul>${renderizarListaRevision(revision.pendiente)}</ul></section>
+                    <section><h4>âœ… Lo que ya lograste</h4><ul>${renderizarListaRevision(revision.fortalezas)}</ul></section>
+                    <section><h4>âš ï¸ Para revisar</h4><ul>${renderizarListaRevision(revision.paraRevisar)}</ul></section>
+                    <section><h4>ðŸ”´ Pendiente</h4><ul>${renderizarListaRevision(revision.pendiente)}</ul></section>
                   </div>
-                  <h4 class="time-review-priority-title">Ã°Å¸â€Â´ Prioridad ahora</h4>
+                  <h4 class="time-review-priority-title">ðŸ”´ Prioridad ahora</h4>
                   <ol>${renderizarListaRevision(revision.prioridades)}</ol>
-                  <p class="time-review-hint">Ã°Å¸â€™Â¡ Pista: ${escaparTextoAnalista(revision.pista)}</p>`;
+                  <p class="time-review-hint">ðŸ’¡ Pista: ${escaparTextoAnalista(revision.pista)}</p>`;
           }
           alertBox.hidden = false;
           alertBox.dataset.lastShown = tipo;
@@ -3506,10 +3506,10 @@
           const finalBox = document.createElement("div");
           finalBox.className = "student-final-evaluation";
           finalBox.innerHTML = `
-              <h4>EvaluaciÃ³n final para seguir mejorando</h4>
-              <p><strong>Logrado:</strong> ${escaparTextoAnalista((fortalezas.length ? fortalezas : ["Completaste la entrega del desafÃ­o."]).join(" "))}</p>
-              <p><strong>Para mejorar:</strong> ${escaparTextoAnalista((dificultades.length ? dificultades : ["RevisÃ¡ el criterio que haya quedado parcial."]).join(" "))}</p>
-              <p><strong>PrÃ³ximo paso:</strong> ${escaparTextoAnalista((pendientes.length ? `En una prÃ³xima actividad, priorizÃ¡: ${pendientes.join(", ")}.` : "ProbÃ¡ un caso lÃ­mite y explicÃ¡ por quÃ© tu soluciÃ³n funciona.").slice(0, 360))}</p>`;
+              <h4>Evaluación final para seguir mejorando</h4>
+              <p><strong>Logrado:</strong> ${escaparTextoAnalista((fortalezas.length ? fortalezas : ["Completaste la entrega del desafío."]).join(" "))}</p>
+              <p><strong>Para mejorar:</strong> ${escaparTextoAnalista((dificultades.length ? dificultades : ["Revisá el criterio que haya quedado parcial."]).join(" "))}</p>
+              <p><strong>Próximo paso:</strong> ${escaparTextoAnalista((pendientes.length ? `En una próxima actividad, priorizá: ${pendientes.join(", ")}.` : "Probá un caso límite y explicá por qué tu solución funciona.").slice(0, 360))}</p>`;
           feedback.appendChild(finalBox);
       }
 
@@ -3556,7 +3556,7 @@
       function expirarTiempoModulo(sectionId) {
           if (!cuentaEstudianteActiva || !claseHabilitada || actividadesFinalizadas[sectionId]) return;
 
-          alert(`Ã¢ÂÂ° Â¡Tiempo agotado (40 minutos) para este mÃ³dulo! Se registrarÃ¡ nota 1 por tiempo expirado.`);
+          alert(`â° ¡Tiempo agotado (40 minutos) para este módulo! Se registrará nota 1 por tiempo expirado.`);
 
           const editor = document.getElementById(`editor-${sectionId}`);
           if (editor) editor.disabled = true;
@@ -3580,7 +3580,7 @@
           historialResultados[sectionId].notaPreguntas = 0;
           historialResultados[sectionId].notaFinal = 1;
           historialResultados[sectionId].notaIA = 1;
-          historialResultados[sectionId].analisisIA = "MÃ³dulo expirado por lÃ­mite de tiempo (40 minutos). Nota: 1/10.";
+          historialResultados[sectionId].analisisIA = "Módulo expirado por límite de tiempo (40 minutos). Nota: 1/10.";
           historialResultados[sectionId].exito = false;
 
           const feedbackBox = document.getElementById(`ai-feedback-${sectionId}`);
@@ -3591,7 +3591,7 @@
 
           if (feedbackBox) feedbackBox.classList.add('active');
           if (studentCodeDisplay && editor) studentCodeDisplay.innerText = editor.value;
-          if (feedbackText) feedbackText.innerHTML = "<strong>Resultado automÃ¡tico orientativo: 1/10</strong><br>Tiempo agotado (40 min). Requiere revisiÃ³n docente.";
+          if (feedbackText) feedbackText.innerHTML = "<strong>Resultado automático orientativo: 1/10</strong><br>Tiempo agotado (40 min). Requiere revisión docente.";
 
           actualizarIconoEstado(sectionId, false);
           actualizarProgreso();
@@ -3621,13 +3621,13 @@
           }
           if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
               liberarBotonSolicitud();
-              alert('No se pudo preparar la solicitud de ayuda. RecargÃ¡ la actividad e intentÃ¡ nuevamente.');
+              alert('No se pudo preparar la solicitud de ayuda. Recargá la actividad e intentá nuevamente.');
               return;
           }
           const sec = seccionesData.find(item => item.id === sectionId);
           const motivo = prompt(
-              `Â¿QuÃ© necesitÃ¡s revisar con el docente en "${sec?.title || 'este desafÃ­o'}"?`,
-              'Necesito ayuda para revisar mi cÃ³digo.'
+              `¿Qué necesitás revisar con el docente en "${sec?.title || 'este desafío'}"?`,
+              'Necesito ayuda para revisar mi código.'
           );
           if (motivo === null) {
               liberarBotonSolicitud();
@@ -3644,7 +3644,7 @@
               const estado = document.getElementById(`estado-colaboracion-${sectionId}`);
               if (estado) {
                   estado.hidden = false;
-                  estado.textContent = 'Solicitud enviada al docente. Queda pendiente de atenciÃ³n.';
+                  estado.textContent = 'Solicitud enviada al docente. Queda pendiente de atención.';
               }
               const cancelar = document.getElementById(`btn-cancelar-colaboracion-${sectionId}`);
               if (cancelar) cancelar.hidden = false;
@@ -3654,10 +3654,10 @@
               if (estado) {
                   estado.hidden = false;
                   estado.textContent = error?.code === 'permission-denied'
-                      ? 'Firebase rechazÃ³ la solicitud. VerificÃ¡ que las reglas publicadas correspondan a este proyecto.'
-                      : (error?.message || 'No se pudo enviar la solicitud de colaboraciÃ³n.');
+                      ? 'Firebase rechazó la solicitud. Verificá que las reglas publicadas correspondan a este proyecto.'
+                      : (error?.message || 'No se pudo enviar la solicitud de colaboración.');
               }
-              alert(error?.message || 'No se pudo enviar la solicitud de colaboraciÃ³n.');
+              alert(error?.message || 'No se pudo enviar la solicitud de colaboración.');
           }
       }
       window.solicitarColaboracionEstudiante = solicitarColaboracionEstudiante;
@@ -3665,10 +3665,10 @@
       async function cancelarColaboracionEstudiante(sectionId, boton) {
           const uid = window.firebaseCurrentUser?.uid;
           if (!uid || typeof window.eliminarSolicitudColaboracionEstudianteFirebase !== 'function') {
-              alert('La funciÃ³n de cancelaciÃ³n todavÃ­a no estÃ¡ disponible. RecargÃ¡ la actividad.');
+              alert('La función de cancelación todavía no está disponible. Recargá la actividad.');
               return;
           }
-          if (!confirm('Â¿Cancelar esta solicitud de colaboraciÃ³n? PodrÃ¡s volver a solicitar ayuda despuÃ©s.')) return;
+          if (!confirm('¿Cancelar esta solicitud de colaboración? Podrás volver a solicitar ayuda después.')) return;
           if (boton) boton.disabled = true;
           try {
               const ok = await window.eliminarSolicitudColaboracionEstudianteFirebase({ uid, sectionId });
@@ -3676,7 +3676,7 @@
               const estado = document.getElementById(`estado-colaboracion-${sectionId}`);
               if (estado) {
                   estado.hidden = false;
-                  estado.textContent = 'Solicitud cancelada. PodÃ©s volver a solicitar colaboraciÃ³n cuando lo necesites.';
+                  estado.textContent = 'Solicitud cancelada. Podés volver a solicitar colaboración cuando lo necesites.';
               }
               const solicitar = document.getElementById(`btn-solicitar-colaboracion-${sectionId}`);
               if (solicitar) solicitar.disabled = false;
@@ -3698,17 +3698,17 @@
           } else if (accion === 'unlock_all') {
               desc.innerHTML = `Autorizar desbloqueo <b>global de todos los ejercicios</b> de la plataforma:`;
           } else if (accion === 'unlock_screen') {
-              desc.innerHTML = `Autorizar el <b>desbloqueo de la pantalla</b> tras un cambio de pestaÃ±a:`;
+              desc.innerHTML = `Autorizar el <b>desbloqueo de la pantalla</b> tras un cambio de pestaña:`;
           } else if (accion === 'panel_profesor') {
               desc.innerHTML = `Autorizar <b>acceso al Panel del Profesor</b>:`;
           } else if (accion === 'editor_desafios') {
-              desc.innerHTML = `Autorizar <b>acceso al editor de desafÃ­os</b>:`;
+              desc.innerHTML = `Autorizar <b>acceso al editor de desafíos</b>:`;
           } else if (accion === 'reset_contador_salidas') {
-              desc.innerHTML = `Autorizar el reinicio del <b>contador visible</b>. El historial permanecerÃ¡ disponible para revisiÃ³n:`;
+              desc.innerHTML = `Autorizar el reinicio del <b>contador visible</b>. El historial permanecerá disponible para revisión:`;
           } else if (accion === 'pausar_modulo') {
-              desc.innerHTML = `Autorizar pausa/reanudaciÃ³n del mÃ³dulo <b>${seccionPendientePausa}</b>:`;
+              desc.innerHTML = `Autorizar pausa/reanudación del módulo <b>${seccionPendientePausa}</b>:`;
           } else if (accion === 'pausar_global') {
-              desc.innerHTML = `Autorizar <b>pausa/reanudaciÃ³n GLOBAL</b> para todos los mÃ³dulos de la clase:`;
+              desc.innerHTML = `Autorizar <b>pausa/reanudación GLOBAL</b> para todos los módulos de la clase:`;
           } else {
               desc.innerHTML = `Autorizar el <b>reseteo completo</b> con la cuenta docente:`;
           }
@@ -3745,7 +3745,7 @@
                       return;
                   }
                   const motivoIngresado = prompt(
-                      'IndicÃ¡ el motivo del desbloqueo para el historial de auditorÃ­a:',
+                      'Indicá el motivo del desbloqueo para el historial de auditoría:',
                       'Desbloqueo autorizado presencialmente por el docente'
                   );
                   if (motivoIngresado === null) return;
@@ -3756,7 +3756,7 @@
                       { motivo, nombre }
                   );
                   if (!desbloqueado) {
-                      alert('No se pudo registrar el desbloqueo. La pantalla continuarÃ¡ bloqueada.');
+                      alert('No se pudo registrar el desbloqueo. La pantalla continuará bloqueada.');
                       return;
                   }
                   pantallaBloqueada = false;
@@ -3779,7 +3779,7 @@
               }
               seccionPendientePausa = null;
           } else {
-              alert("No hay una cuenta docente autorizada. IniciÃ¡ sesiÃ³n con la cuenta institucional o verificÃ¡ los permisos de Firebase.");
+              alert("No hay una cuenta docente autorizada. Iniciá sesión con la cuenta institucional o verificá los permisos de Firebase.");
           }
       }
 
@@ -3800,7 +3800,7 @@
                   return;
               }
               const confirmarFinalizacion = confirm(
-                  "Â¿ConfirmÃ¡s finalizar la clase? Todos los estudiantes volverÃ¡n al estado de espera y se detendrÃ¡n los cronÃ³metros activos."
+                  "¿Confirmás finalizar la clase? Todos los estudiantes volverán al estado de espera y se detendrán los cronómetros activos."
               );
               if (!confirmarFinalizacion) return;
               window.finalizarClaseFirebase?.(true).then(finalizada => {
@@ -3854,7 +3854,7 @@
               alert("Solo una cuenta docente autorizada puede reiniciar el contador.");
               return;
           }
-          if (!confirm("El contador visible volverÃ¡ a cero. El historial de cambios de pestaÃ±a, las justificaciones y la revisiÃ³n docente se conservarÃ¡n. Â¿Continuar?")) {
+          if (!confirm("El contador visible volverá a cero. El historial de cambios de pestaña, las justificaciones y la revisión docente se conservarán. ¿Continuar?")) {
               return;
           }
           const cantidadAnterior = totalSalidasPestana;
@@ -3866,7 +3866,7 @@
           const hayPendientes = eventosSalidasPestana.some(evento => !evento.justificacion);
           document.getElementById('btnJustificarSalida').style.display = hayPendientes ? 'inline-flex' : 'none';
           await guardarAhoraFirebase();
-          alert(`Contador reiniciado: ${cantidadAnterior} cambio(s) pasaron a 0. El historial anterior continÃºa disponible para el profesor.`);
+          alert(`Contador reiniciado: ${cantidadAnterior} cambio(s) pasaron a 0. El historial anterior continúa disponible para el profesor.`);
       }
 
       function desbloquearEjercicioActual() {
@@ -3874,11 +3874,11 @@
           if (actividadesFinalizadas[sectionId]) {
               prepararReintentoDesafio(sectionId, { conservarHistorial: false });
               actualizarProgreso();
-              alert(`DesafÃ­o ${sectionId} habilitado para un nuevo intento.`);
+              alert(`Desafío ${sectionId} habilitado para un nuevo intento.`);
               return;
           }
           if (!actividadesFinalizadas[sectionId]) {
-              alert("Ã¢â€žÂ¹Ã¯Â¸Â Este ejercicio ya se encuentra desbloqueado y activo.");
+              alert("â„¹ï¸ Este ejercicio ya se encuentra desbloqueado y activo.");
               return;
           }
 
@@ -3920,7 +3920,7 @@
           actualizarDisplayTiempo(sectionId);
 
           actualizarProgreso();
-          alert(`Ã°Å¸â€â€œ Â¡El ejercicio actual (${sectionId}) ha sido desbloqueado con Ã©xito por el profesor!`);
+          alert(`ðŸ”“ ¡El ejercicio actual (${sectionId}) ha sido desbloqueado con éxito por el profesor!`);
       }
 
       function desbloquearTodosEjercicios() {
@@ -3928,7 +3928,7 @@
               prepararReintentoDesafio(sec.id, { conservarHistorial: false });
           });
           actualizarProgreso();
-          alert("Todos los desafÃ­os fueron habilitados para nuevos intentos.");
+          alert("Todos los desafíos fueron habilitados para nuevos intentos.");
           return;
 
           seccionesData.forEach(sec => {
@@ -3973,7 +3973,7 @@
           });
 
           actualizarProgreso();
-          alert("Ã°Å¸â€â€œ Â¡Todos los ejercicios de la plataforma han sido desbloqueados con Ã©xito!");
+          alert("ðŸ”“ ¡Todos los ejercicios de la plataforma han sido desbloqueados con éxito!");
       }
 
       function togglePausaModulo(sectionId) {
@@ -4007,7 +4007,7 @@
                   control.disabled = true;
               });
 
-              alert(`Ã¢ÂÂ¸Ã¯Â¸Â CronÃ³metro y ediciÃ³n pausados por el profesor para el mÃ³dulo ${sectionId}.`);
+              alert(`â¸ï¸ Cronómetro y edición pausados por el profesor para el módulo ${sectionId}.`);
           } else {
               if (btnPause) {
                   btnPause.innerHTML = `<i class="fa-solid fa-pause"></i> Pausar (Profe)`;
@@ -4034,7 +4034,7 @@
                   }
               }
 
-              alert(`Ã¢â€“Â¶Ã¯Â¸Â CronÃ³metro y ediciÃ³n reanudados para el mÃ³dulo ${sectionId}.`);
+              alert(`â–¶ï¸ Cronómetro y edición reanudados para el módulo ${sectionId}.`);
           }
       }
 
@@ -4098,8 +4098,8 @@
           actualizarBotonPausaCronometros();
           if (mostrarAviso) {
               alert(cronometrosPausadosPorDocente
-                  ? "Ã¢ÂÂ¸Ã¯Â¸Â Pausa Global Activada: Se han congelado los cronÃ³metros y editores de todos los mÃ³dulos."
-                  : "Ã¢â€“Â¶Ã¯Â¸Â Pausa Global Desactivada: Se han reanudado todos los mÃ³dulos activos.");
+                  ? "â¸ï¸ Pausa Global Activada: Se han congelado los cronómetros y editores de todos los módulos."
+                  : "â–¶ï¸ Pausa Global Desactivada: Se han reanudado todos los módulos activos.");
           }
       }
 
@@ -4116,25 +4116,25 @@
               pausar.disabled = !claseActiva || cronometrosPausadosPorDocente;
               pausar.setAttribute('aria-pressed', String(cronometrosPausadosPorDocente));
               pausar.title = !claseActiva
-                  ? 'Primero iniciÃ¡ la clase'
+                  ? 'Primero iniciá la clase'
                   : cronometrosPausadosPorDocente
-                  ? 'Los cronÃ³metros de todos ya estÃ¡n pausados'
-                  : 'Pausar los cronÃ³metros y la ediciÃ³n de todos los estudiantes';
+                  ? 'Los cronómetros de todos ya están pausados'
+                  : 'Pausar los cronómetros y la edición de todos los estudiantes';
           }
           if (continuar) {
               continuar.disabled = !claseActiva || !cronometrosPausadosPorDocente;
               continuar.setAttribute('aria-pressed', String(!cronometrosPausadosPorDocente));
               continuar.title = !claseActiva
-                  ? 'Primero iniciÃ¡ la clase'
+                  ? 'Primero iniciá la clase'
                   : cronometrosPausadosPorDocente
-                  ? 'Continuar los cronÃ³metros y la ediciÃ³n de todos los estudiantes'
-                  : 'Los cronÃ³metros de todos ya estÃ¡n activos';
+                  ? 'Continuar los cronómetros y la edición de todos los estudiantes'
+                  : 'Los cronómetros de todos ya están activos';
           }
           if (reiniciar) {
               reiniciar.disabled = !claseActiva;
               reiniciar.title = claseActiva
-                  ? 'Reiniciar a 40 minutos los mÃ³dulos activos de todos los estudiantes'
-                  : 'Primero iniciÃ¡ la clase';
+                  ? 'Reiniciar a 40 minutos los módulos activos de todos los estudiantes'
+                  : 'Primero iniciá la clase';
           }
       }
 
@@ -4182,7 +4182,7 @@
           const responsable = datos.cronometrosActualizadosPor
               ? ` por ${datos.cronometrosActualizadosPor}`
               : '';
-          alert(`El docente reiniciÃ³ los cronÃ³metros a 40:00${responsable}.`);
+          alert(`El docente reinició los cronómetros a 40:00${responsable}.`);
       }
 
       function aplicarControlCronometroIndividual(datos = {}) {
@@ -4194,7 +4194,7 @@
           reiniciarCronometrosLocales();
           setLocalStorage('app_last_individual_timer_reset', reinicioId);
           const responsable = datos.actualizadoPor ? ` por ${datos.actualizadoPor}` : '';
-          alert(`Tu cronÃ³metro fue reiniciado a 40:00${responsable}.`);
+          alert(`Tu cronómetro fue reiniciado a 40:00${responsable}.`);
       }
 
       function resetearSistemaCompleto() {
@@ -4257,7 +4257,7 @@
           });
           actualizarProgreso();
           programarGuardadoFirebase();
-          alert("Sistema, actividades y registro de cambios de pestaÃ±a reiniciados.");
+          alert("Sistema, actividades y registro de cambios de pestaña reiniciados.");
       }
 
       function actualizarIconoEstado(sectionId, esExitoso) {
@@ -4277,12 +4277,12 @@
           if (!claseHabilitada) return;
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
-          if (confirm("Â¿EstÃ¡s seguro de restablecer este ejercicio?")) {
+          if (confirm("¿Estás seguro de restablecer este ejercicio?")) {
               const sec = seccionesData.find(s => s.id === sectionId);
               if (sec) {
                   document.getElementById(`editor-${sectionId}`).value = sec.initialCode;
                   document.getElementById(`editor-${sectionId}`).dispatchEvent(new Event('input', { bubbles: true }));
-                  document.getElementById(`console-${sectionId}`).innerText = '// CÃ³digo restablecido.';
+                  document.getElementById(`console-${sectionId}`).innerText = '// Código restablecido.';
                   document.getElementById(`ai-feedback-${sectionId}`).classList.remove('active');
                   removeLocalStorage(`draft_editor-${sectionId}`);
                   delete historialResultados[sectionId];
@@ -4294,13 +4294,13 @@
                   }
                   actualizarProgreso();
                   actualizarMetricasEditor(sectionId);
-                  actualizarEstadoEditorEstudiante(sectionId, "idle", "CÃ³digo inicial restaurado");
+                  actualizarEstadoEditorEstudiante(sectionId, "idle", "Código inicial restaurado");
               }
           }
       }
 
       async function reiniciarSesionEstudiante() {
-          if (confirm("Ã¢Å¡Â Ã¯Â¸Â Â¿Iniciar nueva sesiÃ³n? Se cerrarÃ¡ la cuenta de Google y se borrarÃ¡ el avance local de este equipo.")) {
+          if (confirm("âš ï¸ ¿Iniciar nueva sesión? Se cerrará la cuenta de Google y se borrará el avance local de este equipo.")) {
               if (window.cerrarSesionGoogle) await window.cerrarSesionGoogle();
               else window.location.reload();
           }
@@ -4357,7 +4357,7 @@
                   try { return JSON.stringify(valor, null, 2); }
                   catch { return "[Objeto circular o no serializable]"; }
               };
-              const bloquearRed = () => { throw new Error("El acceso a red no estÃ¡ permitido en los ejercicios."); };
+              const bloquearRed = () => { throw new Error("El acceso a red no está permitido en los ejercicios."); };
               self.fetch = bloquearRed;
               self.XMLHttpRequest = undefined;
               self.WebSocket = undefined;
@@ -4388,7 +4388,7 @@
                   const timeout = setTimeout(() => {
                       worker.terminate();
                       URL.revokeObjectURL(workerUrl);
-                      reject(new Error("La ejecuciÃ³n superÃ³ el lÃ­mite de 2 segundos."));
+                      reject(new Error("La ejecución superó el límite de 2 segundos."));
                   }, 2000);
 
                   worker.onmessage = event => {
@@ -4416,7 +4416,7 @@
           if (!editor || !indicador) return;
           const texto = editor.value || "";
           const lineas = texto ? texto.split(/\r?\n/).length : 0;
-          indicador.textContent = `${lineas} lÃ­nea${lineas === 1 ? '' : 's'} Â· ${texto.length} caracteres`;
+          indicador.textContent = `${lineas} línea${lineas === 1 ? '' : 's'} · ${texto.length} caracteres`;
       }
 
       function actualizarEstadoEditorEstudiante(sectionId, estado = "idle", texto = "") {
@@ -4426,9 +4426,9 @@
               idle: ["fa-pen", texto || "Listo para programar"],
               dirty: ["fa-circle", texto || "Cambios sin ejecutar"],
               running: ["fa-spinner fa-spin", texto || "Ejecutando..."],
-              success: ["fa-circle-check", texto || "EjecuciÃ³n correcta"],
-              error: ["fa-triangle-exclamation", texto || "RevisÃ¡ el error"],
-              ai: ["fa-wand-magic-sparkles", texto || "La IA estÃ¡ analizando"]
+              success: ["fa-circle-check", texto || "Ejecución correcta"],
+              error: ["fa-triangle-exclamation", texto || "Revisá el error"],
+              ai: ["fa-wand-magic-sparkles", texto || "La IA está analizando"]
           };
           const [icono, etiqueta] = configuracion[estado] || configuracion.idle;
           indicador.className = `student-editor-state ${estado}`;
@@ -4447,8 +4447,8 @@
                   ? '<i class="fa-solid fa-compress"></i><span>Ver todo</span>'
                   : '<i class="fa-solid fa-expand"></i><span>Enfoque</span>';
               boton.title = activo
-                  ? "Volver a mostrar teorÃ­a y herramientas de comprensiÃ³n"
-                  : "Ocultar temporalmente teorÃ­a y ayudas";
+                  ? "Volver a mostrar teoría y herramientas de comprensión"
+                  : "Ocultar temporalmente teoría y ayudas";
           }
           document.querySelector(`#${CSS.escape(sectionId)} .student-coding-workspace`)?.scrollIntoView({
               behavior: "smooth",
@@ -4470,8 +4470,8 @@
           const control = boton || columna.querySelector('.ai-chat-minimize');
           if (control) {
               const accion = minimizar
-                  ? 'Restaurar Tutor de programaciÃ³n'
-                  : 'Minimizar Tutor de programaciÃ³n';
+                  ? 'Restaurar Tutor de programación'
+                  : 'Minimizar Tutor de programación';
               control.setAttribute('aria-expanded', String(!minimizar));
               control.title = accion;
               control.innerHTML = `
@@ -4505,7 +4505,7 @@
           const total = eventos.length;
           const segundos = eventos.reduce((suma, item) => suma + Math.max(0, Number(item.duracionSegundos || item.duracion || 0)), 0);
           const minutos = Math.round(segundos / 60);
-          contenido.innerHTML = `<div class="student-tabs-summary-stats"><div><small>Cambios registrados</small><strong>${total}</strong></div><div><small>Tiempo fuera</small><strong>${minutos} min</strong></div><div><small>ÃƒÅ¡ltimo cambio</small><strong>${total ? escapeHtml(new Date(eventos[total - 1].timestamp || eventos[total - 1].en || Date.now()).toLocaleTimeString('es-AR')) : 'Sin cambios'}</strong></div></div><div class="student-tabs-summary-list">${total ? eventos.slice(-12).reverse().map(item => `<article><strong>${escapeHtml(item.titulo || item.dominio || item.motivo || 'Cambio de pestaÃ±a')}</strong><small>${escapeHtml(new Date(item.timestamp || item.en || Date.now()).toLocaleString('es-AR'))} Â· ${Math.max(0, Number(item.duracionSegundos || item.duracion || 0))} s</small></article>`).join('') : '<p class="student-tabs-summary-empty">TodavÃ­a no hay cambios de pestaÃ±a registrados.</p>'}</div>`;
+          contenido.innerHTML = `<div class="student-tabs-summary-stats"><div><small>Cambios registrados</small><strong>${total}</strong></div><div><small>Tiempo fuera</small><strong>${minutos} min</strong></div><div><small>Ãšltimo cambio</small><strong>${total ? escapeHtml(new Date(eventos[total - 1].timestamp || eventos[total - 1].en || Date.now()).toLocaleTimeString('es-AR')) : 'Sin cambios'}</strong></div></div><div class="student-tabs-summary-list">${total ? eventos.slice(-12).reverse().map(item => `<article><strong>${escapeHtml(item.titulo || item.dominio || item.motivo || 'Cambio de pestaña')}</strong><small>${escapeHtml(new Date(item.timestamp || item.en || Date.now()).toLocaleString('es-AR'))} · ${Math.max(0, Number(item.duracionSegundos || item.duracion || 0))} s</small></article>`).join('') : '<p class="student-tabs-summary-empty">Todavía no hay cambios de pestaña registrados.</p>'}</div>`;
           modal.classList.add('active');
           document.body.classList.add('student-tabs-summary-open');
           modal.querySelector('.student-tabs-summary-box')?.focus({preventScroll:true});
@@ -4520,7 +4520,7 @@
           const controles = [...document.querySelectorAll(`#${CSS.escape(sectionId)} [data-ai-editor-action]`)];
           controles.forEach(control => control.disabled = true);
           boton?.classList.add("is-loading");
-          actualizarEstadoEditorEstudiante(sectionId, "ai", "Analizando tu cÃ³digo");
+          actualizarEstadoEditorEstudiante(sectionId, "ai", "Analizando tu código");
           try {
               await pedirPistaIA(sectionId, modo);
               const chat = document.getElementById(`ai-chat-${sectionId}`);
@@ -4557,7 +4557,7 @@
           const resultado = await ejecutarCodigoAislado(code);
 
           const logs = Array.isArray(resultado.logs) ? resultado.logs : [];
-          if (!resultado.ok) logs.push("[EXCEPCIÃƒâ€œN]: " + resultado.error);
+          if (!resultado.ok) logs.push("[EXCEPCIÃ“N]: " + resultado.error);
           if (logs.length === 0) logs.push("// Ejecutado sin salida en consola.");
           consoleBox.style.color = resultado.ok ? "#10b981" : "#ef4444";
           consoleBox.innerText = logs.join("\n");
@@ -4566,7 +4566,7 @@
           actualizarEstadoEditorEstudiante(
               sectionId,
               esExitoso ? "success" : "error",
-              esExitoso ? "CÃ³digo ejecutado correctamente" : "La consola encontrÃ³ un error"
+              esExitoso ? "Código ejecutado correctamente" : "La consola encontró un error"
           );
 
           if(!historialResultados[sectionId]) historialResultados[sectionId] = {};
@@ -4607,7 +4607,7 @@
 
       function limpiarSalidaEvaluacion(valor) {
           return normalizarEvaluacion(String(valor || "")
-              .replace(/\[(?:LOG|INFO|AVISO|ERROR|EXCEPCIÃƒâ€œN)\]:/gi, " ")
+              .replace(/\[(?:LOG|INFO|AVISO|ERROR|EXCEPCIÃ“N)\]:/gi, " ")
               .replace(/\/\/ ejecutado sin salida en consola\./gi, " ")
               .replace(/[{}[\]",'`]/g, " "));
       }
@@ -4637,7 +4637,7 @@
               (Array.isArray(resultadoEjecucion?.logs) ? resultadoEjecucion.logs.join("\n") : "");
           const salidaEsperada = resultadoEjecucion?.salidaEsperada || "";
           const error = resultadoEjecucion?.error ||
-              (ejecucionIntentada && !resultadoEjecucion?.ok ? "Error de ejecuciÃ³n" : "");
+              (ejecucionIntentada && !resultadoEjecucion?.ok ? "Error de ejecución" : "");
           const esPlantilla = !fuente.trim() ||
               (sec?.initialCode && fuente.trim() === String(sec.initialCode).trim());
           const lineas = fuente.split(/\r?\n/);
@@ -4650,7 +4650,7 @@
               (fuente.match(/;/g) || []).length,
               (fuente.match(/\b(if|switch|for|while|return|console\.(?:log|info|warn|error))\b/g) || []).length
           );
-          const tienePendientes = /\b(TODO|FIXME)\b|completar|escrib[iÃ­].*aqu[iÃ­]|tu c[oÃ³]digo/i.test(fuente);
+          const tienePendientes = /\b(TODO|FIXME)\b|completar|escrib[ií].*aqu[ií]|tu c[oó]digo/i.test(fuente);
           const declaraciones = [...fuente.matchAll(/\b(?:let|const|var)\s+([A-Za-z_$][\w$]*)/g)].map(x => x[1]);
           const declaracionesRepetidas = [...new Set(declaraciones.filter((x, i) => declaraciones.indexOf(x) !== i))];
           const nombresDescriptivos = declaraciones.length
@@ -4720,8 +4720,8 @@
                   nombre,
                   cumple,
                   evidencia: cumple
-                      ? `Se encontrÃ³ una estructura compatible con Ã¢â‚¬Å“${nombre}Ã¢â‚¬Â.`
-                      : `No se encontrÃ³ una estructura verificable para Ã¢â‚¬Å“${nombre}Ã¢â‚¬Â.`
+                      ? `Se encontró una estructura compatible con â€œ${nombre}â€.`
+                      : `No se encontró una estructura verificable para â€œ${nombre}â€.`
               };
           });
           const conceptosCumplidos = evidenciasConceptos.filter(x => x.cumple).length;
@@ -4763,18 +4763,18 @@
               ? sec.criteriosEvaluacion.filter(c => c && (c.criterio || c.indicador))
               : [];
           const criteriosBase = criteriosDefinidos.length ? criteriosDefinidos : [
-              { criterio: "Sintaxis y ejecuciÃ³n", peso: 25, indicador: "El cÃ³digo es vÃ¡lido, se ejecuta sin errores y termina." },
-              { criterio: "Requisitos del desafÃ­o", peso: 30, indicador: "Usa las estructuras y conceptos solicitados." },
+              { criterio: "Sintaxis y ejecución", peso: 25, indicador: "El código es válido, se ejecuta sin errores y termina." },
+              { criterio: "Requisitos del desafío", peso: 30, indicador: "Usa las estructuras y conceptos solicitados." },
               { criterio: "Comportamiento verificable", peso: 25, indicador: "La salida coincide razonablemente con el comportamiento de referencia." },
-              { criterio: "Calidad y claridad", peso: 20, indicador: "La soluciÃ³n es legible, suficiente y evita problemas bÃ¡sicos de mantenimiento." }
+              { criterio: "Calidad y claridad", peso: 20, indicador: "La solución es legible, suficiente y evita problemas básicos de mantenimiento." }
           ];
           const obtenerResultadoCriterio = criterio => {
               const texto = normalizarEvaluacion(`${criterio.criterio} ${criterio.indicador}`);
               if (/sintaxis|compil/.test(texto)) {
-                  return { proporcion: puntajeSintaxis * 0.4 + puntajeEjecucion * 0.6, evidencia: sintaxis.valida ? (resultadoEjecucion?.ok ? "Sintaxis vÃ¡lida y ejecuciÃ³n correcta." : "La sintaxis es vÃ¡lida, pero falta una ejecuciÃ³n correcta.") : `Error de sintaxis: ${sintaxis.error}` };
+                  return { proporcion: puntajeSintaxis * 0.4 + puntajeEjecucion * 0.6, evidencia: sintaxis.valida ? (resultadoEjecucion?.ok ? "Sintaxis válida y ejecución correcta." : "La sintaxis es válida, pero falta una ejecución correcta.") : `Error de sintaxis: ${sintaxis.error}` };
               }
               if (/ejec|error|funciona|termina/.test(texto)) {
-                  return { proporcion: puntajeEjecucion, evidencia: resultadoEjecucion?.ok ? "La ejecuciÃ³n terminÃ³ sin excepciones." : (error || "TodavÃ­a no hay una ejecuciÃ³n correcta registrada.") };
+                  return { proporcion: puntajeEjecucion, evidencia: resultadoEjecucion?.ok ? "La ejecución terminó sin excepciones." : (error || "Todavía no hay una ejecución correcta registrada.") };
               }
               if (/concept|consigna|requis|estructura solicit|contenido/.test(texto)) {
                   return { proporcion: proporcionConceptos * 0.75 + coberturaNombresExigidos * 0.25, evidencia: `${conceptosCumplidos}/${evidenciasConceptos.length || conceptos.length || 1} conceptos esperados detectados; nombres exigidos: ${nombresExigidosCumplidos.length}/${nombresExigidos.length || 0}.` };
@@ -4783,14 +4783,14 @@
                   return { proporcion: coberturaReferencia * 0.7 + coberturaNombresExigidos * 0.3, evidencia: `Estructuras clave de referencia: ${estructurasReferenciaCumplidas.length}/${palabrasClaveReferencia.length || 0}; identificadores exigidos: ${nombresExigidosCumplidos.length}/${nombresExigidos.length || 0}.` };
               }
               if (/salida|resultado|objetivo|comport|evidencia|prueba/.test(texto)) {
-                  return { proporcion: puntajeComportamiento, evidencia: salidaEsperada ? `Coincidencia orientativa con la salida de referencia: ${Math.round(similitudSalida * 100)}%.` : "Se verificÃ³ la existencia de una salida, pero este mÃ³dulo no define una salida de referencia automÃ¡tica." };
+                  return { proporcion: puntajeComportamiento, evidencia: salidaEsperada ? `Coincidencia orientativa con la salida de referencia: ${Math.round(similitudSalida * 100)}%.` : "Se verificó la existencia de una salida, pero este módulo no define una salida de referencia automática." };
               }
               if (/clar|legib|orden|calidad|manten|nombre/.test(texto)) {
-                  return { proporcion: puntajeCalidad, evidencia: declaracionesRepetidas.length ? `Hay declaraciones repetidas: ${declaracionesRepetidas.join(", ")}.` : "Se revisaron nombres, declaraciones, extensiÃ³n de lÃ­neas y marcadores pendientes." };
+                  return { proporcion: puntajeCalidad, evidencia: declaracionesRepetidas.length ? `Hay declaraciones repetidas: ${declaracionesRepetidas.join(", ")}.` : "Se revisaron nombres, declaraciones, extensión de líneas y marcadores pendientes." };
               }
               return {
                   proporcion: puntajeEstructura * 0.45 + puntajeComportamiento * 0.35 + puntajeCalidad * 0.2,
-                  evidencia: "Evaluado mediante requisitos, comportamiento y calidad del cÃ³digo."
+                  evidencia: "Evaluado mediante requisitos, comportamiento y calidad del código."
               };
           };
           const totalPeso = criteriosBase.reduce((s, c) => s + (Number(c.peso) || 0), 0) || 100;
@@ -4813,53 +4813,53 @@
           const limites = [];
           if (esPlantilla) {
               nota = 1;
-              limites.push("Plantilla inicial o editor vacÃ­o: nota mÃ¡xima 1.");
+              limites.push("Plantilla inicial o editor vacío: nota máxima 1.");
           } else if (!sintaxis.valida) {
               nota = Math.min(nota, 3);
-              limites.push("Error de sintaxis: nota mÃ¡xima 3.");
+              limites.push("Error de sintaxis: nota máxima 3.");
           } else if (ejecucionIntentada && !resultadoEjecucion?.ok) {
               nota = Math.min(nota, 4);
-              limites.push("Error de ejecuciÃ³n: nota mÃ¡xima 4.");
+              limites.push("Error de ejecución: nota máxima 4.");
           } else if (!ejecucionIntentada) {
               nota = Math.min(nota, 6);
-              limites.push("Sin ejecuciÃ³n comprobada: nota mÃ¡xima 6.");
+              limites.push("Sin ejecución comprobada: nota máxima 6.");
           }
           if (!esPlantilla && instruccionesEstimadas < 2) {
               nota = Math.min(nota, 5);
-              limites.push("CÃ³digo insuficiente para demostrar una soluciÃ³n completa: nota mÃ¡xima 5.");
+              limites.push("Código insuficiente para demostrar una solución completa: nota máxima 5.");
           }
           if (!esPlantilla && coberturaNombresExigidos < 0.5) {
               nota = Math.min(nota, 5);
-              limites.push("Faltan identificadores o funciones expresamente solicitados en la consigna: nota mÃ¡xima 5.");
+              limites.push("Faltan identificadores o funciones expresamente solicitados en la consigna: nota máxima 5.");
           }
           if (!esPlantilla && referencia && coberturaReferencia < 0.45) {
               nota = Math.min(nota, 6);
-              limites.push("La implementaciÃ³n no demuestra suficientes estructuras de la soluciÃ³n esperada: nota mÃ¡xima 6.");
+              limites.push("La implementación no demuestra suficientes estructuras de la solución esperada: nota máxima 6.");
           }
           if (resultadoEjecucion?.ok && salidaEsperada && similitudSalida < 0.35) {
               nota = Math.min(nota, 6);
-              limites.push("La salida difiere sustancialmente de la referencia: nota mÃ¡xima 6.");
+              limites.push("La salida difiere sustancialmente de la referencia: nota máxima 6.");
           }
           if (tienePendientes) {
               nota = Math.min(nota, 7);
-              limites.push("Persisten marcadores de cÃ³digo pendiente: nota mÃ¡xima 7.");
+              limites.push("Persisten marcadores de código pendiente: nota máxima 7.");
           }
           nota = Number(Math.max(1, Math.min(10, nota)).toFixed(1));
           const porcentaje = Number((nota * 10).toFixed(1));
 
           const fortalezas = [];
           const mejoras = [];
-          if (sintaxis.valida && !esPlantilla) fortalezas.push("La sintaxis del cÃ³digo es vÃ¡lida.");
-          else mejoras.push(sintaxis.error ? `Corregir la sintaxis: ${sintaxis.error}` : "Reemplazar la plantilla por una soluciÃ³n propia.");
-          if (resultadoEjecucion?.ok) fortalezas.push("El cÃ³digo se ejecuta sin errores.");
-          else mejoras.push(error ? `Corregir la ejecuciÃ³n: ${error}` : "Ejecutar el cÃ³digo antes de entregar.");
+          if (sintaxis.valida && !esPlantilla) fortalezas.push("La sintaxis del código es válida.");
+          else mejoras.push(sintaxis.error ? `Corregir la sintaxis: ${sintaxis.error}` : "Reemplazar la plantilla por una solución propia.");
+          if (resultadoEjecucion?.ok) fortalezas.push("El código se ejecuta sin errores.");
+          else mejoras.push(error ? `Corregir la ejecución: ${error}` : "Ejecutar el código antes de entregar.");
           if (conceptosCumplidos) fortalezas.push(`Se verificaron ${conceptosCumplidos}/${evidenciasConceptos.length || conceptos.length || 1} conceptos esperados.`);
           if (evidenciasConceptos.some(x => !x.cumple)) mejoras.push("Completar las estructuras que exige la consigna.");
           if (coberturaNombresExigidos < 1 && nombresExigidos.length) mejoras.push(`Incorporar los identificadores exigidos: ${nombresExigidos.filter(nombre => !nombresExigidosCumplidos.includes(nombre)).join(", ")}.`);
-          if (referencia && coberturaReferencia < 0.75) mejoras.push("Comparar la estructura de tu soluciÃ³n con las acciones y mÃ©todos pedidos, sin copiar la referencia.");
+          if (referencia && coberturaReferencia < 0.75) mejoras.push("Comparar la estructura de tu solución con las acciones y métodos pedidos, sin copiar la referencia.");
           if (puntajeComportamiento >= 0.8) fortalezas.push("La salida coincide razonablemente con el comportamiento de referencia.");
           else if (salidaEsperada) mejoras.push("Revisar la salida: no coincide suficientemente con el comportamiento esperado.");
-          if (puntajeCalidad < 0.65) mejoras.push("Mejorar nombres, declaraciones y organizaciÃ³n del cÃ³digo.");
+          if (puntajeCalidad < 0.65) mejoras.push("Mejorar nombres, declaraciones y organización del código.");
 
           return {
               nota,
@@ -4870,7 +4870,7 @@
               mejoras,
               limites,
               advertencias: [
-                  "EvaluaciÃ³n automÃ¡tica orientativa: el docente conserva la decisiÃ³n final.",
+                  "Evaluación automática orientativa: el docente conserva la decisión final.",
                   ...limites
               ],
               ejecucion: {
@@ -4918,35 +4918,35 @@
               .slice(0, 4);
           const pasos = [];
           if (!ejecucion) {
-              pasos.push("EjecutÃ¡ el cÃ³digo con distintos datos y observÃ¡ la consola.");
+              pasos.push("Ejecutá el código con distintos datos y observá la consola.");
           } else if (!ejecucion.ok) {
-              pasos.push(`RevisÃ¡ el error de ejecuciÃ³n: ${ejecucion.error || "la consola indicÃ³ un problema"}.`);
+              pasos.push(`Revisá el error de ejecución: ${ejecucion.error || "la consola indicó un problema"}.`);
           } else {
-              pasos.push("La ejecuciÃ³n no muestra errores; ahora comprobÃ¡ casos normales y casos lÃ­mite.");
+              pasos.push("La ejecución no muestra errores; ahora comprobá casos normales y casos límite.");
           }
           if (conceptosPendientes.length) {
-              pasos.push(`RevisÃ¡ la consigna para incorporar: ${conceptosPendientes.join(", ")}.`);
+              pasos.push(`Revisá la consigna para incorporar: ${conceptosPendientes.join(", ")}.`);
           }
           if (criteriosPendientes.length) {
               pasos.push(...criteriosPendientes);
           }
           if (!pasos.length) {
-              pasos.push("La soluciÃ³n presenta evidencias suficientes. JustificÃ¡ tus decisiones antes de entregar.");
+              pasos.push("La solución presenta evidencias suficientes. Justificá tus decisiones antes de entregar.");
           }
           const referencia = Number(evaluacion?.metricas?.referencia ?? 0);
           const nombres = Number(evaluacion?.metricas?.nombresExigidos ?? 1);
           if (referencia < 0.75 || nombres < 1) {
-              pasos.push(`La correspondencia estricta todavÃ­a es incompleta: ${Math.round(referencia * 100)}% de estructuras clave y ${Math.round(nombres * 100)}% de identificadores exigidos.`);
+              pasos.push(`La correspondencia estricta todavía es incompleta: ${Math.round(referencia * 100)}% de estructuras clave y ${Math.round(nombres * 100)}% de identificadores exigidos.`);
           }
           return {
               resumen: evaluacion?.nota >= 8 && referencia >= 0.75 && nombres >= 1
-                  ? "La soluciÃ³n muestra un avance sÃ³lido y evidencia la mayorÃ­a de los requisitos explÃ­citos."
+                  ? "La solución muestra un avance sólido y evidencia la mayoría de los requisitos explícitos."
                   : evaluacion?.nota >= 5
-                      ? "La soluciÃ³n es parcial: la nota considera requisitos explÃ­citos, estructura, ejecuciÃ³n y comportamiento."
-                      : "TodavÃ­a faltan evidencias importantes para considerar resuelto el desafÃ­o; la estimaciÃ³n se limitÃ³ por los requisitos ausentes.",
+                      ? "La solución es parcial: la nota considera requisitos explícitos, estructura, ejecución y comportamiento."
+                      : "Todavía faltan evidencias importantes para considerar resuelto el desafío; la estimación se limitó por los requisitos ausentes.",
               pasos: pasos.slice(0, 5),
               preguntaGuia: sec?.preguntasSocraticas?.[0] ||
-                  "Â¿QuÃ© parte del cÃ³digo cambiarÃ­as primero para acercarte al objetivo y por quÃ©?"
+                  "¿Qué parte del código cambiarías primero para acercarte al objetivo y por qué?"
           };
       }
 
@@ -4954,36 +4954,29 @@
           return evaluarCodigoPorEvidencias(code, sec, resultadoEjecucion).nota;
       }
 
-      function calcularNotaCombinada(notaCodigo, porcentajePreguntas, evaluacionCodigo = null, componentes = {}) {
-          const codigoBase = Math.max(0, Math.min(10, Number(notaCodigo) || 0));
+      function calcularNotaCombinada(notaCodigo, porcentajePreguntas, evaluacionCodigo = null) {
+          const codigo = Math.max(0, Math.min(10, Number(notaCodigo) || 0));
+          const preguntas = Math.max(0, Math.min(100, Number(porcentajePreguntas) || 0)) / 10;
           const metricas = evaluacionCodigo?.metricas || {};
           const evidencia = [
               Number(metricas.requisitos),
+              Number(metricas.comportamiento),
               Number(metricas.estructura),
               Number(metricas.calidad)
           ].filter(Number.isFinite);
-          const requisitos = evidencia.length
+          const evidenciaPromedio = evidencia.length
               ? evidencia.reduce((total, valor) => total + Math.max(0, Math.min(1, valor)), 0) / evidencia.length
-              : codigoBase / 10;
-          const funcionamiento = Number.isFinite(Number(metricas.comportamiento))
-              ? Math.max(0, Math.min(1, Number(metricas.comportamiento)))
-              : (evaluacionCodigo?.ejecucion?.ok ? 0.8 : 0);
-          const codigo = Number((codigoBase * 0.65 + requisitos * 10 * 0.35).toFixed(1));
-          const multiple = Math.max(0, Math.min(10, Number(componentes.multiple ?? porcentajePreguntas) || 0));
-          const socraticas = Math.max(0, Math.min(10, Number(componentes.socraticas ?? porcentajePreguntas) || 0));
-          const pruebas = Math.max(0, Math.min(10, Number(componentes.pruebas ?? (evaluacionCodigo?.ejecucion?.intentada ? (evaluacionCodigo.ejecucion.ok ? 10 : 2) : 0)) || 0));
-          let nota = (
-              codigo * 0.40 +
-              (funcionamiento * 10) * 0.25 +
-              multiple * 0.15 +
-              socraticas * 0.15 +
-              pruebas * 0.05
+              : codigo / 10;
+          const notaCodigoAjustada = Number(
+              (codigo * 0.75 + evidenciaPromedio * 10 * 0.25).toFixed(1)
           );
+          let nota = notaCodigoAjustada * 0.65 + preguntas * 0.35;
           const sintaxisValida = evaluacionCodigo?.sintaxis?.valida !== false;
           const ejecucionCorrecta = evaluacionCodigo?.ejecucion?.ok !== false;
+          const comportamiento = Number(evaluacionCodigo?.metricas?.comportamiento);
           if (!sintaxisValida) nota = Math.min(nota, 3);
           else if (!ejecucionCorrecta) nota = Math.min(nota, 4);
-          else if (funcionamiento < 0.35) nota = Math.min(nota, 6);
+          else if (Number.isFinite(comportamiento) && comportamiento < 0.35) nota = Math.min(nota, 6);
           return Number(Math.max(1, Math.min(10, nota)).toFixed(1));
       }
 
@@ -4993,7 +4986,7 @@
 
           let usos = contadorPrevisualizaciones[sectionId] || 0;
           if (usos >= 3) {
-              alert("Ã¢Å¡Â Ã¯Â¸Â Has alcanzado el lÃ­mite mÃ¡ximo de 3 consultas de nota previa para este mÃ³dulo.");
+              alert("âš ï¸ Has alcanzado el límite máximo de 3 consultas de nota previa para este módulo.");
               return;
           }
 
@@ -5013,103 +5006,103 @@
 
           feedbackBox.classList.add('active');
           studentCodeDisplay.innerText = code;
-          document.getElementById(`ai-ideal-code-${sectionId}`).innerText = "// (Oculto en previsualizaciÃ³n parcial)";
+          document.getElementById(`ai-ideal-code-${sectionId}`).innerText = "// (Oculto en previsualización parcial)";
 
           const evaluacion = evaluarCodigoPorEvidencias(code, sec, historialResultados[sectionId]?.exito === undefined ? null : {
               ok: Boolean(historialResultados[sectionId]?.exito),
               salida: historialResultados[sectionId]?.salida || "",
-              error: historialResultados[sectionId]?.exito ? "" : "La ejecuciÃ³n todavÃ­a no fue validada."
+              error: historialResultados[sectionId]?.exito ? "" : "La ejecución todavía no fue validada."
           });
           let notaEstimada = evaluacion.nota;
           const diagnostico = generarDiagnosticoIA(evaluacion, sec, historialResultados[sectionId]);
           feedbackText.innerHTML =
-              `<strong>EstimaciÃ³n orientativa (${usos}/3): ${notaEstimada}/10</strong>` +
+              `<strong>Estimación orientativa (${usos}/3): ${notaEstimada}/10</strong>` +
               `<br>${escaparTextoAnalista(diagnostico.resumen)}` +
-              `<br><strong>PrÃ³ximos pasos:</strong><ol>${diagnostico.pasos.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ol>` +
-              `<br><strong>Pregunta guÃ­a:</strong> ${escaparTextoAnalista(diagnostico.preguntaGuia)}` +
-              `<br><small>La nota previa orienta tu revisiÃ³n; no reemplaza la entrega ni la correcciÃ³n docente.</small>`;
+              `<br><strong>Próximos pasos:</strong><ol>${diagnostico.pasos.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ol>` +
+              `<br><strong>Pregunta guía:</strong> ${escaparTextoAnalista(diagnostico.preguntaGuia)}` +
+              `<br><small>La nota previa orienta tu revisión; no reemplaza la entrega ni la corrección docente.</small>`;
       }
 
       const preguntasSocraticas = [
           {
               respuestaAbierta: true,
-              q: () => `ElegÃ­ una decisiÃ³n concreta de tu cÃ³digo, nombrÃ¡ la variable, condiciÃ³n, bucle o funciÃ³n involucrada y explicÃ¡ quÃ© problema resuelve. Â¿QuÃ© cambiarÃ­a en el resultado si la eliminaras o la reemplazaras?`
+              q: () => `Elegí una decisión concreta de tu código, nombrá la variable, condición, bucle o función involucrada y explicá qué problema resuelve. ¿Qué cambiaría en el resultado si la eliminaras o la reemplazaras?`
           },
           {
               respuestaAbierta: true,
-              q: () => `ProponÃ© un caso de prueba diferente del ejemplo de la consigna. IndicÃ¡ la entrada, anticipÃ¡ la salida y explicÃ¡ quÃ© parte de tu cÃ³digo permite obtener ese resultado.`
+              q: () => `Proponé un caso de prueba diferente del ejemplo de la consigna. Indicá la entrada, anticipá la salida y explicá qué parte de tu código permite obtener ese resultado.`
           },
           {
               respuestaAbierta: true,
-              q: () => `ComparÃ¡ una diferencia concreta entre tu soluciÃ³n y la soluciÃ³n de referencia. ElegÃ­ un criterio Ã¢â‚¬â€claridad, robustez, eficiencia o facilidad de mantenimientoÃ¢â‚¬â€ y defendÃ© cuÃ¡l decisiÃ³n es mÃ¡s adecuada y en quÃ© situaciÃ³n podrÃ­a convenir la otra.`
+              q: () => `Compará una diferencia concreta entre tu solución y la solución de referencia. Elegí un criterio â€”claridad, robustez, eficiencia o facilidad de mantenimientoâ€” y defendé cuál decisión es más adecuada y en qué situación podría convenir la otra.`
           },
           {
               respuestaAbierta: true,
-              q: () => `IdentificÃ¡ una suposiciÃ³n que hace tu cÃ³digo sobre los datos de entrada. ConstruÃ­ un caso lÃ­mite que cuestione esa suposiciÃ³n y explicÃ¡ cÃ³mo comprobarÃ­as o mejorarÃ­as el comportamiento del programa.`
+              q: () => `Identificá una suposición que hace tu código sobre los datos de entrada. Construí un caso límite que cuestione esa suposición y explicá cómo comprobarías o mejorarías el comportamiento del programa.`
           },
           {
               respuestaAbierta: true,
-              q: () => `ImaginÃ¡ que otro estudiante debe modificar tu programa sin preguntarte nada. SeÃ±alÃ¡ la parte que podrÃ­a resultarle mÃ¡s difÃ­cil de comprender y proponÃ© una mejora concreta que conserve el comportamiento.`
+              q: () => `Imaginá que otro estudiante debe modificar tu programa sin preguntarte nada. Señalá la parte que podría resultarle más difícil de comprender y proponé una mejora concreta que conserve el comportamiento.`
           },
           {
               respuestaAbierta: true,
-              q: () => `Tu programa produce la salida esperada, pero eso no demuestra por sÃ­ solo que la soluciÃ³n sea correcta. Â¿QuÃ© evidencias adicionales reunirÃ­as y quÃ© error podrÃ­a seguir oculto aunque el ejemplo funcione?`
+              q: () => `Tu programa produce la salida esperada, pero eso no demuestra por sí solo que la solución sea correcta. ¿Qué evidencias adicionales reunirías y qué error podría seguir oculto aunque el ejemplo funcione?`
           },
           {
               respuestaAbierta: true,
-              q: () => `Si descubrÃ­s que el resultado correcto apareciÃ³ por una coincidencia, describÃ­ cÃ³mo localizarÃ­as la causa, quÃ© prueba usarÃ­as para confirmarla y quÃ© modificaciÃ³n harÃ­as para evitar que vuelva a ocurrir.`
+              q: () => `Si descubrís que el resultado correcto apareció por una coincidencia, describí cómo localizarías la causa, qué prueba usarías para confirmarla y qué modificación harías para evitar que vuelva a ocurrir.`
           },
           {
               respuestaAbierta: true,
-              q: () => `Usando un ejemplo especÃ­fico de tu cÃ³digo, explicÃ¡ la diferencia entre Ã¢â‚¬Å“obtener la salida correctaÃ¢â‚¬Â y construir una soluciÃ³n tÃ©cnicamente sÃ³lida. ProponÃ© una mejora y justificÃ¡ quÃ© calidad aporta.`
+              q: () => `Usando un ejemplo específico de tu código, explicá la diferencia entre â€œobtener la salida correctaâ€ y construir una solución técnicamente sólida. Proponé una mejora y justificá qué calidad aporta.`
           }
       ];
 
       const analistaPlantillas = [
           {
               tipo: "ESTUDIANTE",
-              q: code => `Â¿CuÃ¡l de las siguientes afirmaciones describe correctamente algo que aparece en el cÃ³digo que programaste?`,
+              q: code => `¿Cuál de las siguientes afirmaciones describe correctamente algo que aparece en el código que programaste?`,
               opciones: code => {
                   const snippets = extraerEvidencias(code);
                   return [
-                      {t:`El cÃ³digo contiene: ${snippets[0] || "una instrucciÃ³n ejecutable"}`, c:true},
-                      {t:`El cÃ³digo contiene: ${snippets[1] || "una estructura declarativa"}`, c:true},
-                      {t:"El cÃ³digo necesariamente utiliza una API externa aunque no aparezca en el cÃ³digo.", c:false},
-                      {t:"El cÃ³digo no contiene ninguna instrucciÃ³n ejecutable.", c:false}
+                      {t:`El código contiene: ${snippets[0] || "una instrucción ejecutable"}`, c:true},
+                      {t:`El código contiene: ${snippets[1] || "una estructura declarativa"}`, c:true},
+                      {t:"El código necesariamente utiliza una API externa aunque no aparezca en el código.", c:false},
+                      {t:"El código no contiene ninguna instrucción ejecutable.", c:false}
                   ];
               }
           },
           {
               tipo: "ESTUDIANTE",
-              q: code => `Observando tu cÃ³digo, Â¿cuÃ¡les de estas caracterÃ­sticas pueden identificarse realmente?`,
+              q: code => `Observando tu código, ¿cuáles de estas características pueden identificarse realmente?`,
               opciones: code => {
                   const features = detectarCaracteristicas(code);
                   const correctas = features.filter(x => x.c).slice(0,2);
                   const falsas = [
                       "Utiliza una base de datos externa obligatoriamente.",
-                      "Contiene una clase CSS con el mismo comportamiento que una funciÃ³n JavaScript."
+                      "Contiene una clase CSS con el mismo comportamiento que una función JavaScript."
                   ];
                   return [...correctas, ...falsas.map(t=>({t,c:false}))];
               }
           },
           {
               tipo: "ESTUDIANTE",
-              q: code => `Â¿QuÃ© afirmaciones son compatibles con la lÃ³gica de tu cÃ³digo entregado?`,
+              q: code => `¿Qué afirmaciones son compatibles con la lógica de tu código entregado?`,
               opciones: code => generarAfirmacionesEstudiante(code)
           },
           {
               tipo: "IA",
-              q: (code, ideal) => `Al comparar tu soluciÃ³n con la soluciÃ³n programada por la IA, Â¿cuÃ¡les afirmaciones describen correctamente la soluciÃ³n ideal?`,
+              q: (code, ideal) => `Al comparar tu solución con la solución programada por la IA, ¿cuáles afirmaciones describen correctamente la solución ideal?`,
               opciones: (code, ideal) => generarAfirmacionesIA(ideal)
           },
           {
               tipo: "IA",
-              q: (code, ideal) => `Respecto de la soluciÃ³n de IA mostrada en la evaluaciÃ³n, Â¿quÃ© elementos forman parte de su lÃ³gica?`,
+              q: (code, ideal) => `Respecto de la solución de IA mostrada en la evaluación, ¿qué elementos forman parte de su lógica?`,
               opciones: (code, ideal) => generarAfirmacionesIA(ideal)
           },
           {
               tipo: "COMPARACION",
-              q: (code, ideal) => `Comparando ambos cÃ³digos, Â¿quÃ© afirmaciones son verdaderas?`,
+              q: (code, ideal) => `Comparando ambos códigos, ¿qué afirmaciones son verdaderas?`,
               opciones: (code, ideal) => generarComparaciones(code, ideal)
           }
       ];
@@ -5146,10 +5139,10 @@
               ? mensajes.map(m => {
                   const esEstudiante = m.rol === "student";
                   return `<div class="ai-chat-message ${esEstudiante ? "student" : "assistant"}">
-                      <span class="ai-message-label">${esEstudiante ? "Tu consulta" : "GuÃ­a IA"}</span>${escaparTextoAnalista(m.texto)}
+                      <span class="ai-message-label">${esEstudiante ? "Tu consulta" : "Guía IA"}</span>${escaparTextoAnalista(m.texto)}
                   </div>`;
               }).join("")
-              : `<div class="ai-chat-message assistant"><span class="ai-message-label">GuÃ­a IA</span>Voy a leer tu cÃ³digo antes de responder. Puedo ayudarte a entender la consigna, localizar un error, revisar decisiones y diseÃ±ar pruebas. Te darÃ© pistas progresivas, no la soluciÃ³n completa.</div>`;
+              : `<div class="ai-chat-message assistant"><span class="ai-message-label">Guía IA</span>Voy a leer tu código antes de responder. Puedo ayudarte a entender la consigna, localizar un error, revisar decisiones y diseñar pruebas. Te daré pistas progresivas, no la solución completa.</div>`;
           contenedor.scrollTop = contenedor.scrollHeight;
       }
 
@@ -5191,7 +5184,7 @@
           const conceptosPendientes = (evaluacion.conceptos || [])
               .filter(x => !x.cumple).map(x => x.nombre).slice(0, 3);
           const errorTexto = String(historial.error || (historial.exito === false ? historial.salida : "") || "").trim();
-          const coincidenciaLinea = errorTexto.match(/(?:line|lÃ­nea)\s*(\d+)/i);
+          const coincidenciaLinea = errorTexto.match(/(?:line|línea)\s*(\d+)/i);
           const lineaSospechosa = lineasConContenido.find(x =>
               /\b(?:prompt|Number|parseInt|parseFloat)\s*\(/.test(x.texto) ||
               /\b(?:if|while|for)\b/.test(x.texto) ||
@@ -5226,9 +5219,9 @@
       function obtenerNivelPistaIA(sectionId, pregunta) {
           const mensajes = historialChatIA[sectionId] || [];
           const consultas = mensajes.filter(m => m.rol === "student");
-          const clave = normalizarEvaluacion(pregunta).replace(/[Â¿?Â¡!.,;:]+/g, "").trim();
+          const clave = normalizarEvaluacion(pregunta).replace(/[¿?¡!.,;:]+/g, "").trim();
           const similares = consultas.filter(m => {
-              const anterior = normalizarEvaluacion(m.texto).replace(/[Â¿?Â¡!.,;:]+/g, "").trim();
+              const anterior = normalizarEvaluacion(m.texto).replace(/[¿?¡!.,;:]+/g, "").trim();
               return anterior === clave || (clave.length > 12 && (anterior.includes(clave) || clave.includes(anterior)));
           }).length;
           return Math.max(1, Math.min(3, similares));
@@ -5238,8 +5231,8 @@
           return [
               titulo ? `${titulo}` : "",
               observacion ? `Lo que observo: ${observacion}` : "",
-              accion ? `PrÃ³ximo paso: ${accion}` : "",
-              preguntaGuia ? `ComprobaciÃ³n: ${preguntaGuia}` : ""
+              accion ? `Próximo paso: ${accion}` : "",
+              preguntaGuia ? `Comprobación: ${preguntaGuia}` : ""
           ].filter(Boolean).join("\n\n");
       }
 
@@ -5250,7 +5243,7 @@
           const lineasCodigo = bloquesCodigo.reduce((total, bloque) => total + bloque.split(/\r?\n/).length, 0);
           const instruccionesEjecutables = (respuesta.match(/(?:\bconst\b|\blet\b|\bfunction\b|=>|console\.log\s*\()/g) || []).length;
           if (lineasCodigo > 6 || instruccionesEjecutables > 8) {
-              return `${respaldoLocal}\n\nLa respuesta remota fue reemplazada porque incluÃ­a demasiado cÃ³digo listo para copiar.`;
+              return `${respaldoLocal}\n\nLa respuesta remota fue reemplazada porque incluía demasiado código listo para copiar.`;
           }
           return respuesta.slice(0, 1800);
       }
@@ -5271,8 +5264,8 @@
           });
           const resumenLocal = [
               `Nota orientativa local: ${evaluacion.nota}/10.`,
-              `Sintaxis vÃ¡lida: ${evaluacion.sintaxis?.valida ? "sÃ­" : "no"}.`,
-              `EjecuciÃ³n correcta: ${evaluacion.ejecucion?.ok ? "sÃ­" : "no"}.`,
+              `Sintaxis válida: ${evaluacion.sintaxis?.valida ? "sí" : "no"}.`,
+              `Ejecución correcta: ${evaluacion.ejecucion?.ok ? "sí" : "no"}.`,
               `Conceptos pendientes: ${(evaluacion.conceptos || []).filter(x => !x.cumple).map(x => x.nombre).join(", ") || "ninguno detectado"}.`,
               `Mejora prioritaria: ${evaluacion.mejoras?.[0] || "probar casos diferentes"}.`
           ].join(" ");
@@ -5294,7 +5287,7 @@
               ]);
               return validarRespuestaTutorRemoto(respuestaRemota, respaldoLocal);
           } catch (error) {
-              console.warn("Tutor IA remoto no disponible; se usarÃ¡ el tutor local.", error);
+              console.warn("Tutor IA remoto no disponible; se usará el tutor local.", error);
               actualizarEstadoChatIA(sectionId, "error", "Tutor local activo");
               return respaldoLocal;
           }
@@ -5308,7 +5301,7 @@
           const evaluacion = evaluarCodigoPorEvidencias(code, sec, historial.exito === undefined ? null : {
               ok: Boolean(historial.exito),
               salida: historial.salida || "",
-              error: historial.exito ? "" : "La ejecuciÃ³n no fue validada correctamente."
+              error: historial.exito ? "" : "La ejecución no fue validada correctamente."
           });
           const texto = normalizarEvaluacion(`${pregunta} ${modo}`);
           const diagnostico = diagnosticarCodigoChatIA(code, sec, evaluacion, historial);
@@ -5320,29 +5313,29 @@
 
           if (/^(hola|buenas|buen dia|buenas tardes|buenas noches)\b/.test(texto)) {
               return construirRespuestaIA(
-                  "Hola. Ya estoy mirando este mÃ³dulo.",
+                  "Hola. Ya estoy mirando este módulo.",
                   diagnostico.esPlantilla
-                      ? "todavÃ­a estÃ¡ la plantilla inicial."
-                      : `hay ${diagnostico.lineasUtiles.length} lÃ­neas Ãºtiles y la evaluaciÃ³n orientativa marca ${evaluacion.nota}/10.`,
-                  "ElegÃ­ Ã¢â‚¬Å“Entender consignaÃ¢â‚¬Â si todavÃ­a estÃ¡s planificando o Ã¢â‚¬Å“Revisar mi cÃ³digoÃ¢â‚¬Â si ya hiciste un intento."
+                      ? "todavía está la plantilla inicial."
+                      : `hay ${diagnostico.lineasUtiles.length} líneas útiles y la evaluación orientativa marca ${evaluacion.nota}/10.`,
+                  "Elegí â€œEntender consignaâ€ si todavía estás planificando o â€œRevisar mi códigoâ€ si ya hiciste un intento."
               );
           }
 
           if (modo === "consigna" || /consigna|que pide|objetivo|entender/.test(texto)) {
               return construirRespuestaIA(
                   "Lectura de la consigna",
-                  sec.exerciseDesc || "debes resolver el desafÃ­o del mÃ³dulo.",
-                  "EscribÃ­ tres comentarios en el editor: 1) datos de entrada, 2) transformaciÃ³n o decisiÃ³n, 3) salida esperada.",
-                  preguntaSocratica || "Â¿QuÃ© resultado concreto deberÃ­a mostrar el programa para demostrar que resolviste el problema?"
+                  sec.exerciseDesc || "debes resolver el desafío del módulo.",
+                  "Escribí tres comentarios en el editor: 1) datos de entrada, 2) transformación o decisión, 3) salida esperada.",
+                  preguntaSocratica || "¿Qué resultado concreto debería mostrar el programa para demostrar que resolviste el problema?"
               );
           }
           if (modo === "revisar" || /revisar mi codigo|revisar|esta bien|calidad/.test(texto)) {
               if (diagnostico.esPlantilla) {
                   return construirRespuestaIA(
-                      "TodavÃ­a no puedo revisar una soluciÃ³n.",
+                      "Todavía no puedo revisar una solución.",
                       "el editor conserva la plantilla inicial.",
-                      "TransformÃ¡ el primer comentario de la plantilla en una instrucciÃ³n ejecutable y volvÃ© a consultar.",
-                      "Â¿CuÃ¡l es el primer dato que necesita tu programa?"
+                      "Transformá el primer comentario de la plantilla en una instrucción ejecutable y volvé a consultar.",
+                      "¿Cuál es el primer dato que necesita tu programa?"
                   );
               }
               const fortalezas = (evaluacion.fortalezas || []).slice(0, 2);
@@ -5353,129 +5346,129 @@
                       ? `se repiten declaraciones de variables: ${diagnostico.repetidas.join(", ")}.`
                       : "";
               return construirRespuestaIA(
-                  `RevisiÃ³n orientativa: ${evaluacion.nota}/10`,
+                  `Revisión orientativa: ${evaluacion.nota}/10`,
                   problemaEstructural ||
-                      (fortalezas.length ? fortalezas.join(" Â· ") : "ya existe un intento ejecutable para analizar."),
+                      (fortalezas.length ? fortalezas.join(" · ") : "ya existe un intento ejecutable para analizar."),
                   mejoras.length
                       ? mejoras[0]
                       : pendientes.length
-                          ? `HacÃ© visible en el cÃ³digo el concepto Ã¢â‚¬Å“${pendientes[0]}Ã¢â‚¬Â.`
-                          : "EjecutÃ¡ dos casos con datos distintos y comparÃ¡ los resultados esperados.",
-                  preguntaSocratica || "Â¿QuÃ© lÃ­nea demuestra mejor que tu programa cumple la consigna?"
+                          ? `Hacé visible en el código el concepto â€œ${pendientes[0]}â€.`
+                          : "Ejecutá dos casos con datos distintos y compará los resultados esperados.",
+                  preguntaSocratica || "¿Qué línea demuestra mejor que tu programa cumple la consigna?"
               );
           }
           if (diagnostico.asignacionEnCondicion || /igual|comparar|comparacion|asignacion/.test(texto)) {
               if (diagnostico.asignacionEnCondicion) {
                   return construirRespuestaIA(
-                      "RevisÃ¡ la condiciÃ³n",
-                      "detectÃ© un signo `=` dentro de un `if` o `while`; eso asigna un valor en vez de comparar.",
-                      "ProbÃ¡ con `===` para comparar valores y ejecutÃ¡ un caso verdadero y otro falso.",
-                      "Â¿QuÃ© valor deberÃ­a tener la expresiÃ³n antes y despuÃ©s de la comparaciÃ³n?"
+                      "Revisá la condición",
+                      "detecté un signo `=` dentro de un `if` o `while`; eso asigna un valor en vez de comparar.",
+                      "Probá con `===` para comparar valores y ejecutá un caso verdadero y otro falso.",
+                      "¿Qué valor debería tener la expresión antes y después de la comparación?"
                   );
               }
               return construirRespuestaIA(
                   "Comparaciones",
-                  "una comparaciÃ³n debe expresar con claridad quÃ© dos valores se relacionan.",
-                  "EscribÃ­ primero la regla en palabras y elegÃ­ entre `===`, `>`, `<`, `>=` o `<=` segÃºn esa regla.",
-                  "Â¿QuÃ© resultado esperÃ¡s cuando los valores son iguales?"
+                  "una comparación debe expresar con claridad qué dos valores se relacionan.",
+                  "Escribí primero la regla en palabras y elegí entre `===`, `>`, `<`, `>=` o `<=` según esa regla.",
+                  "¿Qué resultado esperás cuando los valores son iguales?"
               );
           }
           if (diagnostico.funcionSinRetorno || /return|retornar|devuelve|devolver/.test(texto)) {
               if (diagnostico.funcionSinRetorno) {
                   return construirRespuestaIA(
-                      "RevisÃ¡ el valor de retorno",
-                      "hay una funciÃ³n, pero no encuentro `return`; si otra parte del programa necesita su resultado, recibirÃ¡ `undefined`.",
-                      "DecidÃ­ quÃ© dato debe devolver la funciÃ³n y colocÃ¡ `return` en el camino que corresponde.",
-                      "Â¿La funciÃ³n debe mostrar el resultado o entregarlo para que otra instrucciÃ³n lo use?"
+                      "Revisá el valor de retorno",
+                      "hay una función, pero no encuentro `return`; si otra parte del programa necesita su resultado, recibirá `undefined`.",
+                      "Decidí qué dato debe devolver la función y colocá `return` en el camino que corresponde.",
+                      "¿La función debe mostrar el resultado o entregarlo para que otra instrucción lo use?"
                   );
               }
               return construirRespuestaIA(
                   "Funciones y `return`",
                   "mostrar un valor con `console.log` no es lo mismo que devolverlo.",
-                  "SeguÃ­ el recorrido del dato: entrada, procesamiento y valor que la funciÃ³n entrega.",
-                  "Â¿QuÃ© variable deberÃ­a recibir el resultado de la llamada?"
+                  "Seguí el recorrido del dato: entrada, procesamiento y valor que la función entrega.",
+                  "¿Qué variable debería recibir el resultado de la llamada?"
               );
           }
           if (diagnostico.usaEntradaNoValidada || /validar|validacion|dato invalido|entrada/.test(texto)) {
               return construirRespuestaIA(
-                  "ValidaciÃ³n de datos",
-                  "tu cÃ³digo recibe o convierte datos, pero no veo una comprobaciÃ³n clara para entradas invÃ¡lidas.",
-                  "ProbÃ¡ con un valor vacÃ­o, texto y un nÃºmero vÃ¡lido; verificÃ¡ el resultado antes de continuar.",
-                  "Â¿QuÃ© deberÃ­a hacer el programa si el usuario escribe algo que no es un nÃºmero?"
+                  "Validación de datos",
+                  "tu código recibe o convierte datos, pero no veo una comprobación clara para entradas inválidas.",
+                  "Probá con un valor vacío, texto y un número válido; verificá el resultado antes de continuar.",
+                  "¿Qué debería hacer el programa si el usuario escribe algo que no es un número?"
               );
           }
           if (modo === "ejemplo" || /prueba|caso|ejemplo|dato/.test(texto)) {
               const foco = diagnostico.tieneDecision
-                  ? "un valor que cumpla la condiciÃ³n y otro que no la cumpla"
+                  ? "un valor que cumpla la condición y otro que no la cumpla"
                   : diagnostico.tieneRepeticion
-                      ? "una colecciÃ³n con varios elementos y otra vacÃ­a o con un solo elemento"
+                      ? "una colección con varios elementos y otra vacía o con un solo elemento"
                       : "dos valores de entrada claramente diferentes";
               const casos = diagnostico.tieneDecision
-                  ? "Caso 1: condiciÃ³n verdadera Â· Caso 2: condiciÃ³n falsa Â· Caso 3: valor lÃ­mite (igual al umbral)."
+                  ? "Caso 1: condición verdadera · Caso 2: condición falsa · Caso 3: valor límite (igual al umbral)."
                   : diagnostico.tieneRepeticion
-                      ? "Caso 1: colecciÃ³n con varios elementos Â· Caso 2: colecciÃ³n vacÃ­a Â· Caso 3: un solo elemento."
-                      : "Caso 1: entrada habitual Â· Caso 2: entrada mÃ­nima Â· Caso 3: entrada inesperada o lÃ­mite.";
+                      ? "Caso 1: colección con varios elementos · Caso 2: colección vacía · Caso 3: un solo elemento."
+                      : "Caso 1: entrada habitual · Caso 2: entrada mínima · Caso 3: entrada inesperada o límite.";
               return construirRespuestaIA(
                   "Plan de prueba",
-                  `tu cÃ³digo ${diagnostico.tieneDecision ? "contiene decisiones" : diagnostico.tieneRepeticion ? "contiene una repeticiÃ³n" : "necesita validar su resultado con mÃ¡s de un caso"}.`,
-                  `${casos} ProbÃ¡ ${foco}. Antes de ejecutar, anotÃ¡ la salida que esperÃ¡s en cada caso.`,
-                  "Â¿La salida real coincide exactamente con lo esperado en ambos casos?"
+                  `tu código ${diagnostico.tieneDecision ? "contiene decisiones" : diagnostico.tieneRepeticion ? "contiene una repetición" : "necesita validar su resultado con más de un caso"}.`,
+                  `${casos} Probá ${foco}. Antes de ejecutar, anotá la salida que esperás en cada caso.`,
+                  "¿La salida real coincide exactamente con lo esperado en ambos casos?"
               );
           }
-          if (modo === "linea" || /por linea|por lÃ­nea|linea|lÃ­nea/.test(texto)) {
+          if (modo === "linea" || /por linea|por línea|linea|línea/.test(texto)) {
               const linea = diagnostico.lineaError || diagnostico.lineaSospechosa;
               const contexto = linea
                   ? diagnostico.lineas.find(x => x.numero === linea)
                   : diagnostico.lineasUtiles[0];
               if (!contexto) {
                   return construirRespuestaIA(
-                      "TodavÃ­a no hay una lÃ­nea para analizar",
-                      "el editor estÃ¡ vacÃ­o o conserva la plantilla inicial.",
-                      "EscribÃ­ una primera instrucciÃ³n, ejecutÃ¡ el programa y volvÃ© a pedir la explicaciÃ³n por lÃ­nea.",
-                      "Â¿QuÃ© lÃ­nea esperÃ¡s que produzca el primer resultado?"
+                      "Todavía no hay una línea para analizar",
+                      "el editor está vacío o conserva la plantilla inicial.",
+                      "Escribí una primera instrucción, ejecutá el programa y volvé a pedir la explicación por línea.",
+                      "¿Qué línea esperás que produzca el primer resultado?"
                   );
               }
               return construirRespuestaIA(
-                  `AnÃ¡lisis de la lÃ­nea ${contexto.numero}`,
-                  `la instrucciÃ³n es: ${contexto.texto}`,
+                  `Análisis de la línea ${contexto.numero}`,
+                  `la instrucción es: ${contexto.texto}`,
                   diagnostico.errorTexto
-                      ? `El error registrado apunta a esta zona. RevisÃ¡ quÃ© variables existen antes de la lÃ­nea ${contexto.numero}, quÃ© tipo de dato recibe y quÃ© resultado deberÃ­a producir.`
-                      : "No hay un error de ejecuciÃ³n registrado; revisÃ¡ el dato que entra, la operaciÃ³n que realiza y el valor que deja disponible para la siguiente lÃ­nea.",
-                  `Â¿QuÃ© valor tiene cada variable justo antes de ejecutar la lÃ­nea ${contexto.numero}?`
+                      ? `El error registrado apunta a esta zona. Revisá qué variables existen antes de la línea ${contexto.numero}, qué tipo de dato recibe y qué resultado debería producir.`
+                      : "No hay un error de ejecución registrado; revisá el dato que entra, la operación que realiza y el valor que deja disponible para la siguiente línea.",
+                  `¿Qué valor tiene cada variable justo antes de ejecutar la línea ${contexto.numero}?`
               );
           }
           if (/solucion|codigo completo|respuesta completa|hacelo por mi|dame el codigo/.test(texto)) {
               return construirRespuestaIA(
-                  "No voy a entregar el cÃ³digo completo.",
-                  "la actividad evalÃºa tu razonamiento y tus decisiones, no solo el resultado final.",
+                  "No voy a entregar el código completo.",
+                  "la actividad evalúa tu razonamiento y tus decisiones, no solo el resultado final.",
                   pendientes.length
-                      ? `Trabajemos sobre Ã¢â‚¬Å“${pendientes[0]}Ã¢â‚¬Â: explicÃ¡ en una frase quÃ© deberÃ­a hacer esa parte.`
-                      : "Decime quÃ© parte te cuesta: entrada, condiciÃ³n, repeticiÃ³n, funciÃ³n o salida.",
-                  "Â¿QuÃ© intentaste hasta ahora y quÃ© resultado obtuviste?"
+                      ? `Trabajemos sobre â€œ${pendientes[0]}â€: explicá en una frase qué debería hacer esa parte.`
+                      : "Decime qué parte te cuesta: entrada, condición, repetición, función o salida.",
+                  "¿Qué intentaste hasta ahora y qué resultado obtuviste?"
               );
           }
           if (modo === "error" || /error|no funciona|falla|undefined|syntax/.test(texto)) {
               if (diagnostico.delimitadores.length) {
                   return construirRespuestaIA(
                       "Posible error de sintaxis",
-                      `los delimitadores ${diagnostico.delimitadores.map(x => x.simbolo).join(", ")} no estÃ¡n balanceados.`,
-                      "RevisÃ¡ desde la Ãºltima estructura que abriste y cerrÃ¡ solo el bloque correspondiente.",
-                      "Â¿Cada parÃ©ntesis, corchete y llave de apertura tiene su cierre?"
+                      `los delimitadores ${diagnostico.delimitadores.map(x => x.simbolo).join(", ")} no están balanceados.`,
+                      "Revisá desde la última estructura que abriste y cerrá solo el bloque correspondiente.",
+                      "¿Cada paréntesis, corchete y llave de apertura tiene su cierre?"
                   );
               }
               if (diagnostico.errorTexto) {
                   return construirRespuestaIA(
-                      "DiagnÃ³stico de ejecuciÃ³n",
-                      `${diagnostico.errorTexto}${diagnostico.lineaError ? ` El navegador seÃ±ala la lÃ­nea ${diagnostico.lineaError}.` : ""}`,
-                      "RevisÃ¡ primero nombres de variables y el valor disponible justo antes de esa instrucciÃ³n. CambiÃ¡ una sola cosa y volvÃ© a ejecutar.",
-                      "Â¿QuÃ© valor esperabas y quÃ© valor existe realmente en ese punto?"
+                      "Diagnóstico de ejecución",
+                      `${diagnostico.errorTexto}${diagnostico.lineaError ? ` El navegador señala la línea ${diagnostico.lineaError}.` : ""}`,
+                      "Revisá primero nombres de variables y el valor disponible justo antes de esa instrucción. Cambiá una sola cosa y volvé a ejecutar.",
+                      "¿Qué valor esperabas y qué valor existe realmente en ese punto?"
                   );
               }
               return construirRespuestaIA(
-                  "Necesito una ejecuciÃ³n reciente.",
-                  "no encuentro un error registrado en la consola del mÃ³dulo.",
-                  "PulsÃ¡ Ã¢â‚¬Å“Ejecutar y probarÃ¢â‚¬Â y despuÃ©s volvÃ© a Ã¢â‚¬Å“AyÃºdame con el errorÃ¢â‚¬Â.",
-                  "Â¿CuÃ¡l es la primera salida que difiere de lo esperado?"
+                  "Necesito una ejecución reciente.",
+                  "no encuentro un error registrado en la consola del módulo.",
+                  "Pulsá â€œEjecutar y probarâ€ y después volvé a â€œAyúdame con el errorâ€.",
+                  "¿Cuál es la primera salida que difiere de lo esperado?"
               );
           }
           if (modo === "siguiente" || /ahora|sigo|continuo|reviso/.test(texto)) {
@@ -5483,46 +5476,46 @@
               return construirRespuestaIA(
                   "Un solo foco para avanzar",
                   foco
-                      ? `todavÃ­a no encuentro evidencia clara de Ã¢â‚¬Å“${foco}Ã¢â‚¬Â.`
-                      : `la estructura alcanza una estimaciÃ³n de ${evaluacion.nota}/10 y no detecto un concepto principal ausente.`,
+                      ? `todavía no encuentro evidencia clara de â€œ${foco}â€.`
+                      : `la estructura alcanza una estimación de ${evaluacion.nota}/10 y no detecto un concepto principal ausente.`,
                   foco
-                      ? `AgregÃ¡ o corregÃ­ Ãºnicamente la parte que demuestra Ã¢â‚¬Å“${foco}Ã¢â‚¬Â y ejecutÃ¡ de nuevo.`
-                      : "DiseÃ±Ã¡ un caso lÃ­mite y verificÃ¡ que la salida siga siendo correcta.",
-                  preguntaSocratica || "Â¿QuÃ© cambio pequeÃ±o podÃ©s comprobar antes de continuar?"
+                      ? `Agregá o corregí únicamente la parte que demuestra â€œ${foco}â€ y ejecutá de nuevo.`
+                      : "Diseñá un caso límite y verificá que la salida siga siendo correcta.",
+                  preguntaSocratica || "¿Qué cambio pequeño podés comprobar antes de continuar?"
               );
           }
-          if (/condicion|if|decidir/.test(texto)) return construirRespuestaIA("Condiciones", diagnostico.tieneDecision ? "tu cÃ³digo ya contiene una decisiÃ³n." : "todavÃ­a no detecto una decisiÃ³n explÃ­cita.", "EscribÃ­ la regla en palabras: Ã¢â‚¬Å“si ocurre..., entonces...; de lo contrario...Ã¢â‚¬Â. DespuÃ©s traducÃ­ exactamente esa regla.", "Â¿QuÃ© dos resultados diferentes deberÃ­a producir la condiciÃ³n?");
-          if (/bucle|repet|for|while|recorrer/.test(texto)) return construirRespuestaIA("Repeticiones", diagnostico.tieneRepeticion ? "tu cÃ³digo ya contiene una estructura repetitiva." : "todavÃ­a no detecto un bucle.", "DefinÃ­ quÃ© dato recorrÃ©s, dÃ³nde empieza y cuÃ¡l es la condiciÃ³n de finalizaciÃ³n.", "Â¿QuÃ© cambia en cada vuelta para evitar un ciclo infinito?");
-          if (/funcion|parametro|return/.test(texto)) return construirRespuestaIA("Funciones", diagnostico.tieneFuncion ? "tu cÃ³digo ya declara una funciÃ³n." : "todavÃ­a no detecto una funciÃ³n.", "DefinÃ­ una tarea Ãºnica, los datos que recibe y el resultado que devuelve. Probala con un ejemplo pequeÃ±o.", "Â¿La funciÃ³n devuelve un valor o solamente lo muestra?");
-          if (/salida|console|mostrar|resultado/.test(texto)) return construirRespuestaIA("Salida del programa", diagnostico.tieneSalida ? "hay una instrucciÃ³n de salida en tu cÃ³digo." : "no encuentro una salida visible con console.log.", "ComparÃ¡ la variable mostrada con la salida exacta que exige la consigna y verificÃ¡ cuÃ¡ndo se calcula.", "Â¿La salida permite comprobar el resultado sin leer el cÃ³digo?");
-          if (/no entiendo|no se|no puedo|estoy perdido|me trabe|me trabÃ©/.test(texto)) {
+          if (/condicion|if|decidir/.test(texto)) return construirRespuestaIA("Condiciones", diagnostico.tieneDecision ? "tu código ya contiene una decisión." : "todavía no detecto una decisión explícita.", "Escribí la regla en palabras: â€œsi ocurre..., entonces...; de lo contrario...â€. Después traducí exactamente esa regla.", "¿Qué dos resultados diferentes debería producir la condición?");
+          if (/bucle|repet|for|while|recorrer/.test(texto)) return construirRespuestaIA("Repeticiones", diagnostico.tieneRepeticion ? "tu código ya contiene una estructura repetitiva." : "todavía no detecto un bucle.", "Definí qué dato recorrés, dónde empieza y cuál es la condición de finalización.", "¿Qué cambia en cada vuelta para evitar un ciclo infinito?");
+          if (/funcion|parametro|return/.test(texto)) return construirRespuestaIA("Funciones", diagnostico.tieneFuncion ? "tu código ya declara una función." : "todavía no detecto una función.", "Definí una tarea única, los datos que recibe y el resultado que devuelve. Probala con un ejemplo pequeño.", "¿La función devuelve un valor o solamente lo muestra?");
+          if (/salida|console|mostrar|resultado/.test(texto)) return construirRespuestaIA("Salida del programa", diagnostico.tieneSalida ? "hay una instrucción de salida en tu código." : "no encuentro una salida visible con console.log.", "Compará la variable mostrada con la salida exacta que exige la consigna y verificá cuándo se calcula.", "¿La salida permite comprobar el resultado sin leer el código?");
+          if (/no entiendo|no se|no puedo|estoy perdido|me trabe|me trabé/.test(texto)) {
               return construirRespuestaIA(
                   "Vamos a reducir el problema.",
-                  diagnostico.esPlantilla ? "todavÃ­a no hay un intento ejecutable." : `ya escribiste ${diagnostico.lineasUtiles.length} lÃ­neas Ãºtiles.`,
+                  diagnostico.esPlantilla ? "todavía no hay un intento ejecutable." : `ya escribiste ${diagnostico.lineasUtiles.length} líneas útiles.`,
                   nivelPista >= 3 && pendientes.length
-                      ? `BuscÃ¡ en la teorÃ­a del mÃ³dulo el concepto Ã¢â‚¬Å“${pendientes[0]}Ã¢â‚¬Â y escribÃ­ una sola instrucciÃ³n que lo represente.`
-                      : "CompletÃ¡ esta frase en un comentario: Ã¢â‚¬Å“Mi programa recibe..., hace... y muestra...Ã¢â‚¬Â.",
-                  preguntaSocratica || "Â¿CuÃ¡l de esas tres partes podÃ©s resolver primero?"
+                      ? `Buscá en la teoría del módulo el concepto â€œ${pendientes[0]}â€ y escribí una sola instrucción que lo represente.`
+                      : "Completá esta frase en un comentario: â€œMi programa recibe..., hace... y muestra...â€.",
+                  preguntaSocratica || "¿Cuál de esas tres partes podés resolver primero?"
               );
           }
           if (pendientes.length) {
               const accion = nivelPista === 1
-                  ? `RevisÃ¡ la consigna y localizÃ¡ dÃ³nde deberÃ­a aparecer Ã¢â‚¬Å“${pendientes[0]}Ã¢â‚¬Â.`
+                  ? `Revisá la consigna y localizá dónde debería aparecer â€œ${pendientes[0]}â€.`
                   : nivelPista === 2
-                      ? `EscribÃ­ en un comentario quÃ© deberÃ­a hacer Ã¢â‚¬Å“${pendientes[0]}Ã¢â‚¬Â y convertÃ­ ese comentario en una instrucciÃ³n.`
-                      : `Concentrate solo en Ã¢â‚¬Å“${pendientes[0]}Ã¢â‚¬Â: agregÃ¡ la estructura mÃ­nima que lo demuestre y ejecutÃ¡ un caso pequeÃ±o.`;
+                      ? `Escribí en un comentario qué debería hacer â€œ${pendientes[0]}â€ y convertí ese comentario en una instrucción.`
+                      : `Concentrate solo en â€œ${pendientes[0]}â€: agregá la estructura mínima que lo demuestre y ejecutá un caso pequeño.`;
               return construirRespuestaIA(
                   `Pista ${nivelPista} de 3`,
-                  `detectÃ© ${diagnostico.conceptosCumplidos.length ? `como avances ${diagnostico.conceptosCumplidos.join(", ")}, pero ` : ""}falta evidencia clara de ${pendientes.join(", ")}.`,
+                  `detecté ${diagnostico.conceptosCumplidos.length ? `como avances ${diagnostico.conceptosCumplidos.join(", ")}, pero ` : ""}falta evidencia clara de ${pendientes.join(", ")}.`,
                   accion,
-                  preguntaSocratica || "Â¿CÃ³mo vas a comprobar que ese cambio funciona?"
+                  preguntaSocratica || "¿Cómo vas a comprobar que ese cambio funciona?"
               );
           }
           return construirRespuestaIA(
-              "Tu soluciÃ³n estÃ¡ encaminada.",
-              `la evaluaciÃ³n orientativa es ${evaluacion.nota}/10 y no detecto conceptos principales ausentes.`,
-              "ExplicÃ¡ quÃ© debe entrar, quÃ© se procesa y quÃ© sale; despuÃ©s probÃ¡ un caso lÃ­mite.",
-              preguntaSocratica || "Â¿QuÃ© evidencia usarÃ­as para defender que tu soluciÃ³n es correcta?"
+              "Tu solución está encaminada.",
+              `la evaluación orientativa es ${evaluacion.nota}/10 y no detecto conceptos principales ausentes.`,
+              "Explicá qué debe entrar, qué se procesa y qué sale; después probá un caso límite.",
+              preguntaSocratica || "¿Qué evidencia usarías para defender que tu solución es correcta?"
           );
       }
 
@@ -5530,16 +5523,16 @@
           if (!claseHabilitada || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
           const textos = {
               consigna: "Ayudame a entender la consigna.",
-              revisar: "RevisÃ¡ mi cÃ³digo sin darme la soluciÃ³n.",
+              revisar: "Revisá mi código sin darme la solución.",
               pista: "Dame una pista para avanzar.",
-              error: "AyÃºdame a revisar un posible error.",
-              siguiente: "Â¿QuÃ© deberÃ­a revisar ahora?",
-              ejemplo: "Proponeme una prueba para verificar mi soluciÃ³n.",
-              casos: "GenerÃ¡ tres casos de prueba y decime quÃ© deberÃ­a observar en cada uno.",
-              linea: "Explicame el error o la lÃ­nea mÃ¡s importante de mi cÃ³digo.",
-              pista1: "Dame una pista de nivel 1: ayudame a ubicar el concepto sin decirme cÃ³mo resolverlo.",
+              error: "Ayúdame a revisar un posible error.",
+              siguiente: "¿Qué debería revisar ahora?",
+              ejemplo: "Proponeme una prueba para verificar mi solución.",
+              casos: "Generá tres casos de prueba y decime qué debería observar en cada uno.",
+              linea: "Explicame el error o la línea más importante de mi código.",
+              pista1: "Dame una pista de nivel 1: ayudame a ubicar el concepto sin decirme cómo resolverlo.",
               pista2: "Dame una pista de nivel 2: ayudame a convertir el concepto en un paso concreto.",
-              pista3: "Dame una pista de nivel 3: indicame quÃ© cambio mÃ­nimo puedo probar ahora."
+              pista3: "Dame una pista de nivel 3: indicame qué cambio mínimo puedo probar ahora."
           };
           const pregunta = textos[modo] || textos.pista;
           agregarMensajeChatIA(sectionId, "student", pregunta);
@@ -5549,7 +5542,7 @@
 
       function limpiarChatIA(sectionId) {
           if (!claseHabilitada || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
-          if (!confirm("Â¿Limpiar las consultas de IA de este mÃ³dulo? El docente dejarÃ¡ de ver este historial despuÃ©s de sincronizarse.")) return;
+          if (!confirm("¿Limpiar las consultas de IA de este módulo? El docente dejará de ver este historial después de sincronizarse.")) return;
           historialChatIA[sectionId] = [];
           guardarChatIA(sectionId);
           renderizarChatIA(sectionId);
@@ -5584,7 +5577,7 @@
           if (/\b(if|else if|else)\b/.test(c))
               out.push({t:"Utiliza estructuras condicionales.",c:true});
           if (/\b(for|while|forEach)\b/.test(c))
-              out.push({t:"Utiliza una estructura de repeticiÃ³n.",c:true});
+              out.push({t:"Utiliza una estructura de repetición.",c:true});
           if (/\bfunction\b|=>/.test(c))
               out.push({t:"Define o utiliza funciones.",c:true});
           if (/\b(const|let|var)\b/.test(c))
@@ -5592,11 +5585,11 @@
           if (/\b(array|push|pop|shift|unshift|map|filter|reduce)\b/i.test(c) || /\[[^\]]*\]/.test(c))
               out.push({t:"Trabaja con estructuras tipo array.",c:true});
           if (/console\.log/.test(c))
-              out.push({t:"Muestra informaciÃ³n mediante console.log().",c:true});
+              out.push({t:"Muestra información mediante console.log().",c:true});
           if (/\.length\b/.test(c))
               out.push({t:"Consulta la propiedad length.",c:true});
           if (/\.trim\(\)|toLowerCase|toUpperCase/.test(c))
-              out.push({t:"Realiza operaciones de normalizaciÃ³n de texto.",c:true});
+              out.push({t:"Realiza operaciones de normalización de texto.",c:true});
           if (/this\./.test(c))
               out.push({t:"Utiliza this para acceder al estado de un objeto/clase.",c:true});
 
@@ -5610,9 +5603,9 @@
           const reales = detectarCaracteristicas(code).filter(x=>x.c).slice(0,2);
           const opciones = reales.map(x=>({t:x.t,c:true}));
           opciones.push(
-              {t:"El cÃ³digo contiene obligatoriamente una conexiÃ³n a una base de datos.",c:false},
-              {t:"El cÃ³digo ejecuta automÃ¡ticamente una soluciÃ³n generada por una IA externa.",c:false},
-              {t:"Todas las variables del cÃ³digo son constantes inmutables.",c:false}
+              {t:"El código contiene obligatoriamente una conexión a una base de datos.",c:false},
+              {t:"El código ejecuta automáticamente una solución generada por una IA externa.",c:false},
+              {t:"Todas las variables del código son constantes inmutables.",c:false}
           );
           return opciones.slice(0,5);
       }
@@ -5621,9 +5614,9 @@
           const reales = detectarCaracteristicas(ideal).filter(x=>x.c).slice(0,3);
           const opciones = reales.map(x=>({t:x.t,c:true}));
           opciones.push(
-              {t:"La soluciÃ³n ideal no contiene ninguna instrucciÃ³n ejecutable.",c:false},
-              {t:"La soluciÃ³n ideal depende obligatoriamente de una base de datos externa.",c:false},
-              {t:"La soluciÃ³n ideal utiliza solamente HTML y nunca JavaScript.",c:false}
+              {t:"La solución ideal no contiene ninguna instrucción ejecutable.",c:false},
+              {t:"La solución ideal depende obligatoriamente de una base de datos externa.",c:false},
+              {t:"La solución ideal utiliza solamente HTML y nunca JavaScript.",c:false}
           );
           return opciones.slice(0,5);
       }
@@ -5635,20 +5628,20 @@
 
           const common = fc.find(a => fi.some(b => b.t === a.t));
           if (common)
-              opciones.push({t:`Ambos cÃ³digos ${common.t.toLowerCase()}`,c:true});
+              opciones.push({t:`Ambos códigos ${common.t.toLowerCase()}`,c:true});
 
           const onlyIA = fi.find(a => !fc.some(b => b.t === a.t));
           if (onlyIA)
-              opciones.push({t:`La soluciÃ³n de IA ${onlyIA.t.toLowerCase()} y eso no se detecta en tu cÃ³digo entregado.`,c:true});
+              opciones.push({t:`La solución de IA ${onlyIA.t.toLowerCase()} y eso no se detecta en tu código entregado.`,c:true});
 
           const onlyStudent = fc.find(a => !fi.some(b => b.t === a.t));
           if (onlyStudent)
-              opciones.push({t:`Tu cÃ³digo ${onlyStudent.t.toLowerCase()} y esa caracterÃ­stica no se detecta en la soluciÃ³n ideal.`,c:true});
+              opciones.push({t:`Tu código ${onlyStudent.t.toLowerCase()} y esa característica no se detecta en la solución ideal.`,c:true});
 
           opciones.push(
-              {t:"Ambos cÃ³digos son necesariamente idÃ©nticos carÃ¡cter por carÃ¡cter.",c:false},
-              {t:"La soluciÃ³n de IA siempre debe tener exactamente la misma cantidad de lÃ­neas que tu cÃ³digo.",c:false},
-              {t:"Si dos cÃ³digos resuelven el mismo problema, obligatoriamente deben utilizar las mismas variables.",c:false}
+              {t:"Ambos códigos son necesariamente idénticos carácter por carácter.",c:false},
+              {t:"La solución de IA siempre debe tener exactamente la misma cantidad de líneas que tu código.",c:false},
+              {t:"Si dos códigos resuelven el mismo problema, obligatoriamente deben utilizar las mismas variables.",c:false}
           );
 
           return opciones.slice(0,5);
@@ -5668,14 +5661,14 @@
           const configuradas = Array.isArray(sec.preguntasSocraticas) ? sec.preguntasSocraticas.filter(Boolean) : [];
           const base = mezclarArray(analistaPlantillas).slice(0,4);
           const personalizadas = configuradas.slice(0,2).map(q => ({
-              tipo:"SOCRÃTICA",
-              categoria:"SOCRÃTICA DEL DESAFÃƒÂO",
+              tipo:"SOCRÁTICA",
+              categoria:"SOCRÁTICA DEL DESAFÃO",
               respuestaAbierta:true,
-              q:()=>`${q} FundamentÃ¡ tu respuesta con una decisiÃ³n concreta del cÃ³digo, una evidencia y una consecuencia.`
+              q:()=>`${q} Fundamentá tu respuesta con una decisión concreta del código, una evidencia y una consecuencia.`
           }));
           const gen = mezclarArray(preguntasSocraticas).slice(0,Math.max(0,2-personalizadas.length));
-          return [...base.map(p=>({...p,categoria:"ANÃLISIS TÃƒâ€°CNICO"})),...personalizadas,...gen.map(p=>({...p,tipo:"SOCRÃTICA",categoria:"SOCRÃTICA"}))].map((p,i)=>{
-            const respuestaAbierta = p.respuestaAbierta === true || p.tipo === "SOCRÃTICA";
+          return [...base.map(p=>({...p,categoria:"ANÁLISIS TÃ‰CNICO"})),...personalizadas,...gen.map(p=>({...p,tipo:"SOCRÁTICA",categoria:"SOCRÁTICA"}))].map((p,i)=>{
+            const respuestaAbierta = p.respuestaAbierta === true || p.tipo === "SOCRÁTICA";
             const opciones = respuestaAbierta ? [] : mezclarArray(p.opciones(code,ideal));
             if (!respuestaAbierta && !opciones.some(x=>x.c)) opciones[0].c=true;
             return {
@@ -5707,30 +5700,30 @@
               <div class="analyst-question">
                   <strong>${i + 1}. ${p.q}</strong>
                   <div style="margin:.4rem 0 .7rem;color:var(--text-muted);font-size:.75rem">
-                      <span class="analyst-badge">${p.categoria || "ANÃLISIS"}</span>
-                      ${p.respuestaAbierta ? "Ã°Å¸Å¸Â  Respuesta razonada sobre tu soluciÃ³n" :
-                        p.tipo === "ESTUDIANTE" ? "Ã°Å¸â€Âµ Basada en tu cÃ³digo" :
-                        p.tipo === "IA" ? "Ã°Å¸Å¸Â£ Basada en la soluciÃ³n de IA" :
-                        "Ã°Å¸Å¸Â¢ ComparaciÃ³n entre ambos cÃ³digos"}
+                      <span class="analyst-badge">${p.categoria || "ANÁLISIS"}</span>
+                      ${p.respuestaAbierta ? "ðŸŸ  Respuesta razonada sobre tu solución" :
+                        p.tipo === "ESTUDIANTE" ? "ðŸ”µ Basada en tu código" :
+                        p.tipo === "IA" ? "ðŸŸ£ Basada en la solución de IA" :
+                        "ðŸŸ¢ Comparación entre ambos códigos"}
                       <br>${p.respuestaAbierta
-                          ? "IncluÃ­ una decisiÃ³n concreta, una justificaciÃ³n, una evidencia y una consecuencia o mejora."
-                          : 'Puede haber <strong>mÃ¡s de una respuesta correcta</strong>.'}
+                          ? "Incluí una decisión concreta, una justificación, una evidencia y una consecuencia o mejora."
+                          : 'Puede haber <strong>más de una respuesta correcta</strong>.'}
                   </div>
                    ${p.respuestaAbierta ? `
                        <label class="analyst-open-label" for="analyst-open-${sectionId}-${i}">
-                           Tu explicaciÃ³n
+                           Tu explicación
                        </label>
                        <textarea class="analyst-open-response"
                                  id="analyst-open-${sectionId}-${i}"
                                  name="analyst-open-${sectionId}-${i}"
                                  rows="5"
                                  maxlength="900"
-                                 placeholder="EscribÃ­ entre 3 y 6 oraciones. No alcanza con decir que funciona: explicÃ¡ por quÃ© y con quÃ© evidencia."></textarea>
-                       <div class="analyst-open-counter">MÃ¡ximo 900 caracteres</div>
+                                 placeholder="Escribí entre 3 y 6 oraciones. No alcanza con decir que funciona: explicá por qué y con qué evidencia."></textarea>
+                       <div class="analyst-open-counter">Máximo 900 caracteres</div>
                        <button type="button"
                                class="btn btn-secondary analyst-explain-question"
                                onclick="explicarPreguntaAnalista('${sectionId}', ${i}, this)">
-                           <i class="fa-solid fa-lightbulb"></i> Explicame quÃ© pide
+                           <i class="fa-solid fa-lightbulb"></i> Explicame qué pide
                        </button>
                        <div class="analyst-question-help" id="analyst-help-${sectionId}-${i}" hidden aria-live="polite"></div>
                    ` : p.opciones.map((op,j) => `
@@ -5768,7 +5761,7 @@
           const textoPregunta = String(pregunta.q || "").trim();
           const sec = seccionesData.find(item => item.id === sectionId) || {};
           const esAbierta = pregunta.respuestaAbierta === true || pregunta.formato === "abierta";
-          const modoAyuda = esAbierta ? "pregunta socrÃ¡tica abierta" : "pregunta de selecciÃ³n mÃºltiple";
+          const modoAyuda = esAbierta ? "pregunta socrática abierta" : "pregunta de selección múltiple";
           const historial = historialResultados[sectionId] || (historialResultados[sectionId] = {});
           historial.ayudasAnalista = Array.isArray(historial.ayudasAnalista) ? historial.ayudasAnalista : [];
           historial.ayudasAnalista.push({
@@ -5780,11 +5773,11 @@
           historial.ayudasAnalista = historial.ayudasAnalista.slice(-30);
           programarGuardadoFirebase();
           const prompt = [
-              "Necesito entender una pregunta socrÃ¡tica de una actividad de JavaScript.",
+              "Necesito entender una pregunta socrática de una actividad de JavaScript.",
               `Pregunta: ${textoPregunta}`,
-              `Consigna del desafÃ­o: ${sec.exerciseDesc || ""}`,
-              "ExplicÃ¡ con lenguaje claro quÃ© me pide la pregunta, quÃ© parte de mi cÃ³digo debo observar y quÃ© evidencia deberÃ­a mencionar.",
-              "No respondas la pregunta por mÃ­, no escribas cÃ³digo completo y no inventes una respuesta del estudiante."
+              `Consigna del desafío: ${sec.exerciseDesc || ""}`,
+              "Explicá con lenguaje claro qué me pide la pregunta, qué parte de mi código debo observar y qué evidencia debería mencionar.",
+              "No respondas la pregunta por mí, no escribas código completo y no inventes una respuesta del estudiante."
           ].join("\n\n");
           const etiquetaOriginal = boton?.innerHTML || "";
           if (boton) {
@@ -5792,28 +5785,28 @@
               boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Explicando...';
           }
           salida.hidden = false;
-          salida.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> La IA estÃ¡ leyendo la pregunta...';
+          salida.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> La IA está leyendo la pregunta...';
           try {
               let respuesta = "";
               if (window.firebaseAIRealConfigurada && typeof window.consultarTutorIAFirebase === "function") {
                   respuesta = await generarRespuestaChatIASegura(
                       sectionId,
                       `${prompt}\n\nTipo de ayuda solicitada: ${modoAyuda}. ${esAbierta
-                          ? "Enfocate en organizar una explicaciÃ³n propia."
-                          : "Enfocate en enseÃ±ar a comparar las opciones sin revelar la correcta."}`,
+                          ? "Enfocate en organizar una explicación propia."
+                          : "Enfocate en enseñar a comparar las opciones sin revelar la correcta."}`,
                       "consigna"
                   );
               } else {
                   respuesta = [
-                      `QuÃ© te pide: ${textoPregunta}`,
-                      "CÃ³mo encararla: buscÃ¡ en tu cÃ³digo una decisiÃ³n concreta, explicÃ¡ por quÃ© la tomaste y seÃ±alÃ¡ una evidencia observable.",
-                      "Importante: escribÃ­ tu propio razonamiento; esta ayuda no incluye una respuesta lista para entregar."
+                      `Qué te pide: ${textoPregunta}`,
+                      "Cómo encararla: buscá en tu código una decisión concreta, explicá por qué la tomaste y señalá una evidencia observable.",
+                      "Importante: escribí tu propio razonamiento; esta ayuda no incluye una respuesta lista para entregar."
                   ].join("<br>");
               }
-              salida.innerHTML = escapeHtml(String(respuesta || "No se pudo generar una explicaciÃ³n.")).replace(/\n/g, "<br>");
+              salida.innerHTML = escapeHtml(String(respuesta || "No se pudo generar una explicación.")).replace(/\n/g, "<br>");
           } catch (error) {
-              console.warn("No se pudo explicar la pregunta socrÃ¡tica:", error);
-              salida.innerHTML = "No se pudo generar la explicaciÃ³n ahora. RevisÃ¡ la consigna y volvÃ© a intentarlo.";
+              console.warn("No se pudo explicar la pregunta socrática:", error);
+              salida.innerHTML = "No se pudo generar la explicación ahora. Revisá la consigna y volvé a intentarlo.";
           } finally {
               if (boton) {
                   boton.disabled = false;
@@ -5842,7 +5835,7 @@
                    nivel: "incompleta",
                    etiqueta: "Correcta incompleta",
                    puntos: puntosRubrica.incompleta,
-                   detalle: `Tu razonamiento es correcto, pero faltÃ³ reconocer ${faltantes} opciÃ³n${faltantes === 1 ? "" : "es"} vÃ¡lida${faltantes === 1 ? "" : "s"}.`
+                   detalle: `Tu razonamiento es correcto, pero faltó reconocer ${faltantes} opción${faltantes === 1 ? "" : "es"} válida${faltantes === 1 ? "" : "s"}.`
                };
            }
            if (aciertos > 0) {
@@ -5850,7 +5843,7 @@
                    nivel: "parcial",
                    etiqueta: "Parcial con errores",
                    puntos: puntosRubrica.parcial,
-                   detalle: `Reconociste ${aciertos} opciÃ³n${aciertos === 1 ? "" : "es"} vÃ¡lida${aciertos === 1 ? "" : "s"}, pero tambiÃ©n elegiste ${errores} incorrecta${errores === 1 ? "" : "s"}.`
+                   detalle: `Reconociste ${aciertos} opción${aciertos === 1 ? "" : "es"} válida${aciertos === 1 ? "" : "s"}, pero también elegiste ${errores} incorrecta${errores === 1 ? "" : "s"}.`
                };
            }
            return {
@@ -5866,7 +5859,7 @@
            const respuesta = String(respuestaOriginal || "").trim();
            const normalizada = normalizarEvaluacion(respuesta);
            const palabras = normalizada.split(/\s+/).filter(Boolean);
-           const trivial = /^(no se|no sÃ©|nose|porque si|porque sÃ­|funciona|esta bien|estÃ¡ bien|da igual|no entiendo)[.! ]*$/i.test(respuesta);
+           const trivial = /^(no se|no sé|nose|porque si|porque sí|funciona|esta bien|está bien|da igual|no entiendo)[.! ]*$/i.test(respuesta);
            const identificadoresCodigo = [...new Set(
                String(codigo || "").match(/\b[A-Za-z_$][\w$]{2,}\b/g) || []
            )]
@@ -5883,19 +5876,19 @@
                },
                {
                    clave: "justificacion",
-                   nombre: "justificaciÃ³n causal",
+                   nombre: "justificación causal",
                    cumple: /\b(porque|por que|ya que|debido|entonces|por lo tanto|por eso|permite|evita|provoca|genera|hace que)\b/.test(normalizada)
                },
                {
                    clave: "evidencia",
-                   nombre: "evidencia del cÃ³digo o de una prueba",
+                   nombre: "evidencia del código o de una prueba",
                    cumple: mencionaIdentificador ||
                        /\b(variable|funcion|condicion|bucle|for|while|if|return|entrada|salida|resultado|prueba|caso|valor|error|linea|console|array|objeto)\b/.test(normalizada)
                },
                {
                    clave: "consecuencia",
-                   nombre: "consecuencia, lÃ­mite o mejora",
-                   cumple: /\b(si |cambi|elimin|reemplaz|mejor|podria|podrÃ­a|fall|limite|lÃ­mite|riesgo|manten|robust|clar|eficien|correg|evitar|comprobar|verificar)\b/.test(normalizada)
+                   nombre: "consecuencia, límite o mejora",
+                   cumple: /\b(si |cambi|elimin|reemplaz|mejor|podria|podría|fall|limite|límite|riesgo|manten|robust|clar|eficien|correg|evitar|comprobar|verificar)\b/.test(normalizada)
                }
            ];
            const criteriosActivos = criterios.filter(x => rubrica.criterios[x.clave] !== false);
@@ -5907,7 +5900,7 @@
                    nivel: "incorrecta",
                    etiqueta: "Razonamiento insuficiente",
                    puntos: 0,
-                   detalle: "La respuesta es demasiado breve o no presenta una explicaciÃ³n verificable.",
+                   detalle: "La respuesta es demasiado breve o no presenta una explicación verificable.",
                    criteriosCumplidos: cumplidos.map(x => x.nombre),
                    criteriosFaltantes: faltantes.map(x => x.nombre)
                };
@@ -5923,8 +5916,8 @@
                nivel === "parcial" ? "Razonamiento parcial" : "Razonamiento insuficiente";
            const puntos = Number(rubrica.puntos[nivel] || 0);
            const detalle = faltantes.length
-               ? `Se reconociÃ³ ${cumplidos.map(x => x.nombre).join(", ") || "una idea inicial"}. Falta fortalecer: ${faltantes.map(x => x.nombre).join(", ")}.`
-               : "La respuesta identifica una decisiÃ³n, la justifica con evidencia y analiza sus consecuencias.";
+               ? `Se reconoció ${cumplidos.map(x => x.nombre).join(", ") || "una idea inicial"}. Falta fortalecer: ${faltantes.map(x => x.nombre).join(", ")}.`
+               : "La respuesta identifica una decisión, la justifica con evidencia y analiza sus consecuencias.";
            return {
                nivel,
                etiqueta,
@@ -6001,7 +5994,7 @@
           const result = document.getElementById(`analyst-result-${sectionId}`);
 
            if (respondidas < preguntas.length) {
-               result.innerHTML = `Ã¢Å¡Â Ã¯Â¸Â Debes responder todas las preguntas. Las socrÃ¡ticas requieren una explicaciÃ³n escrita y las tÃ©cnicas pueden tener varias opciones correctas.`;
+               result.innerHTML = `âš ï¸ Debes responder todas las preguntas. Las socráticas requieren una explicación escrita y las técnicas pueden tener varias opciones correctas.`;
                return;
            }
 
@@ -6027,13 +6020,7 @@
           if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
           const notaCodigo = Number(historialResultados[sectionId].notaCodigo ?? historialResultados[sectionId].notaIA ?? 0);
           const evaluacionCodigo = historialResultados[sectionId].evaluacionCodigo || null;
-           const notaFinal = calcularNotaCombinada(notaCodigo, porcentaje, evaluacionCodigo, {
-               multiple: porcentaje,
-               socraticas: notaPreguntas,
-               pruebas: evaluacionCodigo?.ejecucion?.intentada
-                   ? (evaluacionCodigo.ejecucion.ok ? 10 : 2)
-                   : 0
-           });
+          const notaFinal = calcularNotaCombinada(notaCodigo, porcentaje, evaluacionCodigo);
           const metricasCodigoVista = evaluacionCodigo?.metricas || {};
           const evidenciasCodigoVista = [
               Number(metricasCodigoVista.requisitos),
@@ -6044,24 +6031,25 @@
           const evidenciaCodigoVista = evidenciasCodigoVista.length
               ? Number((evidenciasCodigoVista.reduce((total, valor) => total + valor, 0) / evidenciasCodigoVista.length * 10).toFixed(1))
               : notaCodigo;
-           const funcionamientoVista = Number(((evaluacionCodigo?.metricas?.comportamiento || 0) * 10).toFixed(1));
+          const notaCodigoPonderadaVista = Number(
+              (notaCodigo * 0.75 + evidenciaCodigoVista * 0.25).toFixed(1)
+          );
           const limiteFinal = evaluacionCodigo?.sintaxis?.valida === false
-              ? "La calificaciÃ³n automÃ¡tica del mÃ³dulo se limitÃ³ a 3 porque el cÃ³digo contiene un error de sintaxis."
+              ? "La calificación automática del módulo se limitó a 3 porque el código contiene un error de sintaxis."
               : evaluacionCodigo?.ejecucion?.ok === false
-                  ? "La calificaciÃ³n automÃ¡tica del mÃ³dulo se limitÃ³ a 4 porque el cÃ³digo no se ejecutÃ³ correctamente."
+                  ? "La calificación automática del módulo se limitó a 4 porque el código no se ejecutó correctamente."
                   : Number(evaluacionCodigo?.metricas?.comportamiento) < 0.35
-                      ? "La calificaciÃ³n automÃ¡tica del mÃ³dulo se limitÃ³ a 6 porque la salida no demuestra el comportamiento esperado."
+                      ? "La calificación automática del módulo se limitó a 6 porque la salida no demuestra el comportamiento esperado."
                       : "";
 
            result.innerHTML =
-               `<strong>CalificaciÃ³n automÃ¡tica del mÃ³dulo: ${notaFinal}/10</strong><br>` +
-               `Funcionamiento y pruebas: <strong>${funcionamientoVista}/10</strong> (25%).<br>` +
-               `Opción múltiple: <strong>${notaPreguntas}/10</strong> (15%).<br>` +
-               `Socráticas: <strong>${notaPreguntas}/10</strong> (15%).<br>` +
-               `Proceso y pruebas registradas: <strong>${evaluacionCodigo?.ejecucion?.intentada ? (evaluacionCodigo.ejecucion.ok ? "10.0" : "2.0") : "0.0"}/10</strong> (5%).<br>` +
+               `<strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>` +
+               `Código y evidencias técnicas: <strong>${notaCodigoPonderadaVista}/10</strong> (65%).<br>` +
+               `Respuestas razonadas: <strong>${notaPreguntas}/10</strong> (35%).<br>` +
                `<strong>Desglose:</strong> ${conteoNiveles.completa} completas (${rubricaAplicada.puntos.completa.toFixed(2)}), ${conteoNiveles.incompleta} correctas incompletas (${rubricaAplicada.puntos.incompleta.toFixed(2)}), ${conteoNiveles.parcial} parciales (${rubricaAplicada.puntos.parcial.toFixed(2)}) y ${conteoNiveles.incorrecta} incorrectas (${rubricaAplicada.puntos.incorrecta.toFixed(2)}).<br>` +
+               `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
               `Excelencia: <strong>${excelencia}</strong>.<br>` +
-              `Las preguntas mezclaron evidencias de tu cÃ³digo, de la soluciÃ³n IA, de la comparaciÃ³n entre ambos y situaciones de razonamiento socrÃ¡tico.` +
+              `Las preguntas mezclaron evidencias de tu código, de la solución IA, de la comparación entre ambos y situaciones de razonamiento socrático.` +
               (limiteFinal ? `<br><strong>${escaparTextoAnalista(limiteFinal)}</strong>` : "");
 
            resaltarRespuestasAnalista(sectionId);
@@ -6082,7 +6070,7 @@
               ? Number((evidenciasCodigo.reduce((total, valor) => total + valor, 0) / evidenciasCodigo.length * 10).toFixed(1))
               : notaCodigo;
           historialResultados[sectionId].desgloseNota = {
-              formula: "codigo_40_funcionamiento_25_multiple_15_socraticas_15_pruebas_5",
+              formula: "codigo_evidencias_65_respuestas_35",
               notaCodigoBase: notaCodigo,
               evidenciaCodigo,
               notaPreguntas,
@@ -6100,7 +6088,7 @@
               excelencia,
               preguntas: preguntas.map((p, i) => ({
                   tipo: p.tipo,
-                  categoria: p.categoria || "ANÃLISIS",
+                  categoria: p.categoria || "ANÁLISIS",
                   pregunta: p.q,
                   formato: p.respuestaAbierta ? "abierta" : "seleccion-multiple",
                   opciones: p.opciones.map(x => ({
@@ -6126,8 +6114,8 @@
               feedbackText.insertAdjacentHTML(
                   "beforeend",
                   `<div style="margin-top:.8rem;padding:.7rem;border:1px solid rgba(16,185,129,.4);border-radius:6px;color:#a7f3d0">
-                      <strong>CalificaciÃ³n automÃ¡tica del mÃ³dulo: ${notaFinal}/10</strong><br>
-                      CÃ³digo ${notaCodigo}/10 Ãƒâ€” 70% + preguntas ${notaPreguntas}/10 Ãƒâ€” 30%.
+                      <strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>
+                      Código ${notaCodigo}/10 Ã— 70% + preguntas ${notaPreguntas}/10 Ã— 30%.
                   </div>`
               );
           }
@@ -6138,7 +6126,7 @@
           if (!claseHabilitada) return;
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
-          if (!confirm("ATENCIÃƒâ€œN: esta acciÃ³n mostrarÃ¡ una soluciÃ³n de referencia, realizarÃ¡ una evaluaciÃ³n automÃ¡tica orientativa y bloquearÃ¡ la actividad. Â¿Deseas continuar?")) {
+          if (!confirm("ATENCIÃ“N: esta acción mostrará una solución de referencia, realizará una evaluación automática orientativa y bloqueará la actividad. ¿Deseas continuar?")) {
               return;
           }
 
@@ -6152,10 +6140,10 @@
 
           if (!editor || !sec || !feedbackBox || !feedbackText) return;
 
-          if (idealDisplay) idealDisplay.innerText = "// La soluciÃ³n de referencia se habilita despuÃ©s de entregar el anÃ¡lisis.";
+          if (idealDisplay) idealDisplay.innerText = "// La solución de referencia se habilita después de entregar el análisis.";
           feedbackBox.classList.add('active');
           if (studentCodeDisplay) studentCodeDisplay.innerText = code;
-          feedbackText.innerHTML = "<i>Ejecutando el cÃ³digo del estudiante y la referencia en entornos aislados...</i>";
+          feedbackText.innerHTML = "<i>Ejecutando el código del estudiante y la referencia en entornos aislados...</i>";
 
           await new Promise(resolve => setTimeout(resolve, 300));
           const [resultadoAlumno, resultadoReferencia] = await Promise.all([
@@ -6164,7 +6152,7 @@
           ]);
           const salidaAlumno = [
               ...(Array.isArray(resultadoAlumno.logs) ? resultadoAlumno.logs : []),
-              ...(!resultadoAlumno.ok && resultadoAlumno.error ? [`[EXCEPCIÃƒâ€œN]: ${resultadoAlumno.error}`] : [])
+              ...(!resultadoAlumno.ok && resultadoAlumno.error ? [`[EXCEPCIÃ“N]: ${resultadoAlumno.error}`] : [])
           ].join("\n");
           const salidaReferencia = resultadoReferencia.ok
               ? (Array.isArray(resultadoReferencia.logs) ? resultadoReferencia.logs.join("\n") : "")
@@ -6184,34 +6172,34 @@
               const puntaje = evaluacion.nota;
               let analisis = "";
 
-              if (puntaje === 1) analisis = "Ã¢ÂÅ’ <strong>EvaluaciÃ³n Estricta (1/10):</strong> Plantilla inicial sin resolver.";
-              else if (puntaje === 4) analisis = "Ã¢Å¡Â Ã¯Â¸Â <strong>EvaluaciÃ³n Estricta (4/10):</strong> CÃ³digo sin estructuras lÃ³gicas requeridas.";
-              else if (puntaje === 7) analisis = "Ã°Å¸Å½Â¯ <strong>EvaluaciÃ³n Estricta (7/10):</strong> Alcanza o supera el 70% de desarrollo.";
-              else if (puntaje === 5) analisis = "Ã°Å¸â€Â <strong>EvaluaciÃ³n Estricta (5/10):</strong> ResoluciÃ³n parcial por debajo del 70%.";
-              else if (puntaje === 3) analisis = "Ã¢Å¡Â Ã¯Â¸Â <strong>EvaluaciÃ³n Estricta (3/10):</strong> CÃ³digo demasiado escueto.";
-              else if (puntaje === 10) analisis = "Ã¢Å“â€¦ <strong>Â¡Excelente Trabajo! (10/10):</strong> Cumple rigurosamente con los parÃ¡metros ideales.";
+              if (puntaje === 1) analisis = "âŒ <strong>Evaluación Estricta (1/10):</strong> Plantilla inicial sin resolver.";
+              else if (puntaje === 4) analisis = "âš ï¸ <strong>Evaluación Estricta (4/10):</strong> Código sin estructuras lógicas requeridas.";
+              else if (puntaje === 7) analisis = "ðŸŽ¯ <strong>Evaluación Estricta (7/10):</strong> Alcanza o supera el 70% de desarrollo.";
+              else if (puntaje === 5) analisis = "ðŸ” <strong>Evaluación Estricta (5/10):</strong> Resolución parcial por debajo del 70%.";
+              else if (puntaje === 3) analisis = "âš ï¸ <strong>Evaluación Estricta (3/10):</strong> Código demasiado escueto.";
+              else if (puntaje === 10) analisis = "âœ… <strong>¡Excelente Trabajo! (10/10):</strong> Cumple rigurosamente con los parámetros ideales.";
 
-              analisis = `<strong>EstimaciÃ³n orientativa estricta (${puntaje}/10):</strong> ${diagnostico.resumen}` +
-                  `<br><strong>GuÃ­a de mejora:</strong><ol>${diagnostico.pasos.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ol>` +
-                  `<br><strong>Fortalezas:</strong> ${evaluacion.fortalezas.length ? evaluacion.fortalezas.map(escaparTextoAnalista).join(" Â· ") : "TodavÃ­a no se observan evidencias suficientes."}` +
-                  `<br><strong>Mejoras:</strong> ${evaluacion.mejoras.length ? evaluacion.mejoras.map(escaparTextoAnalista).join(" Â· ") : "No se detectaron mejoras prioritarias."}` +
+              analisis = `<strong>Estimación orientativa estricta (${puntaje}/10):</strong> ${diagnostico.resumen}` +
+                  `<br><strong>Guía de mejora:</strong><ol>${diagnostico.pasos.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ol>` +
+                  `<br><strong>Fortalezas:</strong> ${evaluacion.fortalezas.length ? evaluacion.fortalezas.map(escaparTextoAnalista).join(" · ") : "Todavía no se observan evidencias suficientes."}` +
+                  `<br><strong>Mejoras:</strong> ${evaluacion.mejoras.length ? evaluacion.mejoras.map(escaparTextoAnalista).join(" · ") : "No se detectaron mejoras prioritarias."}` +
                   `<br><strong>Correspondencia con lo pedido:</strong> ${Math.round((evaluacion.metricas.referencia || 0) * 100)}% de estructuras clave y ${Math.round((evaluacion.metricas.nombresExigidos || 1) * 100)}% de identificadores exigidos.` +
                   `<hr><strong>Desglose verificable:</strong><ul>${evaluacion.criterios.map(c => `<li>${escaparTextoAnalista(c.nombre)}: ${c.puntos}/${c.peso} puntos (${c.estado}). ${escaparTextoAnalista(c.evidencia)}</li>`).join("")}</ul>` +
-                  (evaluacion.limites.length ? `<strong>LÃ­mites aplicados:</strong><ul>${evaluacion.limites.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ul>` : "") +
-                  `<strong>EjecuciÃ³n del estudiante:</strong> ${resultadoAlumno.ok ? "correcta" : `fallida: ${escaparTextoAnalista(resultadoAlumno.error || "error no especificado")}`}.<br>` +
+                  (evaluacion.limites.length ? `<strong>Límites aplicados:</strong><ul>${evaluacion.limites.map(x => `<li>${escaparTextoAnalista(x)}</li>`).join("")}</ul>` : "") +
+                  `<strong>Ejecución del estudiante:</strong> ${resultadoAlumno.ok ? "correcta" : `fallida: ${escaparTextoAnalista(resultadoAlumno.error || "error no especificado")}`}.<br>` +
                   `<strong>Coincidencia de comportamiento:</strong> ${Math.round((evaluacion.ejecucion.similitudSalida || 0) * 100)}%.`;
               const objetivos = Array.isArray(sec.objetivosPedagogicos) ? sec.objetivosPedagogicos : [];
               const conceptos = Array.isArray(sec.conceptosDetectar) ? sec.conceptosDetectar : [];
               const errores = Array.isArray(sec.erroresFrecuentes) ? sec.erroresFrecuentes : [];
-              feedbackText.innerHTML = `<strong>Nota del cÃ³digo: ${puntaje}/10 (70% de la calificaciÃ³n automÃ¡tica del mÃ³dulo)</strong><br><small>La calificaciÃ³n automÃ¡tica se calcularÃ¡ despuÃ©s de entregar todas las preguntas, que representan el 30%. La nota definitiva requiere confirmaciÃ³n docente.</small><br>${analisis}` +
-                (objetivos.length ? `<hr><strong>Ã°Å¸Å½Â¯ Objetivos:</strong><ul>${objetivos.map(x=>`<li>${escaparTextoAnalista(x)}</li>`).join("")}</ul>`:"") +
-                (conceptos.length ? `<strong>Ã°Å¸Â§Â  Conceptos que la IA revisa:</strong> ${conceptos.map(x=>escaparTextoAnalista(x)).join(", ")}<br>`:"") +
-                (errores.length ? `<strong>Ã¢Å¡Â Ã¯Â¸Â Errores frecuentes a revisar:</strong> ${errores.slice(0,3).map(x=>escaparTextoAnalista(x)).join(" Â· ")}<br>`:"") +
-                `<div style="margin-top:.6rem;color:#a5b4fc"><strong>Ã°Å¸Å¡Â« ProtecciÃ³n IA:</strong> no se entrega cÃ³digo listo para copiar ni se revelan directamente las respuestas.</div>`;
+              feedbackText.innerHTML = `<strong>Nota del código: ${puntaje}/10 (70% de la calificación automática del módulo)</strong><br><small>La calificación automática se calculará después de entregar todas las preguntas, que representan el 30%. La nota definitiva requiere confirmación docente.</small><br>${analisis}` +
+                (objetivos.length ? `<hr><strong>ðŸŽ¯ Objetivos:</strong><ul>${objetivos.map(x=>`<li>${escaparTextoAnalista(x)}</li>`).join("")}</ul>`:"") +
+                (conceptos.length ? `<strong>ðŸ§  Conceptos que la IA revisa:</strong> ${conceptos.map(x=>escaparTextoAnalista(x)).join(", ")}<br>`:"") +
+                (errores.length ? `<strong>âš ï¸ Errores frecuentes a revisar:</strong> ${errores.slice(0,3).map(x=>escaparTextoAnalista(x)).join(" · ")}<br>`:"") +
+                `<div style="margin-top:.6rem;color:#a5b4fc"><strong>ðŸš« Protección IA:</strong> no se entrega código listo para copiar ni se revelan directamente las respuestas.</div>`;
 
               construirAnalista(sectionId, code);
               if (idealDisplay) {
-                  idealDisplay.innerText = `${sec.aiSolution}\n\n// UsÃ¡ esta referencia para comparar decisiones, no para copiarla.`;
+                  idealDisplay.innerText = `${sec.aiSolution}\n\n// Usá esta referencia para comparar decisiones, no para copiarla.`;
               }
 
               const analystBox = document.getElementById(`analyst-${sectionId}`);
@@ -6227,7 +6215,7 @@
               document.querySelectorAll(`#${CSS.escape(sectionId)} [data-ai-editor-action]`).forEach(control => {
                   control.disabled = true;
               });
-              actualizarEstadoEditorEstudiante(sectionId, "success", "CÃ³digo entregado");
+              actualizarEstadoEditorEstudiante(sectionId, "success", "Código entregado");
 
               if (cronometrosActivos[sectionId]) {
                   clearInterval(cronometrosActivos[sectionId]);
@@ -6252,11 +6240,11 @@
       function generarTextoAnalistaPDF(sectionId) {
           const data = historialResultados[sectionId] || {};
           const preguntas = data.analista && data.analista.preguntas ? data.analista.preguntas : [];
-          if (!preguntas.length) return "ANALISTA DE VIABILIDAD Y EXCELENCIA\nNo se respondiÃ³ el cuestionario del analista.\n";
+          if (!preguntas.length) return "ANALISTA DE VIABILIDAD Y EXCELENCIA\nNo se respondió el cuestionario del analista.\n";
 
-          let texto = "\n\nÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â\n";
+          let texto = "\n\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n";
           texto += "ANALISTA DE VIABILIDAD Y EXCELENCIA\n";
-          texto += "Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â\n\n";
+          texto += "â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•\n\n";
 
           texto += `Resultado: ${data.analista.correctas || 0}/${data.analista.total || preguntas.length} `;
           texto += `(${data.analista.porcentaje || 0}%)\n`;
@@ -6264,12 +6252,12 @@
           texto += `Excelencia: ${data.analista.excelencia || "PENDIENTE"}\n\n`;
 
           preguntas.forEach((p, i) => {
-              texto += `${i + 1}. [${p.categoria || p.tipo || "ANÃLISIS"}]\n`;
+              texto += `${i + 1}. [${p.categoria || p.tipo || "ANÁLISIS"}]\n`;
               texto += `${p.pregunta}\n`;
 
               if (p.opciones) {
                   p.opciones.forEach((op, j) => {
-                      const marcada = p.seleccionadas && p.seleccionadas.includes(j) ? "Ã¢Ëœâ€˜" : "Ã¢ËœÂ";
+                      const marcada = p.seleccionadas && p.seleccionadas.includes(j) ? "â˜‘" : "â˜";
                       texto += `   ${marcada} ${String.fromCharCode(65 + j)}) ${op.texto || op.t || ""}`;
                       if (op.correcta === true || op.c === true) texto += "  [CORRECTA]";
                       texto += "\n";
@@ -6281,7 +6269,7 @@
               if (p.respuestaTexto) {
                   texto += `   Respuesta del estudiante: ${p.respuestaTexto}\n`;
               }
-              texto += `   Nivel: ${p.etiquetaNivel || p.nivel || "Sin clasificar"} Â· ${Number(p.puntos || 0).toFixed(2)}/1,00\n`;
+              texto += `   Nivel: ${p.etiquetaNivel || p.nivel || "Sin clasificar"} · ${Number(p.puntos || 0).toFixed(2)}/1,00\n`;
               if (Array.isArray(p.criteriosCumplidos) && p.criteriosCumplidos.length) {
                   texto += `   Criterios cumplidos: ${p.criteriosCumplidos.join(", ")}\n`;
               }
@@ -6347,7 +6335,7 @@
               evento.stopImmediatePropagation();
               if (evento.dataTransfer) evento.dataTransfer.dropEffect = "none";
               const estado = host.querySelector(".cm-workbench-status");
-              if (estado) estado.textContent = "Copiar, cortar y pegar estÃ¡n deshabilitados para estudiantes.";
+              if (estado) estado.textContent = "Copiar, cortar y pegar están deshabilitados para estudiantes.";
           };
           ["copy", "cut", "paste", "contextmenu", "dragstart", "dragover", "drop", "keydown"].forEach(tipo => {
               host.addEventListener(tipo, bloquearPortapapelesDirecto, true);
@@ -6359,7 +6347,7 @@
               evento.preventDefault();
               evento.stopImmediatePropagation();
               const estado = host.querySelector(".cm-workbench-status");
-              if (estado) estado.textContent = "Copiar, cortar y pegar estÃ¡n deshabilitados para estudiantes.";
+              if (estado) estado.textContent = "Copiar, cortar y pegar están deshabilitados para estudiantes.";
           };
           host.addEventListener("beforeinput", bloquearEntradaPortapapelesDirecta, true);
           textarea.addEventListener("beforeinput", bloquearEntradaPortapapelesDirecta, true);
@@ -6367,28 +6355,28 @@
           const barra = document.createElement("div");
           barra.className = "cm-workbench-toolbar";
           barra.setAttribute("role", "toolbar");
-          barra.setAttribute("aria-label", "Herramientas del editor de cÃ³digo");
+          barra.setAttribute("aria-label", "Herramientas del editor de código");
           barra.innerHTML = `
               <label class="cm-workbench-search">
-                  <span class="sr-only">Buscar en el cÃ³digo</span>
+                  <span class="sr-only">Buscar en el código</span>
                   <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-                  <input type="search" placeholder="Buscar en el cÃ³digo" autocomplete="off">
+                  <input type="search" placeholder="Buscar en el código" autocomplete="off">
               </label>
               <button type="button" data-cm-find title="Buscar siguiente" aria-label="Buscar siguiente"><i class="fa-solid fa-arrow-down"></i></button>
-              <button type="button" data-cm-replace title="Reemplazar selecciÃ³n" aria-label="Reemplazar selecciÃ³n"><i class="fa-solid fa-arrow-right-arrow-left"></i></button>
+              <button type="button" data-cm-replace title="Reemplazar selección" aria-label="Reemplazar selección"><i class="fa-solid fa-arrow-right-arrow-left"></i></button>
               <button type="button" data-cm-undo title="Deshacer" aria-label="Deshacer"><i class="fa-solid fa-rotate-left"></i></button>
               <button type="button" data-cm-redo title="Rehacer" aria-label="Rehacer"><i class="fa-solid fa-rotate-right"></i></button>
               <button type="button" data-cm-complete title="Mostrar sugerencias (Ctrl+Espacio)" aria-label="Mostrar sugerencias"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
-              <select data-cm-font aria-label="TamaÃ±o de fuente">
-                  <option value=".8rem">PequeÃ±a</option>
+              <select data-cm-font aria-label="Tamaño de fuente">
+                  <option value=".8rem">Pequeña</option>
                   <option value=".9rem" selected>Normal</option>
                   <option value="1rem">Grande</option>
                   <option value="1.1rem">Muy grande</option>
               </select>
-              <button type="button" data-cm-wrap title="Ajustar lÃ­neas largas" aria-label="Ajustar lÃ­neas largas" aria-pressed="false"><i class="fa-solid fa-align-left"></i></button>
-              <span class="cm-workbench-position" aria-live="polite">LÃ­nea 1, columna 1</span>
+              <button type="button" data-cm-wrap title="Ajustar líneas largas" aria-label="Ajustar líneas largas" aria-pressed="false"><i class="fa-solid fa-align-left"></i></button>
+              <span class="cm-workbench-position" aria-live="polite">Línea 1, columna 1</span>
               <button type="button" data-cm-fullscreen title="Pantalla completa" aria-label="Pantalla completa" aria-pressed="false"><i class="fa-solid fa-expand"></i></button>
-              <span class="cm-workbench-lines" aria-live="polite">LÃ­neas 1</span>
+              <span class="cm-workbench-lines" aria-live="polite">Líneas 1</span>
               <span class="cm-workbench-autosave" aria-live="polite">Autoguardado activo</span>
               <span class="cm-workbench-status" aria-live="polite"></span>`;
           host.appendChild(barra);
@@ -6415,8 +6403,8 @@
           const actualizarPosicion = estado => {
               const cabeza = estado.selection.main.head;
               const linea = estado.doc.lineAt(cabeza);
-              if (contadorLineas) contadorLineas.textContent = `LÃ­neas ${estado.doc.lines}`;
-              posicionCursor.textContent = `LÃ­nea ${linea.number}, columna ${cabeza - linea.from + 1}`;
+              if (contadorLineas) contadorLineas.textContent = `Líneas ${estado.doc.lines}`;
+              posicionCursor.textContent = `Línea ${linea.number}, columna ${cabeza - linea.from + 1}`;
           };
 
           let view;
@@ -6434,7 +6422,7 @@
           const deshacer = () => {
               const anterior = historialDeshacer.pop();
               if (anterior === undefined) {
-                  estadoHerramientas.textContent = "No hay mÃ¡s cambios para deshacer.";
+                  estadoHerramientas.textContent = "No hay más cambios para deshacer.";
                   return true;
               }
               historialRehacer.push(view.state.doc.toString());
@@ -6478,19 +6466,19 @@
                   return { from: linea.from, to: linea.to, insert: texto };
               }).filter(Boolean);
               if (cambios.length) view.dispatch({ changes: cambios });
-              estadoHerramientas.textContent = todasComentadas ? "Comentarios quitados." : "LÃ­neas comentadas.";
+              estadoHerramientas.textContent = todasComentadas ? "Comentarios quitados." : "Líneas comentadas.";
               return true;
           };
 
           const irALinea = () => {
               const actual = view.state.doc.lineAt(view.state.selection.main.head).number;
-              const valor = prompt(`Ir a lÃ­nea (1-${view.state.doc.lines}):`, String(actual));
+              const valor = prompt(`Ir a línea (1-${view.state.doc.lines}):`, String(actual));
               if (valor === null) return true;
               const numero = Math.max(1, Math.min(view.state.doc.lines, Number.parseInt(valor, 10) || actual));
               const linea = view.state.doc.line(numero);
               view.dispatch({ selection: { anchor: linea.from }, scrollIntoView: true });
               view.focus();
-              estadoHerramientas.textContent = `LÃ­nea ${numero}.`;
+              estadoHerramientas.textContent = `Línea ${numero}.`;
               return true;
           };
 
@@ -6502,7 +6490,7 @@
               host.style.setProperty("--cm-font-size", tamanos[nivel]);
               const selector = barra.querySelector("[data-cm-font]");
               if (selector) selector.value = tamanos[nivel];
-              estadoHerramientas.textContent = `TamaÃ±o de fuente: ${tamanos[nivel]}.`;
+              estadoHerramientas.textContent = `Tamaño de fuente: ${tamanos[nivel]}.`;
               return true;
           };
 
@@ -6613,7 +6601,7 @@
                                   if (!restringirPortapapeles()) return false;
                                   evento.preventDefault();
                                   if (evento.dataTransfer) evento.dataTransfer.dropEffect = "none";
-                                  estadoHerramientas.textContent = "Arrastrar cÃ³digo estÃ¡ deshabilitado para estudiantes.";
+                                  estadoHerramientas.textContent = "Arrastrar código está deshabilitado para estudiantes.";
                                   return true;
                               },
                               dragover: evento => {
@@ -6626,7 +6614,7 @@
                                   if (!restringirPortapapeles()) return false;
                                   evento.preventDefault();
                                   if (evento.dataTransfer) evento.dataTransfer.dropEffect = "none";
-                                  estadoHerramientas.textContent = "Soltar cÃ³digo estÃ¡ deshabilitado para estudiantes.";
+                                  estadoHerramientas.textContent = "Soltar código está deshabilitado para estudiantes.";
                                   return true;
                               }
                           }),
@@ -6752,7 +6740,7 @@
           const buscarSiguiente = () => {
               const termino = campoBusqueda.value;
               if (!termino) {
-                  estadoHerramientas.textContent = "EscribÃ­ un texto para buscar.";
+                  estadoHerramientas.textContent = "Escribí un texto para buscar.";
                   campoBusqueda.focus();
                   return false;
               }
@@ -6760,7 +6748,7 @@
               let posicion = documento.indexOf(termino, view.state.selection.main.to);
               if (posicion < 0) posicion = documento.indexOf(termino);
               if (posicion < 0) {
-                  estadoHerramientas.textContent = `No se encontrÃ³ Ã¢â‚¬Å“${termino}Ã¢â‚¬Â.`;
+                  estadoHerramientas.textContent = `No se encontró â€œ${termino}â€.`;
                   return false;
               }
               const coincidencias = documento.split(termino).length - 1;
@@ -6781,13 +6769,13 @@
           barra.querySelector("[data-cm-replace]").onclick = () => {
               const termino = campoBusqueda.value;
               if (!termino) {
-                  estadoHerramientas.textContent = "BuscÃ¡ primero el texto que querÃ©s reemplazar.";
+                  estadoHerramientas.textContent = "Buscá primero el texto que querés reemplazar.";
                   campoBusqueda.focus();
                   return;
               }
               const seleccion = view.state.selection.main;
               if (view.state.sliceDoc(seleccion.from, seleccion.to) !== termino && !buscarSiguiente()) return;
-              const reemplazo = prompt(`Reemplazar Ã¢â‚¬Å“${termino}Ã¢â‚¬Â por:`, "");
+              const reemplazo = prompt(`Reemplazar â€œ${termino}â€ por:`, "");
               if (reemplazo === null) return;
               const rango = view.state.selection.main;
               view.dispatch({
@@ -6804,7 +6792,7 @@
               const tamanos = [".8rem", ".9rem", "1rem", "1.1rem"];
               host.dataset.cmFontLevel = String(Math.max(0, tamanos.indexOf(evento.target.value)));
               host.style.setProperty("--cm-font-size", evento.target.value);
-              estadoHerramientas.textContent = `TamaÃ±o de fuente: ${evento.target.value}.`;
+              estadoHerramientas.textContent = `Tamaño de fuente: ${evento.target.value}.`;
           };
           barra.querySelector("[data-cm-wrap]").onclick = evento => {
               const activo = evento.currentTarget.getAttribute("aria-pressed") !== "true";
@@ -6888,7 +6876,7 @@
           const informarBloqueo = evento => {
               const editor = obtenerEditorEstudiante(evento.target);
               const estado = editor?.__codeMirrorHost?.querySelector?.('.cm-workbench-status');
-              if (estado) estado.textContent = 'Copiar, cortar y pegar estÃ¡n deshabilitados para estudiantes.';
+              if (estado) estado.textContent = 'Copiar, cortar y pegar están deshabilitados para estudiantes.';
           };
 
           const identificarAccion = evento => {
@@ -6987,7 +6975,7 @@
       }
 
       // ==========================================
-      // FUNCIONES DE IMPORTACIÃƒâ€œN Y EXPORTACIÃƒâ€œN JSON Y PDF
+      // FUNCIONES DE IMPORTACIÃ“N Y EXPORTACIÃ“N JSON Y PDF
       // ==========================================
 
       // ===============================
@@ -7063,8 +7051,8 @@
           if (!solicitudes.length) return;
           const nombres = solicitudes.map(item => item.estudianteNombre || 'Estudiante');
           const texto = solicitudes.length === 1
-              ? `Ã°Å¸â€“ÂÃ¯Â¸Â ${nombres[0]} solicita colaboraciÃ³n`
-              : `Ã°Å¸â€“ÂÃ¯Â¸Â ${solicitudes.length} estudiantes solicitan colaboraciÃ³n`;
+              ? `ðŸ–ï¸ ${nombres[0]} solicita colaboración`
+              : `ðŸ–ï¸ ${solicitudes.length} estudiantes solicitan colaboración`;
           const etiqueta = document.getElementById('textoAlertaColaboracionFlotante');
           const contador = document.getElementById('contadorAlertaColaboracionFlotante');
           const alerta = document.getElementById('alertaColaboracionFlotante');
@@ -7079,7 +7067,7 @@
           intervaloTituloColaboracion = setInterval(() => {
               if (!alertaColaboracionActiva) return;
               alternarTitulo = !alternarTitulo;
-              document.title = alternarTitulo ? 'Ã°Å¸â€“ÂÃ¯Â¸Â SOLICITUD DE COLABORACIÃƒâ€œN' : tituloOriginalDocumento;
+              document.title = alternarTitulo ? 'ðŸ–ï¸ SOLICITUD DE COLABORACIÃ“N' : tituloOriginalDocumento;
           }, 900);
           reproducirSonidoSolicitud();
           if (intervaloSonidoColaboracion) clearInterval(intervaloSonidoColaboracion);
@@ -7151,7 +7139,7 @@
                   <h4>${escapeHtml(e.nombre || d.nombreGoogle || 'Estudiante sin nombre')}</h4>
                   <p>
                       ${escapeHtml(d.email || 'Sin correo')}<br>
-                      ${escapeHtml(e.curso || 'Sin curso')} ${escapeHtml(e.division || '')} Â· ${escapeHtml(e.turno || 'Sin turno')}<br>
+                      ${escapeHtml(e.curso || 'Sin curso')} ${escapeHtml(e.division || '')} · ${escapeHtml(e.turno || 'Sin turno')}<br>
                       Solicitud: ${escapeHtml(fecha)}
                   </p>
                   <div class="pending-request-actions">
@@ -7179,7 +7167,7 @@
           const horas = Math.floor(minutos / 60);
           if (horas < 24) return `${horas} h ${minutos % 60} min`;
           const dias = Math.floor(horas / 24);
-          return `${dias} dÃ­a${dias === 1 ? '' : 's'} ${horas % 24} h`;
+          return `${dias} día${dias === 1 ? '' : 's'} ${horas % 24} h`;
       }
 
       function validarSolicitudEstudiante(d) {
@@ -7187,9 +7175,9 @@
           const problemas = [];
           if (!String(e.nombre || '').trim()) problemas.push('Falta nombre y apellido.');
           if (!String(e.curso || '').trim()) problemas.push('Falta curso.');
-          if (!String(e.division || '').trim()) problemas.push('Falta divisiÃ³n.');
+          if (!String(e.division || '').trim()) problemas.push('Falta división.');
           if (!String(e.turno || '').trim()) problemas.push('Falta turno.');
-          if (!String(d?.email || '').trim()) problemas.push('Falta correo electrÃ³nico.');
+          if (!String(d?.email || '').trim()) problemas.push('Falta correo electrónico.');
           if (d?.emailVerificado !== true) problemas.push('El correo de Google no figura como verificado.');
           return problemas;
       }
@@ -7236,14 +7224,14 @@
                   <h4>${escapeHtml(e.nombre || d.nombreGoogle || 'Estudiante sin nombre')}</h4>
                   <div class="pending-request-wait"><i class="fa-solid fa-hourglass-half"></i> Espera: ${escapeHtml(formatearAntiguedadSolicitud(d))}</div>
                   <p>
-                      <strong>Correo:</strong> ${escapeHtml(d.email || 'Sin correo')} ${d.emailVerificado === true ? 'Â· Verificado' : 'Â· No verificado'}<br>
+                      <strong>Correo:</strong> ${escapeHtml(d.email || 'Sin correo')} ${d.emailVerificado === true ? '· Verificado' : '· No verificado'}<br>
                       <strong>Curso:</strong> ${escapeHtml(e.curso || 'Sin curso')}<br>
-                      <strong>DivisiÃ³n:</strong> ${escapeHtml(e.division || 'Sin divisiÃ³n')}<br>
+                      <strong>División:</strong> ${escapeHtml(e.division || 'Sin división')}<br>
                       <strong>Turno:</strong> ${escapeHtml(e.turno || 'Sin turno')}<br>
                       <strong>Solicitud:</strong> ${escapeHtml(fecha)}
                   </p>
                   ${antecedentes.length ? `<details style="margin-bottom:.6rem;font-size:.73rem;color:var(--text-muted)"><summary style="cursor:pointer;color:#fca5a5">Antecedentes de rechazo (${antecedentes.length})</summary>${antecedentes.map(a => `<div style="margin-top:.35rem">Motivo: ${escapeHtml(a.motivo || 'Sin motivo')}<br>Responsable: ${escapeHtml(a.rechazadoPor || 'Sin registrar')}</div>`).join('')}</details>` : ''}
-                  ${problemas.length ? `<div class="pending-request-warning"><i class="fa-solid fa-triangle-exclamation"></i> No se puede aceptar todavÃ­a:<br>${problemas.map(escapeHtml).join('<br>')}</div>` : ''}
+                  ${problemas.length ? `<div class="pending-request-warning"><i class="fa-solid fa-triangle-exclamation"></i> No se puede aceptar todavía:<br>${problemas.map(escapeHtml).join('<br>')}</div>` : ''}
                   <div class="pending-request-actions">
                       <button class="btn btn-success" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'activo')" ${seleccionable ? '' : 'disabled'}><i class="fa-solid fa-user-check"></i> Aceptar</button>
                       <button class="btn btn-danger" onclick="cambiarEstadoCuentaEstudiante(${indice}, 'rechazado')"><i class="fa-solid fa-user-xmark"></i> Rechazar</button>
@@ -7264,7 +7252,7 @@
               return;
           }
           const nombres = solicitudes.map(d => d.estudiante?.nombre || d.email || 'Estudiante');
-          if (!confirm(`Â¿Aceptar ${solicitudes.length} solicitud(es)?\n\n${nombres.join('\n')}`)) return;
+          if (!confirm(`¿Aceptar ${solicitudes.length} solicitud(es)?\n\n${nombres.join('\n')}`)) return;
           let aceptadas = 0;
           for (const solicitud of solicitudes) {
               if (await aceptarSolicitudDocenteDirecta(solicitud)) aceptadas++;
@@ -7309,7 +7297,7 @@
                   <i class="fa-solid ${actual ? 'fa-circle-check' : 'fa-envelope'}" style="color:${actual ? '#6ee7b7' : '#7dd3fc'}"></i>
                   <div style="min-width:0">
                       <strong style="display:block;overflow-wrap:anywhere">${escapeHtml(email)}</strong>
-                      <small style="color:${actual ? '#a7f3d0' : 'var(--text-muted)'}">${actual ? 'SesiÃ³n docente verificada y activa' : `Docente autorizado ${indice + 1} Â· requiere correo verificado`}</small>
+                      <small style="color:${actual ? '#a7f3d0' : 'var(--text-muted)'}">${actual ? 'Sesión docente verificada y activa' : `Docente autorizado ${indice + 1} · requiere correo verificado`}</small>
                   </div>
               </div>`;
           }).join('');
@@ -7333,7 +7321,7 @@
 
       function abrirEliminacionHistorialJitsiAdministrador() {
           if (window.esAdministradorPrincipalDocente?.() !== true) {
-              alert('Solo la cuenta administradora principal puede realizar esta operaciÃ³n.');
+              alert('Solo la cuenta administradora principal puede realizar esta operación.');
               return;
           }
           documentosHistorialJitsiAdministrador = [];
@@ -7341,7 +7329,7 @@
           const resumen = document.getElementById('resumenEliminacionHistorialJitsi');
           const alcance = document.getElementById('alcanceEliminacionHistorialJitsi');
           const confirmacion = document.getElementById('confirmacionEliminarHistorialJitsi');
-          if (resumen) resumen.textContent = 'PresionÃ¡ Ã¢â‚¬Å“Revisar documentosÃ¢â‚¬Â para contar el historial existente.';
+          if (resumen) resumen.textContent = 'Presioná â€œRevisar documentosâ€ para contar el historial existente.';
           if (alcance) alcance.textContent = 'Todas las clases y fechas';
           if (confirmacion) confirmacion.value = '';
           actualizarConfirmacionEliminarHistorialJitsi();
@@ -7390,8 +7378,8 @@
           documentosHistorialJitsiAdministrador = resultado.documentos || [];
           if (resumen) {
               resumen.innerHTML = resultado.cantidad
-                  ? `<strong>${resultado.cantidad}</strong> documento${resultado.cantidad === 1 ? '' : 's'} histÃ³rico${resultado.cantidad === 1 ? '' : 's'} listo${resultado.cantidad === 1 ? '' : 's'} para eliminar.`
-                  : '<strong>No hay documentos histÃ³ricos Jitsi.</strong> No es necesario ejecutar la eliminaciÃ³n.';
+                  ? `<strong>${resultado.cantidad}</strong> documento${resultado.cantidad === 1 ? '' : 's'} histórico${resultado.cantidad === 1 ? '' : 's'} listo${resultado.cantidad === 1 ? '' : 's'} para eliminar.`
+                  : '<strong>No hay documentos históricos Jitsi.</strong> No es necesario ejecutar la eliminación.';
           }
           actualizarConfirmacionEliminarHistorialJitsi();
       }
@@ -7400,7 +7388,7 @@
           const confirmacion = String(document.getElementById('confirmacionEliminarHistorialJitsi')?.value || '').trim().toUpperCase();
           if (confirmacion !== 'BORRAR JITSI' || !documentosHistorialJitsiAdministrador.length) return;
           const cantidadEsperada = documentosHistorialJitsiAdministrador.length;
-          if (!confirm(`Se eliminarÃ¡n definitivamente ${cantidadEsperada} documento(s) histÃ³ricos Jitsi de todas las clases y fechas. Â¿Continuar?`)) return;
+          if (!confirm(`Se eliminarán definitivamente ${cantidadEsperada} documento(s) históricos Jitsi de todas las clases y fechas. ¿Continuar?`)) return;
           const boton = document.getElementById('btnConfirmarEliminarHistorialJitsi');
           const resumen = document.getElementById('resumenEliminacionHistorialJitsi');
           if (boton) {
@@ -7413,19 +7401,19 @@
           );
           if (!resultado?.ok) {
               if (boton) {
-                  boton.innerHTML = '<i class="fa-solid fa-trash-can"></i> Reintentar eliminaciÃ³n';
+                  boton.innerHTML = '<i class="fa-solid fa-trash-can"></i> Reintentar eliminación';
                   boton.disabled = false;
               }
               if (resumen) {
-                  resumen.textContent = `${resultado?.error || 'No se pudo completar la eliminaciÃ³n.'} Eliminados antes del error: ${Number(resultado?.eliminadas || 0)}.`;
+                  resumen.textContent = `${resultado?.error || 'No se pudo completar la eliminación.'} Eliminados antes del error: ${Number(resultado?.eliminadas || 0)}.`;
               }
               return;
           }
           documentosHistorialJitsiAdministrador = [];
           if (resumen) {
               resumen.innerHTML = resultado.auditoriaRegistrada === false
-                  ? `<strong>EliminaciÃ³n completada con advertencia.</strong> Se borraron ${resultado.eliminadas} documento(s), pero no se pudo registrar la auditorÃ­a. PublicÃ¡ las reglas actualizadas y revisÃ¡ la consola.`
-                  : `<strong>EliminaciÃ³n completada.</strong> Se borraron ${resultado.eliminadas} documento(s) y se registrÃ³ la operaciÃ³n administrativa.`;
+                  ? `<strong>Eliminación completada con advertencia.</strong> Se borraron ${resultado.eliminadas} documento(s), pero no se pudo registrar la auditoría. Publicá las reglas actualizadas y revisá la consola.`
+                  : `<strong>Eliminación completada.</strong> Se borraron ${resultado.eliminadas} documento(s) y se registró la operación administrativa.`;
           }
           if (boton) {
               boton.innerHTML = '<i class="fa-solid fa-circle-check"></i> Historial eliminado';
@@ -7437,10 +7425,10 @@
 
       async function eliminarHistorialAportesAdministrador() {
           if (window.esAdministradorPrincipalDocente?.() !== true) {
-              alert('Solo la cuenta administradora principal puede realizar esta operaciÃ³n.');
+              alert('Solo la cuenta administradora principal puede realizar esta operación.');
               return;
           }
-          const confirmacion = prompt('Esta operaciÃ³n elimina definitivamente todos los aportes colaborativos antiguos. EscribÃ­ BORRAR APORTES para continuar.');
+          const confirmacion = prompt('Esta operación elimina definitivamente todos los aportes colaborativos antiguos. Escribí BORRAR APORTES para continuar.');
           if (String(confirmacion || '').trim().toUpperCase() !== 'BORRAR APORTES') return;
           const boton = document.getElementById('btnEliminarHistorialAportesFirestore');
           const original = boton?.innerHTML || '';
@@ -7454,7 +7442,7 @@
               boton.innerHTML = original;
           }
           if (!resultado?.ok) {
-              alert(`${resultado?.error || 'No se pudo completar la eliminaciÃ³n.'} Eliminados antes del error: ${Number(resultado?.eliminadas || 0)}.`);
+              alert(`${resultado?.error || 'No se pudo completar la eliminación.'} Eliminados antes del error: ${Number(resultado?.eliminadas || 0)}.`);
               return;
           }
           alert(`Limpieza completada. Se eliminaron ${Number(resultado.eliminadas || 0)} documento(s) antiguos de historialAportes.`);
@@ -7514,13 +7502,13 @@
           const p = rubrica.puntos;
           if (!(p.completa > 0)) return "El puntaje de respuesta completa debe ser mayor que cero.";
           if (!(p.completa >= p.incompleta && p.incompleta >= p.parcial && p.parcial >= p.incorrecta)) {
-              return "Los puntajes deben respetar este orden: completa Ã¢â€°Â¥ incompleta Ã¢â€°Â¥ parcial Ã¢â€°Â¥ incorrecta.";
+              return "Los puntajes deben respetar este orden: completa â‰¥ incompleta â‰¥ parcial â‰¥ incorrecta.";
           }
           if (!Object.values(rubrica.criterios).some(Boolean)) {
-              return "ActivÃ¡ al menos un criterio de evaluaciÃ³n.";
+              return "Activá al menos un criterio de evaluación.";
           }
           if (rubrica.alertas.severidadAlta < rubrica.alertas.riesgoMinimo) {
-              return "El umbral de severidad alta no puede ser menor que el riesgo mÃ­nimo.";
+              return "El umbral de severidad alta no puede ser menor que el riesgo mínimo.";
           }
           return "";
       }
@@ -7543,11 +7531,11 @@
           }
           if (estado) {
               estado.className = "";
-              estado.textContent = "Guardando configuraciÃ³n...";
+              estado.textContent = "Guardando configuración...";
           }
           try {
               const guardada = await window.guardarRubricaSocraticaFirebase?.(rubrica);
-              if (guardada === false) throw new Error("Firebase rechazÃ³ la actualizaciÃ³n.");
+              if (guardada === false) throw new Error("Firebase rechazó la actualización.");
               aplicarRubricaSocratica({
                   ...rubrica,
                   actualizadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || "docente",
@@ -7556,7 +7544,7 @@
               localStorage.setItem("rubrica_socratica_docente", JSON.stringify(rubricaSocraticaActual));
               if (estado) {
                   estado.className = "is-success";
-                  estado.textContent = "RÃºbrica guardada y sincronizada.";
+                  estado.textContent = "Rúbrica guardada y sincronizada.";
               }
               renderInformeGrupalSocratico();
           } catch (e) {
@@ -7577,7 +7565,7 @@
           const estado = document.getElementById("estadoRubricaSocraticaProfesor");
           if (estado) {
               estado.className = "";
-              estado.textContent = "Valores predeterminados cargados. PresionÃ¡ Guardar rÃºbrica para sincronizarlos.";
+              estado.textContent = "Valores predeterminados cargados. Presioná Guardar rúbrica para sincronizarlos.";
           }
       }
 
@@ -7655,10 +7643,10 @@
           const filtros = obtenerFiltrosGrupoInformeSocratico();
           const partes = [
               filtros.curso ? `Curso ${filtros.curso}` : "",
-              filtros.division ? `DivisiÃ³n ${filtros.division}` : "",
+              filtros.division ? `División ${filtros.division}` : "",
               filtros.turno ? `Turno ${filtros.turno}` : ""
           ].filter(Boolean);
-          return partes.length ? partes.join(" Â· ") : "Todos los cursos, divisiones y turnos";
+          return partes.length ? partes.join(" · ") : "Todos los cursos, divisiones y turnos";
       }
 
       function obtenerDatosInformeGrupalSocratico() {
@@ -7682,7 +7670,7 @@
                       cursoNombre: d.estudiante?.curso || "",
                       division: d.estudiante?.division || "",
                       turno: d.estudiante?.turno || "",
-                      curso: [d.estudiante?.curso, d.estudiante?.division, d.estudiante?.turno].filter(Boolean).join(" Â· "),
+                      curso: [d.estudiante?.curso, d.estudiante?.division, d.estudiante?.turno].filter(Boolean).join(" · "),
                       conteo,
                       total,
                       desafiosEvaluados: actividades.length,
@@ -7740,7 +7728,7 @@
                   console.error(`No se pudo renderizar ${nombre}:`, error);
                   return `<div class="teacher-report-diagnostic is-warning">
                       <i class="fa-solid fa-triangle-exclamation"></i>
-                      <span><strong>${escapeHtml(nombre)}</strong> no pudo mostrarse por un dato histÃ³rico incompatible. Los demÃ¡s componentes continÃºan disponibles.</span>
+                      <span><strong>${escapeHtml(nombre)}</strong> no pudo mostrarse por un dato histórico incompatible. Los demás componentes continúan disponibles.</span>
                   </div>`;
               }
           };
@@ -7751,10 +7739,10 @@
               const alertas = detectarAlertasEvolucionSocratica(evolucion, datos.estudiantesAlcance);
               const estudiantesConHistorial = datos.filas.length;
               contenedor.innerHTML = `
-              <div class="teacher-report-scope"><i class="fa-solid fa-filter"></i> Alcance: <strong>${escapeHtml(datos.alcance)}</strong> Â· ${datos.estudiantesAlcance.length} estudiante${datos.estudiantesAlcance.length === 1 ? "" : "s"}</div>
+              <div class="teacher-report-scope"><i class="fa-solid fa-filter"></i> Alcance: <strong>${escapeHtml(datos.alcance)}</strong> · ${datos.estudiantesAlcance.length} estudiante${datos.estudiantesAlcance.length === 1 ? "" : "s"}</div>
               <div class="teacher-report-diagnostic ${datos.totalRespuestas ? "is-ok" : "is-warning"}">
                   <i class="fa-solid ${datos.totalRespuestas ? "fa-chart-line" : "fa-circle-info"}"></i>
-                  <span><strong>Datos verificados:</strong> ${estudiantesConHistorial} estudiante${estudiantesConHistorial === 1 ? "" : "s"}, ${datos.totalDesafiosEvaluados} desafÃ­o${datos.totalDesafiosEvaluados === 1 ? "" : "s"} finalizado${datos.totalDesafiosEvaluados === 1 ? "" : "s"} con evaluaciÃ³n y ${datos.totalRespuestas} respuesta${datos.totalRespuestas === 1 ? "" : "s"} socrÃ¡tica${datos.totalRespuestas === 1 ? "" : "s"}. Los niveles cuentan respuestas, no desafÃ­os.${datos.registrosExcluidos ? ` Se excluyeron ${datos.registrosExcluidos} registro${datos.registrosExcluidos === 1 ? "" : "s"} histÃ³rico${datos.registrosExcluidos === 1 ? "" : "s"} no finalizado${datos.registrosExcluidos === 1 ? "" : "s"} o ajeno${datos.registrosExcluidos === 1 ? "" : "s"} al curso actual.` : ""} ${datos.totalRespuestas ? "Tablas, grÃ¡ficos y exportaciones usan este mismo conjunto." : "CambiÃ¡ los filtros o esperÃ¡ entregas finalizadas del Analista de Viabilidad y Excelencia."}</span>
+                  <span><strong>Datos verificados:</strong> ${estudiantesConHistorial} estudiante${estudiantesConHistorial === 1 ? "" : "s"}, ${datos.totalDesafiosEvaluados} desafío${datos.totalDesafiosEvaluados === 1 ? "" : "s"} finalizado${datos.totalDesafiosEvaluados === 1 ? "" : "s"} con evaluación y ${datos.totalRespuestas} respuesta${datos.totalRespuestas === 1 ? "" : "s"} socrática${datos.totalRespuestas === 1 ? "" : "s"}. Los niveles cuentan respuestas, no desafíos.${datos.registrosExcluidos ? ` Se excluyeron ${datos.registrosExcluidos} registro${datos.registrosExcluidos === 1 ? "" : "s"} histórico${datos.registrosExcluidos === 1 ? "" : "s"} no finalizado${datos.registrosExcluidos === 1 ? "" : "s"} o ajeno${datos.registrosExcluidos === 1 ? "" : "s"} al curso actual.` : ""} ${datos.totalRespuestas ? "Tablas, gráficos y exportaciones usan este mismo conjunto." : "Cambiá los filtros o esperá entregas finalizadas del Analista de Viabilidad y Excelencia."}</span>
               </div>
               <div class="teacher-group-report-summary">
                   <div class="is-completa"><small>Completas</small><strong>${total.completa}</strong><span>${porcentaje("completa")}%</span></div>
@@ -7762,14 +7750,14 @@
                   <div class="is-parcial"><small>Parciales</small><strong>${total.parcial}</strong><span>${porcentaje("parcial")}%</span></div>
                   <div class="is-incorrecta"><small>Incorrectas</small><strong>${total.incorrecta}</strong><span>${porcentaje("incorrecta")}%</span></div>
               </div>
-              ${componenteSeguro("GrÃ¡ficos de distribuciÃ³n y evoluciÃ³n", () => renderGraficosInformeGrupalSocratico(datos, evolucion))}
-              ${componenteSeguro("GrÃ¡ficos de notas", () => renderGraficosNotasProfesor(datos.estudiantesAlcance))}
-              ${componenteSeguro("AnÃ¡lisis por criterio", () => renderAnalisisCriteriosSocraticos(datos))}
-              ${componenteSeguro("Alertas de evoluciÃ³n", () => renderAlertasEvolucionSocratica(alertas))}
-              ${componenteSeguro("Tabla de evoluciÃ³n", () => renderTablaEvolucionPanelSocratico(evolucion, alertas))}
-              ${componenteSeguro("ComparaciÃ³n de grupos", () => renderComparacionGruposSocratico(datos))}
+              ${componenteSeguro("Gráficos de distribución y evolución", () => renderGraficosInformeGrupalSocratico(datos, evolucion))}
+              ${componenteSeguro("Gráficos de notas", () => renderGraficosNotasProfesor(datos.estudiantesAlcance))}
+              ${componenteSeguro("Análisis por criterio", () => renderAnalisisCriteriosSocraticos(datos))}
+              ${componenteSeguro("Alertas de evolución", () => renderAlertasEvolucionSocratica(alertas))}
+              ${componenteSeguro("Tabla de evolución", () => renderTablaEvolucionPanelSocratico(evolucion, alertas))}
+              ${componenteSeguro("Comparación de grupos", () => renderComparacionGruposSocratico(datos))}
               ${filas.length ? `<div class="teacher-group-report-table"><table>
-                  <thead><tr><th>Estudiante</th><th>Grupo</th><th>DesafÃ­os evaluados</th><th>Completas</th><th>Incompletas</th><th>Parciales</th><th>Incorrectas</th><th>Total respuestas</th></tr></thead>
+                  <thead><tr><th>Estudiante</th><th>Grupo</th><th>Desafíos evaluados</th><th>Completas</th><th>Incompletas</th><th>Parciales</th><th>Incorrectas</th><th>Total respuestas</th></tr></thead>
                   <tbody>${filas.map(fila => `<tr>
                       <td><strong>${escapeHtml(fila.nombre)}</strong></td>
                       <td>${escapeHtml(fila.curso || "Sin grupo")}</td>
@@ -7780,14 +7768,14 @@
                       <td class="is-incorrecta">${fila.conteo.incorrecta}</td>
                       <td>${fila.total}</td>
                   </tr>`).join("")}</tbody>
-              </table></div>` : `<p class="teacher-group-report-empty">TodavÃ­a no hay respuestas entregadas para el alcance seleccionado.</p>`}`;
+              </table></div>` : `<p class="teacher-group-report-empty">Todavía no hay respuestas entregadas para el alcance seleccionado.</p>`}`;
               componenteSeguro("Formulario de refuerzo", () => {
                   prepararFormularioPlanRefuerzoSocratico();
                   renderPlanesRefuerzoSocratico();
                   return "";
               });
           } catch (error) {
-              console.error("No se pudo construir el informe grupal socrÃ¡tico:", error);
+              console.error("No se pudo construir el informe grupal socrático:", error);
               contenedor.innerHTML = `<div class="teacher-report-diagnostic is-error">
                   <i class="fa-solid fa-circle-exclamation"></i>
                   <span><strong>No se pudo construir el informe.</strong> ${escapeHtml(error?.message || "Error desconocido")}</span>
@@ -7798,9 +7786,9 @@
 
       const CRITERIOS_SOCRATICOS_INFORME = [
           { clave: "desarrollo suficiente", etiqueta: "Desarrollo suficiente", icono: "fa-align-left" },
-          { clave: "justificaciÃ³n causal", etiqueta: "JustificaciÃ³n causal", icono: "fa-link" },
-          { clave: "evidencia del cÃ³digo o de una prueba", etiqueta: "Evidencia concreta", icono: "fa-code" },
-          { clave: "consecuencia, lÃ­mite o mejora", etiqueta: "Consecuencia o mejora", icono: "fa-arrow-trend-up" }
+          { clave: "justificación causal", etiqueta: "Justificación causal", icono: "fa-link" },
+          { clave: "evidencia del código o de una prueba", etiqueta: "Evidencia concreta", icono: "fa-code" },
+          { clave: "consecuencia, límite o mejora", etiqueta: "Consecuencia o mejora", icono: "fa-arrow-trend-up" }
       ];
 
       function obtenerAnalisisCriteriosSocraticos(datos) {
@@ -7847,13 +7835,13 @@
           const principal = [...conDatos].sort((a, b) => b.porcentajeFaltante - a.porcentajeFaltante)[0];
           return `<section class="teacher-criteria-analysis">
               <header>
-                  <div><i class="fa-solid fa-magnifying-glass-chart"></i><strong>AnÃ¡lisis por criterio de razonamiento</strong></div>
+                  <div><i class="fa-solid fa-magnifying-glass-chart"></i><strong>Análisis por criterio de razonamiento</strong></div>
                   <small>Principal aspecto a reforzar: <strong>${escapeHtml(principal.etiqueta)}</strong> (${porcentajeExactoPanel(principal.porcentajeFaltante)} pendiente).</small>
               </header>
               <div class="teacher-criteria-grid">${criterios.map(item => `<article class="${item.evaluaciones ? "" : "is-empty"}">
                   <div class="teacher-criterion-heading"><span><i class="fa-solid ${item.icono}"></i>${escapeHtml(item.etiqueta)}</span><strong>${item.evaluaciones ? porcentajeExactoPanel(item.porcentajeCumplido) : "Sin datos"}</strong></div>
                   <div class="teacher-criterion-bar"><span style="width:${item.porcentajeCumplido}%"></span></div>
-                  <small>${item.cumplido} cumplidos Â· ${item.faltante} a fortalecer Â· ${item.evaluaciones} evaluaciones</small>
+                  <small>${item.cumplido} cumplidos · ${item.faltante} a fortalecer · ${item.evaluaciones} evaluaciones</small>
               </article>`).join("")}</div>
           </section>`;
       }
@@ -7899,33 +7887,33 @@
           }).join("");
           return `<div class="teacher-group-charts">
               <section class="teacher-chart-panel">
-                  <header><div><strong>DistribuciÃ³n</strong><small>${escapeHtml(datos.actividad)}</small></div></header>
+                  <header><div><strong>Distribución</strong><small>${escapeHtml(datos.actividad)}</small></div></header>
                   <div class="teacher-distribution-chart">${barras}</div>
               </section>
               <section class="teacher-chart-panel">
                   <header>
-                      <div><strong>EvoluciÃ³n por actividad</strong><small>Porcentaje de cada nivel</small></div>
+                      <div><strong>Evolución por actividad</strong><small>Porcentaje de cada nivel</small></div>
                       <div class="teacher-chart-legend">${SERIES_GRAFICO_SOCRATICO.map(serie =>
                           `<span class="is-${serie.nivel}">${serie.etiqueta}</span>`
                       ).join("")}</div>
                   </header>
                   ${evolucion.length ? `<div class="teacher-evolution-chart">
-                      <svg viewBox="0 0 ${ancho} ${alto}" role="img" aria-label="EvoluciÃ³n porcentual de respuestas por actividad">
+                      <svg viewBox="0 0 ${ancho} ${alto}" role="img" aria-label="Evolución porcentual de respuestas por actividad">
                           <g class="chart-grid">${ejes}</g>
                           <g class="chart-series">${lineas}</g>
                           <g class="chart-labels">${etiquetas}</g>
                       </svg>
-                      <small>Eje horizontal: nÃºmero de actividad. PosÃ¡ el cursor sobre un punto para consultar su valor exacto.</small>
-                  </div>` : `<p class="teacher-group-report-empty">AÃºn no hay actividades respondidas para mostrar evoluciÃ³n.</p>`}
+                      <small>Eje horizontal: número de actividad. Posá el cursor sobre un punto para consultar su valor exacto.</small>
+                  </div>` : `<p class="teacher-group-report-empty">Aún no hay actividades respondidas para mostrar evolución.</p>`}
               </section>
           </div>`;
       }
 
       const INTERVALOS_NOTAS_PROFESOR = [
-          { etiqueta: "0Ã¢â‚¬â€œ3,9", minimo: 0, maximo: 4, color: "#ef4444" },
-          { etiqueta: "4Ã¢â‚¬â€œ5,9", minimo: 4, maximo: 6, color: "#f59e0b" },
-          { etiqueta: "6Ã¢â‚¬â€œ7,9", minimo: 6, maximo: 8, color: "#0ea5e9" },
-          { etiqueta: "8Ã¢â‚¬â€œ10", minimo: 8, maximo: 10.01, color: "#22c55e" }
+          { etiqueta: "0â€“3,9", minimo: 0, maximo: 4, color: "#ef4444" },
+          { etiqueta: "4â€“5,9", minimo: 4, maximo: 6, color: "#f59e0b" },
+          { etiqueta: "6â€“7,9", minimo: 6, maximo: 8, color: "#0ea5e9" },
+          { etiqueta: "8â€“10", minimo: 8, maximo: 10.01, color: "#22c55e" }
       ];
 
       function obtenerDatosGraficosNotasProfesor(estudiantes) {
@@ -7939,10 +7927,10 @@
                       estudiante.estudiante?.curso,
                       estudiante.estudiante?.division,
                       estudiante.estudiante?.turno
-                  ].filter(Boolean).join(" Â· "),
-                  academica: academicaTexto === "Ã¢â‚¬â€" ? null : Number(academicaTexto),
-                  calculada: calculadaTexto === "Ã¢â‚¬â€" ? null : Number(calculadaTexto),
-                  final: finalTexto === "Ã¢â‚¬â€" ? null : Number(finalTexto),
+                  ].filter(Boolean).join(" · "),
+                  academica: academicaTexto === "â€”" ? null : Number(academicaTexto),
+                  calculada: calculadaTexto === "â€”" ? null : Number(calculadaTexto),
+                  final: finalTexto === "â€”" ? null : Number(finalTexto),
                   progreso: calcularProgresoEstudiante(estudiante),
                   desafiosConNota: obtenerNotasDesafiosFinalizadosEstudiante(estudiante).length,
                   desafiosFinalizados: seccionesData.filter(sec => estudiante?.finalizadas?.[sec.id] === true).length
@@ -8016,11 +8004,11 @@
               const finales = datos.distribucionFinal[indice];
               return `<div class="teacher-grade-distribution-group">
                   <div class="teacher-grade-distribution-bars">
-                      <span class="is-academic" style="height:${intervalo.cantidad * 100 / maximoDistribucion}%" title="Promedio acadÃ©mico ${intervalo.etiqueta}: ${intervalo.cantidad}"></span>
+                      <span class="is-academic" style="height:${intervalo.cantidad * 100 / maximoDistribucion}%" title="Promedio académico ${intervalo.etiqueta}: ${intervalo.cantidad}"></span>
                       <span class="is-final" style="height:${finales.cantidad * 100 / maximoDistribucion}%" title="Nota final ${intervalo.etiqueta}: ${finales.cantidad}"></span>
                   </div>
                   <strong>${intervalo.etiqueta}</strong>
-                  <small>${intervalo.cantidad} actual Â· ${finales.cantidad} final</small>
+                  <small>${intervalo.cantidad} actual · ${finales.cantidad} final</small>
               </div>`;
           }).join("");
           const anchoGrafico = 1000;
@@ -8049,7 +8037,7 @@
           }).join("");
           const circulosEvolucion = puntosEvolucion.map(punto =>
               `<circle class="teacher-grade-evolution-point" cx="${punto.x.toFixed(1)}" cy="${punto.y.toFixed(1)}" r="6">
-                  <title>${escapeHtml(`${punto.indice}. ${punto.titulo}: promedio ${formatearNotaGrafico(punto.promedio)}, ${punto.estudiantes} estudiantes, mÃ­nimo ${formatearNotaGrafico(punto.minima)}, mÃ¡ximo ${formatearNotaGrafico(punto.maxima)}`)}</title>
+                  <title>${escapeHtml(`${punto.indice}. ${punto.titulo}: promedio ${formatearNotaGrafico(punto.promedio)}, ${punto.estudiantes} estudiantes, mínimo ${formatearNotaGrafico(punto.minima)}, máximo ${formatearNotaGrafico(punto.maxima)}`)}</title>
               </circle>`
           ).join("");
           const etiquetasEvolucion = puntosEvolucion.map(punto =>
@@ -8075,28 +8063,28 @@
           return `<section class="teacher-grade-analysis">
               <header>
                   <div><i class="fa-solid fa-chart-column"></i><strong>Notas obtenidas hasta el momento y nota final</strong></div>
-                  <small>Solo considera notas de desafÃ­os vÃ¡lidos finalizados. La nota final aparece Ãºnicamente cuando fue confirmada por el docente.</small>
+                  <small>Solo considera notas de desafíos válidos finalizados. La nota final aparece únicamente cuando fue confirmada por el docente.</small>
               </header>
               <div class="teacher-grade-summary">
-                  <div><small>Promedio acadÃ©mico grupal</small><strong>${formatearNotaGrafico(datos.promedioAcademico)}</strong><span>${datos.conPromedio} estudiantes</span></div>
+                  <div><small>Promedio académico grupal</small><strong>${formatearNotaGrafico(datos.promedioAcademico)}</strong><span>${datos.conPromedio} estudiantes</span></div>
                   <div><small>Promedio calculado grupal</small><strong>${formatearNotaGrafico(datos.promedioCalculado)}</strong><span>Incluye penalizaciones configuradas</span></div>
                   <div><small>Promedio final confirmado</small><strong>${formatearNotaGrafico(datos.promedioFinal)}</strong><span>${datos.conFinal} de ${datos.filas.length} confirmadas</span></div>
               </div>
               <div class="teacher-grade-charts">
                   <article class="teacher-chart-panel">
-                      <header><div><strong>DistribuciÃ³n por intervalos</strong><small>Promedio actual frente a nota final confirmada</small></div>
+                      <header><div><strong>Distribución por intervalos</strong><small>Promedio actual frente a nota final confirmada</small></div>
                           <div class="teacher-grade-legend"><span class="is-academic">Promedio actual</span><span class="is-final">Nota final</span></div>
                       </header>
                       <div class="teacher-grade-distribution">${distribucion}</div>
                   </article>
                   <article class="teacher-chart-panel">
-                      <header><div><strong>ComparaciÃ³n por estudiante</strong><small>Escala de 0 a 10</small></div>
-                          <div class="teacher-grade-legend"><span class="is-academic">AcadÃ©mica</span><span class="is-calculated">Calculada</span><span class="is-final">Final</span></div>
+                      <header><div><strong>Comparación por estudiante</strong><small>Escala de 0 a 10</small></div>
+                          <div class="teacher-grade-legend"><span class="is-academic">Académica</span><span class="is-calculated">Calculada</span><span class="is-final">Final</span></div>
                       </header>
                       <div class="teacher-grade-student-list">${datos.filas.map(fila => `<div class="teacher-grade-student">
-                          <div><strong>${escapeHtml(fila.nombre)}</strong><small>${fila.desafiosConNota} desafÃ­o${fila.desafiosConNota === 1 ? "" : "s"} con nota</small></div>
+                          <div><strong>${escapeHtml(fila.nombre)}</strong><small>${fila.desafiosConNota} desafío${fila.desafiosConNota === 1 ? "" : "s"} con nota</small></div>
                           <div class="teacher-grade-track-set">
-                              <span class="is-academic" style="width:${Number(fila.academica || 0) * 10}%" title="Promedio acadÃ©mico: ${formatearNotaGrafico(fila.academica)}"></span>
+                              <span class="is-academic" style="width:${Number(fila.academica || 0) * 10}%" title="Promedio académico: ${formatearNotaGrafico(fila.academica)}"></span>
                               <span class="is-calculated" style="width:${Number(fila.calculada || 0) * 10}%" title="Nota calculada: ${formatearNotaGrafico(fila.calculada)}"></span>
                               <span class="is-final" style="width:${Number(fila.final || 0) * 10}%" title="Nota final: ${formatearNotaGrafico(fila.final)}"></span>
                           </div>
@@ -8106,35 +8094,35 @@
               </div>
               <div class="teacher-grade-charts teacher-grade-charts-secondary">
                   <article class="teacher-chart-panel">
-                      <header><div><strong>EvoluciÃ³n del promedio por actividad</strong><small>Promedio exacto sobre desafÃ­os finalizados con nota</small></div></header>
+                      <header><div><strong>Evolución del promedio por actividad</strong><small>Promedio exacto sobre desafíos finalizados con nota</small></div></header>
                       ${datos.evolucion.length ? `<div class="teacher-grade-svg-chart">
-                          <svg viewBox="0 0 ${anchoGrafico} ${altoGrafico}" role="img" aria-label="EvoluciÃ³n del promedio de notas por actividad">
+                          <svg viewBox="0 0 ${anchoGrafico} ${altoGrafico}" role="img" aria-label="Evolución del promedio de notas por actividad">
                               <g class="teacher-grade-chart-grid">${ejesNotas}</g>
                               <polyline class="teacher-grade-evolution-line" points="${lineaEvolucion}"></polyline>
                               <g>${circulosEvolucion}</g>
                               <g class="teacher-grade-chart-labels">${etiquetasEvolucion}</g>
                           </svg>
-                          <small>Eje horizontal: actividad. PosÃ¡ el cursor sobre un punto para ver promedio, muestra, mÃ­nimo y mÃ¡ximo.</small>
-                      </div>` : `<p class="teacher-group-report-empty">No hay notas por actividad para mostrar la evoluciÃ³n.</p>`}
+                          <small>Eje horizontal: actividad. Posá el cursor sobre un punto para ver promedio, muestra, mínimo y máximo.</small>
+                      </div>` : `<p class="teacher-group-report-empty">No hay notas por actividad para mostrar la evolución.</p>`}
                   </article>
                   <article class="teacher-chart-panel">
                       <header><div><strong>Avance y rendimiento</strong><small>Cada punto representa un estudiante</small></div>
                           <div class="teacher-grade-legend"><span class="is-academic">Final pendiente</span><span class="is-final">Final confirmada</span></div>
                       </header>
                       <div class="teacher-grade-svg-chart">
-                          <svg viewBox="0 0 ${anchoGrafico} ${altoGrafico}" role="img" aria-label="RelaciÃ³n entre avance y promedio acadÃ©mico">
+                          <svg viewBox="0 0 ${anchoGrafico} ${altoGrafico}" role="img" aria-label="Relación entre avance y promedio académico">
                               <g class="teacher-grade-chart-grid">${ejesNotas}${ejesAvance}</g>
                               <line class="teacher-grade-reference-line" x1="${margenX}" y1="${margenY + altoUtil * .4}" x2="${anchoGrafico - margenX}" y2="${margenY + altoUtil * .4}"></line>
                               <g>${puntosRendimiento}</g>
                           </svg>
-                          <small>Eje X: porcentaje de desafÃ­os finalizados. Eje Y: promedio acadÃ©mico. La lÃ­nea seÃ±ala nota 6.</small>
+                          <small>Eje X: porcentaje de desafíos finalizados. Eje Y: promedio académico. La línea señala nota 6.</small>
                       </div>
                   </article>
               </div>
               <details class="teacher-grade-followup" open>
                   <summary><i class="fa-solid fa-table-list"></i> Tabla de seguimiento de calificaciones</summary>
                   <div class="teacher-group-report-table"><table>
-                      <thead><tr><th>Estudiante</th><th>Grupo</th><th>Avance</th><th>DesafÃ­os con nota</th><th>Promedio</th><th>Calculada</th><th>Final</th><th>Diferencia final</th><th>Estado</th></tr></thead>
+                      <thead><tr><th>Estudiante</th><th>Grupo</th><th>Avance</th><th>Desafíos con nota</th><th>Promedio</th><th>Calculada</th><th>Final</th><th>Diferencia final</th><th>Estado</th></tr></thead>
                       <tbody>${filasSeguimiento.map(fila => {
                           const diferencia = Number.isFinite(fila.final) && Number.isFinite(fila.calculada)
                               ? Number((fila.final - fila.calculada).toFixed(1))
@@ -8147,7 +8135,7 @@
                               <td>${formatearNotaGrafico(fila.academica)}</td>
                               <td>${formatearNotaGrafico(fila.calculada)}</td>
                               <td>${formatearNotaGrafico(fila.final)}</td>
-                              <td>${diferencia === null ? "Ã¢â‚¬â€" : `${diferencia > 0 ? "+" : ""}${formatearNotaGrafico(diferencia)}`}</td>
+                              <td>${diferencia === null ? "â€”" : `${diferencia > 0 ? "+" : ""}${formatearNotaGrafico(diferencia)}`}</td>
                               <td><span class="teacher-grade-status ${fila.final === null ? "is-pending" : "is-confirmed"}">${fila.final === null ? "Final pendiente" : "Confirmada"}</span></td>
                           </tr>`;
                       }).join("")}</tbody>
@@ -8181,17 +8169,17 @@
           const sec = seccionesData[item.indice - 1] || {};
           const criterioPrincipal = obtenerCriteriosFaltantesActividad(estudiantes, sec.id)[0]?.[0] || "";
           const sugerenciasPorCriterio = {
-              "desarrollo suficiente": "Modelar respuestas breves con la estructura decisiÃ³n, explicaciÃ³n, evidencia y consecuencia.",
-              "justificaciÃ³n causal": "Repasar relaciones de causa y efecto usando conectores como Ã¢â‚¬Å“porqueÃ¢â‚¬Â, Ã¢â‚¬Å“permiteÃ¢â‚¬Â, Ã¢â‚¬Å“evitaÃ¢â‚¬Â y Ã¢â‚¬Å“por lo tantoÃ¢â‚¬Â.",
-              "evidencia del cÃ³digo o de una prueba": "Practicar cÃ³mo citar una variable, condiciÃ³n, funciÃ³n o caso de prueba concreto para sostener una afirmaciÃ³n.",
-              "consecuencia, lÃ­mite o mejora": "Trabajar casos lÃ­mite y pedir que anticipen quÃ© cambia, quÃ© puede fallar y cÃ³mo comprobar una mejora."
+              "desarrollo suficiente": "Modelar respuestas breves con la estructura decisión, explicación, evidencia y consecuencia.",
+              "justificación causal": "Repasar relaciones de causa y efecto usando conectores como â€œporqueâ€, â€œpermiteâ€, â€œevitaâ€ y â€œpor lo tantoâ€.",
+              "evidencia del código o de una prueba": "Practicar cómo citar una variable, condición, función o caso de prueba concreto para sostener una afirmación.",
+              "consecuencia, límite o mejora": "Trabajar casos límite y pedir que anticipen qué cambia, qué puede fallar y cómo comprobar una mejora."
           };
           const sugerencias = [];
           if (criterioPrincipal && sugerenciasPorCriterio[criterioPrincipal]) {
               sugerencias.push(sugerenciasPorCriterio[criterioPrincipal]);
           }
           if (sec.theory) sugerencias.push(`Reforzar el contenido: ${String(sec.theory).slice(0, 180)}`);
-          if (sec.exerciseTitle) sugerencias.push(`Retomar Ã¢â‚¬Å“${sec.exerciseTitle}Ã¢â‚¬Â con una entrada alternativa y una explicaciÃ³n paso a paso.`);
+          if (sec.exerciseTitle) sugerencias.push(`Retomar â€œ${sec.exerciseTitle}â€ con una entrada alternativa y una explicación paso a paso.`);
           return sugerencias.slice(0, 3);
       }
 
@@ -8238,9 +8226,9 @@
               <div>${alertas.map(alerta => `<article class="teacher-risk-card is-${alerta.severidad}">
                   <div class="teacher-risk-card-heading">
                       <strong>${alerta.indice}. ${escapeHtml(alerta.titulo)}</strong>
-                      <span>Riesgo ${porcentajeExactoPanel(alerta.riesgo)} Â· +${porcentajeExactoPanel(alerta.aumentoRiesgo)}</span>
+                      <span>Riesgo ${porcentajeExactoPanel(alerta.riesgo)} · +${porcentajeExactoPanel(alerta.aumentoRiesgo)}</span>
                   </div>
-                  <p>Las respuestas parciales o incorrectas aumentaron desde ${porcentajeExactoPanel(alerta.riesgoAnterior)} en Ã¢â‚¬Å“${escapeHtml(alerta.actividadAnterior)}Ã¢â‚¬Â.</p>
+                  <p>Las respuestas parciales o incorrectas aumentaron desde ${porcentajeExactoPanel(alerta.riesgoAnterior)} en â€œ${escapeHtml(alerta.actividadAnterior)}â€.</p>
                   <ul>${alerta.sugerencias.map(sugerencia => `<li>${escapeHtml(sugerencia)}</li>`).join("")}</ul>
               </article>`).join("")}</div>
           </section>`;
@@ -8252,7 +8240,7 @@
           return `<details class="teacher-evolution-data" open>
               <summary><i class="fa-solid fa-table-list"></i> Porcentajes exactos por actividad</summary>
               <div class="teacher-group-report-table"><table>
-                  <thead><tr><th>N.Ã‚Âº</th><th>Actividad</th><th>DesafÃ­os</th><th>Respuestas</th><th>Completas</th><th>Incompletas</th><th>Parciales</th><th>Incorrectas</th><th>Riesgo</th><th>Cambio</th></tr></thead>
+                  <thead><tr><th>N.Âº</th><th>Actividad</th><th>Desafíos</th><th>Respuestas</th><th>Completas</th><th>Incompletas</th><th>Parciales</th><th>Incorrectas</th><th>Riesgo</th><th>Cambio</th></tr></thead>
                   <tbody>${evolucion.map((item, indice) => `<tr class="${indicesAlerta.has(item.indice) ? "is-risk-row" : ""}">
                       <td>${item.indice}</td>
                       <td><strong>${escapeHtml(item.titulo)}</strong>${indicesAlerta.has(item.indice) ? ' <span class="teacher-risk-badge">Refuerzo</span>' : ""}</td>
@@ -8263,7 +8251,7 @@
                       <td class="is-parcial">${porcentajeExactoPanel(item.porcentajes.parcial)}</td>
                       <td class="is-incorrecta">${porcentajeExactoPanel(item.porcentajes.incorrecta)}</td>
                       <td>${porcentajeExactoPanel(item.riesgo)}</td>
-                      <td>${indice === 0 ? "Ã¢â‚¬â€" : `${item.aumentoRiesgo > 0 ? "+" : ""}${porcentajeExactoPanel(item.aumentoRiesgo)}`}</td>
+                      <td>${indice === 0 ? "â€”" : `${item.aumentoRiesgo > 0 ? "+" : ""}${porcentajeExactoPanel(item.aumentoRiesgo)}`}</td>
                   </tr>`).join("")}</tbody>
               </table></div>
           </details>`;
@@ -8272,17 +8260,17 @@
       function renderComparacionGruposSocratico(datos) {
           const agrupacion = document.getElementById("agrupacionInformeSocratico")?.value || "grupo";
           const etiquetaAgrupacion = {
-              grupo: "curso, divisiÃ³n y turno",
+              grupo: "curso, división y turno",
               curso: "curso",
-              division: "divisiÃ³n",
+              division: "división",
               turno: "turno"
           }[agrupacion] || "grupo";
           const claveGrupo = estudiante => {
               const e = estudiante.estudiante || {};
               if (agrupacion === "curso") return e.curso || "Sin curso";
-              if (agrupacion === "division") return e.division || "Sin divisiÃ³n";
+              if (agrupacion === "division") return e.division || "Sin división";
               if (agrupacion === "turno") return e.turno || "Sin turno";
-              return [e.curso || "Sin curso", e.division || "Sin divisiÃ³n", e.turno || "Sin turno"].join(" Â· ");
+              return [e.curso || "Sin curso", e.division || "Sin división", e.turno || "Sin turno"].join(" · ");
           };
           const grupos = new Map();
           datos.estudiantesAlcance.forEach(estudiante => {
@@ -8315,10 +8303,10 @@
           }).filter(grupo => grupo.total > 0).sort((a, b) => a.nombre.localeCompare(b.nombre));
           if (!filas.length) return "";
           return `<details class="teacher-group-comparison" open>
-              <summary><i class="fa-solid fa-people-group"></i> ComparaciÃ³n por ${escapeHtml(etiquetaAgrupacion)}</summary>
+              <summary><i class="fa-solid fa-people-group"></i> Comparación por ${escapeHtml(etiquetaAgrupacion)}</summary>
               <div class="teacher-comparison-list">${filas.map(grupo => `<article>
-                  <div class="teacher-comparison-heading"><strong>${escapeHtml(grupo.nombre)}</strong><span>${grupo.estudiantes} estudiante${grupo.estudiantes === 1 ? "" : "s"} Â· ${grupo.desafiosEvaluados} desafÃ­o${grupo.desafiosEvaluados === 1 ? "" : "s"} Â· ${grupo.total} respuestas</span></div>
-                  <div class="teacher-comparison-bar" aria-label="${escapeHtml(`DistribuciÃ³n de ${grupo.nombre}`)}">
+                  <div class="teacher-comparison-heading"><strong>${escapeHtml(grupo.nombre)}</strong><span>${grupo.estudiantes} estudiante${grupo.estudiantes === 1 ? "" : "s"} · ${grupo.desafiosEvaluados} desafío${grupo.desafiosEvaluados === 1 ? "" : "s"} · ${grupo.total} respuestas</span></div>
+                  <div class="teacher-comparison-bar" aria-label="${escapeHtml(`Distribución de ${grupo.nombre}`)}">
                       ${SERIES_GRAFICO_SOCRATICO.map(serie => `<span class="is-${serie.nivel}" style="width:${grupo.porcentajes[serie.nivel]}%" title="${serie.etiqueta}: ${porcentajeExactoPanel(grupo.porcentajes[serie.nivel])}"></span>`).join("")}
                   </div>
                   <div class="teacher-comparison-values">${SERIES_GRAFICO_SOCRATICO.map(serie =>
@@ -8393,7 +8381,7 @@
           if (!origenId || !objetivoId || !contenido || !indicaciones) {
               if (estado) {
                   estado.className = "is-error";
-                  estado.textContent = "SeleccionÃ¡ las actividades y completÃ¡ contenido e indicaciones.";
+                  estado.textContent = "Seleccioná las actividades y completá contenido e indicaciones.";
               }
               return;
           }
@@ -8504,7 +8492,7 @@
               const completados = grupo.estudiantes.filter(item => item.estado === "completado").length;
               return `<article>
                   <header>
-                      <div><strong>${escapeHtml(grupo.plan.contenido)}</strong><small>${escapeHtml(grupo.plan.actividadOrigenTitulo)} Ã¢â€ â€™ ${escapeHtml(grupo.plan.actividadObjetivoTitulo)}</small></div>
+                      <div><strong>${escapeHtml(grupo.plan.contenido)}</strong><small>${escapeHtml(grupo.plan.actividadOrigenTitulo)} â†’ ${escapeHtml(grupo.plan.actividadObjetivoTitulo)}</small></div>
                       <span>${completados}/${grupo.estudiantes.length} completados</span>
                   </header>
                   <p>${escapeHtml(grupo.plan.indicaciones)}</p>
@@ -8512,13 +8500,13 @@
                       <span class="is-improved"><strong>${mejoraron}</strong> mejoraron</span>
                       <span><strong>${estables}</strong> estables</span>
                       <span class="is-worse"><strong>${retrocedieron}</strong> retrocedieron</span>
-                      <span><strong>${grupo.estudiantes.length - medidos.length}</strong> sin mediciÃ³n</span>
+                      <span><strong>${grupo.estudiantes.length - medidos.length}</strong> sin medición</span>
                   </div>
-                  <div class="teacher-reinforcement-students">${grupo.estudiantes.map(item => `<span title="${item.riesgoActual === null ? "AÃºn no respondiÃ³ la actividad de comprobaciÃ³n" : `Base ${porcentajeExactoPanel(item.riesgoBase)} Â· Actual ${porcentajeExactoPanel(item.riesgoActual)}`}">
-                      ${escapeHtml(item.nombre)} Â· ${item.riesgoActual === null ? "pendiente" : `${item.variacion > 0 ? "+" : ""}${porcentajeExactoPanel(item.variacion)}`}
+                  <div class="teacher-reinforcement-students">${grupo.estudiantes.map(item => `<span title="${item.riesgoActual === null ? "Aún no respondió la actividad de comprobación" : `Base ${porcentajeExactoPanel(item.riesgoBase)} · Actual ${porcentajeExactoPanel(item.riesgoActual)}`}">
+                      ${escapeHtml(item.nombre)} · ${item.riesgoActual === null ? "pendiente" : `${item.variacion > 0 ? "+" : ""}${porcentajeExactoPanel(item.variacion)}`}
                   </span>`).join("")}</div>
                   <footer>
-                      <small>Vence: ${escapeHtml(grupo.plan.fechaLimite || "sin fecha")} Â· ${escapeHtml(grupo.plan.alcance || "")}</small>
+                      <small>Vence: ${escapeHtml(grupo.plan.fechaLimite || "sin fecha")} · ${escapeHtml(grupo.plan.alcance || "")}</small>
                       <button class="btn btn-secondary" type="button" onclick="actualizarEstadoPlanRefuerzoSocratico('${escapeHtml(grupo.plan.id)}','completado',this)"><i class="fa-solid fa-check"></i> Marcar completado</button>
                   </footer>
               </article>`;
@@ -8583,11 +8571,11 @@
               return;
           }
           const encabezados = [
-              "Estudiante", "Email", "Curso", "DivisiÃ³n", "Turno",
-              "DesafÃ­os evaluados",
+              "Estudiante", "Email", "Curso", "División", "Turno",
+              "Desafíos evaluados",
               "Respuestas completas", "Correctas incompletas",
               "Respuestas parciales", "Respuestas incorrectas", "Total respuestas",
-              "Promedio acadÃ©mico", "Nota calculada", "Nota final confirmada"
+              "Promedio académico", "Nota calculada", "Nota final confirmada"
           ];
           const filas = datos.filas.map(fila => [
               fila.nombre,
@@ -8616,12 +8604,12 @@
               "", "", ""
           ]);
           const metadatos = [
-              ["Informe grupal de respuestas socrÃ¡ticas"],
+              ["Informe grupal de respuestas socráticas"],
               ["Actividad", datos.actividad],
               ["Alcance", datos.alcance],
               ["Estudiantes incluidos", datos.estudiantesAlcance.length],
-              ["Criterio de inclusiÃ³n", "Solo desafÃ­os finalizados con respuestas socrÃ¡ticas evaluadas"],
-              ["Registros histÃ³ricos excluidos", datos.registrosExcluidos],
+              ["Criterio de inclusión", "Solo desafíos finalizados con respuestas socráticas evaluadas"],
+              ["Registros históricos excluidos", datos.registrosExcluidos],
               ["Generado", new Date().toLocaleString("es-AR")],
               []
           ];
@@ -8687,7 +8675,7 @@
           doc.setFont("helvetica", "bold");
           doc.setFontSize(11);
           doc.setTextColor(15, 23, 42);
-          doc.text("DistribuciÃ³n de respuestas", x, y);
+          doc.text("Distribución de respuestas", x, y);
           const baseY = y + alto;
           const graficoAlto = alto - 15;
           const anchoBarra = Math.min(18, (ancho - 24) / 6);
@@ -8717,7 +8705,7 @@
           doc.setFont("helvetica", "bold");
           doc.setFontSize(11);
           doc.setTextColor(15, 23, 42);
-          doc.text("EvoluciÃ³n porcentual por actividad", x, y);
+          doc.text("Evolución porcentual por actividad", x, y);
           dibujarLeyendaGraficoSocraticoPDF(doc, x + ancho - 130, y);
           const graficoX = x + 10;
           const graficoY = y + 8;
@@ -8759,7 +8747,7 @@
           doc.setLineWidth(0.2);
           doc.setFontSize(6.2);
           doc.setTextColor(71, 85, 105);
-          doc.text("Eje X: nÃºmero de actividad segÃºn el orden del curso.", x, y + alto + 2);
+          doc.text("Eje X: número de actividad según el orden del curso.", x, y + alto + 2);
       }
 
       function dibujarGraficosNotasInformePDF(doc, estudiantes, alcance) {
@@ -8774,12 +8762,12 @@
           doc.setFontSize(8);
           doc.text(`Alcance: ${alcance}`, 12, 19);
           doc.text(
-              `Promedio acadÃ©mico grupal: ${formatearNotaGrafico(datos.promedioAcademico)} Â· Promedio calculado: ${formatearNotaGrafico(datos.promedioCalculado)} Â· Promedio final confirmado: ${formatearNotaGrafico(datos.promedioFinal)}`,
+              `Promedio académico grupal: ${formatearNotaGrafico(datos.promedioAcademico)} · Promedio calculado: ${formatearNotaGrafico(datos.promedioCalculado)} · Promedio final confirmado: ${formatearNotaGrafico(datos.promedioFinal)}`,
               12,
               25
           );
           doc.text(
-              `${datos.conPromedio} estudiantes con promedio Â· ${datos.conFinal} con nota final confirmada. Solo se consideran desafÃ­os vÃ¡lidos finalizados.`,
+              `${datos.conPromedio} estudiantes con promedio · ${datos.conFinal} con nota final confirmada. Solo se consideran desafíos válidos finalizados.`,
               12,
               30
           );
@@ -8814,12 +8802,12 @@
           });
           doc.setFont("helvetica", "bold");
           doc.setFontSize(10);
-          doc.text("DistribuciÃ³n por intervalos", 18, 39);
+          doc.text("Distribución por intervalos", 18, 39);
           doc.setFont("helvetica", "normal");
           doc.setFontSize(7);
           doc.setFillColor(14, 165, 233);
           doc.rect(18, 44, 4, 4, "F");
-          doc.text("Promedio acadÃ©mico actual", 24, 47);
+          doc.text("Promedio académico actual", 24, 47);
           doc.setFillColor(34, 197, 94);
           doc.rect(68, 44, 4, 4, "F");
           doc.text("Nota final confirmada", 74, 47);
@@ -8852,7 +8840,7 @@
           if (datos.filas.length > 20) {
               doc.setFontSize(7);
               doc.setTextColor(100, 116, 139);
-              doc.text(`Se muestran 20 de ${datos.filas.length} estudiantes; el detalle completo figura en las pÃ¡ginas siguientes.`, tablaX, 198);
+              doc.text(`Se muestran 20 de ${datos.filas.length} estudiantes; el detalle completo figura en las páginas siguientes.`, tablaX, 198);
           }
 
           if (datos.evolucion.length) {
@@ -8860,10 +8848,10 @@
               doc.setTextColor(15, 23, 42);
               doc.setFont("helvetica", "bold");
               doc.setFontSize(13);
-              doc.text("EvoluciÃ³n de notas por actividad", 12, 13);
+              doc.text("Evolución de notas por actividad", 12, 13);
               doc.setFont("helvetica", "normal");
               doc.setFontSize(7.5);
-              doc.text("El promedio se calcula solo con estudiantes que finalizaron la actividad y tienen una nota vÃ¡lida.", 12, 19);
+              doc.text("El promedio se calcula solo con estudiantes que finalizaron la actividad y tienen una nota válida.", 12, 19);
               const graficoX = 18;
               const graficoY = 31;
               const graficoAncho = 155;
@@ -8904,8 +8892,8 @@
               doc.setFontSize(7);
               doc.text("Act.", tablaEvolucionX + 3, 33);
               doc.text("Prom.", tablaEvolucionX + 17, 33);
-              doc.text("MÃ­n.", tablaEvolucionX + 35, 33);
-              doc.text("MÃ¡x.", tablaEvolucionX + 50, 33);
+              doc.text("Mín.", tablaEvolucionX + 35, 33);
+              doc.text("Máx.", tablaEvolucionX + 50, 33);
               doc.text("Estudiantes", tablaEvolucionX + 67, 33);
               let yEvolucion = 42;
               datos.evolucion.slice(0, 20).forEach((item, indice) => {
@@ -8958,7 +8946,7 @@
                   doc.addPage("a4", "landscape");
                   doc.setFont("helvetica", "bold");
                   doc.setFontSize(12);
-                  doc.text("Seguimiento exacto de calificaciones (continuaciÃ³n)", 12, 10);
+                  doc.text("Seguimiento exacto de calificaciones (continuación)", 12, 10);
                   dibujarEncabezadoSeguimiento();
                   ySeguimiento = 34;
               }
@@ -8987,7 +8975,7 @@
 
       function dibujarTablaEvolucionInformePDF(doc, evolucion) {
           const columnas = [
-              { titulo: "N.Ã‚Âº", x: 10, ancho: 10 },
+              { titulo: "N.Âº", x: 10, ancho: 10 },
               { titulo: "Actividad", x: 21, ancho: 70 },
               { titulo: "Des.", x: 94, ancho: 13 },
               { titulo: "Resp.", x: 109, ancho: 14 },
@@ -9013,7 +9001,7 @@
           doc.addPage("a4", "landscape");
           doc.setFont("helvetica", "bold");
           doc.setFontSize(12);
-          doc.text("Tabla de evoluciÃ³n por actividad", 12, 10);
+          doc.text("Tabla de evolución por actividad", 12, 10);
           dibujarEncabezado();
           let y = 34;
           evolucion.forEach((item, indice) => {
@@ -9023,7 +9011,7 @@
                   doc.addPage("a4", "landscape");
                   doc.setFont("helvetica", "bold");
                   doc.setFontSize(12);
-                  doc.text("Tabla de evoluciÃ³n por actividad (continuaciÃ³n)", 12, 10);
+                  doc.text("Tabla de evolución por actividad (continuación)", 12, 10);
                   dibujarEncabezado();
                   y = 34;
               }
@@ -9054,7 +9042,7 @@
 
       function exportarInformeGrupalSocraticoPDF() {
           if (!window.jspdf?.jsPDF) {
-              alert("No se pudo cargar el generador de PDF. VerificÃ¡ la conexiÃ³n e intentÃ¡ nuevamente.");
+              alert("No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.");
               return;
           }
           const datos = obtenerDatosInformeGrupalSocratico();
@@ -9073,7 +9061,7 @@
           const columnas = [
               { titulo: "Estudiante", x: 12, ancho: 52 },
               { titulo: "Grupo", x: 67, ancho: 47 },
-              { titulo: "DesafÃ­os", x: 117, ancho: 18 },
+              { titulo: "Desafíos", x: 117, ancho: 18 },
               { titulo: "Completas", x: 139, ancho: 22 },
               { titulo: "Incompletas", x: 165, ancho: 24 },
               { titulo: "Parciales", x: 193, ancho: 21 },
@@ -9091,14 +9079,14 @@
           };
           doc.setFont("helvetica", "bold");
           doc.setFontSize(16);
-          doc.text("Informe grupal de respuestas socrÃ¡ticas", 12, 14);
+          doc.text("Informe grupal de respuestas socráticas", 12, 14);
           doc.setFont("helvetica", "normal");
           doc.setFontSize(9);
           doc.text(`Actividad: ${datos.actividad}`, 12, 21);
           doc.text(`Alcance: ${datos.alcance}`, 12, 27);
-          doc.text(`Generado: ${new Date().toLocaleString("es-AR")} Â· Estudiantes incluidos: ${datos.estudiantesAlcance.length} Â· Con respuestas: ${datos.filas.length}`, 12, 33);
+          doc.text(`Generado: ${new Date().toLocaleString("es-AR")} · Estudiantes incluidos: ${datos.estudiantesAlcance.length} · Con respuestas: ${datos.filas.length}`, 12, 33);
           doc.text(
-              `Base verificada: ${datos.totalDesafiosEvaluados} desafÃ­os finalizados Â· ${datos.totalRespuestas} respuestas Â· ${datos.registrosExcluidos} registros histÃ³ricos excluidos`,
+              `Base verificada: ${datos.totalDesafiosEvaluados} desafíos finalizados · ${datos.totalRespuestas} respuestas · ${datos.registrosExcluidos} registros históricos excluidos`,
               12,
               38
           );
@@ -9108,13 +9096,13 @@
           } else {
               doc.setFont("helvetica", "normal");
               doc.setFontSize(9);
-              doc.text("No hay actividades respondidas para mostrar la evoluciÃ³n.", 116, 61);
+              doc.text("No hay actividades respondidas para mostrar la evolución.", 116, 61);
           }
           doc.setFont("helvetica", "normal");
           doc.setFontSize(7);
           doc.setTextColor(100, 116, 139);
           doc.text(
-              "Los niveles cuentan respuestas socrÃ¡ticas. Solo se incluyen desafÃ­os finalizados del curso actual; tablas y grÃ¡ficos usan la misma base.",
+              "Los niveles cuentan respuestas socráticas. Solo se incluyen desafíos finalizados del curso actual; tablas y gráficos usan la misma base.",
               12,
               122
           );
@@ -9199,7 +9187,7 @@
               window.firebaseTeacherUser
           );
           if (!autorizado) {
-              alert('Para abrir el Panel Profesor debÃ©s iniciar sesiÃ³n con una cuenta docente autorizada.');
+              alert('Para abrir el Panel Profesor debés iniciar sesión con una cuenta docente autorizada.');
               await ingresarComoDocente();
               return;
           }
@@ -9313,8 +9301,8 @@
           boton.classList.toggle('is-active', activo);
           boton.setAttribute('aria-pressed', String(activo));
           boton.innerHTML = activo
-              ? '<i class="fa-solid fa-signal"></i> Mostrando en lÃ­nea'
-              : '<i class="fa-solid fa-signal"></i> Solo en lÃ­nea';
+              ? '<i class="fa-solid fa-signal"></i> Mostrando en línea'
+              : '<i class="fa-solid fa-signal"></i> Solo en línea';
       }
 
       function alternarFiltroSoloEnLineaProfesor() {
@@ -9405,23 +9393,23 @@
       }
       function calcularNotaEstudiante(d) {
           const notas = obtenerNotasDesafiosFinalizadosEstudiante(d).map(item => item.nota);
-          if (!notas.length) return 'Ã¢â‚¬â€';
+          if (!notas.length) return 'â€”';
           return (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1);
       }
       function calcularNotaProvisionalEstudiante(d) {
           const academica = Number(calcularNotaEstudiante(d));
-          if (!Number.isFinite(academica)) return 'Ã¢â‚¬â€';
+          if (!Number.isFinite(academica)) return 'â€”';
           const penalizacion = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
           return Math.max(0, academica - penalizacion).toFixed(1);
       }
       function calcularNotaDefinitivaEstudiante(d) {
           const revision = d.revisionSalidas || {};
-          if (revision.notaConfirmada !== true) return 'Ã¢â‚¬â€';
+          if (revision.notaConfirmada !== true) return 'â€”';
           const confirmada = revision.notaConfirmadaValor === null || revision.notaConfirmadaValor === ''
               ? NaN
               : Number(revision.notaConfirmadaValor);
           if (Number.isFinite(confirmada)) return Math.max(0, Math.min(10, confirmada)).toFixed(1);
-          return 'Ã¢â‚¬â€';
+          return 'â€”';
       }
       function obtenerDetallePromedioEstudiante(d) {
           const historial = d.historialResultados || {};
@@ -9473,6 +9461,14 @@
               return ['finalizados', 'corregidos', 'pendientes'].includes(guardado) ? guardado : '';
           } catch (_) {
               return '';
+          }
+      })();
+      const CLAVE_VISIBILIDAD_VALORES_GRAFICO_NOTAS = 'teacher_student_grade_chart_show_values';
+      let mostrarValoresGraficoNotasEstudiante = (() => {
+          try {
+              return sessionStorage.getItem(CLAVE_VISIBILIDAD_VALORES_GRAFICO_NOTAS) !== 'false';
+          } catch (_) {
+              return true;
           }
       })();
       const CLAVE_POSICION_GRAFICO_NOTAS_ESTUDIANTE = 'teacher_student_grade_chart_scroll_left';
@@ -9554,8 +9550,8 @@
           const estado = grafico.querySelector('.teacher-student-grade-filter-status');
           if (estado) {
               estado.textContent = filtroNormalizado
-                  ? `${visibles} desafÃ­o${visibles === 1 ? '' : 's'} ${etiquetas[filtroNormalizado]}`
-                  : `${visibles} desafÃ­os mostrados`;
+                  ? `${visibles} desafío${visibles === 1 ? '' : 's'} ${etiquetas[filtroNormalizado]}`
+                  : `${visibles} desafíos mostrados`;
           }
           const sinResultados = grafico.querySelector('.teacher-student-grade-filter-empty');
           if (sinResultados) sinResultados.hidden = visibles > 0;
@@ -9593,6 +9589,35 @@
           activador?.setAttribute?.('aria-pressed', 'true');
       }
       window.abrirDesafioDesdeGraficoNotasEstudiante = abrirDesafioDesdeGraficoNotasEstudiante;
+      function aplicarVisibilidadValoresGraficoNotasEstudiante(grafico, mostrar) {
+          if (!grafico) return;
+          mostrarValoresGraficoNotasEstudiante = mostrar !== false;
+          grafico.classList.toggle('hide-grade-values', !mostrarValoresGraficoNotasEstudiante);
+          const boton = grafico.querySelector('.teacher-student-grade-values-toggle');
+          if (boton) {
+              boton.setAttribute('aria-pressed', String(mostrarValoresGraficoNotasEstudiante));
+              boton.setAttribute('aria-label', mostrarValoresGraficoNotasEstudiante
+                  ? 'Ocultar notas numéricas del gráfico'
+                  : 'Mostrar notas numéricas del gráfico');
+              boton.innerHTML = mostrarValoresGraficoNotasEstudiante
+                  ? '<i class="fa-solid fa-eye-slash"></i> Ocultar notas'
+                  : '<i class="fa-solid fa-eye"></i> Mostrar notas';
+          }
+          try {
+              sessionStorage.setItem(
+                  CLAVE_VISIBILIDAD_VALORES_GRAFICO_NOTAS,
+                  String(mostrarValoresGraficoNotasEstudiante)
+              );
+          } catch (_) {}
+      }
+      function alternarValoresGraficoNotasEstudiante(boton = null) {
+          const grafico = boton?.closest?.('.teacher-student-grade-chart');
+          if (!grafico) return;
+          aplicarVisibilidadValoresGraficoNotasEstudiante(
+              grafico,
+              grafico.classList.contains('hide-grade-values')
+          );
+      }
       function renderGraficoNotasDesafiosEstudiante(d) {
           const historial = d?.historialResultados || {};
           const notasDocente = d?.notasDesafiosDocente || {};
@@ -9607,7 +9632,7 @@
               return {
                   id: sec.id,
                   indice: indice + 1,
-                  titulo: sec.title || `DesafÃ­o ${indice + 1}`,
+                  titulo: sec.title || `Desafío ${indice + 1}`,
                   automatica: limitarNota(resultado.notaFinal ?? resultado.notaIA),
                   docente: limitarNota(notasDocente[sec.id]?.nota),
                   finalizada: finalizadas[sec.id] === true,
@@ -9640,7 +9665,7 @@
                   : '';
               const barraAutomatica = item.automatica === null ? ''
                   : `<rect class="teacher-student-grade-bar is-automatic" x="${xAutomatica.toFixed(1)}" y="${yNota(item.automatica).toFixed(1)}" width="${anchoBarra.toFixed(1)}" height="${alturaAutomatica.toFixed(1)}" rx="2">
-                      <title>${escapeHtml(`${item.titulo}: nota automÃ¡tica ${item.automatica.toFixed(1)}/10`)}</title>
+                      <title>${escapeHtml(`${item.titulo}: nota automática ${item.automatica.toFixed(1)}/10`)}</title>
                     </rect>`;
               const barraDocente = item.docente === null ? ''
                   : `<rect class="teacher-student-grade-bar is-teacher" x="${xDocente.toFixed(1)}" y="${yNota(item.docente).toFixed(1)}" width="${anchoBarra.toFixed(1)}" height="${alturaDocente.toFixed(1)}" rx="2">
@@ -9652,7 +9677,7 @@
                   : `<text class="teacher-student-grade-value is-teacher" x="${(xDocente + anchoBarra / 2).toFixed(1)}" y="${Math.max(margen.superior - 1, yNota(item.docente) - 6).toFixed(1)}" text-anchor="middle">${item.docente.toFixed(1)}</text>`;
               const marcadorActual = item.actual
                   ? `<circle class="teacher-student-grade-current-point" cx="${centro.toFixed(1)}" cy="${margen.superior - 10}" r="6">
-                      <title>${escapeHtml(`DesafÃ­o actual: ${item.titulo}`)}</title>
+                      <title>${escapeHtml(`Desafío actual: ${item.titulo}`)}</title>
                     </circle>`
                   : '';
               const etiquetaNavegacion = `Abrir ${item.titulo}`;
@@ -9663,11 +9688,11 @@
                   <text class="teacher-student-grade-status-label" x="${centro.toFixed(1)}" y="${alto - 25}" text-anchor="middle">${item.finalizada ? 'Finalizado' : (item.actual ? (desafioActual.siguiente ? 'Siguiente' : 'Actual') : 'Pendiente')}</text>
                 </g>`;
           }).join('');
-          const tituloActual = desafioActual.desafio?.title || 'Sin desafÃ­o informado';
+          const tituloActual = desafioActual.desafio?.title || 'Sin desafío informado';
           const estadoActual = desafioActual.trabajandoAhora
               ? 'Trabajando ahora'
-              : (desafioActual.conectado ? 'DesafÃ­o abierto' : (desafioActual.id ? 'ÃƒÅ¡ltimo desafÃ­o informado' : 'Sin actividad informada'));
-          const estadoActualTexto = desafioActual.siguiente ? 'Siguiente desafÃ­o' : estadoActual;
+              : (desafioActual.conectado ? 'Desafío abierto' : (desafioActual.id ? 'Ãšltimo desafío informado' : 'Sin actividad informada'));
+          const estadoActualTexto = desafioActual.siguiente ? 'Siguiente desafío' : estadoActual;
           const conteosFiltros = {
               todos: datos.length,
               finalizados: datos.filter(item => item.finalizada).length,
@@ -9677,8 +9702,8 @@
           return `<section class="teacher-student-grade-chart">
               <header>
                   <div>
-                      <h3><i class="fa-solid fa-chart-column"></i> Notas por desafÃ­o</h3>
-                      <p>Compara la calificaciÃ³n automÃ¡tica con la nota modificada por el docente.</p>
+                      <h3><i class="fa-solid fa-chart-column"></i> Notas por desafío</h3>
+                      <p>Compara la calificación automática con la nota modificada por el docente.</p>
                   </div>
                   <div class="teacher-student-current-challenge ${desafioActual.trabajandoAhora ? 'is-live' : ''}">
                       <span><i class="fa-solid ${desafioActual.trabajandoAhora ? 'fa-keyboard' : (desafioActual.siguiente ? 'fa-forward-step' : 'fa-location-dot')}"></i> ${escapeHtml(estadoActualTexto)}</span>
@@ -9686,7 +9711,7 @@
                   </div>
               </header>
               <div class="teacher-student-grade-filter-bar">
-                  <div class="teacher-student-grade-filters" role="group" aria-label="Filtrar desafÃ­os del grÃ¡fico">
+                  <div class="teacher-student-grade-filters" role="group" aria-label="Filtrar desafíos del gráfico">
                       <button type="button" class="is-active" data-grade-filter-button="" aria-pressed="true" onclick="filtrarGraficoNotasDesafiosEstudiante('', this)">
                           <i class="fa-solid fa-layer-group"></i> <span>Todos</span><b>${conteosFiltros.todos}</b>
                       </button>
@@ -9699,24 +9724,27 @@
                       <button type="button" data-grade-filter-button="pendientes" aria-pressed="false" onclick="filtrarGraficoNotasDesafiosEstudiante('pendientes', this)">
                           <i class="fa-solid fa-clock"></i> <span>Pendientes</span><b>${conteosFiltros.pendientes}</b>
                       </button>
-                      <button type="button" class="is-reset" onclick="restablecerFiltroGraficoNotasEstudiante(this)" title="Volver a mostrar todos los desafÃ­os">
+                      <button type="button" class="teacher-student-grade-values-toggle" aria-pressed="true" aria-label="Ocultar notas numéricas del gráfico" onclick="alternarValoresGraficoNotasEstudiante(this)">
+                          <i class="fa-solid fa-eye-slash"></i> Ocultar notas
+                      </button>
+                      <button type="button" class="is-reset" onclick="restablecerFiltroGraficoNotasEstudiante(this)" title="Volver a mostrar todos los desafíos">
                           <i class="fa-solid fa-arrow-rotate-left"></i> Restablecer filtro
                       </button>
                   </div>
-                  <span class="teacher-student-grade-filter-status" aria-live="polite">${datos.length} desafÃ­os mostrados</span>
+                  <span class="teacher-student-grade-filter-status" aria-live="polite">${datos.length} desafíos mostrados</span>
               </div>
-              <div class="teacher-student-grade-legend" aria-label="Referencias del grÃ¡fico">
-                  <span class="is-automatic">Nota automÃ¡tica</span>
+              <div class="teacher-student-grade-legend" aria-label="Referencias del gráfico">
+                  <span class="is-automatic">Nota automática</span>
                   <span class="is-teacher">Nota modificada por docente</span>
-                  <span class="is-current">DesafÃ­o actual</span>
+                  <span class="is-current">Desafío actual</span>
               </div>
-              <div class="teacher-student-grade-chart-scroll" tabindex="0" aria-label="GrÃ¡fico desplazable de notas por desafÃ­o. SeleccionÃ¡ una columna para abrir ese desafÃ­o." onscroll="recordarPosicionGraficoNotasEstudiante(this)">
-                  ${hayNotas || desafioActual.id ? `<svg viewBox="0 0 ${ancho} ${alto}" style="min-width:${ancho}px" role="img" aria-label="Notas automÃ¡ticas y modificadas por el docente en cada desafÃ­o">
+              <div class="teacher-student-grade-chart-scroll" tabindex="0" aria-label="Gráfico desplazable de notas por desafío. Seleccioná una columna para abrir ese desafío." onscroll="recordarPosicionGraficoNotasEstudiante(this)">
+                  ${hayNotas || desafioActual.id ? `<svg viewBox="0 0 ${ancho} ${alto}" style="min-width:${ancho}px" role="img" aria-label="Notas automáticas y modificadas por el docente en cada desafío">
                       <g class="teacher-student-grade-grid">${ejes}</g>
                       <g class="teacher-student-grade-columns">${columnas}</g>
-                  </svg>` : '<div class="teacher-student-grade-empty">TodavÃ­a no hay notas ni un desafÃ­o activo para mostrar.</div>'}
+                  </svg>` : '<div class="teacher-student-grade-empty">Todavía no hay notas ni un desafío activo para mostrar.</div>'}
               </div>
-              <div class="teacher-student-grade-filter-empty" hidden>No hay desafÃ­os que coincidan con este filtro.</div>
+              <div class="teacher-student-grade-filter-empty" hidden>No hay desafíos que coincidan con este filtro.</div>
               <div class="teacher-student-grade-key">${datos.map(item => `<span class="teacher-student-grade-key-item is-navigable ${item.actual ? 'is-current' : ''}" data-grade-finalizada="${item.finalizada}" data-grade-docente="${item.docente !== null}" role="button" tabindex="0" aria-label="Abrir ${escapeHtml(item.titulo)}" title="Abrir ${escapeHtml(item.titulo)}" onclick="abrirDesafioDesdeGraficoNotasEstudiante('${escapeHtml(item.id)}', this)" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); abrirDesafioDesdeGraficoNotasEstudiante('${escapeHtml(item.id)}', this); }"><b>D${item.indice}</b> ${escapeHtml(item.titulo)}</span>`).join('')}</div>
           </section>`;
       }
@@ -9876,7 +9904,7 @@
               ordenadas.forEach(actividad => contenedor.appendChild(actividad));
           }
           const estado = document.getElementById('estadoFiltroDetalleProfesor');
-          if (estado) estado.textContent = `${visibles} de ${actividades.length} desafÃ­o${actividades.length === 1 ? '' : 's'}`;
+          if (estado) estado.textContent = `${visibles} de ${actividades.length} desafío${actividades.length === 1 ? '' : 's'}`;
           const vacio = document.getElementById('sinResultadosDetalleProfesor');
           if (vacio) vacio.hidden = visibles > 0;
           document.querySelectorAll('[data-detail-filter-chip]').forEach(boton => {
@@ -9904,11 +9932,11 @@
           const estado = document.getElementById(`estadoNotaDesafioDocente-${sectionId}`);
           const nota = Number(input?.value);
           if (!d?.uid) {
-              alert('No se encontrÃ³ el identificador Firebase del estudiante.');
+              alert('No se encontró el identificador Firebase del estudiante.');
               return;
           }
           if (!Number.isFinite(nota) || nota < 0 || nota > 10) {
-              alert('La nota del desafÃ­o debe ser un nÃºmero entre 0 y 10.');
+              alert('La nota del desafío debe ser un número entre 0 y 10.');
               input?.focus();
               return;
           }
@@ -9936,10 +9964,10 @@
               const codigo = String(errorFirebase.code || '');
               const detalle = String(errorFirebase.message || '');
               const orientacion = codigo.includes('permission-denied')
-                  ? 'PublicÃ¡ la versiÃ³n actualizada de REGLAS.TXT en Firebase Console y verificÃ¡ que la cuenta figure activa en docentesAutorizados.'
-                  : 'RevisÃ¡ la conexiÃ³n, la autenticaciÃ³n docente y la consola de Firebase.';
+                  ? 'Publicá la versión actualizada de REGLAS.TXT en Firebase Console y verificá que la cuenta figure activa en docentesAutorizados.'
+                  : 'Revisá la conexión, la autenticación docente y la consola de Firebase.';
               alert(
-                  `No se pudo guardar la nota del desafÃ­o.${codigo ? `\n\nCÃ³digo: ${codigo}` : ''}` +
+                  `No se pudo guardar la nota del desafío.${codigo ? `\n\nCódigo: ${codigo}` : ''}` +
                   `${detalle ? `\nDetalle: ${detalle}` : ''}\n\n${orientacion}`
               );
               return;
@@ -9979,11 +10007,11 @@
           const confirmacion = await mostrarConfirmacionDocente({
               tipo: 'warning',
               icono: 'fa-arrow-rotate-left',
-              titulo: 'Restaurar nota automÃ¡tica',
-              mensaje: 'Se quitarÃ¡ la correcciÃ³n docente de este desafÃ­o.',
+              titulo: 'Restaurar nota automática',
+              mensaje: 'Se quitará la corrección docente de este desafío.',
               detalles: [
-                  'VolverÃ¡ a utilizarse la calificaciÃ³n automÃ¡tica del cÃ³digo y las preguntas.',
-                  'La nota definitiva general quedarÃ¡ pendiente de una nueva confirmaciÃ³n.'
+                  'Volverá a utilizarse la calificación automática del código y las preguntas.',
+                  'La nota definitiva general quedará pendiente de una nueva confirmación.'
               ],
               confirmarTexto: 'Restaurar nota',
               confirmarIcono: 'fa-arrow-rotate-left',
@@ -9996,8 +10024,8 @@
               const codigo = String(errorFirebase.code || '');
               const detalle = String(errorFirebase.message || '');
               alert(
-                  `No se pudo restaurar la nota automÃ¡tica.${codigo ? `\n\nCÃ³digo: ${codigo}` : ''}` +
-                  `${detalle ? `\nDetalle: ${detalle}` : ''}\n\nPublicÃ¡ la versiÃ³n actualizada de REGLAS.TXT y verificÃ¡ la autorizaciÃ³n docente.`
+                  `No se pudo restaurar la nota automática.${codigo ? `\n\nCódigo: ${codigo}` : ''}` +
+                  `${detalle ? `\nDetalle: ${detalle}` : ''}\n\nPublicá la versión actualizada de REGLAS.TXT y verificá la autorización docente.`
               );
               return;
           }
@@ -10026,8 +10054,8 @@
           if (!historial.length) {
               contenedor.innerHTML = `<div class="teacher-challenge-grade-history-empty">${
                   window.ultimoErrorHistorialNotasDesafios
-                      ? 'No se pudo consultar el historial. VerificÃ¡ los permisos de Firestore.'
-                      : 'TodavÃ­a no hay cambios registrados para este desafÃ­o.'
+                      ? 'No se pudo consultar el historial. Verificá los permisos de Firestore.'
+                      : 'Todavía no hay cambios registrados para este desafío.'
               }</div>`;
               return;
           }
@@ -10061,7 +10089,7 @@
                               <span>${escapeHtml(anterior)}</span>
                               <i class="fa-solid fa-arrow-right"></i>
                               <strong>${escapeHtml(nuevo)}</strong>
-                              ${evento.tipo === 'restauracion' ? '<em>Nota automÃ¡tica restaurada</em>' : ''}
+                              ${evento.tipo === 'restauracion' ? '<em>Nota automática restaurada</em>' : ''}
                           </div>
                           <div class="teacher-challenge-grade-history-meta">
                               <span><i class="fa-solid fa-calendar-days"></i> ${escapeHtml(fecha)}</span>
@@ -10075,7 +10103,7 @@
       async function guardarRevisionSalidasProfesor(indice) {
           const d = estudiantesProfesor[indice];
           if (!d?.uid) {
-              alert('No se encontrÃ³ el identificador Firebase del estudiante.');
+              alert('No se encontró el identificador Firebase del estudiante.');
               return;
           }
           const autorizado = await window.autorizarDocenteFirebase?.();
@@ -10091,15 +10119,15 @@
           const notaFinalTexto = String(document.getElementById('notaFinalDocenteProfesor')?.value || '').trim();
           const notaFinalDocente = notaFinalTexto === '' ? NaN : Number(notaFinalTexto);
           if (penalizacion > 0 && !motivo) {
-              alert('EscribÃ­ una justificaciÃ³n antes de aplicar una penalizaciÃ³n.');
+              alert('Escribí una justificación antes de aplicar una penalización.');
               return;
           }
-          if (notaConfirmada && notaCalculada === 'Ã¢â‚¬â€') {
-              alert('TodavÃ­a no hay un promedio acadÃ©mico para confirmar.');
+          if (notaConfirmada && notaCalculada === 'â€”') {
+              alert('Todavía no hay un promedio académico para confirmar.');
               return;
           }
           if (notaConfirmada && (!Number.isFinite(notaFinalDocente) || notaFinalDocente < 0 || notaFinalDocente > 10)) {
-              alert('La nota final debe ser un nÃºmero entre 0 y 10.');
+              alert('La nota final debe ser un número entre 0 y 10.');
               document.getElementById('notaFinalDocenteProfesor')?.focus();
               return;
           }
@@ -10109,7 +10137,7 @@
           const notaModificadaManualmente = notaConfirmada &&
               notaFinalConfirmada !== Number(notaCalculada);
           if (notaModificadaManualmente && !motivo) {
-              alert('EscribÃ­ un fundamento para modificar la nota calculada.');
+              alert('Escribí un fundamento para modificar la nota calculada.');
               document.getElementById('motivoRevisionProfesor')?.focus();
               return;
           }
@@ -10125,7 +10153,7 @@
           };
           const ok = await window.guardarRevisionDocenteFirebase?.(d.uid, revision);
           if (!ok) {
-              alert('No se pudo guardar la revisiÃ³n. VerificÃ¡ los permisos de Firestore.');
+              alert('No se pudo guardar la revisión. Verificá los permisos de Firestore.');
               return;
           }
           d.revisionSalidas = {
@@ -10138,8 +10166,8 @@
           renderPanelProfesor();
           abrirDetalleEstudianteProfesor(indice);
           alert(notaConfirmada
-              ? `RevisiÃ³n guardada. Nota definitiva confirmada: ${notaFinalConfirmada}/10.`
-              : 'RevisiÃ³n guardada. La nota definitiva queda pendiente de confirmaciÃ³n docente.');
+              ? `Revisión guardada. Nota definitiva confirmada: ${notaFinalConfirmada}/10.`
+              : 'Revisión guardada. La nota definitiva queda pendiente de confirmación docente.');
       }
       async function cambiarEstadoCuentaEstudiante(indice, nuevoEstado, opciones = {}) {
           const d = estudiantesProfesor[indice];
@@ -10147,13 +10175,13 @@
           const responsable = window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email ||
               window.firebaseTeacherUser?.displayName || window.firebaseCurrentUser?.displayName || '';
           if (!d?.uid) {
-              alert('No se encontrÃ³ el identificador Firebase del estudiante.');
+              alert('No se encontró el identificador Firebase del estudiante.');
               return;
           }
           if (nuevoEstado === 'rechazado') {
-              const motivo = prompt('Motivo del rechazo (obligatorio):', 'Datos no autorizados por la instituciÃ³n');
+              const motivo = prompt('Motivo del rechazo (obligatorio):', 'Datos no autorizados por la institución');
               if (!motivo || !motivo.trim()) return;
-              if (!confirm('El estudiante no podrÃ¡ ingresar. Â¿ConfirmÃ¡s el rechazo?')) return;
+              if (!confirm('El estudiante no podrá ingresar. ¿Confirmás el rechazo?')) return;
               const payload = {
                   estadoCuenta: 'rechazado',
                   rechazoMotivo: motivo.trim(),
@@ -10165,7 +10193,7 @@
               };
               const ok = await window.guardarEstadoEstudianteFirebase?.(d.uid, payload);
               if (!ok) {
-                  alert('No se pudo rechazar la solicitud. VerificÃ¡ las reglas de Firestore.');
+                  alert('No se pudo rechazar la solicitud. Verificá las reglas de Firestore.');
                   return;
               }
               Object.assign(d, payload);
@@ -10176,10 +10204,10 @@
           if (estadoActual === 'pendiente' && nuevoEstado === 'activo') {
               const problemas = validarSolicitudEstudiante(d);
               if (problemas.length) {
-                  alert(`No se puede aceptar esta solicitud todavÃ­a:\n\n${problemas.join('\n')}`);
+                  alert(`No se puede aceptar esta solicitud todavía:\n\n${problemas.join('\n')}`);
                   return false;
               }
-              if (!confirm('Â¿Aceptar a este estudiante y habilitar su acceso a las actividades?')) return;
+              if (!confirm('¿Aceptar a este estudiante y habilitar su acceso a las actividades?')) return;
               const payload = {
                   estadoCuenta: 'activo',
                   aprobadoEn: new Date().toISOString(),
@@ -10193,7 +10221,7 @@
               };
               const ok = await window.guardarEstadoEstudianteFirebase?.(d.uid, payload);
               if (!ok) {
-                  alert('No se pudo aceptar al estudiante. VerificÃ¡ las reglas de Firestore.');
+                  alert('No se pudo aceptar al estudiante. Verificá las reglas de Firestore.');
                   return;
               }
               Object.assign(d, payload);
@@ -10204,7 +10232,7 @@
           if (nuevoEstado === 'inactivo') {
               const motivo = prompt('Motivo de la baja (obligatorio):', 'Baja institucional');
               if (!motivo || !motivo.trim()) return;
-              if (!confirm('La cuenta no podrÃ¡ ingresar, pero se conservarÃ¡ todo el historial. Â¿ConfirmÃ¡s la baja?')) return;
+              if (!confirm('La cuenta no podrá ingresar, pero se conservará todo el historial. ¿Confirmás la baja?')) return;
               const payload = {
                   estadoCuenta: 'inactivo',
                   bajaMotivo: motivo.trim(),
@@ -10213,7 +10241,7 @@
               };
               const ok = await window.guardarEstadoEstudianteFirebase?.(d.uid, payload);
               if (!ok) {
-                  alert('No se pudo dar de baja la cuenta. VerificÃ¡ las reglas de Firestore.');
+                  alert('No se pudo dar de baja la cuenta. Verificá las reglas de Firestore.');
                   return;
               }
               d.estadoCuenta = payload.estadoCuenta;
@@ -10224,7 +10252,7 @@
               abrirDetalleEstudianteProfesor(indice);
               return;
           }
-          if (!confirm('Â¿Reactivar esta cuenta para permitirle ingresar nuevamente?')) return;
+          if (!confirm('¿Reactivar esta cuenta para permitirle ingresar nuevamente?')) return;
           const payload = {
               estadoCuenta: 'activo',
               bajaMotivo: '',
@@ -10233,7 +10261,7 @@
           };
           const ok = await window.guardarEstadoEstudianteFirebase?.(d.uid, payload);
           if (!ok) {
-              alert('No se pudo reactivar la cuenta. VerificÃ¡ las reglas de Firestore.');
+              alert('No se pudo reactivar la cuenta. Verificá las reglas de Firestore.');
               return;
           }
           d.estadoCuenta = payload.estadoCuenta;
@@ -10247,25 +10275,25 @@
       async function reiniciarSalidasEstudianteProfesor(indice) {
           const d = estudiantesProfesor[indice];
           if (!d?.uid) {
-              alert('No se encontrÃ³ el identificador Firebase del estudiante.');
+              alert('No se encontró el identificador Firebase del estudiante.');
               return;
           }
           const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'este estudiante';
-          if (!confirm(`Â¿Reiniciar a cero el contador visible de cambios de pestaÃ±a de ${nombre}?\n\nEl historial detallado y las justificaciones se conservarÃ¡n.`)) {
+          if (!confirm(`¿Reiniciar a cero el contador visible de cambios de pestaña de ${nombre}?\n\nEl historial detallado y las justificaciones se conservarán.`)) {
               return;
           }
           const ok = await window.reiniciarSalidasEstudianteFirebase?.(d.uid);
           if (!ok) {
               const error = window.ultimoErrorReinicioSalidas;
               if (error?.code === 'teacher-not-authorized') {
-                  alert('No hay una sesiÃ³n docente autorizada activa. IngresÃ¡ nuevamente con una cuenta docente.');
+                  alert('No hay una sesión docente autorizada activa. Ingresá nuevamente con una cuenta docente.');
               } else if (error?.code === 'permission-denied') {
                   alert(
-                      'Firestore rechazÃ³ el reinicio por permisos.\n\n' +
+                      'Firestore rechazó el reinicio por permisos.\n\n' +
                       `Cuenta utilizada: ${error.email || 'sin identificar'}\n` +
-                      `Correo verificado: ${error.emailVerified ? 'sÃ­' : 'no'}\n\n` +
+                      `Correo verificado: ${error.emailVerified ? 'sí' : 'no'}\n\n` +
                       `Proyecto Firebase: ${error.projectId || 'sin identificar'}\n\n` +
-                      'ConfirmÃ¡ que esta cuenta figure en firestore.rules y que las reglas estÃ©n publicadas.'
+                      'Confirmá que esta cuenta figure en firestore.rules y que las reglas estén publicadas.'
                   );
               } else {
                   alert(`No se pudo reiniciar el contador${error?.message ? `: ${error.message}` : '.'}`);
@@ -10277,30 +10305,30 @@
           abrirDetalleEstudianteProfesor(indice);
           if (window.ultimoErrorReinicioSalidas?.code === 'diagnostic-minimal-write-ok') {
               alert(
-                  'El contador se reiniciÃ³ mediante la escritura mÃ­nima.\n\n' +
-                  'DiagnÃ³stico: Firestore acepta salidasPestana, pero rechaza reinicioSalidas o actualizadoEn.'
+                  'El contador se reinició mediante la escritura mínima.\n\n' +
+                  'Diagnóstico: Firestore acepta salidasPestana, pero rechaza reinicioSalidas o actualizadoEn.'
               );
           } else {
-              alert('Contador de cambios de pestaÃ±a reiniciado correctamente.');
+              alert('Contador de cambios de pestaña reiniciado correctamente.');
           }
       }
 
       async function controlarCronometroEstudianteProfesor(indice, accion) {
           const d = estudiantesProfesor[indice];
           if (!d?.uid) {
-              alert('No se encontrÃ³ el identificador Firebase del estudiante.');
+              alert('No se encontró el identificador Firebase del estudiante.');
               return;
           }
           const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'el estudiante';
           const mensajes = {
-              pausar: `Â¿Pausar el cronÃ³metro y la ediciÃ³n de ${nombre}?`,
-              reanudar: `Â¿Reanudar el cronÃ³metro y la ediciÃ³n de ${nombre}?`,
-              reiniciar: `Â¿Reiniciar a 40:00 los mÃ³dulos activos de ${nombre}?\n\nNo se borrarÃ¡n cÃ³digos, respuestas ni calificaciones.`
+              pausar: `¿Pausar el cronómetro y la edición de ${nombre}?`,
+              reanudar: `¿Reanudar el cronómetro y la edición de ${nombre}?`,
+              reiniciar: `¿Reiniciar a 40:00 los módulos activos de ${nombre}?\n\nNo se borrarán códigos, respuestas ni calificaciones.`
           };
-          if (!confirm(mensajes[accion] || 'Â¿Confirmar la operaciÃ³n?')) return;
+          if (!confirm(mensajes[accion] || '¿Confirmar la operación?')) return;
           const ok = await window.controlarCronometroEstudianteFirebase?.(d.uid, accion);
           if (!ok) {
-              alert('No se pudo actualizar el cronÃ³metro individual. VerificÃ¡ las reglas de Firestore.');
+              alert('No se pudo actualizar el cronómetro individual. Verificá las reglas de Firestore.');
               return;
           }
           const control = d.controlCronometroIndividual || {};
@@ -10311,30 +10339,30 @@
           renderPanelProfesor();
           abrirDetalleEstudianteProfesor(indice);
           const resultado = accion === 'pausar'
-              ? 'CronÃ³metro individual pausado.'
+              ? 'Cronómetro individual pausado.'
               : accion === 'reanudar'
-                  ? 'CronÃ³metro individual reanudado.'
-                  : 'CronÃ³metro individual reiniciado a 40:00.';
+                  ? 'Cronómetro individual reanudado.'
+                  : 'Cronómetro individual reiniciado a 40:00.';
           alert(resultado);
       }
 
       async function desbloquearPantallaEstudianteProfesor(indice) {
           const d = estudiantesProfesor[indice];
-          if (!d?.uid) { alert('No se encontrÃ³ el identificador Firebase del estudiante.'); return; }
+          if (!d?.uid) { alert('No se encontró el identificador Firebase del estudiante.'); return; }
           const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'este estudiante';
           const confirmacion = await mostrarConfirmacionDocente({
               tipo: 'warning',
               icono: 'fa-unlock-keyhole',
               titulo: 'Desbloquear pantalla',
-              mensaje: `Se habilitarÃ¡ nuevamente la pantalla de ${nombre}.`,
+              mensaje: `Se habilitará nuevamente la pantalla de ${nombre}.`,
               detalles: [
-                  'El estudiante podrÃ¡ continuar usando todas las actividades.',
-                  'El desbloqueo quedarÃ¡ registrado con fecha, motivo y docente.',
+                  'El estudiante podrá continuar usando todas las actividades.',
+                  'El desbloqueo quedará registrado con fecha, motivo y docente.',
                   `Desbloqueos anteriores: ${Number(d.cantidadDesbloqueos || 0)}.`
               ],
               campoLabel: 'Motivo del desbloqueo',
               campoValor: 'Desbloqueo autorizado por el docente',
-              campoPlaceholder: 'IndicÃ¡ por quÃ© se autoriza el desbloqueo.',
+              campoPlaceholder: 'Indicá por qué se autoriza el desbloqueo.',
               campoRequerido: true,
               confirmarTexto: 'Desbloquear',
               confirmarIcono: 'fa-unlock-keyhole',
@@ -10355,15 +10383,15 @@
 
       async function desbloquearActividadesEstudianteProfesor(indice, alcance = 'actual') {
           const d = estudiantesProfesor[indice];
-          if (!d?.uid) { alert('No se encontrÃ³ el identificador Firebase del estudiante.'); return; }
+          if (!d?.uid) { alert('No se encontró el identificador Firebase del estudiante.'); return; }
           const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'el estudiante';
           const todas = alcance === 'todas';
           const sectionId = todas ? '' : (d.seccionActiva || d.pantallaBloqueadaSeccion || seccionActivaActual || '');
-          if (!todas && !sectionId) { alert('No se pudo identificar la actividad actual. AbrÃ­ el detalle del estudiante y seleccionÃ¡ una actividad.'); return; }
-          if (!confirm(todas ? `Â¿Desbloquear todas las actividades finalizadas de ${nombre}?` : `Â¿Desbloquear la actividad ${sectionId} de ${nombre}?`)) return;
+          if (!todas && !sectionId) { alert('No se pudo identificar la actividad actual. Abrí el detalle del estudiante y seleccioná una actividad.'); return; }
+          if (!confirm(todas ? `¿Desbloquear todas las actividades finalizadas de ${nombre}?` : `¿Desbloquear la actividad ${sectionId} de ${nombre}?`)) return;
           const motivoDesbloqueo = 'Nuevo intento autorizado por el docente';
           const ok = await window.desbloquearActividadesEstudianteFirebase?.(d.uid, sectionId, motivoDesbloqueo);
-          if (!ok) { alert('No se pudieron desbloquear las actividades. VerificÃ¡ las reglas de Firestore.'); return; }
+          if (!ok) { alert('No se pudieron desbloquear las actividades. Verificá las reglas de Firestore.'); return; }
           const idsDesbloqueados = todas ? seccionesData.map(sec => sec.id) : [sectionId];
           d.intentosDesafio = { ...(d.intentosDesafio || {}) };
           d.historialDesbloqueosDesafios = Array.isArray(d.historialDesbloqueosDesafios)
@@ -10395,7 +10423,7 @@
           const motivoFinal = motivo.trim() || 'Debe volver a resolver la actividad';
           const ok = await window.desbloquearActividadesEstudianteFirebase?.(d.uid, [sectionId], motivoFinal);
           if (!ok) {
-              alert('No se pudo desbloquear la actividad. VerificÃ¡ la autorizaciÃ³n docente y las reglas de Firestore.');
+              alert('No se pudo desbloquear la actividad. Verificá la autorización docente y las reglas de Firestore.');
               return;
           }
           d.finalizadas = { ...(d.finalizadas || {}) };
@@ -10413,12 +10441,12 @@
               }
           ];
           abrirDetalleEstudianteProfesor(indice);
-          alert(`"${sec?.title || sectionId}" quedÃ³ habilitada para volver a resolver.`);
+          alert(`"${sec?.title || sectionId}" quedó habilitada para volver a resolver.`);
       }
 
       function abrirSelectorDesbloqueoActividades(indice) {
           const d = estudiantesProfesor[indice];
-          if (!d?.uid) { alert('No se encontrÃ³ el identificador Firebase del estudiante.'); return; }
+          if (!d?.uid) { alert('No se encontró el identificador Firebase del estudiante.'); return; }
           const finalizadas = d.finalizadas || {};
           const actividades = seccionesData.filter(sec => finalizadas[sec.id] === true);
           if (!actividades.length) { alert('Este estudiante no tiene actividades finalizadas para desbloquear.'); return; }
@@ -10429,7 +10457,7 @@
           modal.className = 'modal-overlay';
           modal.setAttribute('role', 'dialog');
           modal.setAttribute('aria-modal', 'true');
-          modal.innerHTML = `<div class="modal-box teacher-unlock-selector-box" tabindex="-1"><header class="teacher-unlock-selector-header"><div><span class="student-progress-eyebrow">Panel docente</span><h3><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear actividades</h3><p>${escapeHtml(nombre)} Â· ElegÃ­ exactamente quÃ© actividades volver a habilitar.</p></div><button type="button" class="btn btn-secondary teacher-unlock-selector-close" aria-label="Cerrar"><span aria-hidden="true">Ãƒâ€”</span></button></header><div class="teacher-unlock-selector-toolbar"><button type="button" class="btn btn-secondary" data-unlock-select-all><i class="fa-solid fa-check-double"></i> Seleccionar todas</button><button type="button" class="btn btn-secondary" data-unlock-clear><i class="fa-solid fa-square-minus"></i> Limpiar selecciÃ³n</button><span data-unlock-count>0 seleccionadas</span></div><div class="teacher-unlock-selector-list">${actividades.map(sec => `<label class="teacher-unlock-option"><input type="checkbox" value="${escapeHtml(sec.id)}"><span><strong>${escapeHtml(sec.title || sec.id)}</strong><small>Actividad finalizada Â· se conservarÃ¡n respuestas y calificaciones</small></span></label>`).join('')}</div><div class="teacher-unlock-selector-actions"><span class="teacher-unlock-selector-status" role="status"></span><button type="button" class="btn btn-success" data-unlock-confirm disabled><i class="fa-solid fa-unlock"></i> Desbloquear seleccionadas</button></div></div>`;
+          modal.innerHTML = `<div class="modal-box teacher-unlock-selector-box" tabindex="-1"><header class="teacher-unlock-selector-header"><div><span class="student-progress-eyebrow">Panel docente</span><h3><i class="fa-solid fa-unlock-keyhole"></i> Desbloquear actividades</h3><p>${escapeHtml(nombre)} · Elegí exactamente qué actividades volver a habilitar.</p></div><button type="button" class="btn btn-secondary teacher-unlock-selector-close" aria-label="Cerrar"><span aria-hidden="true">Ã—</span></button></header><div class="teacher-unlock-selector-toolbar"><button type="button" class="btn btn-secondary" data-unlock-select-all><i class="fa-solid fa-check-double"></i> Seleccionar todas</button><button type="button" class="btn btn-secondary" data-unlock-clear><i class="fa-solid fa-square-minus"></i> Limpiar selección</button><span data-unlock-count>0 seleccionadas</span></div><div class="teacher-unlock-selector-list">${actividades.map(sec => `<label class="teacher-unlock-option"><input type="checkbox" value="${escapeHtml(sec.id)}"><span><strong>${escapeHtml(sec.title || sec.id)}</strong><small>Actividad finalizada · se conservarán respuestas y calificaciones</small></span></label>`).join('')}</div><div class="teacher-unlock-selector-actions"><span class="teacher-unlock-selector-status" role="status"></span><button type="button" class="btn btn-success" data-unlock-confirm disabled><i class="fa-solid fa-unlock"></i> Desbloquear seleccionadas</button></div></div>`;
           document.body.appendChild(modal);
           const cerrar = () => modal.remove();
           modal.querySelector('.teacher-unlock-selector-close').onclick = cerrar;
@@ -10452,7 +10480,7 @@
               contador.textContent = 'Guardando desbloqueos...';
               const motivoDesbloqueo = 'Nuevo intento autorizado por el docente';
               const ok = await window.desbloquearActividadesEstudianteFirebase?.(d.uid, ids, motivoDesbloqueo);
-              if (!ok) { contador.textContent = 'No se pudo guardar. VerificÃ¡ las reglas de Firestore.'; boton.disabled = false; return; }
+              if (!ok) { contador.textContent = 'No se pudo guardar. Verificá las reglas de Firestore.'; boton.disabled = false; return; }
               d.intentosDesafio = { ...(d.intentosDesafio || {}) };
               d.historialDesbloqueosDesafios = Array.isArray(d.historialDesbloqueosDesafios)
                   ? d.historialDesbloqueosDesafios.slice()
@@ -10478,7 +10506,7 @@
 
       async function bloquearPantallaEstudianteProfesor(indice) {
           const d = estudiantesProfesor[indice];
-          if (!d?.uid) { alert('No se encontrÃ³ el identificador Firebase del estudiante.'); return; }
+          if (!d?.uid) { alert('No se encontró el identificador Firebase del estudiante.'); return; }
           if (d.pantallaBloqueada === true) {
               alert('Este estudiante ya se encuentra bloqueado.');
               return;
@@ -10488,15 +10516,15 @@
               tipo: 'danger',
               icono: 'fa-lock',
               titulo: 'Bloquear pantalla',
-              mensaje: `La pantalla de ${nombre} quedarÃ¡ completamente bloqueada.`,
+              mensaje: `La pantalla de ${nombre} quedará completamente bloqueada.`,
               detalles: [
-                  'El estudiante no podrÃ¡ escribir, navegar ni usar las actividades.',
-                  'Solo un docente autorizado podrÃ¡ desbloquearla.',
-                  'El bloqueo se aplicarÃ¡ inmediatamente en el dispositivo conectado.'
+                  'El estudiante no podrá escribir, navegar ni usar las actividades.',
+                  'Solo un docente autorizado podrá desbloquearla.',
+                  'El bloqueo se aplicará inmediatamente en el dispositivo conectado.'
               ],
               campoLabel: 'Motivo del bloqueo',
               campoValor: 'Bloqueo preventivo solicitado por el docente',
-              campoPlaceholder: 'IndicÃ¡ por quÃ© se bloquea la pantalla.',
+              campoPlaceholder: 'Indicá por qué se bloquea la pantalla.',
               campoRequerido: true,
               confirmarTexto: 'Bloquear',
               confirmarIcono: 'fa-lock',
@@ -10509,7 +10537,7 @@
               seccion: d.seccionActiva || ''
           });
           if (!ok) {
-              alert('No se pudo bloquear la pantalla. VerificÃ¡ la autorizaciÃ³n docente y las reglas de Firestore.');
+              alert('No se pudo bloquear la pantalla. Verificá la autorización docente y las reglas de Firestore.');
               return;
           }
           d.pantallaBloqueada = true;
@@ -10525,7 +10553,7 @@
           const correctas = Array.isArray(p?.correctas)
               ? p.correctas
               : opciones.map((op,i)=>(op?.correcta === true || op?.c === true) ? i : null).filter(i=>i !== null);
-          const esAbierta = p?.formato === "abierta" || (p?.tipo === "SOCRÃTICA" && Boolean(p?.respuestaTexto));
+          const esAbierta = p?.formato === "abierta" || (p?.tipo === "SOCRÁTICA" && Boolean(p?.respuestaTexto));
           const esAbiertaEfectiva = esAbierta
               || String(p?.formato || "").toLowerCase().includes("socr")
               || String(p?.tipo || "").toLowerCase().includes("socr")
@@ -10543,8 +10571,8 @@
           return `<div class="teacher-question">
               <strong>${indice + 1}. ${escapeHtml(p?.pregunta || 'Pregunta sin texto')}</strong>
               <div style="color:var(--text-muted);font-size:.75rem;margin-top:.25rem;">
-                  ${escapeHtml(p?.categoria || p?.tipo || 'ANÃLISIS')} Â·
-                  <strong style="color:${colorNivel}">${escapeHtml(etiquetaNivel)} Â· ${Number(p?.puntos || 0).toFixed(2)}/1,00</strong>
+                  ${escapeHtml(p?.categoria || p?.tipo || 'ANÁLISIS')} ·
+                  <strong style="color:${colorNivel}">${escapeHtml(etiquetaNivel)} · ${Number(p?.puntos || 0).toFixed(2)}/1,00</strong>
               </div>
               ${esAbiertaEfectiva ? `
                   <div class="teacher-socratic-response">
@@ -10559,10 +10587,10 @@
                   const seleccionada=seleccionadas.includes(j);
                   const correcta=correctas.includes(j);
                   const clases=['teacher-answer',seleccionada?'selected':'',correcta?'correct':(seleccionada?'wrong':'')].filter(Boolean).join(' ');
-                  const marcas=[seleccionada?'Seleccionada':'',correcta?'Correcta':''].filter(Boolean).join(' Â· ');
+                  const marcas=[seleccionada?'Seleccionada':'',correcta?'Correcta':''].filter(Boolean).join(' · ');
                   return `<span class="${clases}">
-                      ${seleccionada ? 'Ã¢Ëœâ€˜' : 'Ã¢ËœÂ'} ${String.fromCharCode(65+j)}) ${escapeHtml(op?.texto || op?.t || '')}
-                      ${marcas ? `<small style="color:var(--text-muted)"> Ã¢â‚¬â€ ${marcas}</small>` : ''}
+                      ${seleccionada ? 'â˜‘' : 'â˜'} ${String.fromCharCode(65+j)}) ${escapeHtml(op?.texto || op?.t || '')}
+                      ${marcas ? `<small style="color:var(--text-muted)"> â€” ${marcas}</small>` : ''}
                   </span>`;
               }).join('')}
           </div>`;
@@ -10571,12 +10599,12 @@
       function resumirConsultasIAEstudiante(d) {
           const chat = d?.chatIA && typeof d.chatIA === "object" ? d.chatIA : {};
           const categorias = {
-              "Errores y depuraciÃ³n": 0,
-              "ComprensiÃ³n de consigna": 0,
-              "RevisiÃ³n de cÃ³digo": 0,
+              "Errores y depuración": 0,
+              "Comprensión de consigna": 0,
+              "Revisión de código": 0,
               "Pistas para avanzar": 0,
               "Pruebas y resultados": 0,
-              "Conceptos de programaciÃ³n": 0,
+              "Conceptos de programación": 0,
               "Otras consultas": 0
           };
           const modulos = [];
@@ -10598,15 +10626,15 @@
                   const texto = normalizarEvaluacion(original);
                   total++;
                   let categoria = "Otras consultas";
-                  if (/error|falla|no funciona|bug|syntax|undefined|consola/.test(texto)) categoria = "Errores y depuraciÃ³n";
-                  else if (/consigna|entender|que pide|objetivo/.test(texto)) categoria = "ComprensiÃ³n de consigna";
-                  else if (/revisa|revisar|codigo|esta bien|calidad/.test(texto)) categoria = "RevisiÃ³n de cÃ³digo";
+                  if (/error|falla|no funciona|bug|syntax|undefined|consola/.test(texto)) categoria = "Errores y depuración";
+                  else if (/consigna|entender|que pide|objetivo/.test(texto)) categoria = "Comprensión de consigna";
+                  else if (/revisa|revisar|codigo|esta bien|calidad/.test(texto)) categoria = "Revisión de código";
                   else if (/pista|avanzar|siguiente|continuar|ahora/.test(texto)) categoria = "Pistas para avanzar";
                   else if (/prueba|caso|ejemplo|resultado|salida/.test(texto)) categoria = "Pruebas y resultados";
-                  else if (/variable|condicion|if|bucle|for|while|funcion|parametro|return|array|objeto/.test(texto)) categoria = "Conceptos de programaciÃ³n";
+                  else if (/variable|condicion|if|bucle|for|while|funcion|parametro|return|array|objeto/.test(texto)) categoria = "Conceptos de programación";
                   categorias[categoria]++;
 
-                  const clave = texto.replace(/[Â¿?Â¡!.,;:]+/g, "").trim().slice(0, 120);
+                  const clave = texto.replace(/[¿?¡!.,;:]+/g, "").trim().slice(0, 120);
                   if (clave) {
                       const actual = preguntas.get(clave) || { texto: original.slice(0, 160), cantidad: 0 };
                       actual.cantidad++;
@@ -10672,7 +10700,7 @@
                   modulos.set(m.id, actual);
               });
               resumen.frecuentes.forEach(p => {
-                  const clave = normalizarEvaluacion(p.texto).replace(/[Â¿?Â¡!.,;:]+/g, "").trim();
+                  const clave = normalizarEvaluacion(p.texto).replace(/[¿?¡!.,;:]+/g, "").trim();
                   if (!clave) return;
                   const actual = preguntas.get(clave) || { texto: p.texto, cantidad: 0 };
                   actual.cantidad += p.cantidad;
@@ -10701,10 +10729,10 @@
               return;
           }
           if (!confirm(
-              `Â¿Borrar ${totalConsultas} consulta(s) del chat IA de ${conConsultas.length} alumno(s) mostrados?\n\n` +
-              "Se eliminarÃ¡n preguntas y respuestas del chat. No se borrarÃ¡n cÃ³digos, notas, cronÃ³metros ni actividades."
+              `¿Borrar ${totalConsultas} consulta(s) del chat IA de ${conConsultas.length} alumno(s) mostrados?\n\n` +
+              "Se eliminarán preguntas y respuestas del chat. No se borrarán códigos, notas, cronómetros ni actividades."
           )) return;
-          if (!confirm("Esta acciÃ³n no se puede deshacer desde el panel. Â¿ConfirmÃ¡s el borrado definitivo?")) return;
+          if (!confirm("Esta acción no se puede deshacer desde el panel. ¿Confirmás el borrado definitivo?")) return;
 
           const boton = document.getElementById("btnBorrarConsultasIAGenerales");
           const contenidoOriginal = boton?.innerHTML || "";
@@ -10718,7 +10746,7 @@
               boton.innerHTML = contenidoOriginal;
           }
           if (!ok) {
-              alert("No se pudieron borrar las consultas. VerificÃ¡ que las reglas actualizadas estÃ©n publicadas en Firebase.");
+              alert("No se pudieron borrar las consultas. Verificá que las reglas actualizadas estén publicadas en Firebase.");
               return;
           }
           const ids = new Set(conConsultas.map(d => d.uid));
@@ -10732,7 +10760,7 @@
       async function borrarConsultasIAAlumnoProfesor(indice, origen = "tabla") {
           const d = estudiantesProfesor[indice];
           if (!d?.uid) {
-              alert("No se encontrÃ³ el identificador Firebase del alumno.");
+              alert("No se encontró el identificador Firebase del alumno.");
               return;
           }
           const resumen = resumirConsultasIAEstudiante(d);
@@ -10745,14 +10773,14 @@
               tipo: 'danger',
               icono: 'fa-comments',
               titulo: 'Borrar consultas IA',
-              mensaje: `Se borrarÃ¡n ${resumen.total} consulta(s) del chat IA de ${nombre}.`,
+              mensaje: `Se borrarán ${resumen.total} consulta(s) del chat IA de ${nombre}.`,
               detalles: [
-                  'Se eliminarÃ¡n las preguntas y respuestas guardadas del chat.',
-                  'No se borrarÃ¡n cÃ³digos, notas, cronÃ³metros ni actividades.',
-                  'El historial de consultas no podrÃ¡ recuperarse desde el panel.'
+                  'Se eliminarán las preguntas y respuestas guardadas del chat.',
+                  'No se borrarán códigos, notas, cronómetros ni actividades.',
+                  'El historial de consultas no podrá recuperarse desde el panel.'
               ],
               requiereCheck: true,
-              checkTexto: 'Comprendo que las consultas IA seleccionadas se eliminarÃ¡n definitivamente.',
+              checkTexto: 'Comprendo que las consultas IA seleccionadas se eliminarán definitivamente.',
               confirmarTexto: 'Borrar consultas',
               confirmarIcono: 'fa-trash-can',
               confirmarClase: 'btn-danger'
@@ -10773,7 +10801,7 @@
               boton.innerHTML = contenidoOriginal;
           }
           if (!ok) {
-              alert("No se pudieron borrar las consultas del alumno. VerificÃ¡ las reglas publicadas en Firebase.");
+              alert("No se pudieron borrar las consultas del alumno. Verificá las reglas publicadas en Firebase.");
               return;
           }
           d.chatIA = {};
@@ -10789,7 +10817,7 @@
           const resumen = resumirConsultasIAGeneral(estudiantes);
           if (!resumen.totalConsultas) {
               contenedor.innerHTML = `<div style="padding:1rem;border:1px solid rgba(139,92,246,.28);border-radius:8px;background:rgba(139,92,246,.05);color:var(--text-muted)">
-                  <strong>Consultas generales al chat IA:</strong> todavÃ­a no hay consultas guardadas entre los alumnos mostrados.
+                  <strong>Consultas generales al chat IA:</strong> todavía no hay consultas guardadas entre los alumnos mostrados.
               </div>`;
               return;
           }
@@ -10809,12 +10837,12 @@
                   <div class="teacher-detail-stat"><small>Consultas totales</small><strong>${resumen.totalConsultas}</strong></div>
                   <div class="teacher-detail-stat"><small>Alumnos que consultaron</small><strong>${resumen.alumnosConConsultas}</strong></div>
                   <div class="teacher-detail-stat"><small>Tema principal</small><strong>${escapeHtml(resumen.categorias[0]?.[0] || "Sin clasificar")}</strong></div>
-                  <div class="teacher-detail-stat"><small>MÃ³dulo principal</small><strong>${escapeHtml(resumen.modulos[0]?.titulo || "Sin mÃ³dulo")}</strong></div>
+                  <div class="teacher-detail-stat"><small>Módulo principal</small><strong>${escapeHtml(resumen.modulos[0]?.titulo || "Sin módulo")}</strong></div>
               </div>
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.9rem">
-                  <div><h4>Temas mÃ¡s consultados</h4><div style="margin-top:.4rem;line-height:1.65">${resumen.categorias.slice(0, 6).map(([nombre, cantidad]) => `<div>${escapeHtml(nombre)}: <strong>${cantidad}</strong></div>`).join("")}</div></div>
-                  <div><h4>MÃ³dulos con mÃ¡s consultas</h4><div style="margin-top:.4rem;line-height:1.65">${resumen.modulos.slice(0, 6).map(m => `<div>${escapeHtml(m.titulo)}: <strong>${m.cantidad}</strong></div>`).join("")}</div></div>
-                  <div><h4>Preguntas mÃ¡s repetidas</h4><ol style="margin:.4rem 0 0 1.2rem;line-height:1.6">${resumen.preguntas.map(p => `<li>${escapeHtml(p.texto)}${p.cantidad > 1 ? ` <strong>(${p.cantidad})</strong>` : ""}</li>`).join("") || "<li>Sin repeticiones.</li>"}</ol></div>
+                  <div><h4>Temas más consultados</h4><div style="margin-top:.4rem;line-height:1.65">${resumen.categorias.slice(0, 6).map(([nombre, cantidad]) => `<div>${escapeHtml(nombre)}: <strong>${cantidad}</strong></div>`).join("")}</div></div>
+                  <div><h4>Módulos con más consultas</h4><div style="margin-top:.4rem;line-height:1.65">${resumen.modulos.slice(0, 6).map(m => `<div>${escapeHtml(m.titulo)}: <strong>${m.cantidad}</strong></div>`).join("")}</div></div>
+                  <div><h4>Preguntas más repetidas</h4><ol style="margin:.4rem 0 0 1.2rem;line-height:1.6">${resumen.preguntas.map(p => `<li>${escapeHtml(p.texto)}${p.cantidad > 1 ? ` <strong>(${p.cantidad})</strong>` : ""}</li>`).join("") || "<li>Sin repeticiones.</li>"}</ol></div>
               </div>
           </div>`;
       }
@@ -10880,8 +10908,8 @@
               resumen.checklistMarcados;
           if (!tieneUso) {
               return `<div style="padding:1rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.05);margin-bottom:1rem;color:var(--text-muted)">
-                  <strong><i class="fa-solid fa-graduation-cap"></i> Registro de ayudas de comprensiÃ³n:</strong>
-                  el estudiante todavÃ­a no utilizÃ³ las ayudas pedagÃ³gicas.
+                  <strong><i class="fa-solid fa-graduation-cap"></i> Registro de ayudas de comprensión:</strong>
+                  el estudiante todavía no utilizó las ayudas pedagógicas.
               </div>`;
           }
           const frecuentes = resumen.palabrasFrecuentesOrdenadas.length
@@ -10890,20 +10918,20 @@
                 ).join("")
               : '<span style="color:var(--text-muted)">Sin palabras consultadas.</span>';
           return `<div style="padding:1rem;border:1px solid rgba(56,189,248,.38);border-radius:8px;background:rgba(56,189,248,.07);margin-bottom:1rem">
-              <h3 style="margin:0 0 .7rem;color:#7dd3fc"><i class="fa-solid fa-graduation-cap"></i> Registro de ayudas de comprensiÃ³n</h3>
+              <h3 style="margin:0 0 .7rem;color:#7dd3fc"><i class="fa-solid fa-graduation-cap"></i> Registro de ayudas de comprensión</h3>
               <p style="margin:0 0 .75rem;color:var(--text-muted);font-size:.82rem">
-                  Estos datos muestran quÃ© apoyos utilizÃ³ el estudiante. No modifican automÃ¡ticamente la calificaciÃ³n.
+                  Estos datos muestran qué apoyos utilizó el estudiante. No modifican automáticamente la calificación.
               </p>
               <div class="teacher-detail-summary">
                   <div class="teacher-detail-stat"><small>Consultas de palabras</small><strong>${resumen.consultasPalabras}</strong></div>
                   <div class="teacher-detail-stat"><small>Palabras diferentes</small><strong>${resumen.palabrasUnicasCantidad}</strong></div>
                   <div class="teacher-detail-stat"><small>Aperturas de pasos</small><strong>${resumen.pasosVistos}</strong></div>
                   <div class="teacher-detail-stat"><small>Material de apoyo</small><strong>${resumen.materialApoyoVistas}</strong></div>
-                  <div class="teacher-detail-stat"><small>ComprensiÃ³n verificada</small><strong>${resumen.verificacionesCorrectas}/${resumen.verificacionesIntentadas}</strong></div>
+                  <div class="teacher-detail-stat"><small>Comprensión verificada</small><strong>${resumen.verificacionesCorrectas}/${resumen.verificacionesIntentadas}</strong></div>
                   <div class="teacher-detail-stat"><small>Lista de control</small><strong>${resumen.checklistMarcados}/${resumen.checklistTotal}</strong></div>
-                  <div class="teacher-detail-stat"><small>MÃ³dulos con ayuda</small><strong>${resumen.modulosConAyuda}</strong></div>
+                  <div class="teacher-detail-stat"><small>Módulos con ayuda</small><strong>${resumen.modulosConAyuda}</strong></div>
               </div>
-              <div style="margin-top:.7rem"><strong>Palabras mÃ¡s consultadas:</strong><div style="margin-top:.35rem">${frecuentes}</div></div>
+              <div style="margin-top:.7rem"><strong>Palabras más consultadas:</strong><div style="margin-top:.35rem">${frecuentes}</div></div>
           </div>`;
       }
 
@@ -10944,7 +10972,7 @@
           if (!analista || !Array.isArray(analista.preguntas) || !analista.preguntas.length) {
               return `<div class="teacher-analyst-empty">
                   <i class="fa-solid fa-circle-info"></i>
-                  <span>El estudiante todavÃ­a no entregÃ³ respuestas al Analista de Viabilidad y Excelencia.</span>
+                  <span>El estudiante todavía no entregó respuestas al Analista de Viabilidad y Excelencia.</span>
               </div>`;
           }
           const porcentaje = Number.isFinite(Number(analista.porcentaje))
@@ -10956,14 +10984,14 @@
               <div class="teacher-analyst-review-header">
                   <div>
                       <h4><i class="fa-solid fa-user-check"></i> Analista de Viabilidad y Excelencia</h4>
-                      <p>Respuestas tÃ©cnicas y explicaciones socrÃ¡ticas, con el nivel alcanzado y las evidencias consideradas.</p>
+                      <p>Respuestas técnicas y explicaciones socráticas, con el nivel alcanzado y las evidencias consideradas.</p>
                   </div>
                   <div class="teacher-analyst-review-score">
                       <strong>${escapeHtml(analista.viabilidad || 'Pendiente')}</strong>
                       <span>Viabilidad</span>
                       <strong>${escapeHtml(analista.excelencia || 'Pendiente')}</strong>
                       <span>Excelencia</span>
-                      <small>${Number(analista.correctas || 0)}/${Number(analista.total || analista.preguntas.length)} completas Â· ${porcentaje}</small>
+                      <small>${Number(analista.correctas || 0)}/${Number(analista.total || analista.preguntas.length)} completas · ${porcentaje}</small>
                   </div>
               </div>
               <div class="teacher-analyst-levels" aria-label="Desglose de respuestas">
@@ -10981,8 +11009,8 @@
       function renderDetalleEvaluacionCodigoProfesor(evaluacionCodigo, salida, sec) {
           if (!evaluacionCodigo) {
               return `<div class="teacher-full-evaluation is-empty">
-                  <strong><i class="fa-solid fa-circle-info"></i> AnÃ¡lisis automÃ¡tico pendiente</strong>
-                  <p>El estudiante todavÃ­a no entregÃ³ una ejecuciÃ³n evaluable para este desafÃ­o.</p>
+                  <strong><i class="fa-solid fa-circle-info"></i> Análisis automático pendiente</strong>
+                  <p>El estudiante todavía no entregó una ejecución evaluable para este desafío.</p>
               </div>`;
           }
           const conceptos = Array.isArray(evaluacionCodigo.conceptos) ? evaluacionCodigo.conceptos : [];
@@ -10994,11 +11022,11 @@
           const mejoras = Array.isArray(evaluacionCodigo.mejoras) ? evaluacionCodigo.mejoras : [];
           const limites = Array.isArray(evaluacionCodigo.limites) ? evaluacionCodigo.limites : [];
           return `<details class="teacher-full-evaluation" open>
-              <summary><i class="fa-solid fa-list-check"></i> Detalle completo del anÃ¡lisis automÃ¡tico</summary>
+              <summary><i class="fa-solid fa-list-check"></i> Detalle completo del análisis automático</summary>
               <div class="teacher-full-evaluation-grid">
                   <div><small>Nota estricta</small><strong>${Number(evaluacionCodigo.nota || 0).toFixed(1)}/10</strong></div>
-                  <div><small>Sintaxis</small><strong>${evaluacionCodigo.sintaxis?.valida ? 'VÃ¡lida' : 'Con errores'}</strong></div>
-                  <div><small>EjecuciÃ³n</small><strong>${ejecucion.ok ? 'Correcta' : 'No validada'}</strong></div>
+                  <div><small>Sintaxis</small><strong>${evaluacionCodigo.sintaxis?.valida ? 'Válida' : 'Con errores'}</strong></div>
+                  <div><small>Ejecución</small><strong>${ejecucion.ok ? 'Correcta' : 'No validada'}</strong></div>
                   <div><small>Comportamiento</small><strong>${Math.round(Number(metricas.comportamiento || 0) * 100)}%</strong></div>
                   <div><small>Requisitos</small><strong>${Math.round(Number(metricas.requisitos || 0) * 100)}%</strong></div>
                   <div><small>Referencia</small><strong>${Math.round(Number(metricas.referencia || 0) * 100)}%</strong></div>
@@ -11027,15 +11055,15 @@
                   </section>
               </div>
               ${mejoras.length ? `<div class="teacher-evaluation-list is-improvement"><h5><i class="fa-solid fa-arrow-up-right-dots"></i> Mejoras prioritarias</h5><ul>${mejoras.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
-              ${limites.length ? `<div class="teacher-evaluation-list is-limit"><h5><i class="fa-solid fa-gavel"></i> LÃ­mites aplicados</h5><ul>${limites.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
+              ${limites.length ? `<div class="teacher-evaluation-list is-limit"><h5><i class="fa-solid fa-gavel"></i> Límites aplicados</h5><ul>${limites.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
           </details>`;
       }
 
       // ============================================================
-      // DATOS PERSONALES DEL ESTUDIANTE Ã¢â‚¬â€ EDICIÃƒâ€œN DOCENTE
-      // El docente autorizado puede modificar nombre, curso, divisiÃ³n y turno.
+      // DATOS PERSONALES DEL ESTUDIANTE â€” EDICIÃ“N DOCENTE
+      // El docente autorizado puede modificar nombre, curso, división y turno.
       // El guardado se realiza por UID en estudiantes/{uid} y no toca progreso,
-      // respuestas, cÃ³digos, notas ni historial del estudiante.
+      // respuestas, códigos, notas ni historial del estudiante.
       // ============================================================
       async function editarDatosEstudianteProfesor(indice) {
           const estudiante = estudiantesProfesor[indice];
@@ -11054,7 +11082,7 @@
               <div class="modal-box" style="max-width:560px;width:94%;">
                   <h3><i class="fa-solid fa-user-pen"></i> Modificar datos del estudiante</h3>
                   <p style="color:var(--text-muted);margin:.4rem 0 1rem;">
-                      Esta modificaciÃ³n estÃ¡ disponible Ãºnicamente para docentes autorizados.
+                      Esta modificación está disponible únicamente para docentes autorizados.
                   </p>
                   <div class="input-group">
                       <label for="editarNombreEstudiante">Nombre y Apellido</label>
@@ -11064,15 +11092,15 @@
                       <label for="editarCursoEstudiante">Curso</label>
                       <select id="editarCursoEstudiante">
                           <option value="">Seleccionar curso</option>
-                          ${['1Â° AÃ±o','2Â° AÃ±o','3Â° AÃ±o','4Â° AÃ±o','5Â° AÃ±o','6Â° AÃ±o','7Â° AÃ±o'].map(c =>
+                          ${['1° Año','2° Año','3° Año','4° Año','5° Año','6° Año','7° Año'].map(c =>
                               `<option value="${escapeHtml(c)}" ${String(datos.curso || '') === c ? 'selected' : ''}>${escapeHtml(c)}</option>`
                           ).join('')}
                       </select>
                   </div>
                   <div class="input-group">
-                      <label for="editarDivisionEstudiante">DivisiÃ³n</label>
+                      <label for="editarDivisionEstudiante">División</label>
                       <select id="editarDivisionEstudiante">
-                          <option value="">Seleccionar divisiÃ³n</option>
+                          <option value="">Seleccionar división</option>
                           ${['A','B','C','D','E'].map(d =>
                               `<option value="${d}" ${String(datos.division || '').toUpperCase() === d ? 'selected' : ''}>${d}</option>`
                           ).join('')}
@@ -11082,7 +11110,7 @@
                       <label for="editarTurnoEstudiante">Turno</label>
                       <select id="editarTurnoEstudiante">
                           <option value="">Seleccionar turno</option>
-                          ${['MaÃ±ana','Tarde','Vespertino','Noche'].map(t =>
+                          ${['Mañana','Tarde','Vespertino','Noche'].map(t =>
                               `<option value="${escapeHtml(t)}" ${String(datos.turno || '') === t ? 'selected' : ''}>${escapeHtml(t)}</option>`
                           ).join('')}
                       </select>
@@ -11114,7 +11142,7 @@
               const boton = modal.querySelector('#guardarEditarDatosEstudiante');
 
               if (!nombre || !curso || !division || !turno) {
-                  error.textContent = 'CompletÃ¡ nombre, curso, divisiÃ³n y turno.';
+                  error.textContent = 'Completá nombre, curso, división y turno.';
                   error.style.display = 'block';
                   return;
               }
@@ -11143,7 +11171,7 @@
                   alert('Los datos del estudiante fueron modificados correctamente.');
               } catch (e) {
                   console.error('Error modificando datos del estudiante:', e);
-                  error.textContent = 'No se pudieron guardar los cambios. VerificÃ¡ que tu cuenta sea un docente autorizado y que las reglas de Firestore permitan esta operaciÃ³n.';
+                  error.textContent = 'No se pudieron guardar los cambios. Verificá que tu cuenta sea un docente autorizado y que las reglas de Firestore permitan esta operación.';
                   error.style.display = 'block';
                   boton.disabled = false;
                   boton.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Guardar cambios';
@@ -11175,7 +11203,7 @@
           const promedio = calcularNotaEstudiante(d);
           const notaCalculada = calcularNotaProvisionalEstudiante(d);
           const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
-          const notaFinalEditable = notaDefinitiva !== 'Ã¢â‚¬â€' ? notaDefinitiva : notaCalculada;
+          const notaFinalEditable = notaDefinitiva !== 'â€”' ? notaDefinitiva : notaCalculada;
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
           const desafioActualDetalle = obtenerDesafioActualEstudiante(d);
           const graficoNotasDesafios = renderGraficoNotasDesafiosEstudiante(d);
@@ -11192,7 +11220,7 @@
           const cuentaInactiva = d.estadoCuenta === 'inactivo';
           const cuentaPendiente = d.estadoCuenta === 'pendiente';
           const cuentaRechazada = d.estadoCuenta === 'rechazado';
-          const estadoCuentaDetalle = cuentaPendiente ? 'Pendiente de aprobaciÃ³n' :
+          const estadoCuentaDetalle = cuentaPendiente ? 'Pendiente de aprobación' :
               (cuentaRechazada ? 'Rechazada' : (cuentaInactiva ? 'Inactiva' : 'Activa'));
           const colorCuentaDetalle = cuentaPendiente ? '#fde68a' :
               ((cuentaRechazada || cuentaInactiva) ? '#fca5a5' : '#6ee7b7');
@@ -11218,7 +11246,7 @@
           document.getElementById('detalleEstudianteProfesorTitle').innerHTML =
               `<i class="fa-solid fa-user-graduate"></i> ${escapeHtml(e.nombre || d.nombreGoogle || 'Estudiante sin nombre')}`;
           document.getElementById('detalleEstudianteProfesorSubtitulo').textContent =
-              `${d.email || 'Sin email'} Â· ${e.curso || 'Sin curso'} ${e.division || ''} Â· ${e.turno || 'Sin turno'}`;
+              `${d.email || 'Sin email'} · ${e.curso || 'Sin curso'} ${e.division || ''} · ${e.turno || 'Sin turno'}`;
 
           const actividadesHtml = seccionesData.map((sec, numero) => {
               const r = historial[sec.id] || {};
@@ -11226,16 +11254,16 @@
               const mensajesChat = Array.isArray(chatIA[sec.id]) ? chatIA[sec.id] : [];
               const ayudasAnalista = Array.isArray(r.ayudasAnalista) ? r.ayudasAnalista : [];
               const preguntas = Array.isArray(r.analista?.preguntas) ? r.analista.preguntas : [];
-              const codigo = r.codigo || codigos[sec.id] || '// Sin cÃ³digo guardado';
-              const salida = r.salida || '// Sin salida de ejecuciÃ³n guardada';
+              const codigo = r.codigo || codigos[sec.id] || '// Sin código guardado';
+              const salida = r.salida || '// Sin salida de ejecución guardada';
               const ejecucionRegistrada = Boolean(
                   r.exito === true || r.exito === false || r.error || r.salida
               );
               const estadoEjecucion = r.exito === true
-                  ? 'EjecuciÃ³n correcta registrada'
+                  ? 'Ejecución correcta registrada'
                   : (r.exito === false || r.error
-                      ? 'EjecuciÃ³n registrada con error'
-                      : (ejecucionRegistrada ? 'EjecuciÃ³n registrada' : 'TodavÃ­a no ejecutado'));
+                      ? 'Ejecución registrada con error'
+                      : (ejecucionRegistrada ? 'Ejecución registrada' : 'Todavía no ejecutado'));
               const notaAutomatica = r.notaFinal ?? r.notaIA;
               const notaFinal = obtenerNotaDesafioEstudiante(d, sec.id, r);
               const tieneNotaDocente = ajusteNotaDocente?.nota !== null
@@ -11264,8 +11292,8 @@
                   : '';
               const estado = finalizadas[sec.id] ? 'Finalizada' : (r.notaCodigo !== undefined ? 'Preguntas pendientes' : 'En curso');
               const formulaActividad = r.notaCodigo !== undefined && r.notaPreguntas !== undefined
-                  ? `(${r.notaCodigo} Ãƒâ€” 0,70) + (${r.notaPreguntas} Ãƒâ€” 0,30) = ${notaAutomatica}`
-                  : 'La fÃ³rmula se completarÃ¡ al entregar cÃ³digo y preguntas.';
+                  ? `(${r.notaCodigo} Ã— 0,70) + (${r.notaPreguntas} Ã— 0,30) = ${notaAutomatica}`
+                  : 'La fórmula se completará al entregar código y preguntas.';
               const estadosDetalle = [
                   (!evaluacionCodigo?.sintaxis?.valida || evaluacionCodigo?.ejecucion?.ok === false || Boolean(r.error)) ? 'errores' : '',
                   (!finalizadas[sec.id] || r.notaPreguntas === undefined || notaAutomatica === undefined) ? 'pendientes' : '',
@@ -11296,23 +11324,23 @@
                   <summary>
                       <span class="teacher-activity-summary-main">
                           <strong>${escapeHtml(sec.title)}</strong>
-                          <small>${estado} Â· Nota vigente ${notaFinal !== null ? `${notaFinal}/10` : 'pendiente'}</small>
+                          <small>${estado} · Nota vigente ${notaFinal !== null ? `${notaFinal}/10` : 'pendiente'}</small>
                       </span>
                       <span class="teacher-activity-badges">${etiquetasEstado}</span>
                   </summary>
                   <div class="teacher-activity-content">
                       <div class="teacher-detail-summary">
                           <div class="teacher-detail-stat"><small>Estado</small><strong>${estado}</strong></div>
-                          <div class="teacher-detail-stat"><small>Nota del cÃ³digo (70%)</small><strong>${r.notaCodigo !== undefined ? `${r.notaCodigo}/10` : 'Pendiente'}</strong></div>
+                          <div class="teacher-detail-stat"><small>Nota del código (70%)</small><strong>${r.notaCodigo !== undefined ? `${r.notaCodigo}/10` : 'Pendiente'}</strong></div>
                           <div class="teacher-detail-stat"><small>Nota de preguntas (30%)</small><strong>${r.notaPreguntas !== undefined ? `${r.notaPreguntas}/10` : 'Pendiente'}</strong></div>
-                          <div class="teacher-detail-stat"><small>CalificaciÃ³n automÃ¡tica</small><strong>${notaAutomatica !== undefined ? `${notaAutomatica}/10` : 'Pendiente'}</strong></div>
+                          <div class="teacher-detail-stat"><small>Calificación automática</small><strong>${notaAutomatica !== undefined ? `${notaAutomatica}/10` : 'Pendiente'}</strong></div>
                           <div class="teacher-detail-stat ${tieneNotaDocente ? 'teacher-grade-adjusted' : ''}"><small>Nota vigente</small><strong>${notaFinal !== null ? `${notaFinal}/10` : 'Pendiente'}</strong></div>
                           <div class="teacher-detail-stat"><small>Tiempo restante</small><strong>${formatearTiempoProfesor(tiempos[sec.id] ?? 2400)}</strong></div>
                           <div class="teacher-detail-stat"><small>Consultas de nota</small><strong>${Number(previews[sec.id] || 0)}/3</strong></div>
                           <div class="teacher-detail-stat"><small>Intentos</small><strong>${intentosModulo}</strong></div>
                       </div>
                       ${ultimoDesbloqueoModulo ? `<div style="padding:.65rem;border-radius:6px;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.25);margin-bottom:.8rem;line-height:1.5">
-                          <strong><i class="fa-solid fa-unlock-keyhole"></i> ÃƒÅ¡ltimo desbloqueo</strong><br>
+                          <strong><i class="fa-solid fa-unlock-keyhole"></i> Ãšltimo desbloqueo</strong><br>
                           Motivo: ${escapeHtml(ultimoDesbloqueoModulo.motivo || 'Nuevo intento autorizado')}<br>
                           Docente: ${escapeHtml(ultimoDesbloqueoModulo.por || 'Docente autorizado')}
                           ${fechaDesbloqueoModulo ? `<br>Fecha: ${escapeHtml(fechaDesbloqueoModulo)}` : ''}
@@ -11323,22 +11351,22 @@
                               ${desbloqueosModulo.map(item => {
                                   const fecha = item.fecha ? new Date(item.fecha).toLocaleString('es-AR') : 'Sin fecha';
                                   return `<div style="padding:.45rem .55rem;border-left:3px solid #34d399;background:rgba(52,211,153,.06)">
-                                      <strong>Intento ${Number(item.intento || 1)}</strong> Â· ${escapeHtml(fecha)}<br>
-                                      <small>${escapeHtml(item.por || 'Docente autorizado')} Â· ${escapeHtml(item.motivo || 'Sin motivo registrado')}</small>
+                                      <strong>Intento ${Number(item.intento || 1)}</strong> · ${escapeHtml(fecha)}<br>
+                                      <small>${escapeHtml(item.por || 'Docente autorizado')} · ${escapeHtml(item.motivo || 'Sin motivo registrado')}</small>
                                   </div>`;
                               }).join('')}
                           </div>
                       </details>` : ''}
                       <div style="padding:.65rem;border-radius:6px;background:rgba(56,189,248,.07);border:1px solid rgba(56,189,248,.25);margin-bottom:.8rem;">
-                          <strong>CÃ¡lculo de esta actividad:</strong> ${escapeHtml(formulaActividad)}
+                          <strong>Cálculo de esta actividad:</strong> ${escapeHtml(formulaActividad)}
                       </div>
                       <div class="teacher-challenge-grade-editor">
                           <div class="teacher-challenge-grade-heading">
                               <div>
-                                  <h4><i class="fa-solid fa-pen-to-square"></i> CalificaciÃ³n del docente</h4>
+                                  <h4><i class="fa-solid fa-pen-to-square"></i> Calificación del docente</h4>
                                   <p>${tieneNotaDocente
-                                      ? `Esta nota reemplaza la automÃ¡tica en el promedio. ÃƒÅ¡ltima modificaciÃ³n: ${escapeHtml(ajusteNotaDocente.modificadaPor || 'docente autorizado')}.`
-                                      : 'PodÃ©s reemplazar la nota automÃ¡tica de este desafÃ­o sin modificar el cÃ³digo ni las respuestas.'}</p>
+                                      ? `Esta nota reemplaza la automática en el promedio. Ãšltima modificación: ${escapeHtml(ajusteNotaDocente.modificadaPor || 'docente autorizado')}.`
+                                      : 'Podés reemplazar la nota automática de este desafío sin modificar el código ni las respuestas.'}</p>
                               </div>
                               <span id="estadoNotaDesafioDocente-${sec.id}" class="teacher-challenge-grade-status ${tieneNotaDocente ? 'saved' : ''}">
                                   ${tieneNotaDocente ? 'Nota docente activa' : 'Sin cambios'}
@@ -11346,14 +11374,14 @@
                           </div>
                           <div class="teacher-challenge-grade-fields">
                               <label>
-                                  Nota del desafÃ­o
+                                  Nota del desafío
                                   <input id="notaDesafioDocente-${sec.id}" type="number" min="0" max="10" step="0.1"
                                       value="${notaFinal !== null ? notaFinal : ''}" placeholder="0 a 10">
                               </label>
                               <label>
-                                  ObservaciÃ³n
+                                  Observación
                                   <input id="motivoNotaDesafioDocente-${sec.id}" type="text" maxlength="1000"
-                                      value="${escapeHtml(ajusteNotaDocente?.motivo || '')}" placeholder="Criterio o fundamento de la correcciÃ³n">
+                                      value="${escapeHtml(ajusteNotaDocente?.motivo || '')}" placeholder="Criterio o fundamento de la corrección">
                               </label>
                           </div>
                           <div class="teacher-challenge-grade-actions">
@@ -11367,23 +11395,23 @@
                                   <i class="fa-solid fa-clock-rotate-left"></i> Ver historial
                               </button>
                               ${tieneNotaDocente ? `<button class="btn btn-secondary" type="button" onclick="restaurarNotaDesafioProfesor(${indice}, '${sec.id}')">
-                                  <i class="fa-solid fa-arrow-rotate-left"></i> Usar nota automÃ¡tica
+                                  <i class="fa-solid fa-arrow-rotate-left"></i> Usar nota automática
                               </button>` : ''}
                           </div>
                           <div class="teacher-challenge-grade-history" id="historialNotaDesafio-${sec.id}" hidden></div>
                       </div>
                       <div style="padding:.7rem;border-radius:6px;background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.25);margin-bottom:.8rem;line-height:1.5">
-                          <strong><i class="fa-solid fa-graduation-cap"></i> Ayudas de comprensiÃ³n:</strong><br>
-                          Palabras consultadas: ${consultasPalabrasModulo}${palabrasModuloHtml ? ` Â· ${palabrasModuloHtml}` : ""}<br>
-                          Aperturas de pasos: ${Number(ayudaModulo.pasosVistos || 0)} Â· Material de apoyo: ${Number(ayudaModulo.materialApoyoVistas || 0)}<br>
-                          VerificaciÃ³n: ${Number(ayudaModulo.verificacion?.intentos || 0)
+                          <strong><i class="fa-solid fa-graduation-cap"></i> Ayudas de comprensión:</strong><br>
+                          Palabras consultadas: ${consultasPalabrasModulo}${palabrasModuloHtml ? ` · ${palabrasModuloHtml}` : ""}<br>
+                          Aperturas de pasos: ${Number(ayudaModulo.pasosVistos || 0)} · Material de apoyo: ${Number(ayudaModulo.materialApoyoVistas || 0)}<br>
+                          Verificación: ${Number(ayudaModulo.verificacion?.intentos || 0)
                               ? (ayudaModulo.verificacion?.correcta === true ? "Correcta" : "Pendiente") + ` (${Number(ayudaModulo.verificacion?.intentos || 0)} intento/s)`
-                              : "Sin realizar"} Â· Lista: ${checklistModuloMarcado}/${checklistModuloTotal}
+                              : "Sin realizar"} · Lista: ${checklistModuloMarcado}/${checklistModuloTotal}
                       </div>
                       <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;flex-wrap:wrap">
-                          <h4 style="margin:0">CÃ³digo entregado</h4>
+                          <h4 style="margin:0">Código entregado</h4>
                           <button class="btn btn-primary" type="button" onclick="abrirEditorColaborativoProfesor(${indice}, '${sec.id}')">
-                              <i class="fa-solid fa-code-branch"></i> Abrir cooperaciÃ³n y mensajes
+                              <i class="fa-solid fa-code-branch"></i> Abrir cooperación y mensajes
                           </button>
                       </div>
                       <div class="teacher-execution-status" style="margin:.35rem 0 .55rem;color:var(--text-muted);font-size:.82rem">
@@ -11391,10 +11419,10 @@
                           ${estadoEjecucion}
                       </div>
                       <pre class="teacher-code">${escapeHtml(codigo)}</pre>
-                      <h4 style="margin-top:.8rem">Salida de ejecuciÃ³n</h4>
+                      <h4 style="margin-top:.8rem">Salida de ejecución</h4>
                       <pre class="teacher-code" style="color:#7dd3fc">${escapeHtml(salida)}</pre>
                       ${renderDetalleEvaluacionCodigoProfesor(evaluacionCodigo, salida, sec)}
-                      ${r.analisisIA ? `<div style="margin-top:.8rem"><strong>AnÃ¡lisis automÃ¡tico:</strong><div style="margin-top:.35rem;color:#cbd5e1">${escapeHtml(r.analisisIA)}</div></div>` : ''}
+                      ${r.analisisIA ? `<div style="margin-top:.8rem"><strong>Análisis automático:</strong><div style="margin-top:.35rem;color:#cbd5e1">${escapeHtml(r.analisisIA)}</div></div>` : ''}
                       <div style="margin-top:.8rem">
                           <h4>Chat guiado con IA (${mensajesChat.length} mensajes)</h4>
                           ${mensajesChat.length
@@ -11403,13 +11431,13 @@
                                       <small style="color:var(--text-muted)">${m.rol === 'student' ? 'Alumno' : 'IA'}</small>
                                       <div style="margin-top:.2rem;white-space:pre-wrap;">${escapeHtml(m.texto || '')}</div>
                                   </div>`).join('')}</div>`
-                              : '<div style="color:var(--text-muted);margin-top:.35rem;">No hay consultas guardadas para este mÃ³dulo.</div>'}
+                              : '<div style="color:var(--text-muted);margin-top:.35rem;">No hay consultas guardadas para este módulo.</div>'}
                       </div>
                       ${ayudasAnalista.length ? `<div class="teacher-analyst-help-history">
                           <strong><i class="fa-solid fa-lightbulb"></i> Ayudas solicitadas sobre preguntas</strong>
                           <span>${ayudasAnalista.length} solicitud${ayudasAnalista.length === 1 ? '' : 'es'} registrada${ayudasAnalista.length === 1 ? '' : 's'}</span>
                           <ul>${ayudasAnalista.slice().reverse().slice(0, 8).map(item => `
-                              <li>${escapeHtml(item.tipo === 'abierta' ? 'Abierta' : 'SelecciÃ³n mÃºltiple')} Â· ${escapeHtml(item.pregunta || 'Pregunta sin texto')} Â· ${escapeHtml(new Date(item.fecha || '').toLocaleString('es-AR'))}</li>
+                              <li>${escapeHtml(item.tipo === 'abierta' ? 'Abierta' : 'Selección múltiple')} · ${escapeHtml(item.pregunta || 'Pregunta sin texto')} · ${escapeHtml(new Date(item.fecha || '').toLocaleString('es-AR'))}</li>
                           `).join('')}</ul>
                       </div>` : ''}
                       <div style="margin-top:1rem">
@@ -11421,9 +11449,9 @@
 
           const notasUsadas = detallePromedio.evaluadas.length
               ? detallePromedio.evaluadas.map(x=>`${escapeHtml(x.titulo)}: ${x.nota}/10`).join('<br>')
-              : 'TodavÃ­a no hay actividades con una nota vigente para incluir en el promedio.';
+              : 'Todavía no hay actividades con una nota vigente para incluir en el promedio.';
           const formulaPromedio = detallePromedio.promedio !== null
-              ? `${detallePromedio.evaluadas.map(x=>x.nota).join(' + ')} = ${detallePromedio.suma.toFixed(1)}; ${detallePromedio.suma.toFixed(1)} ÃƒÂ· ${detallePromedio.evaluadas.length} = ${detallePromedio.promedio.toFixed(1)}`
+              ? `${detallePromedio.evaluadas.map(x=>x.nota).join(' + ')} = ${detallePromedio.suma.toFixed(1)}; ${detallePromedio.suma.toFixed(1)} Ã· ${detallePromedio.evaluadas.length} = ${detallePromedio.promedio.toFixed(1)}`
               : 'Pendiente';
           const eventosHtml = eventos.length ? eventos.map(evento => {
               const salida = evento.salidaEn ? new Date(evento.salidaEn).toLocaleString() : 'Sin fecha';
@@ -11431,16 +11459,16 @@
                   ? 'No registrada'
                   : `${evento.duracionSegundos} segundos`;
               const justificacion = evento.justificacion
-                  ? `<div style="margin-top:.4rem;color:#cbd5e1"><strong>JustificaciÃ³n:</strong> ${escapeHtml(evento.justificacion.motivo || '')} Ã¢â‚¬â€ ${escapeHtml(evento.justificacion.detalle || '')}</div>`
-                  : '<div style="margin-top:.4rem;color:#fbbf24">Sin justificaciÃ³n del estudiante.</div>';
+                  ? `<div style="margin-top:.4rem;color:#cbd5e1"><strong>Justificación:</strong> ${escapeHtml(evento.justificacion.motivo || '')} â€” ${escapeHtml(evento.justificacion.detalle || '')}</div>`
+                  : '<div style="margin-top:.4rem;color:#fbbf24">Sin justificación del estudiante.</div>';
               return `<div class="teacher-question">
-                  <strong>Evento ${Number(evento.numero || 0)} Â· ${escapeHtml(salida)}</strong>
+                  <strong>Evento ${Number(evento.numero || 0)} · ${escapeHtml(salida)}</strong>
                   <div style="margin-top:.3rem;color:var(--text-muted)">
-                      Actividad: ${escapeHtml(evento.seccion || 'Sin identificar')} Â· DuraciÃ³n: ${escapeHtml(duracion)}
+                      Actividad: ${escapeHtml(evento.seccion || 'Sin identificar')} · Duración: ${escapeHtml(duracion)}
                   </div>
                   ${justificacion}
               </div>`;
-          }).join('') : '<p style="color:var(--text-muted)">No hay cambios de pestaÃ±a registrados.</p>';
+          }).join('') : '<p style="color:var(--text-muted)">No hay cambios de pestaña registrados.</p>';
 
           const resumenConsultasHtml = resumenConsultasIA.total
               ? `<div style="padding:1rem;border:1px solid rgba(139,92,246,.38);border-radius:8px;background:rgba(139,92,246,.07);margin-bottom:1rem">
@@ -11452,8 +11480,8 @@
                   </div>
                   <div class="teacher-detail-summary" style="margin:.4rem 0 .9rem">
                       <div class="teacher-detail-stat"><small>Consultas del alumno</small><strong>${resumenConsultasIA.total}</strong></div>
-                      <div class="teacher-detail-stat"><small>Tema mÃ¡s consultado</small><strong>${escapeHtml(resumenConsultasIA.categorias[0]?.[0] || "Sin clasificar")}</strong></div>
-                      <div class="teacher-detail-stat"><small>MÃ³dulo con mÃ¡s consultas</small><strong>${escapeHtml(resumenConsultasIA.modulos[0]?.titulo || "Sin mÃ³dulo")}</strong></div>
+                      <div class="teacher-detail-stat"><small>Tema más consultado</small><strong>${escapeHtml(resumenConsultasIA.categorias[0]?.[0] || "Sin clasificar")}</strong></div>
+                      <div class="teacher-detail-stat"><small>Módulo con más consultas</small><strong>${escapeHtml(resumenConsultasIA.modulos[0]?.titulo || "Sin módulo")}</strong></div>
                   </div>
                   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem">
                       <div>
@@ -11462,19 +11490,19 @@
                               `<div>${escapeHtml(nombre)}: <strong>${cantidad}</strong></div>`).join("")}</div>
                       </div>
                       <div>
-                          <h4>Consultas por mÃ³dulo</h4>
+                          <h4>Consultas por módulo</h4>
                           <div style="margin-top:.4rem;line-height:1.65">${resumenConsultasIA.modulos.slice(0, 6).map(m =>
                               `<div>${escapeHtml(m.titulo)}: <strong>${m.cantidad}</strong></div>`).join("")}</div>
                       </div>
                   </div>
                   <div style="margin-top:.8rem">
-                      <h4>Preguntas mÃ¡s repetidas</h4>
+                      <h4>Preguntas más repetidas</h4>
                       <ol style="margin:.45rem 0 0 1.2rem;line-height:1.6">${resumenConsultasIA.frecuentes.map(p =>
                           `<li>${escapeHtml(p.texto)}${p.cantidad > 1 ? ` <strong>(${p.cantidad} veces)</strong>` : ""}</li>`).join("")}</ol>
                   </div>
               </div>`
               : `<div style="padding:1rem;border:1px solid rgba(139,92,246,.3);border-radius:8px;background:rgba(139,92,246,.05);margin-bottom:1rem;color:var(--text-muted)">
-                  <strong>Resumen de consultas al chat IA:</strong> este alumno todavÃ­a no realizÃ³ consultas guardadas.
+                  <strong>Resumen de consultas al chat IA:</strong> este alumno todavía no realizó consultas guardadas.
               </div>`;
 
           document.getElementById('detalleEstudianteProfesorContenido').innerHTML = `
@@ -11482,34 +11510,34 @@
               <div class="teacher-detail-summary">
                   <div class="teacher-detail-stat"><small>Nombre</small><strong>${escapeHtml(e.nombre || d.nombreGoogle || 'Sin nombre')}</strong></div>
                   <div class="teacher-detail-stat"><small>Email</small><strong>${escapeHtml(d.email || 'Sin email')}</strong></div>
-                  <div class="teacher-detail-stat"><small>Curso y divisiÃ³n</small><strong>${escapeHtml(`${e.curso || 'Ã¢â‚¬â€'} ${e.division || ''}`)}</strong></div>
-                   <div class="teacher-detail-stat"><small>Turno</small><strong>${escapeHtml(e.turno || 'Ã¢â‚¬â€')}</strong></div>
+                  <div class="teacher-detail-stat"><small>Curso y división</small><strong>${escapeHtml(`${e.curso || 'â€”'} ${e.division || ''}`)}</strong></div>
+                   <div class="teacher-detail-stat"><small>Turno</small><strong>${escapeHtml(e.turno || 'â€”')}</strong></div>
                    <div class="teacher-detail-stat"><small>Progreso</small><strong>${progreso}%</strong></div>
-                   <div class="teacher-detail-stat teacher-current-challenge-stat"><small>${desafioActualDetalle.siguiente ? 'Siguiente desafÃ­o' : 'DesafÃ­o actual'}</small><strong>${escapeHtml(desafioActualDetalle.desafio?.title || 'Sin actividad informada')}</strong><span>${desafioActualDetalle.trabajandoAhora ? 'Trabajando ahora' : (desafioActualDetalle.siguiente ? 'Calculado por finalizaciÃ³n' : (desafioActualDetalle.id ? 'ÃƒÅ¡ltimo informado' : 'Sin conexiÃ³n activa'))}</span></div>
-                   <div class="teacher-detail-stat"><small>DesafÃ­os con evaluaciÃ³n socrÃ¡tica</small><strong>${actividadesSocraticasValidas.length}</strong></div>
-                  <div class="teacher-detail-stat"><small>Total de respuestas socrÃ¡ticas</small><strong>${respuestasSocraticasValidas}</strong></div>
-                  <div class="teacher-detail-stat"><small>Promedio acadÃ©mico</small><strong>${promedio === 'Ã¢â‚¬â€' ? 'Pendiente' : `${promedio}/10`}</strong></div>
-                  <div class="teacher-detail-stat"><small>Nota calculada</small><strong>${notaCalculada === 'Ã¢â‚¬â€' ? 'Pendiente' : `${notaCalculada}/10`}</strong></div>
-                  <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === 'Ã¢â‚¬â€' ? 'Pendiente de confirmaciÃ³n' : `${notaDefinitiva}/10`}</strong></div>
+                   <div class="teacher-detail-stat teacher-current-challenge-stat"><small>${desafioActualDetalle.siguiente ? 'Siguiente desafío' : 'Desafío actual'}</small><strong>${escapeHtml(desafioActualDetalle.desafio?.title || 'Sin actividad informada')}</strong><span>${desafioActualDetalle.trabajandoAhora ? 'Trabajando ahora' : (desafioActualDetalle.siguiente ? 'Calculado por finalización' : (desafioActualDetalle.id ? 'Ãšltimo informado' : 'Sin conexión activa'))}</span></div>
+                   <div class="teacher-detail-stat"><small>Desafíos con evaluación socrática</small><strong>${actividadesSocraticasValidas.length}</strong></div>
+                  <div class="teacher-detail-stat"><small>Total de respuestas socráticas</small><strong>${respuestasSocraticasValidas}</strong></div>
+                  <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === 'â€”' ? 'Pendiente' : `${promedio}/10`}</strong></div>
+                  <div class="teacher-detail-stat"><small>Nota calculada</small><strong>${notaCalculada === 'â€”' ? 'Pendiente' : `${notaCalculada}/10`}</strong></div>
+                  <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === 'â€”' ? 'Pendiente de confirmación' : `${notaDefinitiva}/10`}</strong></div>
                   <div class="teacher-detail-stat teacher-level-completa"><small>Respuestas completas</small><strong>${resumenNivelesAnalista.completa}</strong></div>
                   <div class="teacher-detail-stat teacher-level-incompleta"><small>Correctas incompletas</small><strong>${resumenNivelesAnalista.incompleta}</strong></div>
                   <div class="teacher-detail-stat teacher-level-parcial"><small>Respuestas parciales</small><strong>${resumenNivelesAnalista.parcial}</strong></div>
                   <div class="teacher-detail-stat teacher-level-incorrecta"><small>Respuestas incorrectas</small><strong>${resumenNivelesAnalista.incorrecta}</strong></div>
                   <div class="teacher-detail-stat"><small>Estado de cuenta</small><strong style="color:${colorCuentaDetalle}">${estadoCuentaDetalle}</strong></div>
-                  <div class="teacher-detail-stat"><small>Salidas de pestaÃ±a</small><strong>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</strong></div>
+                  <div class="teacher-detail-stat"><small>Salidas de pestaña</small><strong>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</strong></div>
                   <div class="teacher-detail-stat"><small>Desbloqueos</small><strong>${cantidadDesbloqueos}</strong></div>
-                   <div class="teacher-detail-stat"><small>ÃƒÅ¡ltima actualizaciÃ³n</small><strong>${escapeHtml(fecha)}</strong></div>
+                   <div class="teacher-detail-stat"><small>Ãšltima actualización</small><strong>${escapeHtml(fecha)}</strong></div>
                </div>
                ${graficoNotasDesafios}
-               <button type="button" class="teacher-floating-chart-button" onclick="irAlGraficoNotasEstudiante(this)" title="Ir al grÃ¡fico de notas">
-                   <i class="fa-solid fa-chart-column"></i><span>Ir al grÃ¡fico</span>
+               <button type="button" class="teacher-floating-chart-button" onclick="irAlGraficoNotasEstudiante(this)" title="Ir al gráfico de notas">
+                   <i class="fa-solid fa-chart-column"></i><span>Ir al gráfico</span>
                </button>
                <div class="teacher-detail-toolbar">
                   <div class="teacher-detail-toolbar-title">
-                      <strong><i class="fa-solid fa-layer-group"></i> DesafÃ­os del informe</strong>
-                      <span id="estadoFiltroDetalleProfesor">${seccionesData.length} de ${seccionesData.length} desafÃ­os</span>
+                      <strong><i class="fa-solid fa-layer-group"></i> Desafíos del informe</strong>
+                      <span id="estadoFiltroDetalleProfesor">${seccionesData.length} de ${seccionesData.length} desafíos</span>
                   </div>
-                  <div class="teacher-detail-quick-filters" aria-label="Filtros rÃ¡pidos de desafÃ­os">
+                  <div class="teacher-detail-quick-filters" aria-label="Filtros rápidos de desafíos">
                       <button type="button" data-detail-filter-chip="" class="is-active" aria-pressed="true" onclick="aplicarFiltroRapidoDetalleProfesor('')">Todos</button>
                       <button type="button" data-detail-filter-chip="errores" aria-pressed="false" onclick="aplicarFiltroRapidoDetalleProfesor('errores')">Errores</button>
                       <button type="button" data-detail-filter-chip="pendientes" aria-pressed="false" onclick="aplicarFiltroRapidoDetalleProfesor('pendientes')">Pendientes</button>
@@ -11518,7 +11546,7 @@
                   <div class="teacher-detail-controls">
                       <label class="teacher-detail-search">
                           <span>Buscar</span>
-                          <div><i class="fa-solid fa-magnifying-glass"></i><input id="buscarDesafioDetalleProfesor" type="search" placeholder="TÃ­tulo o estado" oninput="filtrarDesafiosDetalleProfesor()"></div>
+                          <div><i class="fa-solid fa-magnifying-glass"></i><input id="buscarDesafioDetalleProfesor" type="search" placeholder="Título o estado" oninput="filtrarDesafiosDetalleProfesor()"></div>
                       </label>
                       <label>
                           <span>Mostrar</span>
@@ -11529,7 +11557,7 @@
                           <option value="modificadas">Nota docente modificada</option>
                           <option value="finalizadas">Finalizados</option>
                           <option value="sin-nota">Sin nota vigente</option>
-                          <option value="aprobadas">Nota vigente 7 o mÃ¡s</option>
+                          <option value="aprobadas">Nota vigente 7 o más</option>
                           <option value="desaprobadas">Nota vigente menor a 7</option>
                           <option value="completas">Completos sin observaciones</option>
                           </select>
@@ -11541,7 +11569,7 @@
                               <option value="estado">Prioridad: errores primero</option>
                               <option value="nota-asc">Nota: menor primero</option>
                               <option value="nota-desc">Nota: mayor primero</option>
-                              <option value="titulo">TÃ­tulo: A-Z</option>
+                              <option value="titulo">Título: A-Z</option>
                           </select>
                       </label>
                   </div>
@@ -11556,7 +11584,7 @@
               </div>
               <div style="padding:1rem;border:1px solid rgba(56,189,248,.35);border-radius:8px;background:rgba(56,189,248,.06);margin-bottom:1rem">
                   <strong><i class="fa-solid fa-user-pen"></i> Datos personales</strong>
-                  <div style="margin-top:.35rem;color:var(--text-muted)">El docente puede corregir nombre, curso, divisiÃ³n y turno.</div>
+                  <div style="margin-top:.35rem;color:var(--text-muted)">El docente puede corregir nombre, curso, división y turno.</div>
                   <div style="margin-top:.7rem">
                       <button class="btn btn-primary" type="button" onclick="editarDatosEstudianteProfesor(${indice})">
                           <i class="fa-solid fa-user-pen"></i> Modificar datos del estudiante
@@ -11565,7 +11593,7 @@
               </div>
               <div style="${(cuentaPendiente || cuentaRechazada) ? 'display:none;' : ''}padding:1rem;border:1px solid ${cuentaInactiva ? 'rgba(239,68,68,.35)' : 'rgba(16,185,129,.35)'};border-radius:8px;background:${cuentaInactiva ? 'rgba(239,68,68,.06)' : 'rgba(16,185,129,.06)'};margin-bottom:1rem">
                   <strong>Estado institucional: ${cuentaInactiva ? 'INACTIVA' : 'ACTIVA'}</strong>
-                  ${cuentaInactiva ? `<div style="margin-top:.35rem">Motivo: ${escapeHtml(d.bajaMotivo || 'Sin motivo')}<br>Fecha: ${escapeHtml(d.bajaFecha ? new Date(d.bajaFecha).toLocaleString() : 'Sin fecha')}<br>Responsable: ${escapeHtml(d.bajaPor || 'Sin registrar')}</div>` : '<div style="margin-top:.35rem;color:var(--text-muted)">La cuenta puede iniciar sesiÃ³n normalmente.</div>'}
+                  ${cuentaInactiva ? `<div style="margin-top:.35rem">Motivo: ${escapeHtml(d.bajaMotivo || 'Sin motivo')}<br>Fecha: ${escapeHtml(d.bajaFecha ? new Date(d.bajaFecha).toLocaleString() : 'Sin fecha')}<br>Responsable: ${escapeHtml(d.bajaPor || 'Sin registrar')}</div>` : '<div style="margin-top:.35rem;color:var(--text-muted)">La cuenta puede iniciar sesión normalmente.</div>'}
                   <div style="margin-top:.7rem">
                       <button class="btn ${cuentaInactiva ? 'btn-success' : 'btn-danger'}" onclick="cambiarEstadoCuentaEstudiante(${indice}, '${cuentaInactiva ? 'activo' : 'inactivo'}')">
                           <i class="fa-solid ${cuentaInactiva ? 'fa-user-check' : 'fa-user-slash'}"></i>
@@ -11574,11 +11602,11 @@
                   </div>
               </div>
               <div style="padding:1rem;border:1px solid rgba(56,189,248,.35);border-radius:8px;background:rgba(56,189,248,.06);margin-bottom:1rem">
-                  <strong>Control individual del cronÃ³metro: ${cronometroIndividualPausado ? 'PAUSADO' : 'ACTIVO'}</strong>
+                  <strong>Control individual del cronómetro: ${cronometroIndividualPausado ? 'PAUSADO' : 'ACTIVO'}</strong>
                   <div class="btn-group" style="margin-top:.7rem">
                       <button class="btn ${cronometroIndividualPausado ? 'btn-success' : 'btn-warning'}" onclick="controlarCronometroEstudianteProfesor(${indice}, '${cronometroIndividualPausado ? 'reanudar' : 'pausar'}')">
                           <i class="fa-solid ${cronometroIndividualPausado ? 'fa-play' : 'fa-pause'}"></i>
-                          ${cronometroIndividualPausado ? 'Reanudar cronÃ³metro' : 'Pausar cronÃ³metro'}
+                          ${cronometroIndividualPausado ? 'Reanudar cronómetro' : 'Pausar cronómetro'}
                       </button>
                       <button class="btn btn-secondary" onclick="controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')">
                           <i class="fa-solid fa-clock-rotate-left"></i> Reiniciar a 40:00
@@ -11593,9 +11621,9 @@
                   <div style="margin-top:.4rem;color:var(--text-muted);line-height:1.5">
                     Fecha del bloqueo: ${escapeHtml(d.pantallaBloqueadaEn ? new Date(d.pantallaBloqueadaEn).toLocaleString() : 'Sin bloqueo registrado')}<br>
                     Cantidad de salidas: ${Number(d.pantallaBloqueadaSalidas || d.salidasPestana || 0)}<br>
-                    ÃƒÅ¡ltima secciÃ³n: ${escapeHtml(d.pantallaBloqueadaSeccion || 'Sin identificar')}<br>
+                    Ãšltima sección: ${escapeHtml(d.pantallaBloqueadaSeccion || 'Sin identificar')}<br>
                     Total de desbloqueos: ${cantidadDesbloqueos}<br>
-                    ÃƒÅ¡ltimo desbloqueo: ${escapeHtml(ultimoDesbloqueoFecha)}<br>
+                    Ãšltimo desbloqueo: ${escapeHtml(ultimoDesbloqueoFecha)}<br>
                     Realizado por: ${escapeHtml(ultimoDesbloqueo.por || 'Sin registrar')}<br>
                     Motivo: ${escapeHtml(ultimoDesbloqueo.motivo || 'Sin motivo registrado')}
                   </div>
@@ -11603,25 +11631,25 @@
               ${resumenConsultasHtml}
               ${renderResumenAyudasComprensionProfesor(d)}
               <details class="teacher-activity">
-                  <summary>CÃ³mo se calculÃ³ el promedio acadÃ©mico</summary>
+                  <summary>Cómo se calculó el promedio académico</summary>
                   <div class="teacher-activity-content">
-                      <p><strong>FÃ³rmula:</strong> suma de las notas vigentes evaluadas ÃƒÂ· cantidad de actividades evaluadas. Las correcciones docentes reemplazan a la nota automÃ¡tica.</p>
-                      <p style="margin-top:.5rem;"><strong>CÃ¡lculo actual:</strong> ${escapeHtml(formulaPromedio)}</p>
+                      <p><strong>Fórmula:</strong> suma de las notas vigentes evaluadas Ã· cantidad de actividades evaluadas. Las correcciones docentes reemplazan a la nota automática.</p>
+                      <p style="margin-top:.5rem;"><strong>Cálculo actual:</strong> ${escapeHtml(formulaPromedio)}</p>
                       <p style="margin-top:.7rem;"><strong>Actividades incluidas (${detallePromedio.evaluadas.length}):</strong></p>
                       <div style="margin-top:.35rem;color:#cbd5e1;line-height:1.5">${notasUsadas}</div>
-                      <p style="margin-top:.7rem;color:var(--text-muted);">Las actividades sin nota automÃ¡tica ni correcciÃ³n docente no forman parte del promedio.</p>
+                      <p style="margin-top:.7rem;color:var(--text-muted);">Las actividades sin nota automática ni corrección docente no forman parte del promedio.</p>
                   </div>
               </details>
               <details class="teacher-activity teacher-tab-review-compact">
-                  <summary>Registro de cambios de pestaÃ±a y revisiÃ³n docente <small>${eventos.length} evento${eventos.length === 1 ? '' : 's'} Â· ${revision.estado || 'pendiente'}</small></summary>
+                  <summary>Registro de cambios de pestaña y revisión docente <small>${eventos.length} evento${eventos.length === 1 ? '' : 's'} · ${revision.estado || 'pendiente'}</small></summary>
                   <div class="teacher-activity-content">
-                      <p style="color:var(--text-muted);margin-bottom:.7rem;">Estos eventos son indicadores para revisiÃ³n; no constituyen por sÃ­ solos una prueba de fraude.</p>
+                      <p style="color:var(--text-muted);margin-bottom:.7rem;">Estos eventos son indicadores para revisión; no constituyen por sí solos una prueba de fraude.</p>
                       <button class="btn btn-danger" style="margin-bottom:.8rem" onclick="reiniciarSalidasEstudianteProfesor(${indice})">
-                          <i class="fa-solid fa-rotate-left"></i> Reiniciar contador de cambios de pestaÃ±a
+                          <i class="fa-solid fa-rotate-left"></i> Reiniciar contador de cambios de pestaña
                       </button>
                       ${eventosHtml}
                       <div style="margin-top:1rem;padding:1rem;border:1px solid rgba(245,158,11,.35);border-radius:8px;background:rgba(245,158,11,.06)">
-                          <h4>DecisiÃ³n docente</h4>
+                          <h4>Decisión docente</h4>
                           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.7rem;margin-top:.7rem">
                               <div class="input-group">
                                   <label for="estadoRevisionProfesor">Estado</label>
@@ -11629,8 +11657,8 @@
                                       <option value="pendiente" ${revision.estado === 'pendiente' ? 'selected' : ''}>Pendiente</option>
                                       <option value="sin_observaciones" ${revision.estado === 'sin_observaciones' ? 'selected' : ''}>Sin observaciones</option>
                                       <option value="advertencia" ${revision.estado === 'advertencia' ? 'selected' : ''}>Advertencia</option>
-                                      <option value="penalizacion" ${revision.estado === 'penalizacion' ? 'selected' : ''}>PenalizaciÃ³n</option>
-                                      <option value="repetir_actividad" ${revision.estado === 'repetir_actividad' ? 'selected' : ''}>Solicitar repeticiÃ³n</option>
+                                      <option value="penalizacion" ${revision.estado === 'penalizacion' ? 'selected' : ''}>Penalización</option>
+                                      <option value="repetir_actividad" ${revision.estado === 'repetir_actividad' ? 'selected' : ''}>Solicitar repetición</option>
                                   </select>
                               </div>
                               <div class="input-group">
@@ -11639,33 +11667,33 @@
                               </div>
                           </div>
                           <div class="input-group" style="margin-top:.7rem">
-                              <label for="motivoRevisionProfesor">Fundamento de la decisiÃ³n</label>
+                              <label for="motivoRevisionProfesor">Fundamento de la decisión</label>
                               <textarea id="motivoRevisionProfesor" style="min-height:90px;padding:.7rem;border-radius:6px;background:var(--bg-dark);color:white;border:1px solid var(--border)">${escapeHtml(revision.motivo || '')}</textarea>
                           </div>
                           <div class="input-group" style="margin-top:.7rem">
                               <label for="notaFinalDocenteProfesor">Nota final que desea confirmar el docente</label>
-                              <input id="notaFinalDocenteProfesor" type="number" min="0" max="10" step="0.1" value="${notaFinalEditable === 'Ã¢â‚¬â€' ? '' : notaFinalEditable}">
-                              <small style="color:var(--text-muted)">Puede conservar la nota calculada o reemplazarla por otro valor entre 0 y 10. Solo serÃ¡ definitiva al marcar la confirmaciÃ³n.</small>
+                              <input id="notaFinalDocenteProfesor" type="number" min="0" max="10" step="0.1" value="${notaFinalEditable === 'â€”' ? '' : notaFinalEditable}">
+                              <small style="color:var(--text-muted)">Puede conservar la nota calculada o reemplazarla por otro valor entre 0 y 10. Solo será definitiva al marcar la confirmación.</small>
                           </div>
                           <div style="margin-top:.7rem;line-height:1.5">
-                              Promedio acadÃ©mico: <strong>${promedio === 'Ã¢â‚¬â€' ? 'Pendiente' : `${promedio}/10`}</strong><br>
-                              PenalizaciÃ³n: <strong>-${Number(revision.penalizacion || 0).toFixed(1)}</strong><br>
-                              Nota calculada: <strong>${notaCalculada === 'Ã¢â‚¬â€' ? 'Pendiente' : `${notaCalculada}/10`}</strong><br>
-                              Nota definitiva: <strong>${notaDefinitiva === 'Ã¢â‚¬â€' ? 'Pendiente de confirmaciÃ³n docente' : `${notaDefinitiva}/10`}</strong>
+                              Promedio académico: <strong>${promedio === 'â€”' ? 'Pendiente' : `${promedio}/10`}</strong><br>
+                              Penalización: <strong>-${Number(revision.penalizacion || 0).toFixed(1)}</strong><br>
+                              Nota calculada: <strong>${notaCalculada === 'â€”' ? 'Pendiente' : `${notaCalculada}/10`}</strong><br>
+                              Nota definitiva: <strong>${notaDefinitiva === 'â€”' ? 'Pendiente de confirmación docente' : `${notaDefinitiva}/10`}</strong>
                               ${revision.notaConfirmada === true && revision.notaModificadaManualmente === true
                                   ? '<br><small>La nota definitiva fue modificada manualmente por el docente.</small>'
                                   : ''}
-                              ${revision.revisadoPor ? `<br><small>ÃƒÅ¡ltima revisiÃ³n: ${escapeHtml(revision.revisadoPor)}</small>` : ''}
+                              ${revision.revisadoPor ? `<br><small>Ãšltima revisión: ${escapeHtml(revision.revisadoPor)}</small>` : ''}
                           </div>
                           <label style="display:flex;align-items:flex-start;gap:.55rem;margin-top:.8rem;padding:.75rem;border:1px solid rgba(56,189,248,.35);border-radius:7px;background:rgba(56,189,248,.08);cursor:pointer">
-                              <input id="confirmarNotaDefinitivaProfesor" type="checkbox" ${revision.notaConfirmada === true ? 'checked' : ''} ${notaCalculada === 'Ã¢â‚¬â€' ? 'disabled' : ''} style="margin-top:.2rem">
+                              <input id="confirmarNotaDefinitivaProfesor" type="checkbox" ${revision.notaConfirmada === true ? 'checked' : ''} ${notaCalculada === 'â€”' ? 'disabled' : ''} style="margin-top:.2rem">
                               <span>
                                   <strong>Confirmar nota definitiva</strong><br>
-                                  <small>Se confirmarÃ¡ el valor ingresado arriba. Si se modifica el descuento desde el editor rÃ¡pido, deberÃ¡ confirmarse nuevamente.</small>
+                                  <small>Se confirmará el valor ingresado arriba. Si se modifica el descuento desde el editor rápido, deberá confirmarse nuevamente.</small>
                               </span>
                           </label>
                           <button class="btn btn-warning" style="margin-top:.8rem" onclick="guardarRevisionSalidasProfesor(${indice})">
-                              <i class="fa-solid fa-floppy-disk"></i> Guardar decisiÃ³n y confirmaciÃ³n
+                              <i class="fa-solid fa-floppy-disk"></i> Guardar decisión y confirmación
                           </button>
                       </div>
                   </div>
@@ -11679,8 +11707,8 @@
               </div>
               <div id="sinResultadosDetalleProfesor" class="teacher-detail-empty" hidden>
                   <i class="fa-solid fa-filter-circle-xmark"></i>
-                  <strong>No hay desafÃ­os que coincidan.</strong>
-                  <span>ModificÃ¡ la bÃºsqueda o elegÃ­ otro filtro.</span>
+                  <strong>No hay desafíos que coincidan.</strong>
+                  <span>Modificá la búsqueda o elegí otro filtro.</span>
               </div>
               <div id="listaDesafiosDetalleProfesor">${actividadesHtml}</div>`;
           document.getElementById('detalleEstudianteProfesorModal').classList.add('active');
@@ -11695,6 +11723,7 @@
           if (botonFiltroRecordado) {
               filtrarGraficoNotasDesafiosEstudiante(ultimoFiltroGraficoNotasEstudiante, botonFiltroRecordado);
           }
+          aplicarVisibilidadValoresGraficoNotasEstudiante(graficoNotas, mostrarValoresGraficoNotasEstudiante);
           restaurarPosicionGraficoNotasEstudiante(graficoNotas);
           window.cargarHistorialAccesosProfesorFirebase?.(d.uid).then(accesos => {
               const contenedor = document.getElementById("historialAccesosProfesor");
@@ -11705,14 +11734,14 @@
                           ? acceso.registradoEn.toDate()
                           : new Date(Number(acceso.fechaCliente || 0));
                       return `<div style="padding:.45rem 0;border-bottom:1px solid rgba(148,163,184,.18)">
-                          <strong>${acceso.tipo === "inicio_sesion" ? "Inicio de sesiÃ³n" : "Cierre de sesiÃ³n"}</strong>
-                          Â· ${escapeHtml(fechaAcceso.toLocaleString("es-AR"))}
-                          Â· Script v${escapeHtml(acceso.versionScript || "sin informar")}
-                          ${Number(acceso.duracionSesionSegundos || 0) > 0 ? ` Â· DuraciÃ³n ${Math.round(Number(acceso.duracionSesionSegundos) / 60)} min` : ""}
-                          ${acceso.sesionesDuplicadas ? " Â· SesiÃ³n simultÃ¡nea detectada" : ""}
+                          <strong>${acceso.tipo === "inicio_sesion" ? "Inicio de sesión" : "Cierre de sesión"}</strong>
+                          · ${escapeHtml(fechaAcceso.toLocaleString("es-AR"))}
+                          · Script v${escapeHtml(acceso.versionScript || "sin informar")}
+                          ${Number(acceso.duracionSesionSegundos || 0) > 0 ? ` · Duración ${Math.round(Number(acceso.duracionSesionSegundos) / 60)} min` : ""}
+                          ${acceso.sesionesDuplicadas ? " · Sesión simultánea detectada" : ""}
                       </div>`;
                   }).join("")
-                  : "No hay accesos registrados todavÃ­a.";
+                  : "No hay accesos registrados todavía.";
           }).catch(() => {
               const contenedor = document.getElementById("historialAccesosProfesor");
               if (contenedor) contenedor.textContent = "No se pudo consultar el historial de accesos.";
@@ -11730,7 +11759,7 @@
           if (!d?.uid) return;
           const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante';
           const contenido = document.getElementById('historialDesbloqueosContenido');
-          document.getElementById('historialDesbloqueosSubtitulo').textContent = `${nombre} Â· ${d.email || 'Sin email'}`;
+          document.getElementById('historialDesbloqueosSubtitulo').textContent = `${nombre} · ${d.email || 'Sin email'}`;
           document.getElementById('historialDesbloqueosModal').classList.add('active');
           contenido.innerHTML = '<p style="color:var(--text-muted)">Cargando historial...</p>';
           const historial = await window.obtenerHistorialDesbloqueosFirebase?.(d.uid) || [];
@@ -11757,7 +11786,7 @@
                   <span><b>Docente:</b> ${escapeHtml(evento.desbloqueadoPor || 'Sin registrar')}</span>
                   <span><b>Motivo:</b> ${escapeHtml(evento.motivo || 'Sin motivo registrado')}</span>
                   <span><b>Salidas:</b> ${Number(evento.bloqueoSalidas || 0)}</span>
-                  <span><b>SecciÃ³n:</b> ${escapeHtml(evento.bloqueoSeccion || 'Sin identificar')}</span>
+                  <span><b>Sección:</b> ${escapeHtml(evento.bloqueoSeccion || 'Sin identificar')}</span>
                   <span><b>Bloqueo original:</b> ${escapeHtml(formatoFecha(evento.bloqueoEn))}</span>
                 </div>
               </article>`).join('')}`;
@@ -11863,7 +11892,7 @@
           if (!filtrados.length) {
               contenido.innerHTML = `${resumen}<div class="history-event">
                 <strong><i class="fa-solid fa-filter-circle-xmark"></i> No hay cambios que coincidan con los filtros.</strong>
-                <div style="margin-top:.35rem;color:var(--text-muted)">ModificÃ¡ las fechas, elegÃ­ otro docente o limpiÃ¡ los filtros.</div>
+                <div style="margin-top:.35rem;color:var(--text-muted)">Modificá las fechas, elegí otro docente o limpiá los filtros.</div>
               </div>`;
               return;
           }
@@ -11906,7 +11935,7 @@
           const filtros = document.getElementById('historialDescuentosFiltros');
           if (!modal || !contenido || !subtitulo || !filtros) return;
           const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante';
-          subtitulo.textContent = `${nombre} Â· ${d.email || 'Sin email'}`;
+          subtitulo.textContent = `${nombre} · ${d.email || 'Sin email'}`;
           modal.classList.add('active');
           filtros.hidden = true;
           contenido.innerHTML = '<p style="color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> Cargando historial...</p>';
@@ -11916,7 +11945,7 @@
               const huboError = Boolean(window.ultimoErrorHistorialDescuentos);
               contenido.innerHTML = `<div class="history-event">
                 <strong><i class="fa-solid ${huboError ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i> ${huboError ? 'No se pudo cargar el historial.' : 'No hay cambios de descuento registrados.'}</strong>
-                <div style="margin-top:.35rem;color:var(--text-muted)">${huboError ? 'VerificÃ¡ la conexiÃ³n y que las reglas de Firestore estÃ©n publicadas.' : 'Los prÃ³ximos cambios de valor o motivo aparecerÃ¡n en esta ventana.'}</div>
+                <div style="margin-top:.35rem;color:var(--text-muted)">${huboError ? 'Verificá la conexión y que las reglas de Firestore estén publicadas.' : 'Los próximos cambios de valor o motivo aparecerán en esta ventana.'}</div>
               </div>`;
               return;
           }
@@ -11957,7 +11986,7 @@
           if (!d?.uid) return;
           const autorizado = await window.autorizarDocenteFirebase?.();
           if (!autorizado) {
-              alert('Solo una cuenta docente autorizada puede consultar el historial de pestaÃ±as.');
+              alert('Solo una cuenta docente autorizada puede consultar el historial de pestañas.');
               return;
           }
           const modal = document.getElementById('historialPestanasModal');
@@ -11965,7 +11994,7 @@
           const subtitulo = document.getElementById('historialPestanasSubtitulo');
           if (!modal || !contenido || !subtitulo) return;
           const nombre = d.estudiante?.nombre || d.nombreGoogle || d.email || 'Estudiante';
-          subtitulo.textContent = `${nombre} Â· ${d.email || 'Sin email'}`;
+          subtitulo.textContent = `${nombre} · ${d.email || 'Sin email'}`;
           modal.classList.add('active');
           contenido.innerHTML = '<p style="color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i> Cargando historial...</p>';
           window.ultimoErrorHistorialPestanas = null;
@@ -11973,8 +12002,8 @@
           if (!historial.length) {
               const huboError = Boolean(window.ultimoErrorHistorialPestanas);
               contenido.innerHTML = `<div class="history-event">
-                <strong><i class="fa-solid ${huboError ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i> ${huboError ? 'No se pudo cargar el historial.' : 'No hay pestaÃ±as externas registradas.'}</strong>
-                <div style="margin-top:.35rem;color:var(--text-muted)">${huboError ? 'VerificÃ¡ la conexiÃ³n y publicÃ¡ las reglas actualizadas de Firestore.' : 'InstalÃ¡ la extensiÃ³n en el navegador del estudiante e iniciÃ¡ una clase para comenzar el registro.'}</div>
+                <strong><i class="fa-solid ${huboError ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i> ${huboError ? 'No se pudo cargar el historial.' : 'No hay pestañas externas registradas.'}</strong>
+                <div style="margin-top:.35rem;color:var(--text-muted)">${huboError ? 'Verificá la conexión y publicá las reglas actualizadas de Firestore.' : 'Instalá la extensión en el navegador del estudiante e iniciá una clase para comenzar el registro.'}</div>
               </div>`;
               return;
           }
@@ -12050,17 +12079,17 @@
                     <div>
                       <strong><i class="fa-solid fa-route"></i> Salida ${grupos.length - posicionGrupo}</strong>
                       <div style="margin-top:.3rem;color:var(--text-muted);font-size:.76rem">
-                        ${escapeHtml(fecha(grupo.salidaEn))} Â· regreso ${escapeHtml(tiempo(grupo.regresoEn))}
+                        ${escapeHtml(fecha(grupo.salidaEn))} · regreso ${escapeHtml(tiempo(grupo.regresoEn))}
                       </div>
                     </div>
                     <div class="tab-excursion-summary">
-                      <span><i class="fa-solid fa-window-restore"></i> ${grupo.eventos.length} pÃ¡gina${grupo.eventos.length === 1 ? '' : 's'}</span>
+                      <span><i class="fa-solid fa-window-restore"></i> ${grupo.eventos.length} página${grupo.eventos.length === 1 ? '' : 's'}</span>
                       <span><i class="fa-solid fa-globe"></i> ${dominiosGrupo.size} dominio${dominiosGrupo.size === 1 ? '' : 's'}</span>
                       <span><i class="fa-solid fa-stopwatch"></i> ${escapeHtml(formatearDuracionHistorialPestanas(grupo.duracionSegundos))}</span>
                     </div>
                   </div>
                   <div class="history-event-meta">
-                    <span><b>SecciÃ³n de origen:</b> ${escapeHtml(primerEvento.seccionTitulo || primerEvento.seccionOrigen || 'Sin identificar')}</span>
+                    <span><b>Sección de origen:</b> ${escapeHtml(primerEvento.seccionTitulo || primerEvento.seccionOrigen || 'Sin identificar')}</span>
                     <span><b>Clase:</b> ${escapeHtml(primerEvento.claseId || 'Sin identificar')}</span>
                   </div>
                   <div class="tab-excursion-route">
@@ -12068,11 +12097,11 @@
                       <div class="tab-route-step">
                         <span class="tab-route-number">${indiceEvento + 1}</span>
                         <span class="tab-history-domain"><i class="fa-solid fa-globe"></i> ${escapeHtml(evento.dominioDestino || 'desconocido')}</span>
-                        <span class="tab-history-title">${escapeHtml(evento.tituloDestino || 'Sin tÃ­tulo')}</span>
+                        <span class="tab-history-title">${escapeHtml(evento.tituloDestino || 'Sin título')}</span>
                         <div class="history-event-meta">
                           <span><b>Desde:</b> ${escapeHtml(tiempo(evento.salidaEn))}</span>
                           <span><b>Hasta:</b> ${escapeHtml(tiempo(evento.regresoEn))}</span>
-                          <span class="tab-history-duration"><b>DuraciÃ³n:</b> ${escapeHtml(formatearDuracionHistorialPestanas(evento.duracionSegundos))}</span>
+                          <span class="tab-history-duration"><b>Duración:</b> ${escapeHtml(formatearDuracionHistorialPestanas(evento.duracionSegundos))}</span>
                         </div>
                       </div>`).join('')}
                   </div>
@@ -12129,8 +12158,8 @@
           caja.classList.remove('is-warning', 'is-danger');
           if (configuracion.tipo === 'warning') caja.classList.add('is-warning');
           if (configuracion.tipo === 'danger') caja.classList.add('is-danger');
-          titulo.textContent = configuracion.titulo || 'Confirmar acciÃ³n';
-          mensaje.textContent = configuracion.mensaje || 'RevisÃ¡ la informaciÃ³n antes de continuar.';
+          titulo.textContent = configuracion.titulo || 'Confirmar acción';
+          mensaje.textContent = configuracion.mensaje || 'Revisá la información antes de continuar.';
           icono.className = `fa-solid ${configuracion.icono || 'fa-circle-question'}`;
 
           const listaDetalles = Array.isArray(configuracion.detalles) ? configuracion.detalles : [];
@@ -12141,13 +12170,13 @@
 
           const usaCampo = Boolean(configuracion.campoLabel || configuracion.valorEsperado);
           campo.hidden = !usaCampo;
-          campoLabel.textContent = configuracion.campoLabel || 'ConfirmaciÃ³n';
+          campoLabel.textContent = configuracion.campoLabel || 'Confirmación';
           entrada.value = configuracion.campoValor || '';
           entrada.placeholder = configuracion.campoPlaceholder || '';
 
           checkContenedor.hidden = !configuracion.requiereCheck;
           check.checked = false;
-          checkTexto.textContent = configuracion.checkTexto || 'Comprendo el alcance de esta acciÃ³n.';
+          checkTexto.textContent = configuracion.checkTexto || 'Comprendo el alcance de esta acción.';
           error.style.display = 'none';
           error.textContent = '';
 
@@ -12164,19 +12193,19 @@
               aceptar.onclick = () => {
                   const valor = entrada.value.trim();
                   if (configuracion.campoRequerido && !valor) {
-                      error.textContent = 'CompletÃ¡ el campo requerido para continuar.';
+                      error.textContent = 'Completá el campo requerido para continuar.';
                       error.style.display = 'block';
                       entrada.focus();
                       return;
                   }
                   if (configuracion.valorEsperado && valor !== configuracion.valorEsperado) {
-                      error.textContent = `EscribÃ­ exactamente ${configuracion.valorEsperado} para confirmar.`;
+                      error.textContent = `Escribí exactamente ${configuracion.valorEsperado} para confirmar.`;
                       error.style.display = 'block';
                       entrada.focus();
                       return;
                   }
                   if (configuracion.requiereCheck && !check.checked) {
-                      error.textContent = 'MarcÃ¡ la casilla de confirmaciÃ³n para continuar.';
+                      error.textContent = 'Marcá la casilla de confirmación para continuar.';
                       error.style.display = 'block';
                       check.focus();
                       return;
@@ -12201,7 +12230,7 @@
       function clasificarAccionEstudiante(boton) {
           const texto = String(boton?.textContent || '').toLowerCase();
           if (/detalle|descuento/.test(texto)) return 'evaluacion';
-          if (/historial|pestaÃ±a|pesta/.test(texto)) return 'historiales';
+          if (/historial|pestaña|pesta/.test(texto)) return 'historiales';
           if (/jitsi|llamada|video/.test(texto)) return 'comunicacion';
           if (/eliminar|borrar|reiniciar contador/.test(texto)) return 'criticas';
           return 'control';
@@ -12235,7 +12264,7 @@
           }
           const resultado = document.getElementById('accionesEstudianteResultados');
           if (resultado) resultado.textContent = visibles
-              ? `${visibles} acciÃ³n${visibles === 1 ? '' : 'es'} disponible${visibles === 1 ? '' : 's'}`
+              ? `${visibles} acción${visibles === 1 ? '' : 'es'} disponible${visibles === 1 ? '' : 's'}`
               : 'No hay acciones que coincidan con los filtros.';
       }
 
@@ -12254,8 +12283,8 @@
           const revision = d.revisionSalidas || {};
           const nota = calcularNotaProvisionalEstudiante(d);
           indiceEditorDescuentoEstudiante = indice;
-          document.getElementById('editarDescuentoSubtitulo').textContent = `${nombre} Â· ${d.email || 'Sin email'}`;
-          document.getElementById('editarDescuentoNotaActual').textContent = nota === 'Ã¢â‚¬â€' ? 'Pendiente' : `${nota}/10 calculada`;
+          document.getElementById('editarDescuentoSubtitulo').textContent = `${nombre} · ${d.email || 'Sin email'}`;
+          document.getElementById('editarDescuentoNotaActual').textContent = nota === 'â€”' ? 'Pendiente' : `${nota}/10 calculada`;
           document.getElementById('editarDescuentoPuntos').value = Number(revision.penalizacion || 0).toFixed(1);
           document.getElementById('editarDescuentoMotivo').value = revision.motivo || '';
           const error = document.getElementById('editarDescuentoError');
@@ -12280,7 +12309,7 @@
           const motivo = String(document.getElementById('editarDescuentoMotivo')?.value || '').trim();
           const error = document.getElementById('editarDescuentoError');
           if (puntos > 0 && !motivo) {
-              error.textContent = 'EscribÃ­ un motivo para aplicar un descuento.';
+              error.textContent = 'Escribí un motivo para aplicar un descuento.';
               error.style.display = 'block';
               document.getElementById('editarDescuentoMotivo')?.focus();
               return;
@@ -12308,7 +12337,7 @@
               boton.innerHTML = original;
           }
           if (!ok) {
-              error.textContent = 'No se pudo guardar el descuento. VerificÃ¡ los permisos de Firebase.';
+              error.textContent = 'No se pudo guardar el descuento. Verificá los permisos de Firebase.';
               error.style.display = 'block';
               return;
           }
@@ -12350,9 +12379,9 @@
           const etiquetasJitsi = {
             invitado: 'Invitado',
             notificado: 'Notificado',
-            unido: 'PulsÃ³ Unirse ahora',
-            rechazado: 'RechazÃ³',
-            salio: 'SaliÃ³ o cerrÃ³ la pestaÃ±a',
+            unido: 'Pulsó Unirse ahora',
+            rechazado: 'Rechazó',
+            salio: 'Salió o cerró la pestaña',
             finalizada: 'Finalizada'
           };
           const contenido = document.getElementById('accionesEstudianteContenido');
@@ -12360,10 +12389,10 @@
           const estadoPantalla = document.getElementById('accionesEstudianteEstado');
           const modal = document.getElementById('accionesEstudianteModal');
           if (!contenido || !subtitulo || !estadoPantalla || !modal) {
-              alert('No se pudo cargar la ventana de acciones. ActualizÃ¡ la pÃ¡gina e intentÃ¡ nuevamente.');
+              alert('No se pudo cargar la ventana de acciones. Actualizá la página e intentá nuevamente.');
               return;
           }
-          subtitulo.textContent = `${nombre} Â· ${d.email || 'Sin email'}`;
+          subtitulo.textContent = `${nombre} · ${d.email || 'Sin email'}`;
           estadoPantalla.className = bloqueado ? 'is-locked' : 'is-unlocked';
           estadoPantalla.innerHTML = bloqueado
               ? '<i class="fa-solid fa-lock"></i> Pantalla bloqueada'
@@ -12377,77 +12406,77 @@
 
           const principales = [];
           if (disponibles('abrirDetalleEstudianteProfesor')) {
-              principales.push(botonAccion('btn-primary', 'fa-eye', 'Ver progreso y evaluaciÃ³n', `abrirDetalleEstudianteProfesor(${indice})`, true, 'Notas, respuestas y estado de cada desafÃ­o'));
+              principales.push(botonAccion('btn-primary', 'fa-eye', 'Ver progreso y evaluación', `abrirDetalleEstudianteProfesor(${indice})`, true, 'Notas, respuestas y estado de cada desafío'));
           }
           if (disponibles('abrirProgramacionDocente')) {
-              principales.push(botonAccion('btn-success', 'fa-clipboard-list', 'ProgramaciÃ³n y comentarios', `window.abrirProgramacionDocente(${indice})`, true, 'PublicÃ¡ consignas, fechas y devoluciones'));
+              principales.push(botonAccion('btn-success', 'fa-clipboard-list', 'Programación y comentarios', `window.abrirProgramacionDocente(${indice})`, true, 'Publicá consignas, fechas y devoluciones'));
           }
           if (disponibles('abrirEditorDescuentoEstudiante')) {
-              principales.push(botonAccion('btn-warning', 'fa-circle-minus', 'Editar descuento', `abrirEditorDescuentoEstudiante(${indice})`, false, 'AjustÃ¡ puntos y dejÃ¡ el motivo'));
+              principales.push(botonAccion('btn-warning', 'fa-circle-minus', 'Editar descuento', `abrirEditorDescuentoEstudiante(${indice})`, false, 'Ajustá puntos y dejá el motivo'));
           }
 
           if (disponibles('desbloquearActividadesEstudianteProfesor')) {
-              principales.push(botonAccion('btn-success', 'fa-unlock', 'Desbloquear actividad', `abrirSelectorDesbloqueoActividades(${indice})`, true, 'ElegÃ­ quÃ© actividad finalizada volver a habilitar'));
-              principales.push(botonAccion('btn-success', 'fa-unlock-keyhole', 'Desbloquear todas', `desbloquearActividadesEstudianteProfesor(${indice}, 'todas')`, true, 'VolvÃ© a habilitar todas las actividades finalizadas'));
+              principales.push(botonAccion('btn-success', 'fa-unlock', 'Desbloquear actividad', `abrirSelectorDesbloqueoActividades(${indice})`, true, 'Elegí qué actividad finalizada volver a habilitar'));
+              principales.push(botonAccion('btn-success', 'fa-unlock-keyhole', 'Desbloquear todas', `desbloquearActividadesEstudianteProfesor(${indice}, 'todas')`, true, 'Volvé a habilitar todas las actividades finalizadas'));
           }
 
           const comunicacion = [];
           if (disponibles('abrirMensajeriaDocente')) {
-              comunicacion.push(botonAccion('btn-primary', 'fa-message', 'Enviar mensaje', `abrirMensajeriaDocente('${escapeHtml(d.uid)}')`, false, 'MostrÃ¡ un aviso en la pantalla del estudiante'));
+              comunicacion.push(botonAccion('btn-primary', 'fa-message', 'Enviar mensaje', `abrirMensajeriaDocente('${escapeHtml(d.uid)}')`, false, 'Mostrá un aviso en la pantalla del estudiante'));
           }
           if (disponibles('abrirJitsiDocente')) {
-              comunicacion.push(botonAccion('btn-success', 'fa-video', jitsiDisponible ? 'Volver a Jitsi' : 'Iniciar llamada Jitsi', `abrirJitsiDocente(${indice})`, false, 'AbrÃ­ o iniciÃ¡ la comunicaciÃ³n por video'));
+              comunicacion.push(botonAccion('btn-success', 'fa-video', jitsiDisponible ? 'Volver a Jitsi' : 'Iniciar llamada Jitsi', `abrirJitsiDocente(${indice})`, false, 'Abrí o iniciá la comunicación por video'));
           }
           if ((jitsiDisponible || jitsiTieneSala) && disponibles('cerrarSalaJitsiProfesor')) {
-              comunicacion.push(botonAccion('btn-danger', jitsiDisponible ? 'fa-video-slash' : 'fa-broom', jitsiDisponible ? 'Finalizar llamada' : 'Limpiar llamada anterior', `cerrarSalaJitsiProfesor(${indice})`, false, 'CerrÃ¡ la sala y registrÃ¡ su finalizaciÃ³n'));
+              comunicacion.push(botonAccion('btn-danger', jitsiDisponible ? 'fa-video-slash' : 'fa-broom', jitsiDisponible ? 'Finalizar llamada' : 'Limpiar llamada anterior', `cerrarSalaJitsiProfesor(${indice})`, false, 'Cerrá la sala y registrá su finalización'));
           }
 
           const control = [];
           if (bloqueado && disponibles('desbloquearPantallaEstudianteProfesor')) {
-              control.push(botonAccion('btn-success', 'fa-unlock-keyhole', 'Desbloquear pantalla', `desbloquearPantallaEstudianteProfesor(${indice})`, true, 'HabilitÃ¡ nuevamente la actividad'));
+              control.push(botonAccion('btn-success', 'fa-unlock-keyhole', 'Desbloquear pantalla', `desbloquearPantallaEstudianteProfesor(${indice})`, true, 'Habilitá nuevamente la actividad'));
           } else if (!bloqueado && disponibles('bloquearPantallaEstudianteProfesor')) {
-              control.push(botonAccion('btn-danger', 'fa-lock', 'Bloquear pantalla', `bloquearPantallaEstudianteProfesor(${indice})`, false, 'ImpedÃ­ temporalmente la interacciÃ³n'));
+              control.push(botonAccion('btn-danger', 'fa-lock', 'Bloquear pantalla', `bloquearPantallaEstudianteProfesor(${indice})`, false, 'Impedí temporalmente la interacción'));
           }
           if (disponibles('controlarCronometroEstudianteProfesor')) {
-              control.push(botonAccion(pausado ? 'btn-success' : 'btn-warning', pausado ? 'fa-play' : 'fa-pause', `${pausado ? 'Reanudar' : 'Pausar'} cronÃ³metro`, `controlarCronometroEstudianteProfesor(${indice}, '${pausado ? 'reanudar' : 'pausar'}')`, false, 'ControlÃ¡ el tiempo de la actividad'));
-              control.push(botonAccion('btn-secondary', 'fa-clock-rotate-left', 'Reiniciar cronÃ³metro', `controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')`, false, 'VolvÃ© el tiempo a 40:00'));
+              control.push(botonAccion(pausado ? 'btn-success' : 'btn-warning', pausado ? 'fa-play' : 'fa-pause', `${pausado ? 'Reanudar' : 'Pausar'} cronómetro`, `controlarCronometroEstudianteProfesor(${indice}, '${pausado ? 'reanudar' : 'pausar'}')`, false, 'Controlá el tiempo de la actividad'));
+              control.push(botonAccion('btn-secondary', 'fa-clock-rotate-left', 'Reiniciar cronómetro', `controlarCronometroEstudianteProfesor(${indice}, 'reiniciar')`, false, 'Volvé el tiempo a 40:00'));
           }
 
           const historiales = [];
           if (disponibles('abrirHistorialDesbloqueos')) {
-              historiales.push(botonAccion('btn-secondary', 'fa-clock-rotate-left', 'Desbloqueos', `abrirHistorialDesbloqueos(${indice})`, false, 'ConsultÃ¡ los motivos y responsables'));
+              historiales.push(botonAccion('btn-secondary', 'fa-clock-rotate-left', 'Desbloqueos', `abrirHistorialDesbloqueos(${indice})`, false, 'Consultá los motivos y responsables'));
           }
           if (disponibles('abrirHistorialDescuentos')) {
-              historiales.push(botonAccion('btn-secondary', 'fa-file-invoice-dollar', 'Descuentos', `abrirHistorialDescuentos(${indice})`, false, 'RevisÃ¡ ajustes de nota y motivos'));
+              historiales.push(botonAccion('btn-secondary', 'fa-file-invoice-dollar', 'Descuentos', `abrirHistorialDescuentos(${indice})`, false, 'Revisá ajustes de nota y motivos'));
           }
           if (disponibles('abrirHistorialPestanas')) {
-              historiales.push(botonAccion('btn-secondary', 'fa-window-restore', 'PestaÃ±as visitadas', `abrirHistorialPestanas(${indice})`, false, 'RevisÃ¡ tÃ­tulos, dominios y duraciÃ³n'));
+              historiales.push(botonAccion('btn-secondary', 'fa-window-restore', 'Pestañas visitadas', `abrirHistorialPestanas(${indice})`, false, 'Revisá títulos, dominios y duración'));
           }
           if (disponibles('abrirHistorialPortapapeles')) {
-              historiales.push(botonAccion('btn-secondary', 'fa-clipboard-list', 'Copiar y pegar', `abrirHistorialPortapapeles(${indice})`, false, 'ConsultÃ¡ intentos de copiar, cortar o pegar'));
+              historiales.push(botonAccion('btn-secondary', 'fa-clipboard-list', 'Copiar y pegar', `abrirHistorialPortapapeles(${indice})`, false, 'Consultá intentos de copiar, cortar o pegar'));
           }
 
           const mantenimiento = [];
           if (disponibles('reiniciarSalidasEstudianteProfesor')) {
-              mantenimiento.push(botonAccion('btn-warning', 'fa-rotate-left', 'Reiniciar contador de pestaÃ±as', `reiniciarSalidasEstudianteProfesor(${indice})`, false, 'PonÃ© el contador de salidas en cero'));
+              mantenimiento.push(botonAccion('btn-warning', 'fa-rotate-left', 'Reiniciar contador de pestañas', `reiniciarSalidasEstudianteProfesor(${indice})`, false, 'Poné el contador de salidas en cero'));
           }
           if (disponibles('borrarConsultasIAAlumnoProfesor')) {
-              mantenimiento.push(botonAccion('btn-secondary', 'fa-comments', 'Borrar consultas IA', `borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')`, false, 'EliminÃ¡ el historial de consultas del alumno'));
+              mantenimiento.push(botonAccion('btn-secondary', 'fa-comments', 'Borrar consultas IA', `borrarConsultasIAAlumnoProfesor(${indice}, 'tabla')`, false, 'Eliminá el historial de consultas del alumno'));
           }
           if (disponibles('eliminarEstudianteProfesor')) {
-              mantenimiento.push(botonAccion('student-action-danger', 'fa-trash-can', 'Eliminar estudiante', `eliminarEstudianteProfesor(estudiantesProfesor[${indice}])`, false, 'AcciÃ³n permanente sobre la cuenta'));
+              mantenimiento.push(botonAccion('student-action-danger', 'fa-trash-can', 'Eliminar estudiante', `eliminarEstudianteProfesor(estudiantesProfesor[${indice}])`, false, 'Acción permanente sobre la cuenta'));
           }
 
           contenido.innerHTML = `
             ${llamadaJitsiId ? `<div class="student-action-jitsi-state"><i class="fa-solid fa-signal"></i><span>Estado Jitsi</span><strong>${escapeHtml(etiquetasJitsi[estadoJitsi] || 'Invitado')}</strong></div>` : ''}
             ${grupoAcciones('fa-chart-line', 'Seguimiento', 'is-primary', principales)}
-            ${grupoAcciones('fa-comments', 'ComunicaciÃ³n', 'is-communication', comunicacion)}
-            ${grupoAcciones('fa-sliders', 'Control de la sesiÃ³n', 'is-control', control)}
+            ${grupoAcciones('fa-comments', 'Comunicación', 'is-communication', comunicacion)}
+            ${grupoAcciones('fa-sliders', 'Control de la sesión', 'is-control', control)}
             ${grupoAcciones('fa-clock-rotate-left', 'Registros', 'is-history', historiales)}
             ${grupoAcciones('fa-screwdriver-wrench', 'Mantenimiento', 'is-maintenance', mantenimiento)}`;
           const cantidad = contenido.querySelectorAll('button').length;
           const cantidadElemento = document.getElementById('accionesEstudianteCantidad');
-          if (cantidadElemento) cantidadElemento.textContent = `${cantidad} acciÃ³n${cantidad === 1 ? '' : 'es'}`;
+          if (cantidadElemento) cantidadElemento.textContent = `${cantidad} acción${cantidad === 1 ? '' : 'es'}`;
           modal.style.removeProperty('display');
           modal.classList.add('active');
           modal.querySelector('.student-actions-modal-box')?.focus({ preventScroll: true });
@@ -12514,7 +12543,7 @@
               <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem">
                   <div>
                       <h3 style="margin:0"><i class="fa-solid fa-clipboard-list"></i> Intentos de copiar, cortar y pegar</h3>
-                      <p style="color:var(--text-muted);margin:.35rem 0 0">${escapeHtml(nombre)} Â· se conservan los Ãºltimos 50 intentos.</p>
+                      <p style="color:var(--text-muted);margin:.35rem 0 0">${escapeHtml(nombre)} · se conservan los últimos 50 intentos.</p>
                   </div>
                   <button class="btn btn-secondary" type="button" onclick="document.getElementById('historialPortapapelesModal').classList.remove('active')" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
               </div>
@@ -12525,7 +12554,7 @@
                   <div class="teacher-summary-card"><small>Pegar</small><strong>${resumen.conteos.pegar}</strong></div>
               </div>
               ${filas ? `<div style="overflow:auto"><table class="teacher-table" style="width:100%">
-                  <thead><tr><th>AcciÃ³n</th><th>Actividad</th><th>MÃ©todo</th><th>Fecha</th></tr></thead>
+                  <thead><tr><th>Acción</th><th>Actividad</th><th>Método</th><th>Fecha</th></tr></thead>
                   <tbody>${filas}</tbody>
               </table></div>` : '<p style="padding:1rem;border:1px solid var(--border);border-radius:6px">No hay intentos registrados para este estudiante.</p>'}
           </div>`;
@@ -12580,7 +12609,7 @@
               const items = Array.isArray(estudiante?.__solicitudesColaboracion)
                   ? estudiante.__solicitudesColaboracion
                   : [];
-              // La bandeja activa nunca debe mostrar estados histÃ³ricos.
+              // La bandeja activa nunca debe mostrar estados históricos.
               items.filter(item => String(item?.estado || '') === 'pendiente')
                   .forEach(item => solicitudes.push({
                   ...item,
@@ -12608,7 +12637,7 @@
                   .map(id => document.getElementById(id)?.value || '')
                   .filter(Boolean);
               diagnostico.textContent = estadoLectura
-                  ? `Firestore: ${estadoLectura.coleccion} Â· ${estadoLectura.pendientes} pendientes Â· proyecto ${estadoLectura.proyecto}. `
+                  ? `Firestore: ${estadoLectura.coleccion} · ${estadoLectura.pendientes} pendientes · proyecto ${estadoLectura.proyecto}. `
                     + `Docente: ${auth.autorizado === true ? 'autorizado' : 'no confirmado'}`
                     + `${usuario?.email ? ` (${usuario.email})` : ''}. `
                     + `Filtros activos: ${filtros.length ? filtros.join(', ') : 'ninguno'}.`
@@ -12618,18 +12647,18 @@
               diagnostico.style.color = auth.autorizado === true ? 'var(--text-muted)' : '#fca5a5';
           }
           resumen.textContent = solicitudes.length
-              ? `Hay ${solicitudes.length} solicitud${solicitudes.length === 1 ? '' : 'es'} de colaboraciÃ³n registradas.`
-              : 'No hay solicitudes de colaboraciÃ³n registradas.';
+              ? `Hay ${solicitudes.length} solicitud${solicitudes.length === 1 ? '' : 'es'} de colaboración registradas.`
+              : 'No hay solicitudes de colaboración registradas.';
           if (!solicitudes.length) {
               const detalleError = window.ultimoErrorCooperacion?.message;
-              lista.innerHTML = `<p style="color:var(--text-muted);margin:0">No hay solicitudes de colaboraciÃ³n registradas.${detalleError ? ` <span style="color:#fca5a5">(${escapar(detalleError)})</span>` : ''}</p>`;
+              lista.innerHTML = `<p style="color:var(--text-muted);margin:0">No hay solicitudes de colaboración registradas.${detalleError ? ` <span style="color:#fca5a5">(${escapar(detalleError)})</span>` : ''}</p>`;
               return;
           }
           lista.innerHTML = solicitudes.map(item => {
               const fecha = aFecha(item.solicitudEn);
               const fechaTexto = fecha ? fecha.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }) : 'Fecha no disponible';
-              const titulo = item.sectionTitle || item.sectionName || item.sectionId || 'DesafÃ­o sin tÃ­tulo';
-              const motivo = item.objetivoCooperacion || item.motivo || 'El estudiante solicita revisar su cÃ³digo.';
+              const titulo = item.sectionTitle || item.sectionName || item.sectionId || 'Desafío sin título';
+              const motivo = item.objetivoCooperacion || item.motivo || 'El estudiante solicita revisar su código.';
               const estadoSolicitud = String(item.estado || 'pendiente');
               const esPendiente = estadoSolicitud === 'pendiente';
               const uid = escapar(item.uid || item.estudianteId);
@@ -12642,7 +12671,7 @@
                     </strong>
                     <time datetime="${fecha ? fecha.toISOString() : ''}" style="color:var(--text-muted);font-size:.76rem">${escapar(fechaTexto)}</time>
                   </div>
-                  <div style="margin-top:.35rem;color:#bae6fd;font-weight:700">${escapar(titulo)} Â· Estado: ${escapar(estadoSolicitud)}</div>
+                  <div style="margin-top:.35rem;color:#bae6fd;font-weight:700">${escapar(titulo)} · Estado: ${escapar(estadoSolicitud)}</div>
                   <p style="margin:.45rem 0 0;color:var(--text-muted);font-size:.84rem">${escapar(motivo)}</p>
                   ${item.estudianteEmail ? `<div style="margin-top:.35rem;color:var(--text-muted);font-size:.76rem">${escapar(item.estudianteEmail)}</div>` : ''}
                   <div style="display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.65rem">
@@ -12699,7 +12728,7 @@
               boton.dataset.busy = 'true';
           }
           if (typeof window.responderCooperacionDocenteFirebase !== 'function') {
-              alert('La funciÃ³n de colaboraciÃ³n docente todavÃ­a no estÃ¡ disponible. RecargÃ¡ la pÃ¡gina.');
+              alert('La función de colaboración docente todavía no está disponible. Recargá la página.');
               return;
           }
           let motivo = '';
@@ -12732,8 +12761,8 @@
                   if (contador) contador.textContent = String(actual);
                   const resumen = document.getElementById('resumenSolicitudesColaboracion');
               if (resumen) resumen.textContent = actual
-                      ? `Hay ${actual} solicitud${actual === 1 ? '' : 'es'} de colaboraciÃ³n pendiente${actual === 1 ? '' : 's'}.`
-                      : 'No hay solicitudes de colaboraciÃ³n registradas.';
+                      ? `Hay ${actual} solicitud${actual === 1 ? '' : 'es'} de colaboración pendiente${actual === 1 ? '' : 's'}.`
+                      : 'No hay solicitudes de colaboración registradas.';
                   if (aceptar && typeof window.abrirEditorColaborativoProfesor === 'function') {
                       window.setTimeout(() => {
                           window.abrirEditorColaborativoProfesor(uid, sectionId);
@@ -12749,10 +12778,10 @@
 
       async function eliminarSolicitudColaboracionProfesor(uid, sectionId, boton) {
           if (typeof window.eliminarSolicitudColaboracionDocenteFirebase !== 'function') {
-              alert('La funciÃ³n de eliminaciÃ³n todavÃ­a no estÃ¡ disponible. RecargÃ¡ la pÃ¡gina.');
+              alert('La función de eliminación todavía no está disponible. Recargá la página.');
               return;
           }
-          if (!confirm('Â¿Eliminar esta solicitud de colaboraciÃ³n? Se limpiarÃ¡ tambiÃ©n su estado de colaboraciÃ³n y podrÃ¡ volver a solicitarla.')) {
+          if (!confirm('¿Eliminar esta solicitud de colaboración? Se limpiará también su estado de colaboración y podrá volver a solicitarla.')) {
               return;
           }
           const tarjeta = boton?.closest('article');
@@ -12767,11 +12796,11 @@
               if (contador) contador.textContent = String(actual);
               const resumen = document.getElementById('resumenSolicitudesColaboracion');
               if (resumen) resumen.textContent = actual
-                  ? `Hay ${actual} solicitud${actual === 1 ? '' : 'es'} de colaboraciÃ³n pendiente${actual === 1 ? '' : 's'}.`
-                  : 'No hay solicitudes de colaboraciÃ³n registradas.';
+                  ? `Hay ${actual} solicitud${actual === 1 ? '' : 'es'} de colaboración pendiente${actual === 1 ? '' : 's'}.`
+                  : 'No hay solicitudes de colaboración registradas.';
           } catch (error) {
               botones?.forEach(item => { item.disabled = false; });
-              alert(`EliminaciÃ³n de solicitud: ${error?.code ? `[${error.code}] ` : ''}${error?.message || 'No se pudo eliminar la solicitud.'}`);
+              alert(`Eliminación de solicitud: ${error?.code ? `[${error.code}] ` : ''}${error?.message || 'No se pudo eliminar la solicitud.'}`);
           }
       }
       window.eliminarSolicitudColaboracionProfesor = eliminarSolicitudColaboracionProfesor;
@@ -12779,7 +12808,7 @@
       async function eliminarSolicitudesColaboracionPendientes() {
           if (typeof window.obtenerSolicitudesColaboracionDocenteFirebase !== 'function' ||
               typeof window.eliminarSolicitudColaboracionDocenteFirebase !== 'function') {
-              alert('La funciÃ³n de solicitudes todavÃ­a no estÃ¡ disponible. RecargÃ¡ la pÃ¡gina.');
+              alert('La función de solicitudes todavía no está disponible. Recargá la página.');
               return;
           }
           const solicitudes = await window.obtenerSolicitudesColaboracionDocenteFirebase() || [];
@@ -12788,7 +12817,7 @@
               renderSolicitudesColaboracionProfesor(estudiantesProfesor);
               return;
           }
-          if (!confirm(`Â¿Eliminar ${pendientes.length} solicitud${pendientes.length === 1 ? '' : 'es'} pendiente${pendientes.length === 1 ? '' : 's'}? Esta acciÃ³n limpiarÃ¡ tambiÃ©n el estado de cooperaciÃ³n de cada estudiante.`)) {
+          if (!confirm(`¿Eliminar ${pendientes.length} solicitud${pendientes.length === 1 ? '' : 'es'} pendiente${pendientes.length === 1 ? '' : 's'}? Esta acción limpiará también el estado de cooperación de cada estudiante.`)) {
               return;
           }
           const boton = document.getElementById('btnEliminarSolicitudesColaboracionPendientes');
@@ -12822,7 +12851,7 @@
                   : '';
               resumen.textContent = eliminadas
                   ? `${eliminadas} solicitud${eliminadas === 1 ? '' : 'es'} pendiente${eliminadas === 1 ? '' : 's'} eliminada${eliminadas === 1 ? '' : 's'}.${detalleFallos}`
-                  : `No se eliminÃ³ ninguna solicitud.${detalleFallos}`;
+                  : `No se eliminó ninguna solicitud.${detalleFallos}`;
           }
       }
       window.eliminarSolicitudesColaboracionPendientes = eliminarSolicitudesColaboracionPendientes;
@@ -12859,7 +12888,7 @@
               const email = String(d.email||'').toLowerCase();
               const progreso = calcularProgresoEstudiante(d);
               const notaTexto = calcularNotaDefinitivaEstudiante(d);
-              const nota = notaTexto === 'Ã¢â‚¬â€' ? NaN : Number(notaTexto);
+              const nota = notaTexto === 'â€”' ? NaN : Number(notaTexto);
               const descuento = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
               const alerta = obtenerAlertaConsultasIA(d);
               const actualizado = obtenerMarcaConexionProfesor(d);
@@ -13007,8 +13036,8 @@
           const bloqueados=rows.filter(d=>d.pantallaBloqueada===true).length;
           const desbloqueosTotales=rows.reduce((total,d)=>total+Number(d.cantidadDesbloqueos||0),0);
           const intentosPortapapelesTotales=rows.reduce((total,d)=>total+obtenerResumenPortapapeles(d).total,0);
-          const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='Ã¢â‚¬â€').map(Number);
-          const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'Ã¢â‚¬â€';
+          const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='â€”').map(Number);
+          const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'â€”';
           document.getElementById('resumenProfesor').innerHTML=[
               ['Estudiantes',total,'','fa-users'],
               ['Solicitudes pendientes',solicitudesPendientes,'','fa-user-clock'],
@@ -13029,18 +13058,18 @@
               const resumenPortapapelesFila = obtenerResumenPortapapeles(d);
               const riesgoColor = resumenPortapapelesFila.riesgo === 'alto' ? '#fecaca' : (resumenPortapapelesFila.riesgo === 'medio' ? '#fde68a' : '#bfdbfe');
               const portapapelesFilaHtml = resumenPortapapelesFila.total > 0
-                  ? `<div style="margin-top:.35rem;padding:.3rem .45rem;border-radius:5px;background:rgba(239,68,68,.14);color:${riesgoColor};font-size:.7rem;line-height:1.35" title="Copiar: ${resumenPortapapelesFila.conteos.copiar} Â· Cortar: ${resumenPortapapelesFila.conteos.cortar} Â· Pegar: ${resumenPortapapelesFila.conteos.pegar} Â· ÃƒÅ¡ltimos 2 min: ${resumenPortapapelesFila.intentosUltimosDosMinutos}">
-                      <i class="fa-solid fa-clipboard-list"></i> Portapapeles: <strong>${resumenPortapapelesFila.total}</strong> Â· Riesgo <strong>${escapeHtml(resumenPortapapelesFila.riesgo)}</strong>
+                  ? `<div style="margin-top:.35rem;padding:.3rem .45rem;border-radius:5px;background:rgba(239,68,68,.14);color:${riesgoColor};font-size:.7rem;line-height:1.35" title="Copiar: ${resumenPortapapelesFila.conteos.copiar} · Cortar: ${resumenPortapapelesFila.conteos.cortar} · Pegar: ${resumenPortapapelesFila.conteos.pegar} · Ãšltimos 2 min: ${resumenPortapapelesFila.intentosUltimosDosMinutos}">
+                      <i class="fa-solid fa-clipboard-list"></i> Portapapeles: <strong>${resumenPortapapelesFila.total}</strong> · Riesgo <strong>${escapeHtml(resumenPortapapelesFila.riesgo)}</strong>
                     </div>`
                   : '';
               const ayudasFilaHtml = (resumenAyudasFila.consultasPalabras || resumenAyudasFila.pasosVistos || resumenAyudasFila.verificacionesIntentadas)
-                  ? `<div style="margin-top:.35rem;padding:.3rem .45rem;border-radius:5px;background:rgba(56,189,248,.11);color:#bae6fd;font-size:.7rem;line-height:1.35" title="Registro de ayudas de comprensiÃ³n">
+                  ? `<div style="margin-top:.35rem;padding:.3rem .45rem;border-radius:5px;background:rgba(56,189,248,.11);color:#bae6fd;font-size:.7rem;line-height:1.35" title="Registro de ayudas de comprensión">
                       <i class="fa-solid fa-graduation-cap"></i>
                       Ayudas: ${resumenAyudasFila.consultasPalabras + resumenAyudasFila.pasosVistos + resumenAyudasFila.materialApoyoVistas}
-                      Â· ComprensiÃ³n: ${resumenAyudasFila.verificacionesCorrectas}/${resumenAyudasFila.verificacionesIntentadas}
+                      · Comprensión: ${resumenAyudasFila.verificacionesCorrectas}/${resumenAyudasFila.verificacionesIntentadas}
                     </div>`
                   : '';
-              const fecha=d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : 'Ã¢â‚¬â€';
+              const fecha=d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : 'â€”';
               const indice=estudiantesProfesor.indexOf(d);
               const inactiva = d.estadoCuenta === 'inactivo';
               const cronometroPausado = d.controlCronometroIndividual?.pausado === true;
@@ -13054,18 +13083,18 @@
               const estadoVisual = bloqueado ? 'Bloqueado' : (inactiva ? 'Inactiva' : 'Activa');
               const colorEstado = bloqueado ? '#fca5a5' : (inactiva ? '#fca5a5' : '#6ee7b7');
               const estadoHtml = bloqueado
-                  ? `<span class="teacher-lock-badge" title="AbrÃ­ Acciones para administrar el bloqueo"><i class="fa-solid fa-lock"></i> BLOQUEADO</span>`
+                  ? `<span class="teacher-lock-badge" title="Abrí Acciones para administrar el bloqueo"><i class="fa-solid fa-lock"></i> BLOQUEADO</span>`
                   : `<span style="color:${colorEstado};font-weight:700"><i class="fa-solid fa-circle-check"></i> ${estadoVisual}</span>`;
               const progresoClase = p >= 100 ? 'is-complete' : (p < 35 ? 'is-low' : '');
               const progresoIcono = p >= 100 ? 'fa-circle-check' : 'fa-chart-line';
               const progresoHtml = `<div class="teacher-progress-indicator ${progresoClase}" title="Progreso completado: ${p}%"><div class="teacher-progress-value"><span>${p}%</span><i class="fa-solid ${progresoIcono}"></i></div><div class="teacher-progress-track" aria-hidden="true"><span class="teacher-progress-fill" style="width:${Math.max(0, Math.min(100, p))}%"></span></div></div>`;
-              const notaNumero = n === 'Ã¢â‚¬â€' ? NaN : Number(n);
+              const notaNumero = n === 'â€”' ? NaN : Number(n);
               const notaClase = !Number.isFinite(notaNumero) ? '' : (notaNumero >= 7 ? 'grade-high' : (notaNumero >= 6 ? 'grade-medium' : 'grade-low'));
               const notaIcono = !Number.isFinite(notaNumero) ? 'fa-minus' : (notaNumero >= 7 ? 'fa-star' : (notaNumero >= 6 ? 'fa-circle-half-stroke' : 'fa-triangle-exclamation'));
               const notaCalculada = calcularNotaProvisionalEstudiante(d);
               const notaHtml = Number.isFinite(notaNumero)
                   ? `<span class="teacher-grade-badge ${notaClase}" title="Nota definitiva confirmada por el docente: ${n}"><i class="fa-solid ${notaIcono}"></i> ${n}</span>`
-                  : `<span class="teacher-grade-badge" title="${notaCalculada === 'Ã¢â‚¬â€' ? 'Sin nota calculada' : `Nota calculada ${notaCalculada}/10, pendiente de confirmaciÃ³n docente`}"><i class="fa-solid fa-clock"></i> ${notaCalculada === 'Ã¢â‚¬â€' ? 'Pendiente' : `${notaCalculada} sin confirmar`}</span>`;
+                  : `<span class="teacher-grade-badge" title="${notaCalculada === 'â€”' ? 'Sin nota calculada' : `Nota calculada ${notaCalculada}/10, pendiente de confirmación docente`}"><i class="fa-solid fa-clock"></i> ${notaCalculada === 'â€”' ? 'Pendiente' : `${notaCalculada} sin confirmar`}</span>`;
               const descuentoPuntos = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
               const descuentoMotivo = String(d.revisionSalidas?.motivo || '').trim();
               const descuentoTitulo = descuentoPuntos > 0
@@ -13076,10 +13105,10 @@
               const totalIntentosDesafio = Object.values(intentosDesafioFila).reduce((total, valor) => total + Math.max(0, Number(valor || 0)), 0);
               const ultimoDesbloqueoFila = Array.isArray(d.historialDesbloqueosDesafios) ? d.historialDesbloqueosDesafios[d.historialDesbloqueosDesafios.length - 1] : null;
               const ultimoDesbloqueoTitulo = ultimoDesbloqueoFila
-                  ? `ÃƒÅ¡ltimo desbloqueo: ${ultimoDesbloqueoFila.motivo || 'Nuevo intento'} Â· ${ultimoDesbloqueoFila.fecha ? new Date(ultimoDesbloqueoFila.fecha).toLocaleString('es-AR') : 'Sin fecha'}`
-                  : 'Sin desbloqueos de desafÃ­os registrados';
+                  ? `Ãšltimo desbloqueo: ${ultimoDesbloqueoFila.motivo || 'Nuevo intento'} · ${ultimoDesbloqueoFila.fecha ? new Date(ultimoDesbloqueoFila.fecha).toLocaleString('es-AR') : 'Sin fecha'}`
+                  : 'Sin desbloqueos de desafíos registrados';
               const intentosDesafioHtml = totalIntentosDesafio
-                  ? `<div style="margin-top:.35rem;font-size:.68rem;color:#a7f3d0" title="${escapeHtml(ultimoDesbloqueoTitulo)}"><i class="fa-solid fa-repeat"></i> Intentos de desafÃ­os: ${totalIntentosDesafio}</div>`
+                  ? `<div style="margin-top:.35rem;font-size:.68rem;color:#a7f3d0" title="${escapeHtml(ultimoDesbloqueoTitulo)}"><i class="fa-solid fa-repeat"></i> Intentos de desafíos: ${totalIntentosDesafio}</div>`
                   : '';
               const ultimaReaperturaFechaFila = ultimoDesbloqueoFila?.fecha?.toDate
                   ? ultimoDesbloqueoFila.fecha.toDate().toLocaleString('es-AR')
@@ -13091,28 +13120,28 @@
               const salidasClase = cantidadSalidas >= LIMITE_SALIDAS_PARA_BLOQUEO ? 'tabs-danger' : (cantidadSalidas > 0 ? 'tabs-warning' : '');
               const salidasIcono = cantidadSalidas >= LIMITE_SALIDAS_PARA_BLOQUEO ? 'fa-triangle-exclamation' : (cantidadSalidas > 0 ? 'fa-arrow-up-right-from-square' : 'fa-circle-check');
               const salidasTitulo = cantidadSalidas >= LIMITE_SALIDAS_PARA_BLOQUEO
-                  ? `${cantidadSalidas} cambios: alcanzÃ³ el lÃ­mite de bloqueo`
-                  : (cantidadSalidas > 0 ? `${cantidadSalidas} cambio(s) de pestaÃ±a` : 'Sin cambios de pestaÃ±a');
+                  ? `${cantidadSalidas} cambios: alcanzó el límite de bloqueo`
+                  : (cantidadSalidas > 0 ? `${cantidadSalidas} cambio(s) de pestaña` : 'Sin cambios de pestaña');
               const salidasHtml = `<span class="teacher-tab-badge ${salidasClase}" title="${salidasTitulo}"><i class="fa-solid ${salidasIcono}"></i> ${cantidadSalidas}</span>`;
               const conectadoFila = d.__panelMeta?.conectado === true;
               const escribiendoFila = conectadoFila && d.__controlEstudiante?.escribiendo === true;
               const estadoConexionFila = d.__panelMeta?.estadoConexion || "desconectado";
               const etiquetasConexion = {
                   trabajando: ["Programando", "fa-keyboard"],
-                  en_linea: ["En lÃ­nea", "fa-circle"],
+                  en_linea: ["En línea", "fa-circle"],
                   segundo_plano: ["Segundo plano", "fa-window-minimize"],
-                  inestable: ["ConexiÃ³n inestable", "fa-triangle-exclamation"],
+                  inestable: ["Conexión inestable", "fa-triangle-exclamation"],
                   sin_conexion: ["Sin Internet", "fa-wifi"],
                   desconectado: ["Desconectado", "fa-circle-xmark"]
               };
               const etiquetaConexion = etiquetasConexion[estadoConexionFila] || etiquetasConexion.desconectado;
               const claseAcciones = conectadoFila ? 'btn-success teacher-actions-online' : 'btn-secondary';
               const tituloAcciones = `${etiquetaConexion[0]}. Abrir acciones`;
-              const estadoConexionAcciones = `<span class="teacher-actions-online-label"><i class="fa-solid ${etiquetaConexion[1]}"></i> ${etiquetaConexion[0]}${d.__controlEstudiante?.sesionesDuplicadas ? ' Â· SesiÃ³n duplicada' : ''}</span>`;
+              const estadoConexionAcciones = `<span class="teacher-actions-online-label"><i class="fa-solid ${etiquetaConexion[1]}"></i> ${etiquetaConexion[0]}${d.__controlEstudiante?.sesionesDuplicadas ? ' · Sesión duplicada' : ''}</span>`;
           return `<tr data-estudiante-uid="${escapeHtml(d.uid || '')}" class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn ${claseAcciones} btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="${tituloAcciones}"><i class="fa-solid fa-sliders"></i><span>Acciones</span>${estadoConexionAcciones}</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}<div class="code-version-badge" style="margin-top:.4rem;font-size:.68rem;padding:.25rem .45rem"><i class="fa-solid fa-code-branch"></i> Script v${escapeHtml(versionScript)}</div>${intentosDesafioHtml}${alertaHtml}${ayudasFilaHtml}${portapapelesFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td>${ultimaReaperturaHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td></tr>`;
               }).join('') || '<tr><td colspan="13" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
-          // BOTÃƒâ€œN VISIBLE: ediciÃ³n de datos personales en la primera columna (Acciones).
-          // La versiÃ³n anterior intentaba agregarlo al Ãºltimo TD y por eso no aparecÃ­a.
+          // BOTÃ“N VISIBLE: edición de datos personales en la primera columna (Acciones).
+          // La versión anterior intentaba agregarlo al último TD y por eso no aparecía.
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudianteFila = rows[posicion];
               if (!estudianteFila || !fila.dataset.estudianteUid) return;
@@ -13124,7 +13153,7 @@
               botonEditar.type = 'button';
               botonEditar.className = 'btn btn-primary btn-editar-datos-estudiante-visible';
               botonEditar.style.cssText = 'width:100%;margin-top:.45rem;justify-content:flex-start;text-align:left;padding:.5rem .7rem;';
-              botonEditar.title = 'Modificar nombre, curso, divisiÃ³n y turno';
+              botonEditar.title = 'Modificar nombre, curso, división y turno';
               botonEditar.innerHTML = '<i class="fa-solid fa-user-pen"></i> Modificar datos';
               botonEditar.addEventListener('click', (evento) => {
                   evento.preventDefault();
@@ -13137,7 +13166,7 @@
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
               if (!estudiante) return;
-              const etiquetasColumnas = ['Acciones','Descuento de puntos','Estudiante','Email','Curso','DivisiÃ³n','Turno','Estado','Progreso','Nota definitiva','Cambios de pestaÃ±a','ÃƒÅ¡ltima reapertura','Desbloqueos'];
+              const etiquetasColumnas = ['Acciones','Descuento de puntos','Estudiante','Email','Curso','División','Turno','Estado','Progreso','Nota definitiva','Cambios de pestaña','Ãšltima reapertura','Desbloqueos'];
               [...fila.children].forEach((celda, indiceCelda) => {
                   if (etiquetasColumnas[indiceCelda]) celda.setAttribute('data-label', etiquetasColumnas[indiceCelda]);
               });
@@ -13178,13 +13207,13 @@
                   if (boton.title) return;
                   const texto = boton.textContent.trim().toLowerCase();
                   if (texto.includes('ver todo')) boton.title = 'Ver progreso y detalle completo del estudiante';
-                  else if (texto.includes('pausar') || texto.includes('reanudar')) boton.title = 'Pausar o reanudar el cronÃ³metro del estudiante';
+                  else if (texto.includes('pausar') || texto.includes('reanudar')) boton.title = 'Pausar o reanudar el cronómetro del estudiante';
               });
               if (!contenedor.querySelector('.btn-editar-datos-estudiante')) {
                   const botonEditarDatos = document.createElement('button');
                   botonEditarDatos.className = 'btn btn-primary btn-editar-datos-estudiante';
                   botonEditarDatos.type = 'button';
-                  botonEditarDatos.title = 'Modificar nombre, curso, divisiÃ³n y turno';
+                  botonEditarDatos.title = 'Modificar nombre, curso, división y turno';
                   botonEditarDatos.innerHTML = '<i class="fa-solid fa-user-pen"></i> Modificar datos personales';
                   const filaDatos = contenedor.closest('tr');
                   const uidDatos = filaDatos?.dataset?.estudianteUid || '';
@@ -13248,14 +13277,14 @@
               tipo: 'danger',
               icono: 'fa-user-xmark',
               titulo: 'Eliminar estudiante',
-              mensaje: `Se eliminarÃ¡ definitivamente a ${nombre}.`,
+              mensaje: `Se eliminará definitivamente a ${nombre}.`,
               detalles: [
-                  'Se borrarÃ¡ el documento completo: identidad, progreso, cÃ³digos, respuestas, notas, cronÃ³metros, bloqueos y consultas IA.',
-                  'Se eliminarÃ¡n los historiales de desbloqueos, descuentos, pestaÃ±as, revisiones y auditorÃ­a antes de borrar al estudiante.',
-                  'La cuenta externa de Google no se elimina; se borran todos los datos almacenados por esta aplicaciÃ³n.',
-                  'Esta acciÃ³n no se puede deshacer.'
+                  'Se borrará el documento completo: identidad, progreso, códigos, respuestas, notas, cronómetros, bloqueos y consultas IA.',
+                  'Se eliminarán los historiales de desbloqueos, descuentos, pestañas, revisiones y auditoría antes de borrar al estudiante.',
+                  'La cuenta externa de Google no se elimina; se borran todos los datos almacenados por esta aplicación.',
+                  'Esta acción no se puede deshacer.'
               ],
-              campoLabel: 'EscribÃ­ ELIMINAR para confirmar',
+              campoLabel: 'Escribí ELIMINAR para confirmar',
               campoPlaceholder: 'ELIMINAR',
               campoRequerido: true,
               valorEsperado: 'ELIMINAR',
@@ -13268,7 +13297,7 @@
           if (!ok) {
               const detalleError = window.ultimoResumenEliminacionEstudiante?.error || '';
               const rutaError = window.ultimoResumenEliminacionEstudiante?.ruta || '';
-              alert(`No se pudo completar la eliminaciÃ³n total. VerificÃ¡ la autorizaciÃ³n docente y que las reglas de Firebase estÃ©n publicadas.${detalleError ? `\n\nDetalle: ${detalleError}` : ''}${rutaError ? `\n\nRuta rechazada: ${rutaError}` : ''}`);
+              alert(`No se pudo completar la eliminación total. Verificá la autorización docente y que las reglas de Firebase estén publicadas.${detalleError ? `\n\nDetalle: ${detalleError}` : ''}${rutaError ? `\n\nRuta rechazada: ${rutaError}` : ''}`);
               return;
           }
           const resumenEliminacion = window.ultimoResumenEliminacionEstudiante || {};
@@ -13279,12 +13308,12 @@
       async function iniciarPanelProfesorTiempoReal() {
           if (profesorUnsubscribe) profesorUnsubscribe();
           try {
-              // El mÃ³dulo actividad-firebase.js ya inicializa Firestore y expone
+              // El módulo actividad-firebase.js ya inicializa Firestore y expone
               // el listener docente. No se debe importar el SDK una segunda vez:
               // si falla esa red externa, la bandeja queda sin listener.
               const u=window.firebaseTeacherUser || window.firebaseCurrentUser;
               if (!u) {
-                  document.getElementById('estadoPanelProfesor').textContent = 'Esperando autenticaciÃ³n docente para abrir la bandeja en tiempo real.';
+                  document.getElementById('estadoPanelProfesor').textContent = 'Esperando autenticación docente para abrir la bandeja en tiempo real.';
                   return;
               }
               window.__abrirPanelProfesorFirestore?.();
@@ -13295,13 +13324,13 @@
           } catch(e) {
               document.getElementById('estadoPanelProfesor').textContent='Error al conectar con Firebase: '+e.message;
               const diagnostico = document.getElementById('diagnosticoSolicitudesColaboracion');
-              if (diagnostico) diagnostico.textContent = `No se pudo iniciar el listener de colaboraciÃ³n: ${e.message}`;
+              if (diagnostico) diagnostico.textContent = `No se pudo iniciar el listener de colaboración: ${e.message}`;
           }
       }
 
 
       // ============================================================
-      // EDITOR DE DESAFÃƒÂOS DEL PANEL PROFESOR
+      // EDITOR DE DESAFÃOS DEL PANEL PROFESOR
       // ============================================================
       let desafioEditorActual=0;
       let desafiosEditorFirebase=[];
@@ -13313,7 +13342,7 @@
           window.firebaseTeacherUser
         );
         if (!autorizado) {
-          alert('Para abrir el Editor de desafÃ­os debÃ©s iniciar sesiÃ³n con una cuenta docente autorizada.');
+          alert('Para abrir el Editor de desafíos debés iniciar sesión con una cuenta docente autorizada.');
           await ingresarComoDocente();
           return;
         }
@@ -13336,7 +13365,7 @@
           const b=document.createElement('button');
           b.className='btn '+(i===desafioEditorActual?'btn-primary':'btn-secondary');
           b.style='display:block;width:100%;text-align:left;margin-bottom:.4rem;';
-          b.textContent=(d.id||('sec-'+(i+1)))+' Ã¢â‚¬â€ '+(d.title||'Sin tÃ­tulo');
+          b.textContent=(d.id||('sec-'+(i+1)))+' â€” '+(d.title||'Sin título');
           b.onclick=()=>{guardarFormularioDesafioFirebase(false);desafioEditorActual=i;renderListaDesafiosFirebase();renderFormularioDesafioFirebase();};
           el.appendChild(b);
         });
@@ -13348,27 +13377,27 @@
         document.getElementById('formDesafioFirebase').innerHTML=`
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;">
             <div><label>ID</label><input id="edf_id" value="${escapeHtml(d.id||'')}" readonly></div>
-            <div><label>ÃƒÂcono</label><input id="edf_icon" value="${escapeHtml(d.icon||'')}"></div>
-            <div><label>TÃ­tulo</label><input id="edf_title" value="${escapeHtml(d.title||'')}"></div>
-            <div><label>TÃ­tulo del desafÃ­o</label><input id="edf_exerciseTitle" value="${escapeHtml(d.exerciseTitle||'')}"></div>
-            <div style="grid-column:1/-1"><label>TeorÃ­a</label><textarea id="edf_theory">${escapeHtml(d.theory||'')}</textarea></div>
+            <div><label>Ãcono</label><input id="edf_icon" value="${escapeHtml(d.icon||'')}"></div>
+            <div><label>Título</label><input id="edf_title" value="${escapeHtml(d.title||'')}"></div>
+            <div><label>Título del desafío</label><input id="edf_exerciseTitle" value="${escapeHtml(d.exerciseTitle||'')}"></div>
+            <div style="grid-column:1/-1"><label>Teoría</label><textarea id="edf_theory">${escapeHtml(d.theory||'')}</textarea></div>
             <div style="grid-column:1/-1"><label>Consigna</label><textarea id="edf_exerciseDesc" style="min-height:120px">${escapeHtml(d.exerciseDesc||'')}</textarea></div>
-            <div style="grid-column:1/-1"><label>CÃ³digo inicial</label><textarea id="edf_initialCode" style="min-height:140px">${escapeHtml(d.initialCode||'')}</textarea></div>
-            <div style="grid-column:1/-1"><label>SoluciÃ³n de referencia IA</label><textarea id="edf_aiSolution" style="min-height:160px">${escapeHtml(d.aiSolution||'')}</textarea></div>
-            <div style="grid-column:1/-1"><label>Ã°Å¸Å½Â¯ Objetivos pedagÃ³gicos</label><textarea id="edf_objetivos">${escapeHtml(textoArray(d.objetivosPedagogicos))}</textarea></div>
-            <div style="grid-column:1/-1"><label>Ã°Å¸Â§Â  Conceptos que debe detectar la IA</label><textarea id="edf_conceptos">${escapeHtml(textoArray(d.conceptosDetectar))}</textarea></div>
-            <div style="grid-column:1/-1"><label>Ã¢Ââ€œ Preguntas socrÃ¡ticas</label><textarea id="edf_preguntas" style="min-height:120px">${escapeHtml(textoArray(d.preguntasSocraticas))}</textarea></div>
-            <div style="grid-column:1/-1"><label>Ã¢Å¡Â Ã¯Â¸Â Errores frecuentes</label><textarea id="edf_errores" style="min-height:120px">${escapeHtml(textoArray(d.erroresFrecuentes))}</textarea></div>
-            <div style="grid-column:1/-1"><label>Ã°Å¸Å¡Â« QuÃ© NO debe revelar la IA</label><textarea id="edf_norevelar" style="min-height:120px">${escapeHtml(textoArray(d.noRevelarIA))}</textarea></div>
+            <div style="grid-column:1/-1"><label>Código inicial</label><textarea id="edf_initialCode" style="min-height:140px">${escapeHtml(d.initialCode||'')}</textarea></div>
+            <div style="grid-column:1/-1"><label>Solución de referencia IA</label><textarea id="edf_aiSolution" style="min-height:160px">${escapeHtml(d.aiSolution||'')}</textarea></div>
+            <div style="grid-column:1/-1"><label>ðŸŽ¯ Objetivos pedagógicos</label><textarea id="edf_objetivos">${escapeHtml(textoArray(d.objetivosPedagogicos))}</textarea></div>
+            <div style="grid-column:1/-1"><label>ðŸ§  Conceptos que debe detectar la IA</label><textarea id="edf_conceptos">${escapeHtml(textoArray(d.conceptosDetectar))}</textarea></div>
+            <div style="grid-column:1/-1"><label>â“ Preguntas socráticas</label><textarea id="edf_preguntas" style="min-height:120px">${escapeHtml(textoArray(d.preguntasSocraticas))}</textarea></div>
+            <div style="grid-column:1/-1"><label>âš ï¸ Errores frecuentes</label><textarea id="edf_errores" style="min-height:120px">${escapeHtml(textoArray(d.erroresFrecuentes))}</textarea></div>
+            <div style="grid-column:1/-1"><label>ðŸš« Qué NO debe revelar la IA</label><textarea id="edf_norevelar" style="min-height:120px">${escapeHtml(textoArray(d.noRevelarIA))}</textarea></div>
           </div>
-          <h4>Ã°Å¸â€œÅ  Criterios de evaluaciÃ³n</h4>
+          <h4>ðŸ“Š Criterios de evaluación</h4>
           <p style="color:var(--text-muted);font-size:.8rem;">Los pesos deben sumar 100.</p>
           <table style="width:100%;border-collapse:collapse;min-width:650px;"><thead><tr><th>Criterio</th><th>Peso</th><th>Indicador</th><th></th></tr></thead><tbody id="edf_criterios"></tbody></table>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem;">
-            <button class="btn btn-secondary" onclick="agregarCriterioFirebase()">Ã¢Å¾â€¢ Criterio</button>
-            <button class="btn btn-secondary" onclick="normalizarCriteriosFirebase()">Ã¢Å¡â€“Ã¯Â¸Â Normalizar</button>
-            <button class="btn btn-primary" onclick="guardarDesafioActualFirebase()">Ã¢ËœÂÃ¯Â¸Â Guardar desafÃ­o</button>
-            <button class="btn btn-secondary" onclick="guardarLos19Firebase()">Ã¢ËœÂÃ¯Â¸Â Guardar los 19</button>
+            <button class="btn btn-secondary" onclick="agregarCriterioFirebase()">âž• Criterio</button>
+            <button class="btn btn-secondary" onclick="normalizarCriteriosFirebase()">âš–ï¸ Normalizar</button>
+            <button class="btn btn-primary" onclick="guardarDesafioActualFirebase()">â˜ï¸ Guardar desafío</button>
+            <button class="btn btn-secondary" onclick="guardarLos19Firebase()">â˜ï¸ Guardar los 19</button>
           </div>`;
         criterios.forEach(c=>agregarFilaCriterioFirebase(c));
         document.querySelectorAll('#formDesafioFirebase input,#formDesafioFirebase textarea').forEach(el => {
@@ -13384,7 +13413,7 @@
         tr.innerHTML=`<td><input data-k="criterio" value="${escapeHtml(c.criterio||'')}"></td>
           <td><input data-k="peso" type="number" min="0" max="100" value="${Number(c.peso)||0}" style="width:80px"></td>
           <td><input data-k="indicador" value="${escapeHtml(c.indicador||'')}"></td>
-          <td><button class="btn btn-danger" onclick="this.closest('tr').remove()">Ã°Å¸â€”â€˜Ã¯Â¸Â</button></td>`;
+          <td><button class="btn btn-danger" onclick="this.closest('tr').remove()">ðŸ—‘ï¸</button></td>`;
         document.getElementById('edf_criterios').appendChild(tr);
       }
       function agregarCriterioFirebase(){agregarFilaCriterioFirebase();}
@@ -13393,7 +13422,7 @@
       }).filter(x=>x.criterio||x.indicador);}
       function normalizarCriteriosFirebase(){
         const rows=[...document.querySelectorAll('#edf_criterios tr')],v=rows.map(r=>Number(r.querySelector('[data-k="peso"]').value)||0),t=v.reduce((a,b)=>a+b,0);
-        if(!t){alert('AsignÃ¡ los pesos primero.');return;} rows.forEach((r,i)=>r.querySelector('[data-k="peso"]').value=Math.round(v[i]*100/t));
+        if(!t){alert('Asigná los pesos primero.');return;} rows.forEach((r,i)=>r.querySelector('[data-k="peso"]').value=Math.round(v[i]*100/t));
       }
       function guardarFormularioDesafioFirebase(){
         const d=desafiosEditorFirebase[desafioEditorActual];if(!d)return;
@@ -13405,22 +13434,22 @@
       async function guardarDesafioActualFirebase(){
         const d=guardarFormularioDesafioFirebase();if(!d)return;
         const suma=(d.criteriosEvaluacion||[]).reduce((a,c)=>a+(Number(c.peso)||0),0);
-        if(Math.round(suma)!==100){alert('La rÃºbrica debe sumar 100%. Actualmente suma '+suma+'%.');return;}
+        if(Math.round(suma)!==100){alert('La rúbrica debe sumar 100%. Actualmente suma '+suma+'%.');return;}
         const ok=await window.guardarDesafioFirebase(d);
         if(ok){
           seccionesData=seccionesData.map(x=>x.id===d.id?({...x,...d}):x);
-          document.getElementById('estadoEditorDesafiosFirebase').textContent='Guardado: '+d.id+' Â· '+new Date().toLocaleTimeString();
-        }else document.getElementById('estadoEditorDesafiosFirebase').textContent='Ã¢ÂÅ’ No se pudo guardar. RevisÃ¡ las reglas de Firestore.';
+          document.getElementById('estadoEditorDesafiosFirebase').textContent='Guardado: '+d.id+' · '+new Date().toLocaleTimeString();
+        }else document.getElementById('estadoEditorDesafiosFirebase').textContent='âŒ No se pudo guardar. Revisá las reglas de Firestore.';
       }
       async function guardarLos19Firebase(){
         guardarFormularioDesafioFirebase();
         const invalid=desafiosEditorFirebase.find(d=>Math.round((d.criteriosEvaluacion||[]).reduce((a,c)=>a+(Number(c.peso)||0),0))!==100);
-        if(invalid){alert('La rÃºbrica de '+invalid.id+' no suma 100%.');return;}
+        if(invalid){alert('La rúbrica de '+invalid.id+' no suma 100%.');return;}
         const ok=await window.guardarTodosDesafiosFirebase(desafiosEditorFirebase);
         if(ok){
           seccionesData=JSON.parse(JSON.stringify(desafiosEditorFirebase));
-          document.getElementById('estadoEditorDesafiosFirebase').textContent='Los 19 desafÃ­os fueron guardados Â· '+new Date().toLocaleTimeString();
-        }else document.getElementById('estadoEditorDesafiosFirebase').textContent='Ã¢ÂÅ’ No se pudieron guardar los desafÃ­os.';
+          document.getElementById('estadoEditorDesafiosFirebase').textContent='Los 19 desafíos fueron guardados · '+new Date().toLocaleTimeString();
+        }else document.getElementById('estadoEditorDesafiosFirebase').textContent='âŒ No se pudieron guardar los desafíos.';
       }
       document.getElementById('buscarDesafioFirebase')?.addEventListener('input',renderListaDesafiosFirebase);
       document.addEventListener('keydown', event => {
@@ -13466,7 +13495,7 @@
           doc.setFont('helvetica', 'bold');
           y = agregarTextoPDFProfesor(
               doc,
-              `Analista de Viabilidad y Excelencia Â· Viabilidad: ${analista.viabilidad || 'Pendiente'} Â· Excelencia: ${analista.excelencia || 'Pendiente'} Â· Resultado: ${Number(analista.correctas || 0)}/${Number(analista.total || preguntas.length)} (${Number(analista.porcentaje || 0)}%)`,
+              `Analista de Viabilidad y Excelencia · Viabilidad: ${analista.viabilidad || 'Pendiente'} · Excelencia: ${analista.excelencia || 'Pendiente'} · Resultado: ${Number(analista.correctas || 0)}/${Number(analista.total || preguntas.length)} (${Number(analista.porcentaje || 0)}%)`,
               y
           );
           doc.setFont('helvetica', 'normal');
@@ -13479,10 +13508,10 @@
               const esCorrecta = JSON.stringify([...seleccionadas].sort((a,b) => a-b)) ===
                   JSON.stringify([...correctas].sort((a,b) => a-b));
               const seleccionTexto = seleccionadas.length
-                  ? seleccionadas.map(posicion => `${String.fromCharCode(65 + posicion)}) ${opciones[posicion]?.texto || opciones[posicion]?.t || 'OpciÃ³n'}`).join(' | ')
-                  : 'Sin selecciÃ³n';
+                  ? seleccionadas.map(posicion => `${String.fromCharCode(65 + posicion)}) ${opciones[posicion]?.texto || opciones[posicion]?.t || 'Opción'}`).join(' | ')
+                  : 'Sin selección';
               const correctaTexto = correctas.length
-                  ? correctas.map(posicion => `${String.fromCharCode(65 + posicion)}) ${opciones[posicion]?.texto || opciones[posicion]?.t || 'OpciÃ³n'}`).join(' | ')
+                  ? correctas.map(posicion => `${String.fromCharCode(65 + posicion)}) ${opciones[posicion]?.texto || opciones[posicion]?.t || 'Opción'}`).join(' | ')
                   : 'No definida';
               const esAbierta = pregunta.formato === "abierta" || Boolean(pregunta.respuestaTexto);
               const detalleRespuesta = esAbierta
@@ -13490,7 +13519,7 @@
                   : `Respuesta del estudiante: ${seleccionTexto}\nRespuesta correcta esperada: ${correctaTexto}`;
               y = agregarTextoPDFProfesor(
                   doc,
-                  `${indice + 1}. ${pregunta.pregunta || 'Pregunta sin texto'} Â· ${pregunta.categoria || pregunta.tipo || 'ANÃLISIS'} Â· ${pregunta.etiquetaNivel || (esCorrecta ? 'Correcta completa' : 'Incorrecta')} Â· ${Number(pregunta.puntos || 0).toFixed(2)}/1,00\n${detalleRespuesta}`,
+                  `${indice + 1}. ${pregunta.pregunta || 'Pregunta sin texto'} · ${pregunta.categoria || pregunta.tipo || 'ANÁLISIS'} · ${pregunta.etiquetaNivel || (esCorrecta ? 'Correcta completa' : 'Incorrecta')} · ${Number(pregunta.puntos || 0).toFixed(2)}/1,00\n${detalleRespuesta}`,
                   y,
                   { altoLinea: 3.8 }
               );
@@ -13499,14 +13528,14 @@
       }
 
       async function exportarDetalleEstudianteProfesorPDF() {
-          try { await asegurarLibreriasPdf(); } catch (_) { alert('No se pudo cargar el generador de PDF. VerificÃ¡ la conexiÃ³n e intentÃ¡ nuevamente.'); return; }
+          try { await asegurarLibreriasPdf(); } catch (_) { alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.'); return; }
           if (!window.jspdf?.jsPDF) {
-              alert('No se pudo cargar el generador de PDF. VerificÃ¡ la conexiÃ³n e intentÃ¡ nuevamente.');
+              alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.');
               return;
           }
           const d = estudiantesProfesor[detalleEstudianteProfesorIndiceActual];
           if (!d) {
-              alert('AbrÃ­ primero el detalle de un estudiante.');
+              alert('Abrí primero el detalle de un estudiante.');
               return;
           }
           const { jsPDF } = window.jspdf;
@@ -13523,12 +13552,12 @@
           y += 8;
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9);
-          y = agregarTextoPDFProfesor(doc, `Estudiante: ${nombre}\nEmail: ${d.email || 'Sin email'}\nCurso: ${e.curso || 'Sin curso'} ${e.division || ''} Â· Turno: ${e.turno || 'Sin turno'}\nFecha de emisiÃ³n: ${new Date().toLocaleString('es-AR')}`, y);
+          y = agregarTextoPDFProfesor(doc, `Estudiante: ${nombre}\nEmail: ${d.email || 'Sin email'}\nCurso: ${e.curso || 'Sin curso'} ${e.division || ''} · Turno: ${e.turno || 'Sin turno'}\nFecha de emisión: ${new Date().toLocaleString('es-AR')}`, y);
           y += 3;
           doc.line(14, y, 196, y);
           y += 6;
           doc.setFont('helvetica', 'bold');
-          y = agregarTextoPDFProfesor(doc, `Progreso: ${calcularProgresoEstudiante(d)}% Â· Promedio acadÃ©mico: ${calcularNotaEstudiante(d)} Â· Nota definitiva: ${calcularNotaDefinitivaEstudiante(d)}`, y);
+          y = agregarTextoPDFProfesor(doc, `Progreso: ${calcularProgresoEstudiante(d)}% · Promedio académico: ${calcularNotaEstudiante(d)} · Nota definitiva: ${calcularNotaDefinitivaEstudiante(d)}`, y);
           doc.setFont('helvetica', 'normal');
 
           const actividadesVisibles = [...document.querySelectorAll('#detalleEstudianteProfesorContenido .teacher-activity[data-section-id]')]
@@ -13540,14 +13569,14 @@
               .map(sectionId => seccionesData.find(sec => sec.id === sectionId))
               .filter(Boolean);
           if (!seccionesExportar.length) {
-              alert('El filtro seleccionado no tiene desafÃ­os para exportar.');
+              alert('El filtro seleccionado no tiene desafíos para exportar.');
               return;
           }
           const detalleFiltroPDF = [
               filtroSeleccionado?.selectedOptions?.[0]?.textContent || 'Todos',
-              busquedaActiva ? `bÃºsqueda: ${busquedaActiva}` : ''
-          ].filter(Boolean).join(' Â· ');
-          y = agregarTextoPDFProfesor(doc, `Vista exportada: ${detalleFiltroPDF} Â· DesafÃ­os incluidos: ${seccionesExportar.length}`, y);
+              busquedaActiva ? `búsqueda: ${busquedaActiva}` : ''
+          ].filter(Boolean).join(' · ');
+          y = agregarTextoPDFProfesor(doc, `Vista exportada: ${detalleFiltroPDF} · Desafíos incluidos: ${seccionesExportar.length}`, y);
 
           seccionesExportar.forEach((sec, indice) => {
               const r = historial[sec.id] || {};
@@ -13556,7 +13585,7 @@
               const notaVigente = obtenerNotaDesafioEstudiante(d, sec.id, r);
               const reaperturaDesafio = obtenerUltimaReaperturaProfesor(d, sec.id);
               const intentosDesafio = Math.max(1, Number(d.intentosDesafio?.[sec.id] || 1));
-              const codigo = r.codigo || d.codigos?.[sec.id] || '// Sin cÃ³digo guardado';
+              const codigo = r.codigo || d.codigos?.[sec.id] || '// Sin código guardado';
               if (y > 248) {
                   doc.addPage();
                   y = 18;
@@ -13566,22 +13595,22 @@
               doc.setFontSize(11);
               y = agregarTextoPDFProfesor(doc, `${indice + 1}. ${sec.title}`, y);
               doc.setFontSize(8.5);
-              y = agregarTextoPDFProfesor(doc, `Estado: ${finalizadas[sec.id] ? 'Finalizada' : 'Pendiente'} Â· Nota automÃ¡tica: ${r.notaFinal ?? r.notaIA ?? 'Pendiente'} Â· Nota vigente: ${notaVigente ?? 'Pendiente'}${ajuste.nota !== undefined && ajuste.nota !== null ? ' (correcciÃ³n docente)' : ''}`, y);
-              y = agregarTextoPDFProfesor(doc, `Intentos: ${intentosDesafio} Â· ÃƒÅ¡ltima reapertura: ${reaperturaDesafio ? formatearFechaPDF(reaperturaDesafio.item.fecha || reaperturaDesafio.item.en) : 'Sin reaperturas registradas'} Â· Motivo: ${reaperturaDesafio?.item?.motivo || 'Sin motivo registrado'}`, y);
+              y = agregarTextoPDFProfesor(doc, `Estado: ${finalizadas[sec.id] ? 'Finalizada' : 'Pendiente'} · Nota automática: ${r.notaFinal ?? r.notaIA ?? 'Pendiente'} · Nota vigente: ${notaVigente ?? 'Pendiente'}${ajuste.nota !== undefined && ajuste.nota !== null ? ' (corrección docente)' : ''}`, y);
+              y = agregarTextoPDFProfesor(doc, `Intentos: ${intentosDesafio} · Ãšltima reapertura: ${reaperturaDesafio ? formatearFechaPDF(reaperturaDesafio.item.fecha || reaperturaDesafio.item.en) : 'Sin reaperturas registradas'} · Motivo: ${reaperturaDesafio?.item?.motivo || 'Sin motivo registrado'}`, y);
               doc.setFont('helvetica', 'normal');
               y = agregarTextoPDFProfesor(doc, `Consigna: ${sec.exerciseDesc || 'Sin consigna'}`, y);
               if (evaluacion.nota !== undefined) {
                   const metricas = evaluacion.metricas || {};
-                  y = agregarTextoPDFProfesor(doc, `AnÃ¡lisis estricto: ${evaluacion.nota}/10 Â· Sintaxis: ${evaluacion.sintaxis?.valida ? 'vÃ¡lida' : 'con errores'} Â· EjecuciÃ³n: ${evaluacion.ejecucion?.ok ? 'correcta' : 'no validada'} Â· Requisitos: ${Math.round(Number(metricas.requisitos || 0) * 100)}% Â· Referencia: ${Math.round(Number(metricas.referencia || 0) * 100)}% Â· Comportamiento: ${Math.round(Number(metricas.comportamiento || 0) * 100)}%`, y);
-                  if (evaluacion.limites?.length) y = agregarTextoPDFProfesor(doc, `LÃ­mites: ${evaluacion.limites.join(' | ')}`, y);
+                  y = agregarTextoPDFProfesor(doc, `Análisis estricto: ${evaluacion.nota}/10 · Sintaxis: ${evaluacion.sintaxis?.valida ? 'válida' : 'con errores'} · Ejecución: ${evaluacion.ejecucion?.ok ? 'correcta' : 'no validada'} · Requisitos: ${Math.round(Number(metricas.requisitos || 0) * 100)}% · Referencia: ${Math.round(Number(metricas.referencia || 0) * 100)}% · Comportamiento: ${Math.round(Number(metricas.comportamiento || 0) * 100)}%`, y);
+                  if (evaluacion.limites?.length) y = agregarTextoPDFProfesor(doc, `Límites: ${evaluacion.limites.join(' | ')}`, y);
                   if (evaluacion.mejoras?.length) y = agregarTextoPDFProfesor(doc, `Mejoras: ${evaluacion.mejoras.join(' | ')}`, y);
               }
               if (ajuste.nota !== undefined && ajuste.nota !== null) {
-                  y = agregarTextoPDFProfesor(doc, `CorrecciÃ³n docente: ${ajuste.nota}/10 Â· Docente: ${ajuste.modificadaPor || 'Sin registrar'} Â· ObservaciÃ³n: ${ajuste.motivo || 'Sin observaciÃ³n'}`, y);
+                  y = agregarTextoPDFProfesor(doc, `Corrección docente: ${ajuste.nota}/10 · Docente: ${ajuste.modificadaPor || 'Sin registrar'} · Observación: ${ajuste.motivo || 'Sin observación'}`, y);
               }
               doc.setFont('courier', 'normal');
               doc.setFontSize(7.5);
-              y = agregarTextoPDFProfesor(doc, `CÃ³digo entregado:\n${codigo}`, y, { altoLinea: 3.5 });
+              y = agregarTextoPDFProfesor(doc, `Código entregado:\n${codigo}`, y, { altoLinea: 3.5 });
               doc.setFont('helvetica', 'normal');
               y = agregarTextoPDFProfesor(doc, `Salida: ${r.salida || 'Sin salida registrada'}`, y);
               y = agregarAnalistaViabilidadExcelenciaPDF(doc, r.analista, y);
@@ -13592,9 +13621,9 @@
       }
 
       async function exportarCursoProfesorPDF() {
-          try { await asegurarLibreriasPdf(); } catch (_) { alert('No se pudo cargar el generador de PDF. VerificÃ¡ la conexiÃ³n e intentÃ¡ nuevamente.'); return; }
+          try { await asegurarLibreriasPdf(); } catch (_) { alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.'); return; }
           if (!window.jspdf?.jsPDF) {
-              alert('No se pudo cargar el generador de PDF. VerificÃ¡ la conexiÃ³n e intentÃ¡ nuevamente.');
+              alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.');
               return;
           }
           const curso = String(document.getElementById('filtroCursoProfesor')?.value || '').trim();
@@ -13602,11 +13631,11 @@
           const turno = String(document.getElementById('filtroTurnoProfesor')?.value || '').trim();
           const camposFaltantes = [
               !curso ? { nombre: 'curso', id: 'filtroCursoProfesor' } : null,
-              !division ? { nombre: 'divisiÃ³n', id: 'filtroDivisionProfesor' } : null,
+              !division ? { nombre: 'división', id: 'filtroDivisionProfesor' } : null,
               !turno ? { nombre: 'turno', id: 'filtroTurnoProfesor' } : null
           ].filter(Boolean);
           if (camposFaltantes.length) {
-              alert(`SeleccionÃ¡ ${camposFaltantes.map(item => item.nombre).join(', ')} para identificar el grupo exacto que se exportarÃ¡.`);
+              alert(`Seleccioná ${camposFaltantes.map(item => item.nombre).join(', ')} para identificar el grupo exacto que se exportará.`);
               document.getElementById(camposFaltantes[0].id)?.focus();
               return;
           }
@@ -13617,7 +13646,7 @@
                   String(e.turno || '') === turno;
           }).sort((a, b) => String(a.estudiante?.nombre || a.email || '').localeCompare(String(b.estudiante?.nombre || b.email || ''), 'es'));
           if (!estudiantes.length) {
-              alert('No hay estudiantes para la combinaciÃ³n de curso, divisiÃ³n y turno seleccionada.');
+              alert('No hay estudiantes para la combinación de curso, división y turno seleccionada.');
               return;
           }
           const historialNotasPorUid = new Map(await Promise.all(estudiantes.map(async d => {
@@ -13633,7 +13662,7 @@
           })));
           const { jsPDF } = window.jspdf;
           const doc = new jsPDF();
-          const grupo = `${curso} Â· DivisiÃ³n ${division} Â· Turno ${turno}`;
+          const grupo = `${curso} · División ${division} · Turno ${turno}`;
           const fechaEmision = new Date().toLocaleString('es-AR');
           const formatearFechaPDF = valor => {
               if (!valor) return 'Sin registrar';
@@ -13648,7 +13677,7 @@
           };
           const textoEstadoCuenta = d => {
               const estado = d.estadoCuenta || 'activo';
-              if (estado === 'pendiente') return 'Pendiente de aprobaciÃ³n';
+              if (estado === 'pendiente') return 'Pendiente de aprobación';
               if (estado === 'rechazado') return 'Solicitud rechazada';
               if (estado === 'inactivo') return 'Cuenta inactiva';
               return 'Cuenta activa';
@@ -13673,8 +13702,8 @@
               }, { errores: 0, pendientes: 0, modificadas: 0, finalizadas: 0 });
           };
           const estadisticas = estudiantes.map(d => ({ estudiante: d, ...contarSituacionDesafios(d) }));
-          const notasAcademicas = estudiantes.map(calcularNotaEstudiante).filter(x => x !== 'Ã¢â‚¬â€').map(Number);
-          const notasDefinitivas = estudiantes.map(calcularNotaDefinitivaEstudiante).filter(x => x !== 'Ã¢â‚¬â€').map(Number);
+          const notasAcademicas = estudiantes.map(calcularNotaEstudiante).filter(x => x !== 'â€”').map(Number);
+          const notasDefinitivas = estudiantes.map(calcularNotaDefinitivaEstudiante).filter(x => x !== 'â€”').map(Number);
           const promedio = valores => valores.length
               ? (valores.reduce((a, b) => a + b, 0) / valores.length).toFixed(1)
               : 'Pendiente';
@@ -13700,7 +13729,7 @@
           y += 10;
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(10);
-          y = agregarTextoPDFProfesor(doc, `Curso: ${curso}\nDivisiÃ³n: ${division}\nTurno: ${turno}\nFecha de emisiÃ³n: ${fechaEmision}`, y, { altoLinea: 5 });
+          y = agregarTextoPDFProfesor(doc, `Curso: ${curso}\nDivisión: ${division}\nTurno: ${turno}\nFecha de emisión: ${fechaEmision}`, y, { altoLinea: 5 });
           y += 6;
           doc.line(14, y, 196, y);
           y += 9;
@@ -13710,15 +13739,15 @@
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(9);
           y = agregarTextoPDFProfesor(doc, [
-              `Estudiantes: ${estudiantes.length} Â· Cuentas activas: ${activas} Â· Solicitudes pendientes: ${pendientesCuenta} Â· Inactivas o rechazadas: ${inactivas}`,
-              `Progreso promedio: ${progresoPromedio}% Â· Promedio acadÃ©mico: ${promedio(notasAcademicas)}/10 Â· Promedio definitivo confirmado: ${promedio(notasDefinitivas)}/10`,
-              `DesafÃ­os con errores: ${totalErrores} Â· DesafÃ­os pendientes: ${totalPendientes} Â· Notas corregidas por docentes: ${totalModificadas}`,
-              `Cambios de pestaÃ±a: ${totalSalidas} Â· Desbloqueos registrados: ${totalDesbloqueos}`
+              `Estudiantes: ${estudiantes.length} · Cuentas activas: ${activas} · Solicitudes pendientes: ${pendientesCuenta} · Inactivas o rechazadas: ${inactivas}`,
+              `Progreso promedio: ${progresoPromedio}% · Promedio académico: ${promedio(notasAcademicas)}/10 · Promedio definitivo confirmado: ${promedio(notasDefinitivas)}/10`,
+              `Desafíos con errores: ${totalErrores} · Desafíos pendientes: ${totalPendientes} · Notas corregidas por docentes: ${totalModificadas}`,
+              `Cambios de pestaña: ${totalSalidas} · Desbloqueos registrados: ${totalDesbloqueos}`
           ].join('\n'), y, { altoLinea: 5 });
           y += 5;
           doc.setFont('helvetica', 'bold');
           doc.setFontSize(12);
-          y = agregarTextoPDFProfesor(doc, 'NÃ³mina y situaciÃ³n general', y);
+          y = agregarTextoPDFProfesor(doc, 'Nómina y situación general', y);
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(8.5);
           estadisticas.forEach((item, indice) => {
@@ -13727,8 +13756,8 @@
               const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
               y = agregarTextoPDFProfesor(
                   doc,
-                  `${indice + 1}. ${e.nombre || d.nombreGoogle || 'Sin nombre'} Â· ${d.email || 'Sin email'}\n` +
-                  `Estado: ${textoEstadoCuenta(d)} Â· Progreso: ${calcularProgresoEstudiante(d)}% Â· Promedio: ${calcularNotaEstudiante(d)}/10 Â· Nota definitiva: ${notaDefinitiva === 'Ã¢â‚¬â€' ? 'Pendiente' : `${notaDefinitiva}/10`} Â· Errores: ${item.errores} Â· Pendientes: ${item.pendientes} Â· Correcciones docentes: ${item.modificadas}`,
+                  `${indice + 1}. ${e.nombre || d.nombreGoogle || 'Sin nombre'} · ${d.email || 'Sin email'}\n` +
+                  `Estado: ${textoEstadoCuenta(d)} · Progreso: ${calcularProgresoEstudiante(d)}% · Promedio: ${calcularNotaEstudiante(d)}/10 · Nota definitiva: ${notaDefinitiva === 'â€”' ? 'Pendiente' : `${notaDefinitiva}/10`} · Errores: ${item.errores} · Pendientes: ${item.pendientes} · Correcciones docentes: ${item.modificadas}`,
                   y,
                   { altoLinea: 4 }
               );
@@ -13757,13 +13786,13 @@
               doc.setFont('helvetica', 'normal');
               doc.setFontSize(9);
               y = agregarTextoPDFProfesor(doc, [
-                  `Email: ${d.email || 'Sin email'} Â· UID: ${d.uid || 'Sin registrar'}`,
-                  `Grupo: ${grupo} Â· Estado: ${textoEstadoCuenta(d)}`,
-                  `ÃƒÅ¡ltima actualizaciÃ³n: ${formatearFechaPDF(d.actualizadoEn)}`,
-                  `Progreso: ${calcularProgresoEstudiante(d)}% Â· Promedio acadÃ©mico: ${calcularNotaEstudiante(d)}/10 Â· Nota calculada: ${calcularNotaProvisionalEstudiante(d)}/10 Â· Nota definitiva: ${calcularNotaDefinitivaEstudiante(d) === 'Ã¢â‚¬â€' ? 'Pendiente' : `${calcularNotaDefinitivaEstudiante(d)}/10`}`,
-                  `DesafÃ­os finalizados: ${resumen.finalizadas}/${seccionesData.length} Â· Con errores: ${resumen.errores} Â· Pendientes: ${resumen.pendientes} Â· Notas docentes: ${resumen.modificadas}`,
-                  d.estadoCuenta === 'inactivo' ? `Baja: ${d.bajaMotivo || 'Sin motivo'} Â· Fecha: ${formatearFechaPDF(d.bajaFecha)} Â· Responsable: ${d.bajaPor || 'Sin registrar'}` : '',
-                  d.estadoCuenta === 'rechazado' ? `Rechazo: ${d.rechazoMotivo || 'Sin motivo'} Â· Fecha: ${formatearFechaPDF(d.rechazadoEn)} Â· Responsable: ${d.rechazadoPor || 'Sin registrar'}` : ''
+                  `Email: ${d.email || 'Sin email'} · UID: ${d.uid || 'Sin registrar'}`,
+                  `Grupo: ${grupo} · Estado: ${textoEstadoCuenta(d)}`,
+                  `Ãšltima actualización: ${formatearFechaPDF(d.actualizadoEn)}`,
+                  `Progreso: ${calcularProgresoEstudiante(d)}% · Promedio académico: ${calcularNotaEstudiante(d)}/10 · Nota calculada: ${calcularNotaProvisionalEstudiante(d)}/10 · Nota definitiva: ${calcularNotaDefinitivaEstudiante(d) === 'â€”' ? 'Pendiente' : `${calcularNotaDefinitivaEstudiante(d)}/10`}`,
+                  `Desafíos finalizados: ${resumen.finalizadas}/${seccionesData.length} · Con errores: ${resumen.errores} · Pendientes: ${resumen.pendientes} · Notas docentes: ${resumen.modificadas}`,
+                  d.estadoCuenta === 'inactivo' ? `Baja: ${d.bajaMotivo || 'Sin motivo'} · Fecha: ${formatearFechaPDF(d.bajaFecha)} · Responsable: ${d.bajaPor || 'Sin registrar'}` : '',
+                  d.estadoCuenta === 'rechazado' ? `Rechazo: ${d.rechazoMotivo || 'Sin motivo'} · Fecha: ${formatearFechaPDF(d.rechazadoEn)} · Responsable: ${d.rechazadoPor || 'Sin registrar'}` : ''
               ].filter(Boolean).join('\n'), y, { altoLinea: 4.5 });
               y += 3;
               doc.line(14, y, 196, y);
@@ -13771,43 +13800,43 @@
 
               doc.setFont('helvetica', 'bold');
               doc.setFontSize(11);
-              y = agregarTextoPDFProfesor(doc, 'RevisiÃ³n docente, nota final y seguimiento', y);
+              y = agregarTextoPDFProfesor(doc, 'Revisión docente, nota final y seguimiento', y);
               doc.setFont('helvetica', 'normal');
               doc.setFontSize(8.5);
               y = agregarTextoPDFProfesor(doc, [
-                  `Estado de revisiÃ³n: ${revision.estado || 'Pendiente'} Â· Descuento: ${Number(revision.penalizacion || 0).toFixed(1)} punto(s)`,
+                  `Estado de revisión: ${revision.estado || 'Pendiente'} · Descuento: ${Number(revision.penalizacion || 0).toFixed(1)} punto(s)`,
                   `Fundamento: ${revision.motivo || 'Sin fundamento registrado'}`,
-                  `Revisado por: ${revision.revisadoPor || 'Sin registrar'} Â· Fecha: ${formatearFechaPDF(revision.revisadoEn)}`,
-                  `ConfirmaciÃ³n de nota final: ${revision.notaConfirmada === true ? 'Confirmada' : 'Pendiente'}${revision.notaModificadaManualmente === true ? ' Â· Modificada manualmente por el docente' : ''}`,
-                  `Cambios de pestaÃ±a: ${Number(d.salidasPestana || 0)} Â· Pantalla bloqueada: ${d.pantallaBloqueada === true ? 'SÃ­' : 'No'} Â· Desbloqueos: ${Number(d.cantidadDesbloqueos || 0)}`,
+                  `Revisado por: ${revision.revisadoPor || 'Sin registrar'} · Fecha: ${formatearFechaPDF(revision.revisadoEn)}`,
+                  `Confirmación de nota final: ${revision.notaConfirmada === true ? 'Confirmada' : 'Pendiente'}${revision.notaModificadaManualmente === true ? ' · Modificada manualmente por el docente' : ''}`,
+                  `Cambios de pestaña: ${Number(d.salidasPestana || 0)} · Pantalla bloqueada: ${d.pantallaBloqueada === true ? 'Sí' : 'No'} · Desbloqueos: ${Number(d.cantidadDesbloqueos || 0)}`,
                   d.ultimoDesbloqueo || d.desbloqueoPantalla
-                      ? `ÃƒÅ¡ltimo desbloqueo: ${formatearFechaPDF((d.ultimoDesbloqueo || d.desbloqueoPantalla).en)} Â· Docente: ${(d.ultimoDesbloqueo || d.desbloqueoPantalla).por || 'Sin registrar'} Â· Motivo: ${(d.ultimoDesbloqueo || d.desbloqueoPantalla).motivo || 'Sin motivo'}`
-                      : 'ÃƒÅ¡ltimo desbloqueo: sin registros'
+                      ? `Ãšltimo desbloqueo: ${formatearFechaPDF((d.ultimoDesbloqueo || d.desbloqueoPantalla).en)} · Docente: ${(d.ultimoDesbloqueo || d.desbloqueoPantalla).por || 'Sin registrar'} · Motivo: ${(d.ultimoDesbloqueo || d.desbloqueoPantalla).motivo || 'Sin motivo'}`
+                      : 'Ãšltimo desbloqueo: sin registros'
               ].join('\n'), y, { altoLinea: 4.2 });
 
               if (eventos.length) {
                   y += 3;
                   doc.setFont('helvetica', 'bold');
-                  y = agregarTextoPDFProfesor(doc, `Recorrido de cambios de pestaÃ±a (${eventos.length})`, y);
+                  y = agregarTextoPDFProfesor(doc, `Recorrido de cambios de pestaña (${eventos.length})`, y);
                   doc.setFont('helvetica', 'normal');
                   eventos.forEach((evento, posicion) => {
                       const duracion = evento.duracionSegundos === null || evento.duracionSegundos === undefined
-                          ? 'duraciÃ³n no registrada'
+                          ? 'duración no registrada'
                           : `${evento.duracionSegundos} segundos`;
                       const justificacion = evento.justificacion
                           ? `${evento.justificacion.motivo || 'Justificada'}: ${evento.justificacion.detalle || 'Sin detalle'}`
-                          : 'Sin justificaciÃ³n';
+                          : 'Sin justificación';
                       const revisionEvento = evento.revisionDocente || evento.revision || {};
                       y = agregarTextoPDFProfesor(
                           doc,
-                          `${posicion + 1}. ${formatearFechaPDF(evento.salidaEn)} Â· Actividad: ${evento.seccion || 'Sin identificar'} Â· ${duracion} Â· ${justificacion}` +
-                          `${revisionEvento.estado ? ` Â· RevisiÃ³n docente: ${revisionEvento.estado}` : ''}`,
+                          `${posicion + 1}. ${formatearFechaPDF(evento.salidaEn)} · Actividad: ${evento.seccion || 'Sin identificar'} · ${duracion} · ${justificacion}` +
+                          `${revisionEvento.estado ? ` · Revisión docente: ${revisionEvento.estado}` : ''}`,
                           y,
                           { margen: 18, ancho: 178, altoLinea: 3.8 }
                       );
                   });
               } else {
-                  y = agregarTextoPDFProfesor(doc, 'Recorrido de pestaÃ±as: no se registraron cambios.', y);
+                  y = agregarTextoPDFProfesor(doc, 'Recorrido de pestañas: no se registraron cambios.', y);
               }
 
               seccionesData.forEach((sec, desafioIndice) => {
@@ -13816,7 +13845,7 @@
                   const ajuste = notasDocente[sec.id] || {};
                   const notaVigente = obtenerNotaDesafioEstudiante(d, sec.id, r);
                   const notaAutomatica = r.notaFinal ?? r.notaIA;
-                  const codigo = r.codigo || codigos[sec.id] || '// Sin cÃ³digo guardado';
+                  const codigo = r.codigo || codigos[sec.id] || '// Sin código guardado';
                   const mensajes = Array.isArray(chatIA[sec.id]) ? chatIA[sec.id] : [];
                   const ayudaModulo = ayudas[sec.id] || {};
                   const consultasPalabras = Object.values(ayudaModulo.palabras || {})
@@ -13832,23 +13861,23 @@
                   }
                   doc.setFont('helvetica', 'bold');
                   doc.setFontSize(11);
-                  y = agregarTextoPDFProfesor(doc, `DesafÃ­o ${desafioIndice + 1}: ${sec.title}`, y);
+                  y = agregarTextoPDFProfesor(doc, `Desafío ${desafioIndice + 1}: ${sec.title}`, y);
                   doc.setFontSize(8.5);
                   y = agregarTextoPDFProfesor(doc, [
                       `Estado: ${finalizadas[sec.id] ? 'Finalizado' : 'Pendiente'}`,
-                      `Nota del cÃ³digo (70%): ${r.notaCodigo ?? 'Pendiente'} Â· Nota de preguntas (30%): ${r.notaPreguntas ?? 'Pendiente'} Â· Nota automÃ¡tica: ${notaAutomatica ?? 'Pendiente'} Â· Nota vigente: ${notaVigente ?? 'Pendiente'}${ajuste.nota !== undefined && ajuste.nota !== null ? ' (corregida por docente)' : ''}`,
-                      `Intentos: ${intentosDesafio} Â· ÃƒÅ¡ltima reapertura: ${reaperturaDesafio ? formatearFechaPDF(reaperturaDesafio.item.fecha || reaperturaDesafio.item.en) : 'Sin reaperturas registradas'} Â· Motivo: ${reaperturaDesafio?.item?.motivo || 'Sin motivo registrado'}`,
-                      `Tiempo restante: ${formatearTiempoProfesor(tiempos[sec.id] ?? 2400)} Â· Consultas de nota previa: ${Number(previews[sec.id] || 0)}/3`,
-                      `Ayudas pedagÃ³gicas: palabras consultadas ${consultasPalabras} Â· pasos abiertos ${Number(ayudaModulo.pasosVistos || 0)} Â· material de apoyo ${Number(ayudaModulo.materialApoyoVistas || 0)} Â· verificaciÃ³n ${Number(ayudaModulo.verificacion?.intentos || 0)} intento(s)`
+                      `Nota del código (70%): ${r.notaCodigo ?? 'Pendiente'} · Nota de preguntas (30%): ${r.notaPreguntas ?? 'Pendiente'} · Nota automática: ${notaAutomatica ?? 'Pendiente'} · Nota vigente: ${notaVigente ?? 'Pendiente'}${ajuste.nota !== undefined && ajuste.nota !== null ? ' (corregida por docente)' : ''}`,
+                      `Intentos: ${intentosDesafio} · Ãšltima reapertura: ${reaperturaDesafio ? formatearFechaPDF(reaperturaDesafio.item.fecha || reaperturaDesafio.item.en) : 'Sin reaperturas registradas'} · Motivo: ${reaperturaDesafio?.item?.motivo || 'Sin motivo registrado'}`,
+                      `Tiempo restante: ${formatearTiempoProfesor(tiempos[sec.id] ?? 2400)} · Consultas de nota previa: ${Number(previews[sec.id] || 0)}/3`,
+                      `Ayudas pedagógicas: palabras consultadas ${consultasPalabras} · pasos abiertos ${Number(ayudaModulo.pasosVistos || 0)} · material de apoyo ${Number(ayudaModulo.materialApoyoVistas || 0)} · verificación ${Number(ayudaModulo.verificacion?.intentos || 0)} intento(s)`
                   ].join('\n'), y, { altoLinea: 4 });
                   doc.setFont('helvetica', 'normal');
                   y = agregarTextoPDFProfesor(doc, `Consigna: ${sec.exerciseDesc || 'Sin consigna registrada'}`, y, { altoLinea: 3.8 });
 
                   if (ajuste.nota !== undefined && ajuste.nota !== null) {
                       y = agregarTextoPDFProfesor(doc, [
-                          `CorrecciÃ³n docente: ${ajuste.nota}/10 Â· Valor automÃ¡tico anterior: ${ajuste.notaAutomatica ?? notaAutomatica ?? 'Sin nota'}`,
-                          `Docente: ${ajuste.modificadaPor || 'Sin registrar'} Â· Fecha: ${formatearFechaPDF(ajuste.modificadaEn)}`,
-                          `ObservaciÃ³n: ${ajuste.motivo || 'Sin observaciÃ³n'}`
+                          `Corrección docente: ${ajuste.nota}/10 · Valor automático anterior: ${ajuste.notaAutomatica ?? notaAutomatica ?? 'Sin nota'}`,
+                          `Docente: ${ajuste.modificadaPor || 'Sin registrar'} · Fecha: ${formatearFechaPDF(ajuste.modificadaEn)}`,
+                          `Observación: ${ajuste.motivo || 'Sin observación'}`
                       ].join('\n'), y, { altoLinea: 3.8 });
                   }
                   if (historialNotaDesafio.length) {
@@ -13858,13 +13887,13 @@
                       historialNotaDesafio.forEach((cambio, cambioIndice) => {
                           y = agregarTextoPDFProfesor(
                               doc,
-                              `${cambioIndice + 1}. ${formatearFechaPDF(cambio.cambiadoEn)} Â· Docente: ${cambio.docente || 'Sin registrar'} Â· Valor anterior: ${cambio.valorAnterior ?? 'Sin nota'} Â· Valor nuevo: ${cambio.valorNuevo ?? 'Sin nota'} Â· Motivo: ${cambio.motivo || 'Sin motivo'}`,
+                              `${cambioIndice + 1}. ${formatearFechaPDF(cambio.cambiadoEn)} · Docente: ${cambio.docente || 'Sin registrar'} · Valor anterior: ${cambio.valorAnterior ?? 'Sin nota'} · Valor nuevo: ${cambio.valorNuevo ?? 'Sin nota'} · Motivo: ${cambio.motivo || 'Sin motivo'}`,
                               y,
                               { margen: 18, ancho: 178, altoLinea: 3.7 }
                           );
                       });
                   } else {
-                      y = agregarTextoPDFProfesor(doc, 'Historial de cambios de nota: sin modificaciones histÃ³ricas disponibles.', y);
+                      y = agregarTextoPDFProfesor(doc, 'Historial de cambios de nota: sin modificaciones históricas disponibles.', y);
                   }
 
                   if (evaluacion.nota !== undefined) {
@@ -13872,24 +13901,24 @@
                       const conceptos = Array.isArray(evaluacion.conceptos) ? evaluacion.conceptos : [];
                       const criterios = Array.isArray(evaluacion.criterios) ? evaluacion.criterios : [];
                       y = agregarTextoPDFProfesor(doc, [
-                          `AnÃ¡lisis automÃ¡tico estricto: ${Number(evaluacion.nota).toFixed(1)}/10 Â· Sintaxis: ${evaluacion.sintaxis?.valida ? 'vÃ¡lida' : 'con errores'} Â· EjecuciÃ³n: ${evaluacion.ejecucion?.ok ? 'correcta' : 'no validada'}`,
-                          `MÃ©tricas: requisitos ${Math.round(Number(metricas.requisitos || 0) * 100)}% Â· referencia ${Math.round(Number(metricas.referencia || 0) * 100)}% Â· comportamiento ${Math.round(Number(metricas.comportamiento || 0) * 100)}% Â· identificadores ${Math.round(Number(metricas.nombresExigidos ?? 1) * 100)}%`,
+                          `Análisis automático estricto: ${Number(evaluacion.nota).toFixed(1)}/10 · Sintaxis: ${evaluacion.sintaxis?.valida ? 'válida' : 'con errores'} · Ejecución: ${evaluacion.ejecucion?.ok ? 'correcta' : 'no validada'}`,
+                          `Métricas: requisitos ${Math.round(Number(metricas.requisitos || 0) * 100)}% · referencia ${Math.round(Number(metricas.referencia || 0) * 100)}% · comportamiento ${Math.round(Number(metricas.comportamiento || 0) * 100)}% · identificadores ${Math.round(Number(metricas.nombresExigidos ?? 1) * 100)}%`,
                           conceptos.length ? `Conceptos: ${conceptos.map(item => `${item.nombre || 'Sin nombre'} (${item.cumple ? 'cumple' : 'falta'})`).join(' | ')}` : '',
                           criterios.length ? `Criterios: ${criterios.map(item => `${item.nombre || 'Criterio'} ${item.puntos ?? 0}/${item.peso ?? 0} (${item.estado || 'pendiente'}): ${item.evidencia || 'sin evidencia'}`).join(' | ')}` : '',
                           Array.isArray(evaluacion.mejoras) && evaluacion.mejoras.length ? `Mejoras prioritarias: ${evaluacion.mejoras.join(' | ')}` : '',
-                          Array.isArray(evaluacion.limites) && evaluacion.limites.length ? `LÃ­mites aplicados: ${evaluacion.limites.join(' | ')}` : '',
+                          Array.isArray(evaluacion.limites) && evaluacion.limites.length ? `Límites aplicados: ${evaluacion.limites.join(' | ')}` : '',
                           r.error ? `Error registrado: ${r.error}` : ''
                       ].filter(Boolean).join('\n'), y, { altoLinea: 3.7 });
                   } else {
-                      y = agregarTextoPDFProfesor(doc, `AnÃ¡lisis automÃ¡tico: ${r.analisisIA || 'Pendiente'}`, y);
+                      y = agregarTextoPDFProfesor(doc, `Análisis automático: ${r.analisisIA || 'Pendiente'}`, y);
                   }
 
                   doc.setFont('courier', 'normal');
                   doc.setFontSize(7);
-                  y = agregarTextoPDFProfesor(doc, `CÃ³digo entregado:\n${codigo}`, y, { altoLinea: 3.2 });
+                  y = agregarTextoPDFProfesor(doc, `Código entregado:\n${codigo}`, y, { altoLinea: 3.2 });
                   doc.setFont('helvetica', 'normal');
                   doc.setFontSize(8);
-                  y = agregarTextoPDFProfesor(doc, `Salida de ejecuciÃ³n:\n${r.salida || evaluacion.ejecucion?.salida || 'Sin salida registrada'}`, y, { altoLinea: 3.6 });
+                  y = agregarTextoPDFProfesor(doc, `Salida de ejecución:\n${r.salida || evaluacion.ejecucion?.salida || 'Sin salida registrada'}`, y, { altoLinea: 3.6 });
 
                   if (mensajes.length) {
                       doc.setFont('helvetica', 'bold');
@@ -13918,8 +13947,8 @@
               doc.setFont('helvetica', 'normal');
               doc.setFontSize(7.5);
               doc.setTextColor(90);
-              doc.text(`IPEM 146 Â· ${grupo}`, 14, 9);
-              const pie = `PÃ¡gina ${pagina} de ${cantidadPaginas} Â· Emitido ${fechaEmision}`;
+              doc.text(`IPEM 146 · ${grupo}`, 14, 9);
+              const pie = `Página ${pagina} de ${cantidadPaginas} · Emitido ${fechaEmision}`;
               doc.text(pie, 196 - doc.getTextWidth(pie), 290);
               doc.setTextColor(0);
           }
@@ -13940,8 +13969,8 @@
                   `Reforzar ${item.titulo}`,
                   `Nota vigente: ${item.nota.toFixed(1)}/10.`,
                   item.teoria
-                      ? `RepasÃ¡ Ã¢â‚¬Å“${item.teoria}Ã¢â‚¬Â y volvÃ© a resolver Ã¢â‚¬Å“${item.ejercicio || item.titulo}Ã¢â‚¬Â explicando cada decisiÃ³n y probando al menos dos casos.`
-                      : "RevisÃ¡ la soluciÃ³n, explicÃ¡ cada decisiÃ³n y comprobala con al menos dos casos de prueba."
+                      ? `Repasá â€œ${item.teoria}â€ y volvé a resolver â€œ${item.ejercicio || item.titulo}â€ explicando cada decisión y probando al menos dos casos.`
+                      : "Revisá la solución, explicá cada decisión y comprobala con al menos dos casos de prueba."
               );
           });
           const totalSocratico = finalizadas.reduce((total, item) => {
@@ -13957,9 +13986,9 @@
           if (respuestas && riesgoSocratico >= 25) {
               agregar(
                   riesgoSocratico >= 45 ? "alta" : "media",
-                  "Fortalecer las explicaciones socrÃ¡ticas",
+                  "Fortalecer las explicaciones socráticas",
                   `${totalSocratico.parcial + totalSocratico.incorrecta} de ${respuestas} respuestas fueron parciales o incorrectas (${riesgoSocratico.toFixed(1)}%).`,
-                  "RespondÃ© con la estructura: decisiÃ³n tomada, por quÃ© funciona, evidencia concreta del cÃ³digo o prueba y quÃ© ocurrirÃ­a en un caso lÃ­mite."
+                  "Respondé con la estructura: decisión tomada, por qué funciona, evidencia concreta del código o prueba y qué ocurriría en un caso límite."
               );
           }
           const criterios = {};
@@ -13976,18 +14005,18 @@
           });
           const criterioPrincipal = Object.entries(criterios).sort((a, b) => b[1] - a[1])[0];
           const accionesCriterio = {
-              "desarrollo suficiente": "EscribÃ­ respuestas de al menos tres ideas conectadas: quÃ© hiciste, cÃ³mo funciona y cÃ³mo lo comprobaste.",
-              "justificaciÃ³n causal": "UsÃ¡ conectores como Ã¢â‚¬Å“porqueÃ¢â‚¬Â, Ã¢â‚¬Å“permiteÃ¢â‚¬Â, Ã¢â‚¬Å“evitaÃ¢â‚¬Â y Ã¢â‚¬Å“por lo tantoÃ¢â‚¬Â para relacionar cÃ³digo y resultado.",
-              "evidencia del cÃ³digo o de una prueba": "CitÃ¡ una variable, condiciÃ³n, funciÃ³n o resultado de prueba concreto en cada explicaciÃ³n.",
-              "consecuencia, lÃ­mite o mejora": "IncluÃ­ un caso lÃ­mite, una posible falla o una mejora y explicÃ¡ cÃ³mo la verificarÃ­as."
+              "desarrollo suficiente": "Escribí respuestas de al menos tres ideas conectadas: qué hiciste, cómo funciona y cómo lo comprobaste.",
+              "justificación causal": "Usá conectores como â€œporqueâ€, â€œpermiteâ€, â€œevitaâ€ y â€œpor lo tantoâ€ para relacionar código y resultado.",
+              "evidencia del código o de una prueba": "Citá una variable, condición, función o resultado de prueba concreto en cada explicación.",
+              "consecuencia, límite o mejora": "Incluí un caso límite, una posible falla o una mejora y explicá cómo la verificarías."
           };
           if (criterioPrincipal) {
               agregar(
                   criterioPrincipal[1] >= 3 ? "alta" : "media",
                   `Practicar: ${criterioPrincipal[0]}`,
-                  `Este criterio faltÃ³ en ${criterioPrincipal[1]} respuesta${criterioPrincipal[1] === 1 ? "" : "s"}.`,
+                  `Este criterio faltó en ${criterioPrincipal[1]} respuesta${criterioPrincipal[1] === 1 ? "" : "s"}.`,
                   accionesCriterio[criterioPrincipal[0]] ||
-                      "RevisÃ¡ las devoluciones del analista y agregÃ¡ evidencia concreta para sostener cada respuesta."
+                      "Revisá las devoluciones del analista y agregá evidencia concreta para sostener cada respuesta."
               );
           }
           if (evaluadas.length >= 4) {
@@ -13998,16 +14027,16 @@
               if (promedioReciente <= promedioAnterior - .5) {
                   agregar(
                       "alta",
-                      "Recuperar la tendencia de las Ãºltimas actividades",
-                      `El promedio de las dos Ãºltimas actividades (${promedioReciente.toFixed(1)}) bajÃ³ respecto de las dos anteriores (${promedioAnterior.toFixed(1)}).`,
-                      "ComparÃ¡ los errores de las dos Ãºltimas entregas, corregÃ­ uno por vez y volvÃ© a ejecutar las pruebas."
+                      "Recuperar la tendencia de las últimas actividades",
+                      `El promedio de las dos últimas actividades (${promedioReciente.toFixed(1)}) bajó respecto de las dos anteriores (${promedioAnterior.toFixed(1)}).`,
+                      "Compará los errores de las dos últimas entregas, corregí uno por vez y volvé a ejecutar las pruebas."
                   );
               } else if (promedioReciente >= promedioAnterior + .5) {
                   agregar(
                       "fortaleza",
                       "Mantener la mejora reciente",
-                      `El promedio reciente subiÃ³ de ${promedioAnterior.toFixed(1)} a ${promedioReciente.toFixed(1)}.`,
-                      "ConservÃ¡ la estrategia utilizada y registrÃ¡ quÃ© prueba o explicaciÃ³n te ayudÃ³ a mejorar."
+                      `El promedio reciente subió de ${promedioAnterior.toFixed(1)} a ${promedioReciente.toFixed(1)}.`,
+                      "Conservá la estrategia utilizada y registrá qué prueba o explicación te ayudó a mejorar."
                   );
               }
           }
@@ -14015,27 +14044,27 @@
           if (proxima) {
               agregar(
                   progreso < 50 ? "media" : "siguiente",
-                  `Preparar el prÃ³ximo desafÃ­o: ${proxima.titulo}`,
+                  `Preparar el próximo desafío: ${proxima.titulo}`,
                   `Avance actual: ${progreso}% del trayecto.`,
                   proxima.teoria
-                      ? `LeÃ© primero Ã¢â‚¬Å“${proxima.teoria}Ã¢â‚¬Â, identificÃ¡ los conceptos nuevos y escribÃ­ dos ejemplos breves antes de resolver el desafÃ­o.`
-                      : "RevisÃ¡ la consigna, identificÃ¡ entradas, proceso y salida, y planificÃ¡ dos casos de prueba."
+                      ? `Leé primero â€œ${proxima.teoria}â€, identificá los conceptos nuevos y escribí dos ejemplos breves antes de resolver el desafío.`
+                      : "Revisá la consigna, identificá entradas, proceso y salida, y planificá dos casos de prueba."
               );
           }
           if (Number.isFinite(promedio) && promedio >= 8 && riesgoSocratico < 20) {
               agregar(
                   "fortaleza",
-                  "Profundizar con un desafÃ­o de extensiÃ³n",
+                  "Profundizar con un desafío de extensión",
                   `Promedio ${promedio.toFixed(1)}/10 y ${riesgoSocratico.toFixed(1)}% de respuestas parciales o incorrectas.`,
-                  "CreÃ¡ una variante del Ãºltimo ejercicio que agregue validaciones, casos lÃ­mite y una explicaciÃ³n de las decisiones tÃ©cnicas."
+                  "Creá una variante del último ejercicio que agregue validaciones, casos límite y una explicación de las decisiones técnicas."
               );
           }
           if (!recomendaciones.length) {
               agregar(
                   "siguiente",
-                  "Continuar con prÃ¡ctica guiada",
-                  "TodavÃ­a no hay suficientes actividades finalizadas para detectar un patrÃ³n estable.",
-                  "CompletÃ¡ el prÃ³ximo desafÃ­o y explicÃ¡ la soluciÃ³n con un ejemplo y un caso lÃ­mite."
+                  "Continuar con práctica guiada",
+                  "Todavía no hay suficientes actividades finalizadas para detectar un patrón estable.",
+                  "Completá el próximo desafío y explicá la solución con un ejemplo y un caso límite."
               );
           }
           const orden = { alta: 0, media: 1, siguiente: 2, fortaleza: 3 };
@@ -14137,14 +14166,14 @@
               const aviso = document.getElementById("estadoInformeVisualEstudiante");
               if (aviso) {
                   aviso.className = "student-report-save-status is-error";
-                  aviso.textContent = "El estado cambiÃ³ en pantalla, pero no pudo sincronizarse con Firebase.";
+                  aviso.textContent = "El estado cambió en pantalla, pero no pudo sincronizarse con Firebase.";
               }
           }
       }
 
       function abrirProgresoEstudiante() {
           if (!cuentaEstudianteActiva) {
-              alert("IngresÃ¡ como estudiante para ver tu progreso y tus calificaciones.");
+              alert("Ingresá como estudiante para ver tu progreso y tus calificaciones.");
               return;
           }
           const modal = document.getElementById("progresoEstudianteModal");
@@ -14155,10 +14184,11 @@
           setTimeout(() => modal.querySelector(".student-progress-modal-box")?.focus({ preventScroll: true }), 0);
       }
 
-          function cerrarProgresoEstudiante() {
-              document.getElementById("progresoEstudianteModal")?.classList.remove("active");
-              document.body.classList.remove("student-progress-modal-open");
-          }
+      function cerrarProgresoEstudiante() {
+          document.getElementById("progresoEstudianteModal")?.classList.remove("active");
+          document.body.classList.remove("student-progress-modal-open");
+          document.getElementById("btnAbrirProgresoEstudiante")?.focus({ preventScroll: true });
+      }
 
       document.getElementById("progresoEstudianteModal")?.addEventListener("click", event => {
           if (event.target?.id === "progresoEstudianteModal") cerrarProgresoEstudiante();
@@ -14190,7 +14220,7 @@
               if (coincide) visibles++;
           });
           const estado = grafico.querySelector(".student-grade-filter-status");
-          if (estado) estado.textContent = `${visibles} desafÃ­os mostrados`;
+          if (estado) estado.textContent = `${visibles} desafíos mostrados`;
           const vacio = grafico.querySelector(".student-grade-filter-empty");
           if (vacio) vacio.hidden = visibles > 0;
       }
@@ -14215,37 +14245,37 @@
           const enProgreso = datos.recomendaciones.filter(item => item.estado === "en_progreso").length;
           const resumenBoton = document.getElementById("resumenBotonProgreso");
           if (resumenBoton) {
-              resumenBoton.textContent = `${datos.progreso}% completado Â· Promedio ${formatearNotaGrafico(datos.promedio)}`;
+              resumenBoton.textContent = `${datos.progreso}% completado · Promedio ${formatearNotaGrafico(datos.promedio)}`;
           }
           contenedor.innerHTML = `
               <div class="student-report-summary">
-                  <div><small>Avance</small><strong>${datos.progreso}%</strong><span>${datos.finalizadas}/${datos.actividades.length} desafÃ­os</span></div>
-                  <div><small>Promedio actual</small><strong>${formatearNotaGrafico(datos.promedio)}</strong><span>${datos.evaluadas.length} desafÃ­os con nota</span></div>
-                  <div><small>Respuestas socrÃ¡ticas</small><strong>${totalRespuestas}</strong><span>Solo desafÃ­os finalizados</span></div>
+                  <div><small>Avance</small><strong>${datos.progreso}%</strong><span>${datos.finalizadas}/${datos.actividades.length} desafíos</span></div>
+                  <div><small>Promedio actual</small><strong>${formatearNotaGrafico(datos.promedio)}</strong><span>${datos.evaluadas.length} desafíos con nota</span></div>
+                  <div><small>Respuestas socráticas</small><strong>${totalRespuestas}</strong><span>Solo desafíos finalizados</span></div>
                   <div><small>Plan personal</small><strong>${completadas}/${datos.recomendaciones.length}</strong><span>${enProgreso} en progreso</span></div>
               </div>
               <div id="graficoNotasDesafiosEstudianteVisual"></div>
               <section class="student-heatmap-section">
-                  <header><div><i class="fa-solid fa-grip"></i><strong>Calificaciones por desafÃ­o</strong></div>
+                  <header><div><i class="fa-solid fa-grip"></i><strong>Calificaciones por desafío</strong></div>
                       <div class="student-heatmap-legend">
                           <span class="is-pending">Pendiente</span><span class="is-ungraded">Sin nota</span>
-                          <span class="is-critical">0Ã¢â‚¬â€œ3,9</span><span class="is-warning">4Ã¢â‚¬â€œ5,9</span>
-                          <span class="is-good">6Ã¢â‚¬â€œ7,9</span><span class="is-excellent">8Ã¢â‚¬â€œ10</span>
+                          <span class="is-critical">0â€“3,9</span><span class="is-warning">4â€“5,9</span>
+                          <span class="is-good">6â€“7,9</span><span class="is-excellent">8â€“10</span>
                       </div>
                   </header>
                   <div class="student-heatmap-grid">${datos.actividades.map(actividad => {
                       const riesgo = Number(actividad.conteoSocratico.parcial || 0) +
                           Number(actividad.conteoSocratico.incorrecta || 0);
-                      return `<article class="student-heatmap-cell ${colores(actividad)}" title="${escapeHtml(`${actividad.titulo}: ${actividad.finalizada ? (Number.isFinite(actividad.nota) ? `${actividad.nota.toFixed(1)}/10` : "sin nota") : "pendiente"} Â· ${actividad.respuestasSocraticas} respuestas Â· ${riesgo} a reforzar`)}">
+                      return `<article class="student-heatmap-cell ${colores(actividad)}" title="${escapeHtml(`${actividad.titulo}: ${actividad.finalizada ? (Number.isFinite(actividad.nota) ? `${actividad.nota.toFixed(1)}/10` : "sin nota") : "pendiente"} · ${actividad.respuestasSocraticas} respuestas · ${riesgo} a reforzar`)}">
                           <span>${actividad.indice}</span>
-                          <strong>${Number.isFinite(actividad.nota) ? actividad.nota.toFixed(1) : (actividad.finalizada ? "Ã¢â‚¬â€" : "P")}</strong>
+                          <strong>${Number.isFinite(actividad.nota) ? actividad.nota.toFixed(1) : (actividad.finalizada ? "â€”" : "P")}</strong>
                           <small>${escapeHtml(actividad.titulo.replace(/^\d+\.\s*/, ""))}</small>
                       </article>`;
                   }).join("")}</div>
               </section>
               <section class="student-recommendations-section">
                   <header><div><i class="fa-solid fa-list-check"></i><strong>Mis recomendaciones personalizadas</strong></div>
-                      <small>MarcÃ¡ cada acciÃ³n segÃºn tu avance. Los cambios se guardan en Firebase.</small>
+                      <small>Marcá cada acción según tu avance. Los cambios se guardan en Firebase.</small>
                   </header>
                   <div class="student-recommendations-list">${datos.recomendaciones.map(item => `
                       <article class="student-recommendation-card is-${item.prioridad}" data-status="${item.estado}">
@@ -14262,8 +14292,8 @@
                           </div>
                           <h3>${escapeHtml(item.titulo)}</h3>
                           <p><strong>Evidencia:</strong> ${escapeHtml(item.evidencia)}</p>
-                          <p><strong>AcciÃ³n:</strong> ${escapeHtml(item.accion)}</p>
-                          <small>${item.actualizadoEn ? `Actualizada: ${escapeHtml(new Date(item.actualizadoEn).toLocaleString("es-AR"))}` : "TodavÃ­a no actualizaste esta recomendaciÃ³n."}</small>
+                          <p><strong>Acción:</strong> ${escapeHtml(item.accion)}</p>
+                          <small>${item.actualizadoEn ? `Actualizada: ${escapeHtml(new Date(item.actualizadoEn).toLocaleString("es-AR"))}` : "Todavía no actualizaste esta recomendación."}</small>
                       </article>`).join("")}</div>
                   <p id="estadoInformeVisualEstudiante" class="student-report-save-status">Estados sincronizados con tu progreso.</p>
               </section>`;
@@ -14288,29 +14318,30 @@
               if (botonFiltro) {
                   filtrarGraficoNotasDesafiosEstudiante(ultimoFiltroGraficoNotasEstudiante, botonFiltro);
               }
+              aplicarVisibilidadValoresGraficoNotasEstudiante(grafico, mostrarValoresGraficoNotasEstudiante);
               restaurarPosicionGraficoNotasEstudiante(grafico);
           }
       }
 
       async function exportarResultadosPDF() {
-          try { await asegurarLibreriasPdf(true); } catch (_) { alert('No se pudo cargar el generador de PDF. VerificÃ¡ la conexiÃ³n e intentÃ¡ nuevamente.'); return; }
+          try { await asegurarLibreriasPdf(true); } catch (_) { alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.'); return; }
           if (!window.jspdf?.jsPDF) {
-              alert('No se pudo cargar el generador de PDF. VerificÃ¡ la conexiÃ³n a Internet e intentÃ¡ nuevamente.');
+              alert('No se pudo cargar el generador de PDF. Verificá la conexión a Internet e intentá nuevamente.');
               return;
           }
           const { jsPDF } = window.jspdf;
           const doc = new jsPDF();
           const nombre = document.getElementById('studentName').value.trim() || 'Estudiante Sin Nombre';
           const curso = document.getElementById('studentCourse').value.trim() || 'Sin Curso';
-           const division = document.getElementById('studentDivision').value.trim() || 'Sin DivisiÃ³n';
+           const division = document.getElementById('studentDivision').value.trim() || 'Sin División';
           const turno = document.getElementById('studentTurno').value.trim() || 'Sin Turno';
 
           doc.setFontSize(16);
           doc.text("IPEM 146 - Reporte de Evaluaciones JavaScript", 14, 20);
           doc.setFontSize(10);
-          doc.text(`Alumno: ${nombre} | Curso: ${curso} | DivisiÃ³n: ${division} | Turno: ${turno}`, 14, 28);
-          doc.text(`Cambios de pestaÃ±a registrados: ${totalSalidasPestana}`, 14, 34);
-          doc.text(`Fecha de EmisiÃ³n: ${new Date().toLocaleString()}`, 14, 40);
+          doc.text(`Alumno: ${nombre} | Curso: ${curso} | División: ${division} | Turno: ${turno}`, 14, 28);
+          doc.text(`Cambios de pestaña registrados: ${totalSalidasPestana}`, 14, 34);
+          doc.text(`Fecha de Emisión: ${new Date().toLocaleString()}`, 14, 40);
           doc.line(14, 43, 196, 43);
 
           let yPos = 50;
@@ -14339,9 +14370,9 @@
           const notaCalculadaPDF = notaCalculadaNumero !== null ? notaCalculadaNumero.toFixed(2) : 'Sin evaluar';
           const notaDefinitivaPDF = notaDefinitivaNumero !== null ? notaDefinitivaNumero.toFixed(2) : 'Pendiente';
           doc.setFontSize(11);
-          doc.text(`Promedio acadÃ©mico: ${promedioFinal}/10 | Nota calculada: ${notaCalculadaPDF}/10`, 14, yPos);
+          doc.text(`Promedio académico: ${promedioFinal}/10 | Nota calculada: ${notaCalculadaPDF}/10`, 14, yPos);
           yPos += 6;
-          doc.text(`Nota definitiva: ${notaDefinitivaNumero !== null ? `${notaDefinitivaPDF}/10 (confirmada por docente)` : 'pendiente de confirmaciÃ³n docente'}`, 14, yPos);
+          doc.text(`Nota definitiva: ${notaDefinitivaNumero !== null ? `${notaDefinitivaPDF}/10 (confirmada por docente)` : 'pendiente de confirmación docente'}`, 14, yPos);
           yPos += 9;
 
           const desafiosFinalizadosPDF = actividadesInformeEstudiante.filter(item => item.finalizada).length;
@@ -14381,7 +14412,7 @@
           doc.setFont("helvetica", "bold");
           doc.setFontSize(8);
           doc.setTextColor(15, 23, 42);
-          doc.text(`${desafiosFinalizadosPDF}/${seccionesData.length} desafÃ­os finalizados Â· ${progresoPDF}%`, 105, yPos + 5.7, { align: "center" });
+          doc.text(`${desafiosFinalizadosPDF}/${seccionesData.length} desafíos finalizados · ${progresoPDF}%`, 105, yPos + 5.7, { align: "center" });
           yPos += 16;
 
           const graficoNotasX = 18;
@@ -14390,7 +14421,7 @@
           const graficoNotasAlto = 54;
           doc.setFont("helvetica", "bold");
           doc.setFontSize(10);
-          doc.text("EvoluciÃ³n de notas", 14, yPos);
+          doc.text("Evolución de notas", 14, yPos);
           [0, 2, 4, 6, 8, 10].forEach(valor => {
               const py = graficoNotasY + graficoNotasAlto - graficoNotasAlto * valor / 10;
               doc.setDrawColor(226, 232, 240);
@@ -14424,7 +14455,7 @@
               doc.setFont("helvetica", "normal");
               doc.setFontSize(8);
               doc.setTextColor(100, 116, 139);
-              doc.text("TodavÃ­a no hay desafÃ­os finalizados con nota.", graficoNotasX + 8, graficoNotasY + 28);
+              doc.text("Todavía no hay desafíos finalizados con nota.", graficoNotasX + 8, graficoNotasY + 28);
           }
 
           const graficoRespuestasX = 139;
@@ -14433,7 +14464,7 @@
           doc.setFont("helvetica", "bold");
           doc.setFontSize(10);
           doc.setTextColor(15, 23, 42);
-          doc.text("Respuestas socrÃ¡ticas", 135, yPos);
+          doc.text("Respuestas socráticas", 135, yPos);
           const seriesEstudiantePDF = [
               { clave: "completa", etiqueta: "Completas", color: [34, 197, 94] },
               { clave: "incompleta", etiqueta: "Incompletas", color: [14, 165, 233] },
@@ -14456,28 +14487,28 @@
                   doc.rect(graficoRespuestasX, py + 6, anchoBarra, 4, "F");
               }
               doc.setTextColor(15, 23, 42);
-              doc.text(`${valor} Â· ${porcentaje.toFixed(1)}%`, graficoRespuestasX + 50, py + 9);
+              doc.text(`${valor} · ${porcentaje.toFixed(1)}%`, graficoRespuestasX + 50, py + 9);
           });
           doc.setFont("helvetica", "normal");
           doc.setFontSize(6.5);
           doc.setTextColor(100, 116, 139);
-          doc.text(`${respuestasSocraticasPDF} respuestas en desafÃ­os finalizados`, 135, graficoRespuestasY + graficoRespuestasAlto + 6);
+          doc.text(`${respuestasSocraticasPDF} respuestas en desafíos finalizados`, 135, graficoRespuestasY + graficoRespuestasAlto + 6);
 
           doc.addPage();
           doc.setTextColor(15, 23, 42);
           doc.setFont("helvetica", "bold");
           doc.setFontSize(13);
-          doc.text("Mapa de calor de notas por desafÃ­o", 14, 16);
+          doc.text("Mapa de calor de notas por desafío", 14, 16);
           doc.setFont("helvetica", "normal");
           doc.setFontSize(7.5);
-          doc.text("Cada celda muestra la nota vigente del desafÃ­o. Las actividades pendientes no reciben una nota ni afectan el promedio.", 14, 22);
+          doc.text("Cada celda muestra la nota vigente del desafío. Las actividades pendientes no reciben una nota ni afectan el promedio.", 14, 22);
           const leyendaMapa = [
               { texto: "Pendiente", color: [203, 213, 225] },
               { texto: "Sin nota", color: [148, 163, 184] },
-              { texto: "0Ã¢â‚¬â€œ3,9", color: [239, 68, 68] },
-              { texto: "4Ã¢â‚¬â€œ5,9", color: [245, 158, 11] },
-              { texto: "6Ã¢â‚¬â€œ7,9", color: [14, 165, 233] },
-              { texto: "8Ã¢â‚¬â€œ10", color: [34, 197, 94] }
+              { texto: "0â€“3,9", color: [239, 68, 68] },
+              { texto: "4â€“5,9", color: [245, 158, 11] },
+              { texto: "6â€“7,9", color: [14, 165, 233] },
+              { texto: "8â€“10", color: [34, 197, 94] }
           ];
           let xLeyenda = 14;
           leyendaMapa.forEach(item => {
@@ -14526,7 +14557,7 @@
               if (actividad.finalizada && actividad.respuestasSocraticas) {
                   const riesgo = actividad.conteoSocratico.parcial + actividad.conteoSocratico.incorrecta;
                   doc.setFontSize(5.7);
-                  doc.text(`${actividad.respuestasSocraticas} respuestas Â· ${riesgo} a reforzar`, x + 3, y + 25);
+                  doc.text(`${actividad.respuestasSocraticas} respuestas · ${riesgo} a reforzar`, x + 3, y + 25);
               }
           });
 
@@ -14537,7 +14568,7 @@
           doc.text("Recomendaciones personalizadas", 14, 16);
           doc.setFont("helvetica", "normal");
           doc.setFontSize(7.5);
-          doc.text("Las recomendaciones se generan a partir de desafÃ­os finalizados, notas vigentes y evidencias de las respuestas socrÃ¡ticas.", 14, 22);
+          doc.text("Las recomendaciones se generan a partir de desafíos finalizados, notas vigentes y evidencias de las respuestas socráticas.", 14, 22);
           let yRecomendacion = 32;
           recomendacionesPDF.forEach((recomendacion, indice) => {
               const coloresPrioridad = {
@@ -14548,7 +14579,7 @@
               };
               const color = coloresPrioridad[recomendacion.prioridad] || [100, 116, 139];
               const evidencia = doc.splitTextToSize(`Evidencia: ${recomendacion.evidencia}`, 169);
-              const accion = doc.splitTextToSize(`AcciÃ³n recomendada: ${recomendacion.accion}`, 169);
+              const accion = doc.splitTextToSize(`Acción recomendada: ${recomendacion.accion}`, 169);
               const seguimiento = doc.splitTextToSize(
                   `Seguimiento del estudiante: ${etiquetaEstadoRecomendacion(recomendacion.estado)}.`,
                   169
@@ -14559,7 +14590,7 @@
                   doc.setTextColor(15, 23, 42);
                   doc.setFont("helvetica", "bold");
                   doc.setFontSize(12);
-                  doc.text("Recomendaciones personalizadas (continuaciÃ³n)", 14, 16);
+                  doc.text("Recomendaciones personalizadas (continuación)", 14, 16);
                   yRecomendacion = 27;
               }
               doc.setFillColor(248, 250, 252);
@@ -14594,13 +14625,13 @@
           doc.setTextColor(15, 23, 42);
           doc.setFont("helvetica", "bold");
           doc.setFontSize(13);
-          doc.text("Tabla de avance y resultados por desafÃ­o", 14, 16);
+          doc.text("Tabla de avance y resultados por desafío", 14, 16);
           doc.setFont("helvetica", "normal");
           doc.setFontSize(7.5);
-          doc.text("Las respuestas y notas corresponden Ãºnicamente a desafÃ­os finalizados.", 14, 22);
+          doc.text("Las respuestas y notas corresponden únicamente a desafíos finalizados.", 14, 22);
           const columnasEstudiante = [
-              { titulo: "N.Ã‚Âº", x: 14 },
-              { titulo: "DesafÃ­o", x: 24 },
+              { titulo: "N.Âº", x: 14 },
+              { titulo: "Desafío", x: 24 },
               { titulo: "Estado", x: 91 },
               { titulo: "Nota", x: 116 },
               { titulo: "Comp.", x: 133 },
@@ -14649,12 +14680,12 @@
 
           doc.setFont("helvetica", "bold");
           doc.setFontSize(12);
-          doc.text("Desarrollo del cÃ¡lculo del promedio", 14, yPos);
+          doc.text("Desarrollo del cálculo del promedio", 14, yPos);
           yPos += 6;
           doc.setFont("helvetica", "normal");
           doc.setFontSize(9);
           const formulaGeneral = doc.splitTextToSize(
-              "FÃ³rmula: suma de las notas vigentes de las actividades evaluadas ÃƒÂ· cantidad de actividades evaluadas. Cuando existe una correcciÃ³n docente, esa nota reemplaza a la automÃ¡tica en el promedio. Las actividades pendientes no se incluyen.",
+              "Fórmula: suma de las notas vigentes de las actividades evaluadas Ã· cantidad de actividades evaluadas. Cuando existe una corrección docente, esa nota reemplaza a la automática en el promedio. Las actividades pendientes no se incluyen.",
               180
           );
           doc.text(formulaGeneral, 14, yPos);
@@ -14664,7 +14695,7 @@
               actividadesEvaluadasPDF.forEach((actividad, indice) => {
                   asegurarEspacioPDF(7);
                   doc.text(
-                      `${indice + 1}. ${actividad.titulo}: ${actividad.nota.toFixed(1)}/10${actividad.corregida ? ' (corregida por docente)' : ' (automÃ¡tica)'}`,
+                      `${indice + 1}. ${actividad.titulo}: ${actividad.nota.toFixed(1)}/10${actividad.corregida ? ' (corregida por docente)' : ' (automática)'}`,
                       18,
                       yPos
                   );
@@ -14672,7 +14703,7 @@
                   if (actividad.corregida) {
                       asegurarEspacioPDF(6);
                       const detalleCorreccion = doc.splitTextToSize(
-                          `   AutomÃ¡tica: ${actividad.notaAutomatica !== null ? `${actividad.notaAutomatica.toFixed(1)}/10` : 'sin nota'} | Docente: ${actividad.ajuste?.modificadaPor || 'Docente autorizado'}${actividad.ajuste?.motivo ? ` | ObservaciÃ³n: ${actividad.ajuste.motivo}` : ''}`,
+                          `   Automática: ${actividad.notaAutomatica !== null ? `${actividad.notaAutomatica.toFixed(1)}/10` : 'sin nota'} | Docente: ${actividad.ajuste?.modificadaPor || 'Docente autorizado'}${actividad.ajuste?.motivo ? ` | Observación: ${actividad.ajuste.motivo}` : ''}`,
                           172
                       );
                       doc.text(detalleCorreccion, 18, yPos);
@@ -14688,7 +14719,7 @@
               doc.text(lineasSuma, 14, yPos);
               yPos += lineasSuma.length * 4 + 1;
               doc.text(
-                  `DivisiÃ³n: ${sumaNotasFinales.toFixed(1)} ÃƒÂ· ${actividadesEvaluadasPDF.length} actividades = ${promedioFinal}/10`,
+                  `División: ${sumaNotasFinales.toFixed(1)} Ã· ${actividadesEvaluadasPDF.length} actividades = ${promedioFinal}/10`,
                   14,
                   yPos
               );
@@ -14701,27 +14732,27 @@
           asegurarEspacioPDF(25);
           doc.setFont("helvetica", "bold");
           doc.setFontSize(11);
-          doc.text("RevisiÃ³n docente de cambios de pestaÃ±a", 14, yPos);
+          doc.text("Revisión docente de cambios de pestaña", 14, yPos);
           yPos += 6;
           doc.setFont("helvetica", "normal");
           doc.setFontSize(9);
           const estadoRevision = revisionSalidasActual.estado || 'pendiente';
-          doc.text(`Estado: ${estadoRevision} | PenalizaciÃ³n: -${penalizacionRevision.toFixed(1)} puntos`, 14, yPos);
+          doc.text(`Estado: ${estadoRevision} | Penalización: -${penalizacionRevision.toFixed(1)} puntos`, 14, yPos);
           yPos += 5;
           const motivoRevision = revisionSalidasActual.motivo || 'Sin fundamento docente registrado.';
           const lineasMotivoRevision = doc.splitTextToSize(`Fundamento: ${motivoRevision}`, 180);
           doc.text(lineasMotivoRevision, 14, yPos);
           yPos += lineasMotivoRevision.length * 4 + 1;
           doc.text(
-              `CÃ¡lculo provisorio: ${promedioFinal}/10 - ${penalizacionRevision.toFixed(1)} = ${notaCalculadaPDF}/10`,
+              `Cálculo provisorio: ${promedioFinal}/10 - ${penalizacionRevision.toFixed(1)} = ${notaCalculadaPDF}/10`,
               14,
               yPos
           );
           yPos += 5;
           doc.text(
               notaDefinitivaNumero !== null
-                  ? `ConfirmaciÃ³n docente: nota definitiva ${notaDefinitivaPDF}/10${revisionSalidasActual.notaModificadaManualmente === true ? ' (modificada por el docente)' : ''}`
-                  : 'ConfirmaciÃ³n docente: pendiente; este cÃ¡lculo todavÃ­a no es una nota definitiva.',
+                  ? `Confirmación docente: nota definitiva ${notaDefinitivaPDF}/10${revisionSalidasActual.notaModificadaManualmente === true ? ' (modificada por el docente)' : ''}`
+                  : 'Confirmación docente: pendiente; este cálculo todavía no es una nota definitiva.',
               14,
               yPos
           );
@@ -14729,27 +14760,27 @@
 
           asegurarEspacioPDF(12);
           doc.setFont("helvetica", "bold");
-          doc.text(`Detalle de cambios de pestaÃ±a (${eventosSalidasPestana.length})`, 14, yPos);
+          doc.text(`Detalle de cambios de pestaña (${eventosSalidasPestana.length})`, 14, yPos);
           yPos += 6;
           doc.setFont("helvetica", "normal");
           if (eventosSalidasPestana.length) {
               eventosSalidasPestana.forEach(evento => {
                   const salida = evento.salidaEn ? new Date(evento.salidaEn).toLocaleString() : 'Sin fecha';
                   const duracion = evento.duracionSegundos === null || evento.duracionSegundos === undefined
-                      ? 'duraciÃ³n no registrada'
+                      ? 'duración no registrada'
                       : `${evento.duracionSegundos} segundos`;
                   const justificacion = evento.justificacion
                       ? `${evento.justificacion.motivo}: ${evento.justificacion.detalle}`
-                      : 'Sin justificaciÃ³n';
+                      : 'Sin justificación';
                   const textoEvento =
-                      `Evento ${evento.numero || ''}: ${salida} | Actividad ${evento.seccion || 'sin identificar'} | ${duracion}. JustificaciÃ³n: ${justificacion}`;
+                      `Evento ${evento.numero || ''}: ${salida} | Actividad ${evento.seccion || 'sin identificar'} | ${duracion}. Justificación: ${justificacion}`;
                   const lineasEvento = doc.splitTextToSize(textoEvento, 176);
                   asegurarEspacioPDF(lineasEvento.length * 4 + 3);
                   doc.text(lineasEvento, 18, yPos);
                   yPos += lineasEvento.length * 4 + 2;
               });
           } else {
-              doc.text("No se registraron cambios de pestaÃ±a.", 18, yPos);
+              doc.text("No se registraron cambios de pestaña.", 18, yPos);
               yPos += 6;
           }
 
@@ -14766,12 +14797,12 @@
               const nota = detalleNotaModulo.nota !== null
                   ? `${detalleNotaModulo.nota.toFixed(1)}/10`
                   : 'Pendiente de preguntas';
-              const codigo = res.codigo || document.getElementById(`editor-${sec.id}`)?.value || '// Sin cÃ³digo';
+              const codigo = res.codigo || document.getElementById(`editor-${sec.id}`)?.value || '// Sin código';
 
               doc.setFontSize(12);
               doc.setFont("helvetica", "bold");
               doc.text(
-                  `${sec.title} - ${detalleNotaModulo.corregida ? 'Nota vigente corregida por docente' : 'CalificaciÃ³n automÃ¡tica del mÃ³dulo'}: ${nota}`,
+                  `${sec.title} - ${detalleNotaModulo.corregida ? 'Nota vigente corregida por docente' : 'Calificación automática del módulo'}: ${nota}`,
                   14,
                   yPos
               );
@@ -14782,10 +14813,10 @@
                   doc.setFont("helvetica", "normal");
                   const fechaCorreccion = formatearFechaNotaDocente(detalleNotaModulo.ajuste?.modificadaEn);
                   const datosCorreccion = [
-                      `CalificaciÃ³n automÃ¡tica anterior: ${detalleNotaModulo.notaAutomatica !== null ? `${detalleNotaModulo.notaAutomatica.toFixed(1)}/10` : 'sin calificaciÃ³n'}`,
+                      `Calificación automática anterior: ${detalleNotaModulo.notaAutomatica !== null ? `${detalleNotaModulo.notaAutomatica.toFixed(1)}/10` : 'sin calificación'}`,
                       `Docente: ${detalleNotaModulo.ajuste?.modificadaPor || 'Docente autorizado'}`,
                       fechaCorreccion ? `Fecha: ${fechaCorreccion}` : '',
-                      detalleNotaModulo.ajuste?.motivo ? `ObservaciÃ³n: ${detalleNotaModulo.ajuste.motivo}` : ''
+                      detalleNotaModulo.ajuste?.motivo ? `Observación: ${detalleNotaModulo.ajuste.motivo}` : ''
                   ].filter(Boolean).join(' | ');
                   const lineasCorreccion = doc.splitTextToSize(datosCorreccion, 180);
                   asegurarEspacioPDF(lineasCorreccion.length * 4 + 2);
@@ -14796,12 +14827,12 @@
               if (res.notaCodigo !== undefined || res.notaPreguntas !== undefined) {
                   doc.setFontSize(9);
                   doc.setFont("helvetica", "normal");
-                  const desglose = `CÃ³digo (70%): ${res.notaCodigo ?? 'Pendiente'}/10 | Preguntas (30%): ${res.notaPreguntas ?? 'Pendiente'}/10`;
+                  const desglose = `Código (70%): ${res.notaCodigo ?? 'Pendiente'}/10 | Preguntas (30%): ${res.notaPreguntas ?? 'Pendiente'}/10`;
                   doc.text(desglose, 14, yPos);
                   yPos += 5;
                   if (res.notaCodigo !== undefined && res.notaPreguntas !== undefined && notaFinalModulo !== undefined) {
                       const formulaModulo =
-                          `CÃ¡lculo: (${res.notaCodigo} Ãƒâ€” 0,70) + (${res.notaPreguntas} Ãƒâ€” 0,30) = ${notaFinalModulo}/10`;
+                          `Cálculo: (${res.notaCodigo} Ã— 0,70) + (${res.notaPreguntas} Ã— 0,30) = ${notaFinalModulo}/10`;
                       doc.text(formulaModulo, 14, yPos);
                       yPos += 5;
                   }
@@ -14813,7 +14844,7 @@
                   const criteriosPDF = res.evaluacionCodigo.criterios
                       .map(c => `${c.nombre}: ${c.puntos}/${c.peso} (${c.estado})`)
                       .join(" | ");
-                  const lineasEvaluacion = doc.splitTextToSize(`EvaluaciÃ³n automÃ¡tica orientativa: ${res.evaluacionCodigo.nota}/10\n${criteriosPDF}`, 180);
+                  const lineasEvaluacion = doc.splitTextToSize(`Evaluación automática orientativa: ${res.evaluacionCodigo.nota}/10\n${criteriosPDF}`, 180);
                   asegurarEspacioPDF(lineasEvaluacion.length * 4 + 2);
                   doc.text(lineasEvaluacion, 14, yPos);
                   yPos += lineasEvaluacion.length * 4 + 2;
@@ -14822,7 +14853,7 @@
               doc.setFontSize(9);
               doc.setFont("courier", "normal");
               
-              const codeLines = doc.splitTextToSize(`CÃ³digo:\n${codigo}`, 180);
+              const codeLines = doc.splitTextToSize(`Código:\n${codigo}`, 180);
               asegurarEspacioPDF(Math.min(codeLines.length * 4 + 4, 250));
               doc.text(codeLines, 14, yPos);
               yPos += (codeLines.length * 4) + 4;
@@ -14853,6 +14884,6 @@
           }
       }
 
-      // Exponer explÃ­citamente las acciones docentes usadas por botones dinÃ¡micos.
+      // Exponer explícitamente las acciones docentes usadas por botones dinámicos.
       window.abrirAccionesEstudiante = abrirAccionesEstudiante;
       window.abrirDetalleEstudianteProfesor = abrirDetalleEstudianteProfesor;
