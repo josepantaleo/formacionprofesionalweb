@@ -9752,7 +9752,6 @@
           modalBox.style.setProperty('--teacher-detail-header-offset', `${Math.ceil(altoEncabezado)}px`);
           modalBox.style.setProperty('--teacher-detail-chart-offset', `${Math.ceil(altoEncabezado + altoGraficoBarra + 8)}px`);
       }
-      window.actualizarOffsetsFijosDetalleEstudiante = actualizarOffsetsFijosDetalleEstudiante;
       if (!window.__offsetsDetalleEstudianteResize) {
           window.__offsetsDetalleEstudianteResize = true;
           window.addEventListener('resize', () => {

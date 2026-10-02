@@ -1429,6 +1429,13 @@ body:not(.teacher-authorized) #sumarTiempoJitsi,
 body:not(.teacher-authorized) #confirmarAnfitrionJitsi,
 body:not(.teacher-authorized) #pantallaCompletaJitsi { display: none !important; }
 
+/* El cronómetro pertenece a la vista del estudiante. Se mantiene contando,
+   pero no debe superponerse al panel ni al detalle docente. */
+body:has(#panelProfesorModal.active) #studentFloatingTimer,
+body:has(#detalleEstudianteProfesorModal.active) #studentFloatingTimer {
+  display: none !important;
+}
+
 /* Duraciones Jitsi adaptables */
 .jitsi-duration-presets{grid-template-columns:repeat(auto-fit,minmax(72px,1fr))!important}
 
@@ -5378,10 +5385,6 @@ body.teacher-light-mode .teacher-detail-quick-filters button.is-active{
   border-color:#0369a1;
   background:#0369a1;
   color:#fff;
-}
-body.teacher-light-mode .teacher-detail-toolbar{
-  background:rgba(248,250,252,.98);
-  box-shadow:0 8px 18px rgba(71,85,105,.18);
 }
 @media(max-width:760px){
   .teacher-admin-maintenance{
