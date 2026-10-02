@@ -2547,6 +2547,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           void window.iniciarColaboracionCRDTEstudiante?.();
         }, 0);
       });
+      window.addEventListener("firebase-auth-changed", () => {
+        window.setTimeout(() => {
+          void window.iniciarColaboracionCRDTEstudiante?.();
+        }, 250);
+      });
+      const reintentarCRDTEstudiante = () => {
+        if (window.__sesionCRDTEstudianteActiva?.sesion) return;
+        if (window.firebaseCurrentUser) void window.iniciarColaboracionCRDTEstudiante?.();
+      };
+      window.setInterval(reintentarCRDTEstudiante, 1500);
 
       function contextoChatColaborativoFirebase(rolSolicitado = "") {
         if (rolSolicitado === "docente" && window.firebaseTeacherUser && teacherDb) {

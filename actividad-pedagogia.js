@@ -97,6 +97,9 @@
       const sectionId = event.detail?.sectionId;
       if (sectionId && typeof window.switchSection === "function") window.switchSection(sectionId);
       document.querySelector(`[data-section-id="${CSS.escape?.(sectionId || "")}"]`)?.scrollIntoView?.({ block: "nearest" });
+      // Si la aceptación llegó después del login o de la carga inicial,
+      // fuerza la conexión del editor del estudiante al mismo documento Yjs.
+      window.setTimeout(() => window.iniciarColaboracionCRDTEstudiante?.(), 0);
     });
     new MutationObserver(() => { agregarBotonesExplicacion(); congelarEntrega(); })
       .observe(document.body, { childList: true, subtree: true });
