@@ -9742,6 +9742,16 @@
           boton?.blur?.();
       }
       window.irAlGraficoNotasEstudiante = irAlGraficoNotasEstudiante;
+      function irAListaDesafiosDetalleProfesor(boton = null) {
+          const lista = document.getElementById('listaDesafiosDetalleProfesor');
+          if (!lista) return;
+          lista.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          window.setTimeout(() => {
+              document.getElementById('buscarDesafioDetalleProfesor')?.focus({ preventScroll: true });
+          }, 320);
+          boton?.blur?.();
+      }
+      window.irAListaDesafiosDetalleProfesor = irAListaDesafiosDetalleProfesor;
       function actualizarOffsetsFijosDetalleEstudiante() {
           const modalBox = document.querySelector('#detalleEstudianteProfesorModal > .modal-box');
           if (!modalBox) return;
@@ -11515,6 +11525,9 @@
                ${graficoNotasDesafios}
                <button type="button" class="teacher-floating-chart-button" onclick="irAlGraficoNotasEstudiante(this)" title="Ir al gráfico de notas">
                    <i class="fa-solid fa-chart-column"></i><span>Ir al gráfico</span>
+               </button>
+               <button type="button" class="teacher-floating-list-button" onclick="irAListaDesafiosDetalleProfesor(this)" title="Ir a la lista de desafíos">
+                   <i class="fa-solid fa-list-check"></i><span>Ir a desafíos</span>
                </button>
                <div class="teacher-detail-toolbar">
                   <div class="teacher-detail-toolbar-title">
