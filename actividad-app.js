@@ -9742,6 +9742,25 @@
           boton?.blur?.();
       }
       window.irAlGraficoNotasEstudiante = irAlGraficoNotasEstudiante;
+      function actualizarOffsetsFijosDetalleEstudiante() {
+          const modalBox = document.querySelector('#detalleEstudianteProfesorModal > .modal-box');
+          if (!modalBox) return;
+          const encabezado = modalBox.querySelector('.teacher-detail-student-header');
+          const graficoBarra = modalBox.querySelector('.teacher-student-grade-filter-bar');
+          const altoEncabezado = encabezado?.getBoundingClientRect?.().height || 0;
+          const altoGraficoBarra = graficoBarra?.getBoundingClientRect?.().height || 0;
+          modalBox.style.setProperty('--teacher-detail-header-offset', `${Math.ceil(altoEncabezado)}px`);
+          modalBox.style.setProperty('--teacher-detail-chart-offset', `${Math.ceil(altoEncabezado + altoGraficoBarra + 8)}px`);
+      }
+      window.actualizarOffsetsFijosDetalleEstudiante = actualizarOffsetsFijosDetalleEstudiante;
+      if (!window.__offsetsDetalleEstudianteResize) {
+          window.__offsetsDetalleEstudianteResize = true;
+          window.addEventListener('resize', () => {
+              if (document.getElementById('detalleEstudianteProfesorModal')?.classList.contains('active')) {
+                  actualizarOffsetsFijosDetalleEstudiante();
+              }
+          });
+      }
       function formatearTiempoProfesor(segundos) {
           const total = Math.max(0, Number(segundos) || 0);
           const minutos = Math.floor(total / 60);
@@ -11677,6 +11696,8 @@
               </div>
               <div id="listaDesafiosDetalleProfesor">${actividadesHtml}</div>`;
           document.getElementById('detalleEstudianteProfesorModal').classList.add('active');
+          actualizarOffsetsFijosDetalleEstudiante();
+          window.requestAnimationFrame(actualizarOffsetsFijosDetalleEstudiante);
           const graficoNotas = document.querySelector('#detalleEstudianteProfesorContenido .teacher-student-grade-chart');
           const botonFiltroRecordado = graficoNotas
               ? [...graficoNotas.querySelectorAll('[data-grade-filter-button]')]

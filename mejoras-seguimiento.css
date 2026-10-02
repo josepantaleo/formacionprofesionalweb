@@ -3201,7 +3201,7 @@ body.teacher-light-mode .teacher-filter-group h4{
 }
 .teacher-detail-toolbar{
   position:sticky;
-  top:0;
+  top:var(--teacher-detail-chart-offset, 0px);
   z-index:3;
   display:grid;
   grid-template-columns:minmax(160px,.65fr) minmax(260px,1fr);
@@ -4342,7 +4342,7 @@ body.teacher-light-mode .teacher-floating-chart-button{
   gap:.6rem;
   margin-bottom:.55rem;
   position:sticky;
-  top:0;
+  top:var(--teacher-detail-header-offset, 0px);
   z-index:12;
   padding:.55rem .6rem;
   border:1px solid rgba(56,189,248,.28);
@@ -4350,6 +4350,22 @@ body.teacher-light-mode .teacher-floating-chart-button{
   background:rgba(15,23,42,.96);
   box-shadow:0 8px 18px rgba(2,6,23,.28);
   backdrop-filter:blur(8px);
+}
+.teacher-detail-student-header{
+  position:sticky;
+  top:0;
+  z-index:14;
+  margin:-1rem -1rem .9rem;
+  padding:1rem;
+  background:rgba(15,23,42,.98);
+  border-bottom:1px solid rgba(56,189,248,.25);
+  box-shadow:0 8px 18px rgba(2,6,23,.24);
+}
+.teacher-floating-chart-button{
+  display:none;
+}
+#detalleEstudianteProfesorModal.active .teacher-floating-chart-button{
+  display:inline-flex;
 }
 .teacher-student-grade-filters{
   display:flex;
@@ -4609,6 +4625,11 @@ body.teacher-light-mode .teacher-student-grade-filters button.is-reset{
 body.teacher-light-mode .teacher-student-grade-filter-bar{
   background:rgba(248,250,252,.97);
   border-color:#7dd3fc;
+  box-shadow:0 8px 18px rgba(71,85,105,.18);
+}
+body.teacher-light-mode .teacher-detail-student-header{
+  background:rgba(248,250,252,.98);
+  border-bottom-color:#bae6fd;
   box-shadow:0 8px 18px rgba(71,85,105,.18);
 }
 @media(max-width:980px){
@@ -5329,6 +5350,10 @@ body.teacher-light-mode .teacher-detail-quick-filters button.is-active{
   background:#0369a1;
   color:#fff;
 }
+body.teacher-light-mode .teacher-detail-toolbar{
+  background:rgba(248,250,252,.98);
+  box-shadow:0 8px 18px rgba(71,85,105,.18);
+}
 @media(max-width:760px){
   .teacher-admin-maintenance{
     align-items:stretch;
@@ -5343,8 +5368,17 @@ body.teacher-light-mode .teacher-detail-quick-filters button.is-active{
     grid-template-columns:1fr;
   }
   .teacher-detail-toolbar{
-    position:static;
+    position:sticky;
+    top:var(--teacher-detail-chart-offset, 0px);
+    z-index:11;
+    margin-top:.35rem;
+    background:rgba(15,23,42,.98);
+    box-shadow:0 8px 18px rgba(2,6,23,.3);
     grid-template-columns:1fr;
+  }
+  .teacher-detail-student-header{
+    margin:-.85rem -.85rem .75rem;
+    padding:.85rem;
   }
   .teacher-detail-toolbar-title{
     align-items:flex-start;
