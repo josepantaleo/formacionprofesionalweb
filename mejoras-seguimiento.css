@@ -1432,7 +1432,15 @@ body:not(.teacher-authorized) #pantallaCompletaJitsi { display: none !important;
 /* El cronómetro pertenece a la vista del estudiante. Se mantiene contando,
    pero no debe superponerse al panel ni al detalle docente. */
 body:has(#panelProfesorModal.active) #studentFloatingTimer,
-body:has(#detalleEstudianteProfesorModal.active) #studentFloatingTimer {
+body:has(#detalleEstudianteProfesorModal.active) #studentFloatingTimer,
+body:has(#panelProfesorModal.active) .student-collab-message-popup,
+body:has(#detalleEstudianteProfesorModal.active) .student-collab-message-popup,
+body:has(#panelProfesorModal.active) .cooperation-consent-global,
+body:has(#detalleEstudianteProfesorModal.active) .cooperation-consent-global,
+body:has(#panelProfesorModal.active) .student-programming-float-trigger,
+body:has(#detalleEstudianteProfesorModal.active) .student-programming-float-trigger,
+body:has(#panelProfesorModal.active) .student-programming-float-panel,
+body:has(#detalleEstudianteProfesorModal.active) .student-programming-float-panel {
   display: none !important;
 }
 
