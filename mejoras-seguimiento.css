@@ -5036,6 +5036,41 @@ body.teacher-authorized .student-progress-report{display:block}
   color:var(--text-muted);
   font-size:.75rem;
 }
+.analyst-explain-question{
+  margin-top:.45rem;
+  font-size:.78rem;
+}
+.analyst-question-help{
+  margin-top:.55rem;
+  padding:.65rem .75rem;
+  border-left:3px solid #facc15;
+  border-radius:5px;
+  background:rgba(250,204,21,.08);
+  color:#fef3c7;
+  line-height:1.5;
+  white-space:pre-wrap;
+}
+.teacher-analyst-help-history{
+  margin-top:.75rem;
+  padding:.65rem .75rem;
+  border:1px solid rgba(250,204,21,.28);
+  border-radius:6px;
+  background:rgba(250,204,21,.05);
+  color:#fde68a;
+  font-size:.76rem;
+}
+.teacher-analyst-help-history span{
+  margin-left:.4rem;
+  color:var(--text-muted);
+}
+.teacher-analyst-help-history ul{
+  margin:.45rem 0 0 1.1rem;
+  padding:0;
+  color:#cbd5e1;
+}
+.teacher-analyst-help-history li{
+  margin:.2rem 0;
+}
 body.teacher-light-mode .student-action-group,
 body.teacher-light-mode .student-actions-tools input,
 body.teacher-light-mode .student-actions-tools select,

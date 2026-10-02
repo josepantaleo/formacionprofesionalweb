@@ -5718,6 +5718,12 @@
                                  maxlength="900"
                                  placeholder="Escribí entre 3 y 6 oraciones. No alcanza con decir que funciona: explicá por qué y con qué evidencia."></textarea>
                        <div class="analyst-open-counter">Máximo 900 caracteres</div>
+                       <button type="button"
+                               class="btn btn-secondary analyst-explain-question"
+                               onclick="explicarPreguntaAnalista('${sectionId}', ${i}, this)">
+                           <i class="fa-solid fa-lightbulb"></i> Explicame qué pide
+                       </button>
+                       <div class="analyst-question-help" id="analyst-help-${sectionId}-${i}" hidden aria-live="polite"></div>
                    ` : p.opciones.map((op,j) => `
                        <label class="analyst-option">
                            <input type="checkbox"
@@ -5726,6 +5732,13 @@
                            ${String.fromCharCode(65+j)}) ${escaparTextoAnalista(op.t)}
                        </label>
                    `).join("")}
+                   <button type="button"
+                           class="btn btn-secondary analyst-explain-question"
+                           style="${p.respuestaAbierta ? 'display:none' : ''}"
+                           onclick="explicarPreguntaAnalista('${sectionId}', ${i}, this)">
+                       <i class="fa-solid fa-lightbulb"></i> Explicame las opciones
+                   </button>
+                   <div class="analyst-question-help" id="analyst-help-${sectionId}-${i}" hidden aria-live="polite"></div>
                    <div class="analyst-question-feedback"
                         id="analyst-feedback-${sectionId}-${i}"
                         aria-live="polite"></div>
@@ -5735,9 +5748,73 @@
           result.innerHTML = "";
           box.classList.add("active");
            document.getElementById(`analyst-submit-${sectionId}`).disabled = false;
-       }
+      }
 
-       function calificarRespuestaAnalista(marcadas, reales) {
+      async function explicarPreguntaAnalista(sectionId, indice, boton = null) {
+          const preguntas = window.analistaActual?.[sectionId] || [];
+          const pregunta = preguntas[Number(indice)];
+          const salida = document.getElementById(`analyst-help-${sectionId}-${indice}`);
+          if (!pregunta || !salida) return;
+          if (boton?.disabled) return;
+          const textoPregunta = String(pregunta.q || "").trim();
+          const sec = seccionesData.find(item => item.id === sectionId) || {};
+          const esAbierta = pregunta.respuestaAbierta === true || pregunta.formato === "abierta";
+          const modoAyuda = esAbierta ? "pregunta socrática abierta" : "pregunta de selección múltiple";
+          const historial = historialResultados[sectionId] || (historialResultados[sectionId] = {});
+          historial.ayudasAnalista = Array.isArray(historial.ayudasAnalista) ? historial.ayudasAnalista : [];
+          historial.ayudasAnalista.push({
+              fecha: new Date().toISOString(),
+              indice: Number(indice),
+              tipo: esAbierta ? "abierta" : "seleccion-multiple",
+              pregunta: String(pregunta.q || "").trim()
+          });
+          historial.ayudasAnalista = historial.ayudasAnalista.slice(-30);
+          programarGuardadoFirebase();
+          const prompt = [
+              "Necesito entender una pregunta socrática de una actividad de JavaScript.",
+              `Pregunta: ${textoPregunta}`,
+              `Consigna del desafío: ${sec.exerciseDesc || ""}`,
+              "Explicá con lenguaje claro qué me pide la pregunta, qué parte de mi código debo observar y qué evidencia debería mencionar.",
+              "No respondas la pregunta por mí, no escribas código completo y no inventes una respuesta del estudiante."
+          ].join("\n\n");
+          const etiquetaOriginal = boton?.innerHTML || "";
+          if (boton) {
+              boton.disabled = true;
+              boton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Explicando...';
+          }
+          salida.hidden = false;
+          salida.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> La IA está leyendo la pregunta...';
+          try {
+              let respuesta = "";
+              if (window.firebaseAIRealConfigurada && typeof window.consultarTutorIAFirebase === "function") {
+                  respuesta = await generarRespuestaChatIASegura(
+                      sectionId,
+                      `${prompt}\n\nTipo de ayuda solicitada: ${modoAyuda}. ${esAbierta
+                          ? "Enfocate en organizar una explicación propia."
+                          : "Enfocate en enseñar a comparar las opciones sin revelar la correcta."}`,
+                      "consigna"
+                  );
+              } else {
+                  respuesta = [
+                      `Qué te pide: ${textoPregunta}`,
+                      "Cómo encararla: buscá en tu código una decisión concreta, explicá por qué la tomaste y señalá una evidencia observable.",
+                      "Importante: escribí tu propio razonamiento; esta ayuda no incluye una respuesta lista para entregar."
+                  ].join("<br>");
+              }
+              salida.innerHTML = escapeHtml(String(respuesta || "No se pudo generar una explicación.")).replace(/\n/g, "<br>");
+          } catch (error) {
+              console.warn("No se pudo explicar la pregunta socrática:", error);
+              salida.innerHTML = "No se pudo generar la explicación ahora. Revisá la consigna y volvé a intentarlo.";
+          } finally {
+              if (boton) {
+                  boton.disabled = false;
+                  boton.innerHTML = etiquetaOriginal;
+              }
+          }
+      }
+      window.explicarPreguntaAnalista = explicarPreguntaAnalista;
+
+      function calificarRespuestaAnalista(marcadas, reales) {
            const puntosRubrica = normalizarRubricaSocratica(rubricaSocraticaActual).puntos;
            const aciertos = marcadas.filter(x => reales.includes(x)).length;
            const errores = marcadas.filter(x => !reales.includes(x)).length;
@@ -11130,6 +11207,7 @@
               const r = historial[sec.id] || {};
               const ajusteNotaDocente = d.notasDesafiosDocente?.[sec.id] || null;
               const mensajesChat = Array.isArray(chatIA[sec.id]) ? chatIA[sec.id] : [];
+              const ayudasAnalista = Array.isArray(r.ayudasAnalista) ? r.ayudasAnalista : [];
               const preguntas = Array.isArray(r.analista?.preguntas) ? r.analista.preguntas : [];
               const codigo = r.codigo || codigos[sec.id] || '// Sin código guardado';
               const salida = r.salida || '// Sin salida de ejecución guardada';
@@ -11310,6 +11388,13 @@
                                   </div>`).join('')}</div>`
                               : '<div style="color:var(--text-muted);margin-top:.35rem;">No hay consultas guardadas para este módulo.</div>'}
                       </div>
+                      ${ayudasAnalista.length ? `<div class="teacher-analyst-help-history">
+                          <strong><i class="fa-solid fa-lightbulb"></i> Ayudas solicitadas sobre preguntas</strong>
+                          <span>${ayudasAnalista.length} solicitud${ayudasAnalista.length === 1 ? '' : 'es'} registrada${ayudasAnalista.length === 1 ? '' : 's'}</span>
+                          <ul>${ayudasAnalista.slice().reverse().slice(0, 8).map(item => `
+                              <li>${escapeHtml(item.tipo === 'abierta' ? 'Abierta' : 'Selección múltiple')} · ${escapeHtml(item.pregunta || 'Pregunta sin texto')} · ${escapeHtml(new Date(item.fecha || '').toLocaleString('es-AR'))}</li>
+                          `).join('')}</ul>
+                      </div>` : ''}
                       <div style="margin-top:1rem">
                           ${renderAnalistaViabilidadExcelenciaProfesor(r.analista)}
                       </div>
