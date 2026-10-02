@@ -164,7 +164,7 @@
       }
       .code-version-badge i{color:#7dd3fc}
 
-      /* Indicador de cambios de pestaña */
+      /* Indicador de cambios de pestaÃ±a */
       .antifraud-badge {
         background: rgba(239, 68, 68, 0.15);
         border: 1px solid var(--danger);
@@ -242,7 +242,7 @@
         gap: 0.5rem;
       }
 
-      /* Cartel Visual de Módulo Pausado */
+      /* Cartel Visual de MÃ³dulo Pausado */
       .pause-banner {
         display: none;
         background: rgba(245, 158, 11, 0.15);
@@ -262,7 +262,7 @@
         display: flex;
       }
 
-      /* Barra de Cronómetro por Módulo */
+      /* Barra de CronÃ³metro por MÃ³dulo */
       .module-timer-bar {
         background: rgba(15, 23, 42, 0.7);
         border: 1px solid var(--border);
@@ -306,6 +306,15 @@
   color: var(--text);
   backdrop-filter: blur(8px);
   pointer-events: none;
+}
+
+.student-floating-timer[hidden] {
+  display: none !important;
+}
+
+#firebaseAuthOverlay:not(.hidden) ~ #studentFloatingTimer,
+body:has(#firebaseAuthOverlay:not(.hidden)) #studentFloatingTimer {
+  display: none !important;
 }
 
 .section-title {
@@ -998,7 +1007,7 @@
         }
       }
 
-      /* Analista de Viabilidad y Excelencia — RESPONDE AHORA */
+      /* Analista de Viabilidad y Excelencia â€” RESPONDE AHORA */
       .analyst-box {
         display: none;
         margin-top: 1rem;
@@ -1214,7 +1223,7 @@
         color: white;
       }
 
-      /* Modal Personalizado para Contraseña enmascarada (****) */
+      /* Modal Personalizado para ContraseÃ±a enmascarada (****) */
       .modal-overlay {
         position: fixed;
         top: 0;
