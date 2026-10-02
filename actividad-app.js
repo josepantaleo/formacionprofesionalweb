@@ -12200,7 +12200,7 @@
           window.__accionesEstudianteDelegadas = true;
           document.addEventListener('click', event => {
               const boton = event.target.closest?.('.btn-abrir-acciones-estudiante');
-              if (!boton || boton.dataset.listenerBound === 'true') return;
+              if (!boton) return;
               const indice = Number(boton.dataset.estudianteIndex);
               if (Number.isInteger(indice)) {
                   event.preventDefault();
@@ -12985,7 +12985,7 @@
               const claseAcciones = conectadoFila ? 'btn-success teacher-actions-online' : 'btn-secondary';
               const tituloAcciones = `${etiquetaConexion[0]}. Abrir acciones`;
               const estadoConexionAcciones = `<span class="teacher-actions-online-label"><i class="fa-solid ${etiquetaConexion[1]}"></i> ${etiquetaConexion[0]}${d.__controlEstudiante?.sesionesDuplicadas ? ' · Sesión duplicada' : ''}</span>`;
-          return `<tr data-estudiante-uid="${escapeHtml(d.uid || '')}" class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn ${claseAcciones} btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" data-listener-bound="true" onclick="abrirAccionesEstudiante(${indice})" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="${tituloAcciones}"><i class="fa-solid fa-sliders"></i><span>Acciones</span>${estadoConexionAcciones}</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}<div class="code-version-badge" style="margin-top:.4rem;font-size:.68rem;padding:.25rem .45rem"><i class="fa-solid fa-code-branch"></i> Script v${escapeHtml(versionScript)}</div>${intentosDesafioHtml}${alertaHtml}${ayudasFilaHtml}${portapapelesFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td>${ultimaReaperturaHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td></tr>`;
+          return `<tr data-estudiante-uid="${escapeHtml(d.uid || '')}" class="${bloqueado ? 'teacher-blocked-row' : ''}" style="${!bloqueado && alertaIA.activa ? `background:${alertaIA.nivel === 'alta' ? 'rgba(239,68,68,.045)' : 'rgba(245,158,11,.035)'}` : ''}"><td class="acciones-principales-cell"><button type="button" class="btn ${claseAcciones} btn-abrir-acciones-estudiante" data-estudiante-index="${indice}" style="width:100%;justify-content:flex-start;text-align:left;padding:.55rem .7rem" title="${tituloAcciones}"><i class="fa-solid fa-sliders"></i><span>Acciones</span>${estadoConexionAcciones}</button></td><td class="descuento-puntos-cell">${descuentoHtml}</td><td>${escapeHtml(e.nombre||d.nombreGoogle||'Sin nombre')}<div class="code-version-badge" style="margin-top:.4rem;font-size:.68rem;padding:.25rem .45rem"><i class="fa-solid fa-code-branch"></i> Script v${escapeHtml(versionScript)}</div>${intentosDesafioHtml}${alertaHtml}${ayudasFilaHtml}${portapapelesFilaHtml}</td><td>${escapeHtml(d.email||'')}</td><td>${escapeHtml(e.curso||'')}</td><td>${escapeHtml(e.division||'')}</td><td>${escapeHtml(e.turno||'')}</td><td>${estadoHtml}</td><td>${progresoHtml}</td><td>${notaHtml}</td><td>${salidasHtml}</td><td>${ultimaReaperturaHtml}</td><td><strong>${Number(d.cantidadDesbloqueos || 0)}</strong></td></tr>`;
               }).join('') || '<tr><td colspan="13" style="padding:1rem;text-align:center;">No hay estudiantes que coincidan con los filtros.</td></tr>';
           // BOTÃ“N VISIBLE: edición de datos personales en la primera columna (Acciones).
           // La versión anterior intentaba agregarlo al último TD y por eso no aparecía.
@@ -14731,6 +14731,9 @@
           }
       }
 
+      // Exponer explícitamente las acciones docentes usadas por botones dinámicos.
+      window.abrirAccionesEstudiante = abrirAccionesEstudiante;
+      window.abrirDetalleEstudianteProfesor = abrirDetalleEstudianteProfesor;
 
 
 
