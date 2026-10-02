@@ -1231,12 +1231,12 @@
               editor.dataset.cooperationLocked = String(Boolean(bloqueoCooperacion));
           }
           const bloqueado = (
-              (editor.dataset.cooperationLocked === "true" && !window.firebaseTeacherUser) ||
+              editor.dataset.cooperationLocked === "true" ||
               !cuentaEstudianteActiva ||
               !claseHabilitada ||
               pantallaBloqueada ||
               Boolean(actividadesFinalizadas[sectionId]) ||
-               Boolean(modulosPausados[sectionId]) && !window.firebaseTeacherUser
+              Boolean(modulosPausados[sectionId])
           );
           editor.disabled = bloqueado;
           editor.__setCodeMirrorDisabled?.(bloqueado);
@@ -4954,36 +4954,29 @@
           return evaluarCodigoPorEvidencias(code, sec, resultadoEjecucion).nota;
       }
 
-      function calcularNotaCombinada(notaCodigo, porcentajePreguntas, evaluacionCodigo = null, componentes = {}) {
-          const codigoBase = Math.max(0, Math.min(10, Number(notaCodigo) || 0));
+      function calcularNotaCombinada(notaCodigo, porcentajePreguntas, evaluacionCodigo = null) {
+          const codigo = Math.max(0, Math.min(10, Number(notaCodigo) || 0));
+          const preguntas = Math.max(0, Math.min(100, Number(porcentajePreguntas) || 0)) / 10;
           const metricas = evaluacionCodigo?.metricas || {};
           const evidencia = [
               Number(metricas.requisitos),
+              Number(metricas.comportamiento),
               Number(metricas.estructura),
               Number(metricas.calidad)
           ].filter(Number.isFinite);
-          const requisitos = evidencia.length
+          const evidenciaPromedio = evidencia.length
               ? evidencia.reduce((total, valor) => total + Math.max(0, Math.min(1, valor)), 0) / evidencia.length
-              : codigoBase / 10;
-          const funcionamiento = Number.isFinite(Number(metricas.comportamiento))
-              ? Math.max(0, Math.min(1, Number(metricas.comportamiento)))
-              : (evaluacionCodigo?.ejecucion?.ok ? 0.8 : 0);
-          const codigo = Number((codigoBase * 0.65 + requisitos * 10 * 0.35).toFixed(1));
-          const multiple = Math.max(0, Math.min(10, Number(componentes.multiple ?? porcentajePreguntas) || 0));
-          const socraticas = Math.max(0, Math.min(10, Number(componentes.socraticas ?? porcentajePreguntas) || 0));
-          const pruebas = Math.max(0, Math.min(10, Number(componentes.pruebas ?? (evaluacionCodigo?.ejecucion?.intentada ? (evaluacionCodigo.ejecucion.ok ? 10 : 2) : 0)) || 0));
-          let nota = (
-              codigo * 0.40 +
-              (funcionamiento * 10) * 0.25 +
-              multiple * 0.15 +
-              socraticas * 0.15 +
-              pruebas * 0.05
+              : codigo / 10;
+          const notaCodigoAjustada = Number(
+              (codigo * 0.75 + evidenciaPromedio * 10 * 0.25).toFixed(1)
           );
+          let nota = notaCodigoAjustada * 0.65 + preguntas * 0.35;
           const sintaxisValida = evaluacionCodigo?.sintaxis?.valida !== false;
           const ejecucionCorrecta = evaluacionCodigo?.ejecucion?.ok !== false;
+          const comportamiento = Number(evaluacionCodigo?.metricas?.comportamiento);
           if (!sintaxisValida) nota = Math.min(nota, 3);
           else if (!ejecucionCorrecta) nota = Math.min(nota, 4);
-          else if (funcionamiento < 0.35) nota = Math.min(nota, 6);
+          else if (Number.isFinite(comportamiento) && comportamiento < 0.35) nota = Math.min(nota, 6);
           return Number(Math.max(1, Math.min(10, nota)).toFixed(1));
       }
 
@@ -6027,13 +6020,7 @@
           if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
           const notaCodigo = Number(historialResultados[sectionId].notaCodigo ?? historialResultados[sectionId].notaIA ?? 0);
           const evaluacionCodigo = historialResultados[sectionId].evaluacionCodigo || null;
-           const notaFinal = calcularNotaCombinada(notaCodigo, porcentaje, evaluacionCodigo, {
-               multiple: porcentaje,
-               socraticas: notaPreguntas,
-               pruebas: evaluacionCodigo?.ejecucion?.intentada
-                   ? (evaluacionCodigo.ejecucion.ok ? 10 : 2)
-                   : 0
-           });
+          const notaFinal = calcularNotaCombinada(notaCodigo, porcentaje, evaluacionCodigo);
           const metricasCodigoVista = evaluacionCodigo?.metricas || {};
           const evidenciasCodigoVista = [
               Number(metricasCodigoVista.requisitos),
@@ -6044,7 +6031,9 @@
           const evidenciaCodigoVista = evidenciasCodigoVista.length
               ? Number((evidenciasCodigoVista.reduce((total, valor) => total + valor, 0) / evidenciasCodigoVista.length * 10).toFixed(1))
               : notaCodigo;
-           const funcionamientoVista = Number(((evaluacionCodigo?.metricas?.comportamiento || 0) * 10).toFixed(1));
+          const notaCodigoPonderadaVista = Number(
+              (notaCodigo * 0.75 + evidenciaCodigoVista * 0.25).toFixed(1)
+          );
           const limiteFinal = evaluacionCodigo?.sintaxis?.valida === false
               ? "La calificación automática del módulo se limitó a 3 porque el código contiene un error de sintaxis."
               : evaluacionCodigo?.ejecucion?.ok === false
@@ -6055,7 +6044,9 @@
 
            result.innerHTML =
                `<strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>` +
-               `Funcionamiento y pruebas: <strong>${funcionamientoVista}/10</strong> (25%).<br>` +\r\n               `Opción múltiple: <strong>${notaPreguntas}/10</strong> (15%).<br>` +\r\n               `Socráticas: <strong>${notaPreguntas}/10</strong> (15%).<br>` +\r\n               `Proceso y pruebas registradas: <strong>${evaluacionCodigo?.ejecucion?.intentada ? (evaluacionCodigo.ejecucion.ok ? "10.0" : "2.0") : "0.0"}/10</strong> (5%).<br>` +\r\n               `<strong>Desglose:</strong> ${conteoNiveles.completa} completas (${rubricaAplicada.puntos.completa.toFixed(2)}), ${conteoNiveles.incompleta} correctas incompletas (${rubricaAplicada.puntos.incompleta.toFixed(2)}), ${conteoNiveles.parcial} parciales (${rubricaAplicada.puntos.parcial.toFixed(2)}) y ${conteoNiveles.incorrecta} incorrectas (${rubricaAplicada.puntos.incorrecta.toFixed(2)}).<br>` +
+               `Código y evidencias técnicas: <strong>${notaCodigoPonderadaVista}/10</strong> (65%).<br>` +
+               `Respuestas razonadas: <strong>${notaPreguntas}/10</strong> (35%).<br>` +
+               `<strong>Desglose:</strong> ${conteoNiveles.completa} completas (${rubricaAplicada.puntos.completa.toFixed(2)}), ${conteoNiveles.incompleta} correctas incompletas (${rubricaAplicada.puntos.incompleta.toFixed(2)}), ${conteoNiveles.parcial} parciales (${rubricaAplicada.puntos.parcial.toFixed(2)}) y ${conteoNiveles.incorrecta} incorrectas (${rubricaAplicada.puntos.incorrecta.toFixed(2)}).<br>` +
                `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
               `Excelencia: <strong>${excelencia}</strong>.<br>` +
               `Las preguntas mezclaron evidencias de tu código, de la solución IA, de la comparación entre ambos y situaciones de razonamiento socrático.` +
@@ -6079,7 +6070,7 @@
               ? Number((evidenciasCodigo.reduce((total, valor) => total + valor, 0) / evidenciasCodigo.length * 10).toFixed(1))
               : notaCodigo;
           historialResultados[sectionId].desgloseNota = {
-              formula: "codigo_40_funcionamiento_25_multiple_15_socraticas_15_pruebas_5",
+              formula: "codigo_evidencias_65_respuestas_35",
               notaCodigoBase: notaCodigo,
               evidenciaCodigo,
               notaPreguntas,
@@ -9472,6 +9463,14 @@
               return '';
           }
       })();
+      const CLAVE_VISIBILIDAD_VALORES_GRAFICO_NOTAS = 'teacher_student_grade_chart_show_values';
+      let mostrarValoresGraficoNotasEstudiante = (() => {
+          try {
+              return sessionStorage.getItem(CLAVE_VISIBILIDAD_VALORES_GRAFICO_NOTAS) !== 'false';
+          } catch (_) {
+              return true;
+          }
+      })();
       const CLAVE_POSICION_GRAFICO_NOTAS_ESTUDIANTE = 'teacher_student_grade_chart_scroll_left';
       let ultimaPosicionGraficoNotasEstudiante = (() => {
           try {
@@ -9590,6 +9589,35 @@
           activador?.setAttribute?.('aria-pressed', 'true');
       }
       window.abrirDesafioDesdeGraficoNotasEstudiante = abrirDesafioDesdeGraficoNotasEstudiante;
+      function aplicarVisibilidadValoresGraficoNotasEstudiante(grafico, mostrar) {
+          if (!grafico) return;
+          mostrarValoresGraficoNotasEstudiante = mostrar !== false;
+          grafico.classList.toggle('hide-grade-values', !mostrarValoresGraficoNotasEstudiante);
+          const boton = grafico.querySelector('.teacher-student-grade-values-toggle');
+          if (boton) {
+              boton.setAttribute('aria-pressed', String(mostrarValoresGraficoNotasEstudiante));
+              boton.setAttribute('aria-label', mostrarValoresGraficoNotasEstudiante
+                  ? 'Ocultar notas numéricas del gráfico'
+                  : 'Mostrar notas numéricas del gráfico');
+              boton.innerHTML = mostrarValoresGraficoNotasEstudiante
+                  ? '<i class="fa-solid fa-eye-slash"></i> Ocultar notas'
+                  : '<i class="fa-solid fa-eye"></i> Mostrar notas';
+          }
+          try {
+              sessionStorage.setItem(
+                  CLAVE_VISIBILIDAD_VALORES_GRAFICO_NOTAS,
+                  String(mostrarValoresGraficoNotasEstudiante)
+              );
+          } catch (_) {}
+      }
+      function alternarValoresGraficoNotasEstudiante(boton = null) {
+          const grafico = boton?.closest?.('.teacher-student-grade-chart');
+          if (!grafico) return;
+          aplicarVisibilidadValoresGraficoNotasEstudiante(
+              grafico,
+              grafico.classList.contains('hide-grade-values')
+          );
+      }
       function renderGraficoNotasDesafiosEstudiante(d) {
           const historial = d?.historialResultados || {};
           const notasDocente = d?.notasDesafiosDocente || {};
@@ -9695,6 +9723,9 @@
                       </button>
                       <button type="button" data-grade-filter-button="pendientes" aria-pressed="false" onclick="filtrarGraficoNotasDesafiosEstudiante('pendientes', this)">
                           <i class="fa-solid fa-clock"></i> <span>Pendientes</span><b>${conteosFiltros.pendientes}</b>
+                      </button>
+                      <button type="button" class="teacher-student-grade-values-toggle" aria-pressed="true" aria-label="Ocultar notas numéricas del gráfico" onclick="alternarValoresGraficoNotasEstudiante(this)">
+                          <i class="fa-solid fa-eye-slash"></i> Ocultar notas
                       </button>
                       <button type="button" class="is-reset" onclick="restablecerFiltroGraficoNotasEstudiante(this)" title="Volver a mostrar todos los desafíos">
                           <i class="fa-solid fa-arrow-rotate-left"></i> Restablecer filtro
@@ -11692,6 +11723,7 @@
           if (botonFiltroRecordado) {
               filtrarGraficoNotasDesafiosEstudiante(ultimoFiltroGraficoNotasEstudiante, botonFiltroRecordado);
           }
+          aplicarVisibilidadValoresGraficoNotasEstudiante(graficoNotas, mostrarValoresGraficoNotasEstudiante);
           restaurarPosicionGraficoNotasEstudiante(graficoNotas);
           window.cargarHistorialAccesosProfesorFirebase?.(d.uid).then(accesos => {
               const contenedor = document.getElementById("historialAccesosProfesor");
@@ -14152,10 +14184,11 @@
           setTimeout(() => modal.querySelector(".student-progress-modal-box")?.focus({ preventScroll: true }), 0);
       }
 
-          function cerrarProgresoEstudiante() {
-              document.getElementById("progresoEstudianteModal")?.classList.remove("active");
-              document.body.classList.remove("student-progress-modal-open");
-          }
+      function cerrarProgresoEstudiante() {
+          document.getElementById("progresoEstudianteModal")?.classList.remove("active");
+          document.body.classList.remove("student-progress-modal-open");
+          document.getElementById("btnAbrirProgresoEstudiante")?.focus({ preventScroll: true });
+      }
 
       document.getElementById("progresoEstudianteModal")?.addEventListener("click", event => {
           if (event.target?.id === "progresoEstudianteModal") cerrarProgresoEstudiante();
@@ -14285,6 +14318,7 @@
               if (botonFiltro) {
                   filtrarGraficoNotasDesafiosEstudiante(ultimoFiltroGraficoNotasEstudiante, botonFiltro);
               }
+              aplicarVisibilidadValoresGraficoNotasEstudiante(grafico, mostrarValoresGraficoNotasEstudiante);
               restaurarPosicionGraficoNotasEstudiante(grafico);
           }
       }
