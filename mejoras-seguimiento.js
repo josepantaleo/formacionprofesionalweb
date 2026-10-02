@@ -991,7 +991,7 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
  modal.dataset.uid=d.uid;modal.dataset.sectionId=sectionId;modal.dataset.studentIndex=String(indice);modal.dataset.rolColaborativo="docente";
  actualizarEstadoCursoCooperativo(modal,"waiting");
  document.getElementById("editorColaborativoAlumno").textContent=`${d.estudiante?.nombre||d.nombreGoogle||d.email||"Estudiante"} · ${sec?.title||sectionId}`;
- editor.value=codigo;editor.__syncCodeMirror?.(codigo);editor.disabled=true;editor.__setCodeMirrorDisabled?.(true);
+  editor.value=codigo;editor.__syncCodeMirror?.(codigo);editor.disabled=false;editor.__setCodeMirrorDisabled?.(false);
  estado.textContent="Verificando la cuenta docente...";salida.textContent="Preparando colaboración";salida.className="";
  modal.classList.add("active");
  try{
@@ -1020,9 +1020,9 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
    salida.textContent=modal.dataset.edicionCooperativaPausada==="true" && modoActual.consentimiento==="aceptado"
     ? "Acceso docente directo · edición pausada"
     : "Acceso docente directo · cambios sincronizados automáticamente";
-   const edicionPausada=modal.dataset.edicionCooperativaPausada==="true" && modoActual.consentimiento==="aceptado";
-   editor.disabled=edicionPausada;
-   editor.__setCodeMirrorDisabled?.(edicionPausada);
+    // El docente autorizado conserva edición directa del documento compartido.
+    editor.disabled=false;
+    editor.__setCodeMirrorDisabled?.(false);
    salida.className="success";
  }catch(error){
   actualizarEstadoCursoCooperativo(modal,"error");
@@ -1031,7 +1031,7 @@ async function abrirEditorColaborativoProfesor(referenciaEstudiante,sectionId){
   const codigoError=String(error?.code||error?.message||"");
   const detalle=codigoError.includes("permission-denied")?"Firestore rechazó la colaboración. Publicá la versión actualizada de reglas.txt.":codigoError.includes("teacher-not-authorized")?"La cuenta docente no está autorizada.":codigoError.includes("firebase-not-ready")?"Firebase todavía no está listo. Recargá la página e intentá nuevamente.":String(error?.message||"Revisá la conexión y las reglas de Firestore.");
   estado.textContent="No se pudo iniciar la colaboración";salida.textContent=detalle;salida.className="danger";
-  editor.disabled=true;editor.__setCodeMirrorDisabled?.(true);
+   editor.disabled=false;editor.__setCodeMirrorDisabled?.(false);
  }
 }
 window.abrirEditorColaborativoProfesor=abrirEditorColaborativoProfesor;

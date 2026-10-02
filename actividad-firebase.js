@@ -1244,6 +1244,39 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
       };
 
+      window.registrarEventoActividadFirebase = async function(tipo, detalle = {}) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db) return false;
+        const tiposPermitidos = [
+          "inicio","colaboracion","cambio","ejecucion","prueba","ayuda",
+          "entrega","correccion","evaluacion","explicacion_consigna"
+        ];
+        if (!tiposPermitidos.includes(String(tipo))) return false;
+        try {
+          const eventoRef = doc(collection(db, "estudiantes", user.uid, "actividadEventos"));
+          const payload = {
+            id: eventoRef.id,
+            tipo: String(tipo),
+            uid: user.uid,
+            sectionId: String(detalle.sectionId || "").slice(0,120),
+            intento: Number(detalle.intento || 0),
+            autorUid: user.uid,
+            autorRol: String(detalle.autorRol || "estudiante"),
+            detalle: String(detalle.detalle || "").slice(0,1000),
+            evidencia: detalle.evidencia && typeof detalle.evidencia === "object"
+              ? JSON.parse(JSON.stringify(detalle.evidencia))
+              : {},
+            fechaCliente: Date.now(),
+            registradoEn: serverTimestamp()
+          };
+          await setDoc(eventoRef, payload);
+          return true;
+        } catch (error) {
+          console.warn("No se pudo registrar actividad educativa:", error);
+          return false;
+        }
+      };
+
       window.registrarEventoAccesoFirebase = async function(tipo, detalle = {}) {
         const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
         if (!user || !db || !["inicio_sesion", "cierre_sesion"].includes(tipo)) return false;
@@ -1470,7 +1503,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const texto = documento.getText("codigo");
         const clienteId = `${rol}-${user.uid}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`;
         const metaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId);
-        const actualizacionesRef = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "actualizaciones");
+         const actualizacionesRef = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "actualizaciones");
+         const versionesRef = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "versiones");
         const presenciaRef = doc(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "presencia", clienteId);
         const mensajesRef = collection(database, "estudiantes", uid, "colaboracionCodigo", sectionId, "mensajes");
         const vistos = new Set();
@@ -1485,28 +1519,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             ? datos.estadoConsentimiento
             : "sin_solicitud",
           objetivo: String(datos?.objetivoCooperacion || ""),
-          solicitadoPor: String(datos?.solicitadoPor || "")
+          solicitadoPor: String(datos?.solicitadoPor || ""),
+          ultimoModificador: String(datos?.ultimoModificador || ""),
+          actualizadoEn: datos?.actualizadoEn || null
         });
         let modoCooperacionActual = normalizarModoCooperacion({});
         let cola = [];
-        let temporizador = null;
+         let temporizador = null;
+         let ultimaVersionEn = 0;
+         let ultimoCodigoVersion = "";
         let destruida = false;
-        const colaRespaldoClave = `cooperation_pending:${rol}:${uid}:${sectionId}:${user.uid}`;
-        const persistirColaPendiente = () => {
-          try {
-            if (!cola.length) {
-              localStorage.removeItem(colaRespaldoClave);
-              return;
-            }
-            localStorage.setItem(colaRespaldoClave, JSON.stringify({
-              update: cola.length ? bytesABase64(Y.mergeUpdates(cola)) : "",
-              guardadoEn: Date.now()
-            }));
-          } catch (error) {
-            console.warn("No se pudo respaldar localmente la cola cooperativa:", error);
-          }
-        };
-
         const notificar = (estado, detalle = "") => estadoListeners.forEach(fn => fn({ estado, detalle }));
         const notificarPresencia = participantes => {
           participantesActuales = participantes;
@@ -1541,16 +1563,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           const update = datosIniciales.update;
           if (update) Y.applyUpdate(documento, base64ABytes(update), ORIGEN_FIRESTORE_CRDT);
         });
-        try {
-          const respaldo = JSON.parse(localStorage.getItem(colaRespaldoClave) || "null");
-          if (respaldo?.update) {
-            const updateRecuperado = base64ABytes(respaldo.update);
-            Y.applyUpdate(documento, updateRecuperado, { tipo: "local-recovery", rol });
-            cola.push(updateRecuperado);
-          }
-        } catch (error) {
-          console.warn("No se pudo recuperar la cola cooperativa local:", error);
-        }
 
         const publicarCola = async () => {
           temporizador = null;
@@ -1574,17 +1586,46 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             });
             loteFirestore.set(metaRef, {
               actualizadoEn: serverTimestamp(),
-              actualizadoPor: user.email || user.uid
+              actualizadoPor: user.email || user.uid,
+              ultimoModificadorUid: user.uid,
+              ultimoModificador: user.email || user.displayName || user.uid,
+              ultimoCambioClienteId: clienteId
             }, { merge: true });
-            await loteFirestore.commit();
-            if (rol === "docente") {
-              const codigoDocente = texto.toString().slice(0, 30000);
+             await loteFirestore.commit();
+             void window.registrarEventoActividadFirebase?.("cambio", {
+               sectionId,
+               intento: 0,
+               detalle: `Cambio CRDT sincronizado por ${rol}`,
+               evidencia: {clienteId, rol}
+             });
+             const codigoActual = texto.toString().slice(0, 30000);
+             if (
+               codigoActual !== ultimoCodigoVersion &&
+               (Date.now() - ultimaVersionEn >= 8000 || Math.abs(codigoActual.length - ultimoCodigoVersion.length) >= 120)
+             ) {
+               const versionId = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`;
+               await setDoc(doc(versionesRef, versionId), {
+                 id: versionId,
+                 uid,
+                 sectionId,
+                 version: versionId,
+                 codigo: codigoActual,
+                 autorUid: user.uid,
+                 autorEmail: user.email || "",
+                 rol,
+                 creadoEn: serverTimestamp(),
+                 actualizadoPor: user.email || user.uid
+               });
+               ultimaVersionEn = Date.now();
+               ultimoCodigoVersion = codigoActual;
+             }
+             if (rol === "docente") {
+               const codigoDocente = codigoActual;
               const guardadoDocente = await window.guardarCodigoColaborativoDocenteFirebase?.(uid, sectionId, codigoDocente);
               if (guardadoDocente === false) {
                 throw new Error("teacher-code-save-failed");
               }
             }
-            localStorage.removeItem(colaRespaldoClave);
             notificar("synced", rol === "docente"
               ? "Código del estudiante actualizado y sincronizado"
               : "Cambios sincronizados");
@@ -1592,8 +1633,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           } catch (error) {
             console.error("No se pudo publicar la actualizaciÃƒ³n CRDT:", error);
             cola.unshift(lote);
-            persistirColaPendiente();
-            notificar("error", "Cambios pendientes; se reintentarÃƒ¡n");
+              notificar("error", "Cambios pendientes; se reintentarÃƒ¡n");
             return false;
           }
          };
@@ -1601,9 +1641,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         documento.on("update", (update, origen) => {
           if (origen === ORIGEN_FIRESTORE_CRDT || origen?.tipo === "firestore-crdt" || destruida) return;
           cola.push(update);
-          persistirColaPendiente();
+          notificar("saving", "Guardando cambios...");
           clearTimeout(temporizador);
-          temporizador = setTimeout(publicarCola, 90);
+           temporizador = setTimeout(publicarCola, 650);
         });
 
         const detenerActualizaciones = onSnapshot(actualizacionesRef, snapshot => {
@@ -1612,7 +1652,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             vistos.add(cambio.doc.id);
             const datosCambio = cambio.doc.data();
             const update = datosCambio.update;
-            if (update) Y.applyUpdate(documento, base64ABytes(update), {
+            if (update) {
+              notificar("synced", `Guardado · último cambio: ${datosCambio.autorEmail || datosCambio.rol || "participante"}`);
+              Y.applyUpdate(documento, base64ABytes(update), {
               tipo: "firestore-crdt",
               rol: datosCambio.rol === "docente" ? "docente" : "estudiante",
               autorUid: datosCambio.autorUid || "",
@@ -1665,9 +1707,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           const modoAnterior = modoCooperacionActual;
           modoCooperacionActual = normalizarModoCooperacion(datos);
           modoCooperacionListeners.forEach(fn => fn({ ...modoCooperacionActual }));
-          const aceptada = rol === "docente"
-            ? true
-            : modoCooperacionActual.consentimiento === "aceptado" && modoCooperacionActual.activa;
+           const aceptada = rol === "docente"
+             ? true
+             : modoCooperacionActual.consentimiento === "aceptado" && modoCooperacionActual.activa;
           if (aceptada) {
             iniciarEscuchaPresencia();
             void actualizarPresencia({}, true);
@@ -1696,9 +1738,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
 
         let ultimaPresenciaPublicada = "";
         const actualizarPresencia = (cursor = {}, forzar = false) => {
-          const cooperacionAceptada = rol === "docente"
-            ? true
-            : modoCooperacionActual.consentimiento === "aceptado" && modoCooperacionActual.activa;
+           const cooperacionAceptada = rol === "docente"
+             ? true
+             : modoCooperacionActual.consentimiento === "aceptado" && modoCooperacionActual.activa;
           if (!cooperacionAceptada) {
             return deleteDoc(presenciaRef).catch(() => {});
           }
@@ -1725,6 +1767,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           iniciarEscuchaPresencia();
           await actualizarPresencia();
         }
+        const actualizarConexion = () => {
+          if (destruida) return;
+          notificar(navigator.onLine === false ? "offline" : "synced",
+            navigator.onLine === false ? "Sin conexión · los cambios quedan en la cola de Firestore" : "Guardado");
+        };
+        window.addEventListener("online", actualizarConexion);
+        window.addEventListener("offline", actualizarConexion);
+        actualizarConexion();
         const latido = setInterval(() => actualizarPresencia({}, true), 20000);
         const sesion = {
           clave,
@@ -1982,11 +2032,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             if (destruida) return;
             const sincronizada = await this.flush();
             if (!sincronizada || cola.length) {
-              persistirColaPendiente();
-              return false;
+                  return false;
             }
             destruida = true;
             clearInterval(latido);
+            window.removeEventListener("online", actualizarConexion);
+            window.removeEventListener("offline", actualizarConexion);
              detenerActualizaciones();
              detenerEscuchaPresencia();
              detenerModoCooperacion();
@@ -2017,7 +2068,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         if (sesion.rol === "estudiante") {
           quitarModoCooperacion = sesion.onModoCooperacion(modo => {
             const aceptada = modo.consentimiento === "aceptado" && modo.activa;
-            actualizarBloqueoEditorEstudiante(sectionId, aceptada && modo.pausada);
+             actualizarBloqueoEditorEstudiante(sectionId, false);
           });
         }
         let temporizadorAutorCambio = null;
@@ -2047,7 +2098,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           const posicion = Math.min(siguiente.length, inicio);
           textarea.setSelectionRange(posicion, Math.min(siguiente.length, fin));
           if (sesion.rol === "estudiante") {
-            setLocalStorage(`draft_editor-${sectionId}`, siguiente);
             actualizarMetricasEditor(sectionId);
             programarGuardadoFirebase();
           }
@@ -2080,7 +2130,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         };
         textarea.value = sesion.texto.toString();
         if (sesion.rol === "estudiante") {
-          setLocalStorage(`draft_editor-${sectionId}`, textarea.value);
           actualizarMetricasEditor(sectionId);
         }
         textarea.dataset.crdtActivo = "true";
@@ -2091,8 +2140,26 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         sesion.texto.observe(aplicarRemoto);
         const quitarEstado = sesion.onStatus(info => {
           if (!estadoElemento) return;
+          const icono = info.estado === "synced"
+            ? "fa-circle-check"
+            : info.estado === "saving"
+              ? "fa-cloud-arrow-up"
+              : info.estado === "offline"
+                ? "fa-plug-circle-xmark"
+                : info.estado === "error"
+                  ? "fa-triangle-exclamation"
+                  : "fa-arrows-rotate fa-spin";
+          const etiqueta = info.estado === "synced"
+            ? "Guardado"
+            : info.estado === "saving"
+              ? "Guardando"
+              : info.estado === "offline"
+                ? "Sin conexión"
+                : info.estado === "error"
+                  ? "Error de sincronización"
+                  : "Sincronizando";
           estadoElemento.className = `student-editor-state crdt-${info.estado}`;
-          estadoElemento.innerHTML = `<i class="fa-solid ${info.estado === "synced" ? "fa-people-arrows" : info.estado === "error" ? "fa-triangle-exclamation" : "fa-arrows-rotate fa-spin"}"></i> ${info.detalle}`;
+          estadoElemento.innerHTML = `<i class="fa-solid ${icono}"></i> ${etiqueta}${info.detalle && info.detalle !== etiqueta ? ` · ${String(info.detalle)}` : ""}`;
         });
         const presenciaElemento = document.createElement("span");
         presenciaElemento.className = "collaboration-presence";
@@ -2199,7 +2266,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         let cantidadNoLeidos = 0;
         let ultimoEnvioMensaje = 0;
         let citaPendiente = null;
-        let sonidoMensajesActivo = localStorage.getItem("cooperation_message_sound") === "true";
+        let sonidoMensajesActivo = false;
         let contextoAudioMensajes = null;
 
         const actualizarBotonSonido = () => {
@@ -2399,7 +2466,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         chatQuitarCita.addEventListener("click", limpiarCita);
         chatSonido.addEventListener("click", () => {
           sonidoMensajesActivo = !sonidoMensajesActivo;
-          localStorage.setItem("cooperation_message_sound", String(sonidoMensajesActivo));
           actualizarBotonSonido();
           if (sonidoMensajesActivo) {
             reproducirSonidoMensaje();
@@ -2533,10 +2599,42 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           if (estado) estado.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> ColaboraciÃƒ³n no disponible';
         }
       };
+      let __detenerVigilanciaCooperacionEstudiante = null;
+      function vigilarCooperacionEstudianteActual() {
+        try { __detenerVigilanciaCooperacionEstudiante?.(); } catch (_) {}
+        __detenerVigilanciaCooperacionEstudiante = null;
+        const user = window.firebaseCurrentUser;
+        const sectionId = document.querySelector(".section-card.active")?.id || window.seccionesData?.[0]?.id;
+        if (!user || !db || !sectionId) return;
+        const referencia = doc(db, "estudiantes", user.uid, "colaboracionCodigo", sectionId);
+        __detenerVigilanciaCooperacionEstudiante = onSnapshot(referencia, snapshot => {
+          const datos = snapshot.exists() ? snapshot.data() : {};
+          const estado = datos.estadoConsentimiento || "sin_solicitud";
+          const activa = datos.modoCooperacionActiva === true && estado === "aceptado";
+          const indicador = document.getElementById(`estado-colaboracion-${sectionId}`);
+          if (indicador && !activa) {
+            indicador.hidden = estado === "sin_solicitud";
+            indicador.textContent = estado === "pendiente"
+              ? "Solicitud pendiente · esperando respuesta"
+              : estado === "rechazado"
+                ? "Colaboración rechazada"
+                : estado === "finalizado"
+                  ? "Colaboración finalizada"
+                  : "";
+          }
+          if (activa) {
+            void window.iniciarColaboracionCRDTEstudiante?.();
+          }
+        }, error => console.warn("No se pudo vigilar la colaboración del estudiante:", error));
+      }
       window.addEventListener("seccion-estudiante-cambiada", () => {
         window.setTimeout(() => {
+          vigilarCooperacionEstudianteActual();
           void window.iniciarColaboracionCRDTEstudiante?.();
         }, 0);
+      });
+      window.addEventListener("firebase-auth-changed", () => {
+        window.setTimeout(vigilarCooperacionEstudianteActual, 100);
       });
 
       function contextoChatColaborativoFirebase(rolSolicitado = "") {
@@ -2645,6 +2743,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               registradoEn: serverTimestamp()
             });
           });
+          void window.registrarEventoActividadFirebase?.("colaboracion", {
+            sectionId,
+            autorRol: "estudiante",
+            detalle: aceptada ? "Colaboración aceptada" : "Colaboración rechazada"
+          });
           return true;
         } catch (error) {
           console.error("No se pudo responder la solicitud de cooperacion:", error);
@@ -2715,6 +2818,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               finalizadaEn: null,
               registradoEn: serverTimestamp()
             });
+          });
+          void window.registrarEventoActividadFirebase?.("colaboracion", {
+            sectionId,
+            autorRol: "docente",
+            detalle: aceptada ? "Colaboración aceptada por docente" : "Colaboración rechazada por docente"
           });
           return true;
         } catch (error) {
@@ -3569,6 +3677,40 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             code: error?.code || "",
             message: error?.message || "Error desconocido"
           };
+          return false;
+        }
+      };
+
+      window.guardarEntregaCongeladaFirebase = async function(sectionId, entrega = {}) {
+        const user = window.firebaseCurrentUser || await window.firebaseAuthReady;
+        if (!user || !db || !sectionId || user.uid !== String(user.uid)) return false;
+        try {
+          const entregaRef = doc(collection(
+            db, "estudiantes", user.uid, "entregas", String(sectionId), "versiones"
+          ));
+          const codigo = String(entrega.codigo || "").slice(0, 30000);
+          const payload = {
+            id: entregaRef.id,
+            sectionId: String(sectionId),
+            intento: Math.max(1, Number(entrega.intento || 1)),
+            codigo,
+            salida: String(entrega.salida || "").slice(0, 12000),
+            error: String(entrega.error || "").slice(0, 2000),
+            evaluacion: entrega.evaluacion && typeof entrega.evaluacion === "object"
+              ? JSON.parse(JSON.stringify(entrega.evaluacion))
+              : {},
+            respuestas: entrega.respuestas && typeof entrega.respuestas === "object"
+              ? JSON.parse(JSON.stringify(entrega.respuestas))
+              : {},
+            autorUid: user.uid,
+            congelada: true,
+            creadaEn: serverTimestamp()
+          };
+          await setDoc(entregaRef, payload);
+          return entregaRef.id;
+        } catch (error) {
+          console.error("No se pudo congelar la entrega:", error);
+          window.ultimoErrorEntregaCongelada = {code:error?.code||"",message:error?.message||""};
           return false;
         }
       };
