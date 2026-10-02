@@ -1793,6 +1793,7 @@
               document.getElementById('passwordModal')?.classList.remove('active');
               document.getElementById('panelProfesorModal')?.classList.remove('active');
               document.getElementById('editorDesafiosFirebaseModal')?.classList.remove('active');
+              actualizarEstadoVistaDocente();
           }
       }
 
@@ -1932,6 +1933,7 @@
           cerrarPanelProfesor();
           cerrarEditorDesafiosFirebase();
           document.getElementById('detalleEstudianteProfesorModal')?.classList.remove('active');
+          actualizarEstadoVistaDocente();
           const cerrado = await window.cerrarAutorizacionDocenteFirebase?.();
           if (cerrado) {
               await actualizarVisibilidadDocente();
@@ -9166,6 +9168,18 @@
           guardarPDFProfesor(doc, `Informe_socratico_${datos.actividad}`);
       }
 
+      function actualizarEstadoVistaDocente() {
+          const panelActivo = Boolean(
+              document.getElementById('panelProfesorModal')?.classList.contains('active')
+          );
+          const detalleActivo = Boolean(
+              document.getElementById('detalleEstudianteProfesorModal')?.classList.contains('active')
+          );
+          document.body.classList.toggle('teacher-view-active', panelActivo || detalleActivo);
+          document.body.classList.toggle('teacher-panel-open', panelActivo);
+          document.body.classList.toggle('teacher-detail-open', detalleActivo);
+      }
+
       async function abrirPanelProfesor() {
           const autorizado = Boolean(
               document.body.classList.contains('teacher-authorized') &&
@@ -9178,6 +9192,7 @@
               return;
           }
           document.getElementById('panelProfesorModal').classList.add('active');
+          actualizarEstadoVistaDocente();
           actualizarBotonPausaCronometros();
           actualizarMantenimientoJitsiAdministrador();
           const controlSonido = document.getElementById('sonidoSolicitudesProfesor');
@@ -9192,6 +9207,7 @@
       }
       function cerrarPanelProfesor() {
           document.getElementById('panelProfesorModal').classList.remove('active');
+          actualizarEstadoVistaDocente();
           if (profesorUnsubscribe) { profesorUnsubscribe(); profesorUnsubscribe = null; }
           window.__cerrarPanelProfesorFirestore?.();
       }
@@ -9768,6 +9784,7 @@
       }
       function cerrarDetalleEstudianteProfesor() {
           document.getElementById('detalleEstudianteProfesorModal').classList.remove('active');
+          actualizarEstadoVistaDocente();
       }
       let detalleEstudianteProfesorIndiceActual = null;
 
@@ -11695,6 +11712,7 @@
               </div>
               <div id="listaDesafiosDetalleProfesor">${actividadesHtml}</div>`;
           document.getElementById('detalleEstudianteProfesorModal').classList.add('active');
+          actualizarEstadoVistaDocente();
           actualizarOffsetsFijosDetalleEstudiante();
           window.requestAnimationFrame(actualizarOffsetsFijosDetalleEstudiante);
           const graficoNotas = document.querySelector('#detalleEstudianteProfesorContenido .teacher-student-grade-chart');

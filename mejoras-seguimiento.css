@@ -1440,7 +1440,15 @@ body:has(#detalleEstudianteProfesorModal.active) .cooperation-consent-global,
 body:has(#panelProfesorModal.active) .student-programming-float-trigger,
 body:has(#detalleEstudianteProfesorModal.active) .student-programming-float-trigger,
 body:has(#panelProfesorModal.active) .student-programming-float-panel,
-body:has(#detalleEstudianteProfesorModal.active) .student-programming-float-panel {
+body:has(#detalleEstudianteProfesorModal.active) .student-programming-float-panel,
+body.teacher-view-active #studentFloatingTimer,
+body.teacher-view-active .student-collab-message-popup,
+body.teacher-view-active .cooperation-consent-global,
+body.teacher-view-active .student-programming-float-trigger,
+body.teacher-view-active .student-programming-float-panel,
+body.teacher-view-active #toastAplicacion,
+body.teacher-view-active #mensajeRecibidoToast,
+body.teacher-view-active .crdt-status-toast {
   display: none !important;
 }
 
