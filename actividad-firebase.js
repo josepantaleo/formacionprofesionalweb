@@ -1562,8 +1562,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           cola = [];
           const id = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`;
           notificar("syncing", "Sincronizando cambios");
-          try {
-            const loteFirestore = writeBatch(database);
+           let actualizacionConfirmada = false;
+           try {
+             const loteFirestore = writeBatch(database);
             loteFirestore.set(doc(actualizacionesRef, id), {
               id,
               uid,
@@ -1580,33 +1581,38 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               actualizadoPor: user.email || user.uid
             }, { merge: true });
              await loteFirestore.commit();
+             actualizacionConfirmada = true;
              const codigoActual = texto.toString().slice(0, 30000);
              if (
                codigoActual !== ultimoCodigoVersion &&
                (Date.now() - ultimaVersionEn >= 8000 || Math.abs(codigoActual.length - ultimoCodigoVersion.length) >= 120)
              ) {
                const versionId = `${Date.now()}-${globalThis.crypto?.randomUUID?.() || Math.random().toString(36).slice(2)}`;
-               await setDoc(doc(versionesRef, versionId), {
-                 id: versionId,
-                 uid,
-                 sectionId,
-                 version: versionId,
-                 codigo: codigoActual,
-                 autorUid: user.uid,
-                 autorEmail: user.email || "",
-                 rol,
-                 creadoEn: serverTimestamp(),
-                 actualizadoPor: user.email || user.uid
-               });
+               try {
+                 await setDoc(doc(versionesRef, versionId), {
+                   id: versionId,
+                   uid,
+                   sectionId,
+                   version: versionId,
+                   codigo: codigoActual,
+                   autorUid: user.uid,
+                   autorEmail: user.email || "",
+                   rol,
+                   creadoEn: serverTimestamp(),
+                   actualizadoPor: user.email || user.uid
+                 });
+               } catch (versionError) {
+                 console.warn("La actualización CRDT se guardó, pero no se pudo registrar la versión histórica:", versionError);
+               }
                ultimaVersionEn = Date.now();
                ultimoCodigoVersion = codigoActual;
              }
              if (rol === "docente") {
                const codigoDocente = codigoActual;
               const guardadoDocente = await window.guardarCodigoColaborativoDocenteFirebase?.(uid, sectionId, codigoDocente);
-              if (guardadoDocente === false) {
-                throw new Error("teacher-code-save-failed");
-              }
+               if (guardadoDocente === false) {
+                 console.warn("La actualización CRDT se guardó, pero no se pudo actualizar la copia de seguimiento docente.");
+               }
             }
             localStorage.removeItem(colaRespaldoClave);
             notificar("synced", rol === "docente"
@@ -1615,9 +1621,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             return true;
           } catch (error) {
             console.error("No se pudo publicar la actualizaciÃƒ³n CRDT:", error);
-            cola.unshift(lote);
-            persistirColaPendiente();
-            notificar("error", "Cambios pendientes; se reintentarÃƒ¡n");
+             if (!actualizacionConfirmada) {
+               cola.unshift(lote);
+               persistirColaPendiente();
+               const codigoError = error?.code ? ` (${error.code})` : "";
+               notificar("error", `Cambios pendientes; se reintentarÃƒ¡n${codigoError}`);
+             } else {
+               notificar("synced", "Código sincronizado; quedó pendiente un registro secundario");
+             }
             return false;
           }
          };
