@@ -11129,6 +11129,14 @@
               const preguntas = Array.isArray(r.analista?.preguntas) ? r.analista.preguntas : [];
               const codigo = r.codigo || codigos[sec.id] || '// Sin código guardado';
               const salida = r.salida || '// Sin salida de ejecución guardada';
+              const ejecucionRegistrada = Boolean(
+                  r.exito === true || r.exito === false || r.error || r.salida
+              );
+              const estadoEjecucion = r.exito === true
+                  ? 'Ejecución correcta registrada'
+                  : (r.exito === false || r.error
+                      ? 'Ejecución registrada con error'
+                      : (ejecucionRegistrada ? 'Ejecución registrada' : 'Todavía no ejecutado'));
               const notaAutomatica = r.notaFinal ?? r.notaIA;
               const notaFinal = obtenerNotaDesafioEstudiante(d, sec.id, r);
               const tieneNotaDocente = ajusteNotaDocente?.nota !== null
@@ -11278,6 +11286,10 @@
                           <button class="btn btn-primary" type="button" onclick="abrirEditorColaborativoProfesor(${indice}, '${sec.id}')">
                               <i class="fa-solid fa-code-branch"></i> Abrir cooperación y mensajes
                           </button>
+                      </div>
+                      <div class="teacher-execution-status" style="margin:.35rem 0 .55rem;color:var(--text-muted);font-size:.82rem">
+                          <i class="fa-solid ${r.exito === true ? 'fa-circle-check' : (r.exito === false || r.error ? 'fa-circle-exclamation' : 'fa-clock')}"></i>
+                          ${estadoEjecucion}
                       </div>
                       <pre class="teacher-code">${escapeHtml(codigo)}</pre>
                       <h4 style="margin-top:.8rem">Salida de ejecución</h4>
@@ -14735,5 +14747,3 @@
       // Exponer explícitamente las acciones docentes usadas por botones dinámicos.
       window.abrirAccionesEstudiante = abrirAccionesEstudiante;
       window.abrirDetalleEstudianteProfesor = abrirDetalleEstudianteProfesor;
-
-
