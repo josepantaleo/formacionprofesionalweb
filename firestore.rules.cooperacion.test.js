@@ -98,9 +98,9 @@ beforeEach(async () => {
 });
 
 
-test("docente solo puede escribir Yjs después de aceptar la colaboración", async () => {
+test("docente puede escribir Yjs sin consentimiento para intervención directa", async () => {
   const db = teacherDb();
-  await assertFails(setDoc(doc(
+  await assertSucceeds(setDoc(doc(
     db,
     "estudiantes", studentUid,
     "colaboracionCodigo", sectionId,
@@ -116,45 +116,16 @@ test("docente solo puede escribir Yjs después de aceptar la colaboración", asy
     autorEmail: teacherEmail,
     creadoEn: serverTimestamp(),
   }));
+});
 
-  await assertSucceeds(updateDoc(collabRef(db), {
-    estadoConsentimiento: "aceptado",
-    modoCooperacionActiva: true,
-    edicionCooperativaPausada: false,
-    respondidoEn: serverTimestamp(),
-    respondidoPor: teacherEmail,
-    actualizadoEn: serverTimestamp(),
-    actualizadoPor: teacherEmail,
-    motivoRechazo: "",
-  }));
-
+test("docente puede publicar presencia en intervención directa", async () => {
+  const db = teacherDb();
   await assertSucceeds(setDoc(doc(
     db,
     "estudiantes", studentUid,
     "colaboracionCodigo", sectionId,
-    "actualizaciones", "direct-2"
-  ), {
-    id: "direct-2",
-    uid: studentUid,
-    sectionId,
-    update: "AQID",
-    clienteId: "teacher-client",
-    rol: "docente",
-    autorUid: teacherUid,
-    autorEmail: teacherEmail,
-    creadoEn: serverTimestamp(),
-  }));
-});
-
-test("docente puede publicar presencia solo durante colaboración activa", async () => {
-  const db = teacherDb();
-  const presencia = doc(
-    db,
-    "estudiantes", studentUid,
-    "colaboracionCodigo", sectionId,
     "presencia", "teacher-client"
-  );
-  const payload = {
+  ), {
     clienteId: "teacher-client",
     uid: studentUid,
     sectionId,
@@ -165,19 +136,7 @@ test("docente puede publicar presencia solo durante colaboración activa", async
     cursorFin: 0,
     escribiendo: false,
     activoEn: serverTimestamp(),
-  };
-  await assertFails(setDoc(presencia, payload));
-  await assertSucceeds(updateDoc(collabRef(db), {
-    estadoConsentimiento: "aceptado",
-    modoCooperacionActiva: true,
-    edicionCooperativaPausada: false,
-    respondidoEn: serverTimestamp(),
-    respondidoPor: teacherEmail,
-    actualizadoEn: serverTimestamp(),
-    actualizadoPor: teacherEmail,
-    motivoRechazo: "",
   }));
-  await assertSucceeds(setDoc(presencia, payload));
 });
 
 test("estudiante no puede escribir Yjs si la solicitud pendiente fue hecha por docente", async () => {

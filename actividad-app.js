@@ -162,7 +162,8 @@
               theory: "JavaScript es el lenguaje que le da vida a la web interactiva.",
               exerciseTitle: "Desafío Escolar: Cartelera Digital del IPEM 146",
               exerciseDesc: "Diseña un script interactivo para la pantalla de bienvenida del IPEM 146. Deberás declarar variables utilizando palabras clave adecuadas para almacenar tu nombre de alumno y una frase motivadora orientada al aprendizaje técnico. Luego, genera una variable para la fecha actual e imprime en la consola un encabezado oficial con formato llamativo mediante múltiples llamadas a console.log().",
-              initialCode: `// 1. Declarar variables para tu nombre y el mensaje motivador\n// 2. Usar console.log()`
+              initialCode: `// 1. Declarar variables para tu nombre y el mensaje motivador\n// 2. Usar console.log()`,
+              aiSolution: `const nombreEstudiante = "Lucas";\nconst frase = "¡El esfuerzo de hoy es el éxito de mañana!";\nconsole.log("=== CARTELERA IPEM 146 ===");\nconsole.log("Alumno: " + nombreEstudiante);\nconsole.log("Mensaje: " + frase);\nconsole.log("Fecha: " + new Date().toLocaleDateString());`
           },
           {
               id: "sec-2",
@@ -171,7 +172,8 @@
               theory: "Usa 'const' para valores fijos y 'let' para variables que cambian.",
               exerciseTitle: "Desafío Escolar: Calculadora de Gastos del Recreo",
               exerciseDesc: "Desarrolla el módulo de cobro e inventario para la cantina escolar. Debes definir constantes (const) para establecer los precios unitarios e inmutables de las empanadas y gaseosas, y variables modificables (let) para registrar la cantidad exacta de productos comprados en un recreo. Realiza la operación matemática correspondiente para hallar el costo total e imprime un recibo detallado en la consola.",
-              initialCode: `// 1. Define constantes y variables let\n// 2. Calcula el total gastado`
+              initialCode: `// 1. Define constantes y variables let\n// 2. Calcula el total gastado`,
+              aiSolution: `const PRECIO_EMPANADA = 350;\nconst PRECIO_GASEOSA = 400;\nlet empanadasCompradas = 3;\nlet gaseosasCompradas = 1;\nlet totalGastado = (PRECIO_EMPANADA * empanadasCompradas) + (PRECIO_GASEOSA * gaseosasCompradas);\nconsole.log("Total gastado en cantina: $" + totalGastado);`
           },
           {
               id: "sec-3",
@@ -180,7 +182,8 @@
               theory: "String, Number, Boolean, Undefined y Null.",
               exerciseTitle: "Desafío Escolar: Registro Ficha Médica Educación Física",
               exerciseDesc: "Crea el sistema de fichas médicas para las clases de educación física. Declara 4 variables con distintos tipos de datos primitivos en JavaScript (un String para el nombre del alumno, un Number para la edad, un Boolean para el apto médico y un valor Null para las observaciones médicas pendientes). Luego, muestra en consola cada valor junto con la verificación explícita de su tipo utilizando el operador typeof.",
-              initialCode: `// 1. Crea las 4 variables\n// 2. Imprime valor y typeof`
+              initialCode: `// 1. Crea las 4 variables\n// 2. Imprime valor y typeof`,
+              aiSolution: `let nombreAlumno = "Sofía";\nlet edad = 16;\nlet aptoMedico = true;\nlet observaciones = null;\nconsole.log(nombreAlumno, typeof nombreAlumno);\nconsole.log(edad, typeof edad);\nconsole.log(aptoMedico, typeof aptoMedico);\nconsole.log(observaciones, typeof observaciones);`
           },
           {
               id: "sec-4",
@@ -189,7 +192,8 @@
               theory: "Aritméticos, comparación y lógicos.",
               exerciseTitle: "Desafío Escolar: Sistema de Calificaciones y Asistencia",
               exerciseDesc: "Escribe un algoritmo automatizado de acreditación académica. Declara variables numéricas para representar la calificación final obtenida por un alumno y el porcentaje total de asistencia registrado en el ciclo lectivo. Utiliza operadores de comparación y el operador lógico AND (&&) para evaluar si el estudiante cumple con ambas condiciones mínimas para aprobar (nota >= 6 y asistencia >= 75%), imprimiendo un booleano indicativo en la consola.",
-              initialCode: `// 1. Declara notas y asistencia\n// 2. Usa operador lógico &&`
+              initialCode: `// 1. Declara notas y asistencia\n// 2. Usa operador lógico &&`,
+              aiSolution: `let notaFinal = 8;\nlet porcentajeAsistencia = 80;\nlet apruebaMateria = (notaFinal >= 6) && (porcentajeAsistencia >= 75);\nconsole.log("¿Aprueba la materia?: " + apruebaMateria);`
           },
           {
               id: "sec-5",
@@ -198,7 +202,8 @@
               theory: "Estructuras if, else if y else.",
               exerciseTitle: "Desafío Escolar: Clasificador de Beca Estudiantil",
               exerciseDesc: "Diseña la lógica institucional para la asignación de estímulos y becas educativas. Utilizando estructuras condicionales compuestas (if, else if, else), toma como entrada la variable del promedio académico general de un alumno y clasifícalo automáticamente en una de las cuatro categorías oficiales: 'Beca Excelencia Total' (>= 9), 'Beca Parcial' (>= 7), 'Mención de Honor sin beca' (>= 6) o 'Refuerzo Pedagógico requerido' (< 6).",
-              initialCode: `// 1. Declara promedio\n// 2. Usa if / else if`
+              initialCode: `// 1. Declara promedio\n// 2. Usa if / else if`,
+              aiSolution: `let promedio = 8.5;\nif (promedio >= 9) {\n    console.log("Beca Excelencia Total");\n} else if (promedio >= 7) {\n    console.log("Beca Parcial");\n} else if (promedio >= 6) {\n    console.log("Mención de Honor sin beca");\n} else {\n    console.log("Refuerzo Pedagógico requerido");\n}`
           },
           {
               id: "sec-6",
@@ -207,7 +212,8 @@
               theory: "Bloques reutilizables con parámetros y retorno.",
               exerciseTitle: "Desafío Escolar: Conversor de Moneda para Viaje de Egresados",
               exerciseDesc: "Crea una función modular reutilizable llamada 'calcularAhorroEgresados' que reciba dos parámetros numéricos: la cantidad de pesos argentinos acumulados en el fondo común y la cotización vigente del dólar. La función debe retornar un mensaje especificando el valor equivalente en dólares y evaluar mediante un condicional interno si se alcanzó la meta requerida de USD 500, o de lo contrario, informar el monto faltante.",
-              initialCode: `// 1. Define la función\n// 2. Retorna dólares y meta`
+              initialCode: `// 1. Define la función\n// 2. Retorna dólares y meta`,
+              aiSolution: `function calcularAhorroEgresados(pesosAhorrados, cotizacionDolar) {\n    let dolares = pesosAhorrados / cotizacionDolar;\n    let meta = 500;\n    if (dolares >= meta) {\n        return "¡Meta alcanzada! Tienes USD " + dolares.toFixed(2);\n    } else {\n        return "Faltan USD " + (meta - dolares).toFixed(2) + " para la meta.";\n    }\n}\nconsole.log(calcularAhorroEgresados(600000, 1200));`
           },
           {
               id: "sec-7",
@@ -216,7 +222,8 @@
               theory: "Colección ordenada indexada desde 0.",
               exerciseTitle: "Desafío Escolar: Gestión de Libros Prestados",
               exerciseDesc: "Crea un sistema de control para la Biblioteca Escolar. Inicializa un arreglo (array) con tres títulos de libros disponibles. Utiliza el método .push() para incorporar un nuevo libro al final de la lista de préstamos y el método .shift() para simular la devolución y entrega del primer libro solicitado. Finalmente, imprime el nombre del libro prestado, la longitud del arreglo con .length y la lista actualizada en consola.",
-              initialCode: `// 1. Crea array\n// 2. Usa push y shift`
+              initialCode: `// 1. Crea array\n// 2. Usa push y shift`,
+              aiSolution: `let libros = ["Matemática", "Historia", "Literatura"];\nlibros.push("Física");\nlet devuelto = libros.shift();\nconsole.log("Libro devuelto: " + devuelto);\nconsole.log("Total libros actuales: " + libros.length, libros);`
           },
           {
               id: "sec-8",
@@ -225,7 +232,8 @@
               theory: "Bucles for y while.",
               exerciseTitle: "Desafío Escolar: Generador de Fixture",
               exerciseDesc: "Construye el organizador del fixture para el Torneo Intercolegial. Almacena en un arreglo los nombres de 4 equipos deportivos del IPEM 146. Utiliza bucles 'for' anidados para iterar sobre la estructura y generar todos los cruces posibles de partidos 'todos contra todos', incluyendo una validación que garantice que ningún equipo sea emparejado a jugar contra sí mismo.",
-              initialCode: `// 1. Crea array de 4 equipos\n// 2. Cruza con for anidado`
+              initialCode: `// 1. Crea array de 4 equipos\n// 2. Cruza con for anidado`,
+              aiSolution: `let equipos = ["Equipo A", "Equipo B", "Equipo C", "Equipo D"];\nfor (let i = 0; i < equipos.length; i++) {\n    for (let j = 0; j < equipos.length; j++) {\n        if (i !== j) {\n            console.log(equipos[i] + " vs " + equipos[j]);\n        }\n    }\n}`
           },
           {
               id: "sec-9",
@@ -234,7 +242,8 @@
               theory: "Propiedades clave-valor y métodos.",
               exerciseTitle: "Desafío Escolar: Perfil de Estudiante",
               exerciseDesc: "Modela la Ficha Digital del Alumno utilizando Objetos Literales en JavaScript. Define un objeto 'alumno' que contenga propiedades para su nombre completo, curso y un arreglo de calificaciones. Agrega un método interno llamado 'obtenerEstado()' que utilice la palabra clave 'this' para iterar/promediar las notas y devolver una cadena con el resumen académico, curso y estado de regularidad.",
-              initialCode: `// 1. Declara objeto y método`
+              initialCode: `// 1. Declara objeto y método`,
+              aiSolution: `let alumno = {\n    nombre: "Juan Pérez",\n    curso: "5to A",\n    notas: [8, 9, 7],\n    obtenerEstado: function() {\n        let suma = this.notas.reduce((a, b) => a + b, 0);\n        let prom = suma / this.notas.length;\n        return this.nombre + " (" + this.curso + ") - Promedio: " + prom.toFixed(1) + " [Regular]";\n    }\n};\nconsole.log(alumno.obtenerEstado());`
           },
           {
               id: "sec-10",
@@ -243,7 +252,8 @@
               theory: ".map(), .filter(), .reduce()",
               exerciseTitle: "Desafío Escolar: Auditoría de Inventario",
               exerciseDesc: "Realiza una auditoría técnica del laboratorio de computación. Crea un arreglo con varios objetos que representen computadoras (con ID, memoria RAM en GB y estado). Utiliza el método de orden superior .filter() para obtener una lista exclusiva de las PC en estado 'mantenimiento', y combina los métodos .filter() y .reduce() para calcular la cantidad total de memoria RAM operativa en uso.",
-              initialCode: `// 1. Array de objetos\n// 2. filter y reduce`
+              initialCode: `// 1. Array de objetos\n// 2. filter y reduce`,
+              aiSolution: `let comps = [\n    { id: 1, ram: 8, estado: "operativa" },\n    { id: 2, ram: 16, estado: "mantenimiento" },\n    { id: 3, ram: 8, estado: "operativa" }\n];\nlet mantenimiento = comps.filter(c => c.estado === "mantenimiento");\nlet ramTotal = comps.filter(c => c.estado === "operativa").reduce((acc, c) => acc + c.ram, 0);\nconsole.log("En mantenimiento:", mantenimiento);\nconsole.log("RAM Operativa Total:", ramTotal + "GB");`
           },
           {
               id: "sec-11",
@@ -252,7 +262,8 @@
               theory: ".trim(), .toLowerCase(), .replace()",
               exerciseTitle: "Desafío Escolar: Generador de Mails",
               exerciseDesc: "Desarrolla el normalizador de correos institucionales de la escuela. Diseña la función 'generarCorreo' que reciba como parámetro una cadena de texto con el nombre y apellido del estudiante (la cual puede contener espacios vacíos indeseados o mayúsculas). Aplica la combinación de .trim(), .toLowerCase() y expresiones regulares con .replace() para formatear el texto en 'nombre.apellido' y concatenar el dominio '@ipem146.edu.ar'.",
-              initialCode: `// 1. Función mail institucional`
+              initialCode: `// 1. Función mail institucional`,
+              aiSolution: `function generarCorreo(nombreCompleto) {\n    let limpio = nombreCompleto.trim().toLowerCase().replace(/\\s+/g, '.');\n    return limpio + "@ipem146.edu.ar";\n}\nconsole.log(generarCorreo("  Lucas Emanuel González  "));`
           },
           {
               id: "sec-12",
@@ -261,7 +272,8 @@
               theory: "Global, función y bloque (let/const).",
               exerciseTitle: "Desafío Escolar: Sistema de Contraseña",
               exerciseDesc: "Crea una demostración práctica sobre la visibilidad de variables (Scope) en el sistema de seguridad directivo. Declara una variable de ámbito global para indicar el usuario activo y crea una función de validación que defina internamente variables de bloque (dentro de un bloque 'if/else') usando 'let'. Muestra en consola la diferencia entre acceder a variables globales y el comportamiento del scope restringido de bloque.",
-              initialCode: `// 1. Variable global y de bloque`
+              initialCode: `// 1. Variable global y de bloque`,
+              aiSolution: `let usuarioActivo = "Profesor";\nfunction validarPin(pin) {\n    if (pin === 1234) {\n        let accesoConcedido = true;\n        console.log(usuarioActivo + ": Acceso Autorizado =", accesoConcedido);\n    } else {\n        let accesoConcedido = false;\n        console.log("Acceso Denegado");\n    }\n}\nvalidarPin(1234);`
           },
           {
               id: "sec-13",
@@ -270,7 +282,8 @@
               theory: "Árbol de objetos HTML.",
               exerciseTitle: "Desafío Escolar: Dynamic DOM Banner",
               exerciseDesc: "Simula la manipulación de la interfaz web institucional mediante el DOM. Crea una función 'actualizarAnuncio' que altere las propiedades de un objeto simulación 'mockElement' (modificando las propiedades 'innerText', 'style.color' y 'style.backgroundColor'). La función debe recibir el mensaje del anuncio y un booleano de urgencia para colorear el cartel dinámicamente según la prioridad del aviso.",
-              initialCode: `// Objeto DOM simulado\nconst mockElement = { innerText: "", style: { color: "", backgroundColor: "" } };\n// 1. Función actualizar`
+              initialCode: `// Objeto DOM simulado\nconst mockElement = { innerText: "", style: { color: "", backgroundColor: "" } };\n// 1. Función actualizar`,
+              aiSolution: `const mockElement = { innerText: "", style: { color: "", backgroundColor: "" } };\nfunction actualizarAnuncio(mensaje, urgente) {\n    mockElement.innerText = mensaje;\n    if (urgente) {\n        mockElement.style.color = "white";\n        mockElement.style.backgroundColor = "red";\n    } else {\n        mockElement.style.color = "black";\n        mockElement.style.backgroundColor = "yellow";\n    }\n}\nactualizarAnuncio("Suspensión de clases por mantenimiento", true);\nconsole.log(mockElement);`
           },
           {
               id: "sec-14",
@@ -279,7 +292,8 @@
               theory: "Captura de interacciones y validaciones.",
               exerciseTitle: "Desafío Escolar: Validador de Inscripción",
               exerciseDesc: "Desarrolla el motor de validación para los formularios de inscripción a los talleres extracurriculares. Escribe la función 'validarInscripcion(nombre, edad)' que verifique si el nombre ingresado tiene al menos 3 caracteres de longitud y si la edad es igual o mayor a 12 años. La función debe almacenar los mensajes de falla en un array de errores o devolver una confirmación exitosa si la información es válida.",
-              initialCode: `// 1. Validar nombre y edad`
+              initialCode: `// 1. Validar nombre y edad`,
+              aiSolution: `function validarInscripcion(nombre, edad) {\n    let errores = [];\n    if (nombre.length < 3) errores.push("Nombre muy corto.");\n    if (edad < 12) errores.push("Debe ser mayor de 12 años.");\n    if (errores.length > 0) return "Errores: " + errores.join(" ");\n    return "¡Inscripción exitosa!";\n}\nconsole.log(validarInscripcion("Ana", 14));`
           },
           {
               id: "sec-15",
@@ -288,7 +302,8 @@
               theory: "Almacenamiento clave-valor local.",
               exerciseTitle: "Desafío Escolar: Guardado de Tema",
               exerciseDesc: "Simula el sistema de almacenamiento persistente en el navegador para recordar las preferencias del estudiante. Implementa un objeto que simule el comportamiento de 'LocalStorage' junto a las funciones 'guardarPref(clave, valor)' y 'obtenerPref(clave)'. Guarda la configuración del tema de la interfaz (por ejemplo, 'tema': 'oscuro') y recupera la información posteriormente demostrando la persistenia de datos.",
-              initialCode: `const mockLocalStorage = {};\n// 1. Funciones de storage`
+              initialCode: `const mockLocalStorage = {};\n// 1. Funciones de storage`,
+              aiSolution: `const mockLocalStorage = {};\nfunction guardarPref(clave, valor) {\n    mockLocalStorage[clave] = valor;\n}\nfunction obtenerPref(clave) {\n    return mockLocalStorage[clave];\n}\nguardarPref("tema", "oscuro");\nconsole.log("Tema recuperado:", obtenerPref("tema"));`
           },
           {
               id: "sec-16",
@@ -297,7 +312,8 @@
               theory: "JSON.parse y consumo de datos.",
               exerciseTitle: "Desafío Escolar: Petición de Clima",
               exerciseDesc: "Procesa la respuesta enviada por un servicio meteorológico remoto para planificar una salida de campo del IPEM 146. Convierte una cadena de texto en formato JSON simulada mediante el método 'JSON.parse()'. Examina el objeto de JavaScript resultante evaluando la probabilidad de lluvia y muestra un reporte determinando si la excursión educativa se confirma o se suspende.",
-              initialCode: `const jsonRespuestaServidor = '...';\n// 1. JSON.parse`
+              initialCode: `const jsonRespuestaServidor = '...';\n// 1. JSON.parse`,
+              aiSolution: `const jsonRespuestaServidor = '{"ciudad": "Córdoba", "temperatura": 24, "clima": "Soleado", "lluviaProbabilidad": 5}';\nlet datos = JSON.parse(jsonRespuestaServidor);\nif (datos.lluviaProbabilidad < 20) {\n    console.log("Clima " + datos.clima + ". ¡Excursión confirmada!");\n} else {\n    console.log("Se suspende por lluvia.");\n}`
           },
           {
               id: "sec-17",
@@ -306,7 +322,8 @@
               theory: "try, catch y throw new Error.",
               exerciseTitle: "Desafío Escolar: Validador de Notas",
               exerciseDesc: "Construye un sistema robusto de carga de calificaciones a prueba de fallos. Crea la función 'registrarNota(nota)' envuelta en un bloque 'try...catch...finally'. Si el usuario ingresa un número fuera del rango permitido de notas (1 al 10), genera un error intencional utilizando 'throw new Error()', captura la excepción para informar al usuario de manera segura y ejecuta la cláusula 'finally' indicando el fin del proceso.",
-              initialCode: `// 1. try...catch con throw`
+              initialCode: `// 1. try...catch con throw`,
+              aiSolution: `function registrarNota(nota) {\n    try {\n        if (nota < 1 || nota > 10) {\n            throw new Error("Nota fuera de rango válido (1-10).");\n        }\n        console.log("Nota registrada correctamente: " + nota);\n    } catch (err) {\n        console.log("[ERROR CAPTURADO]: " + err.message);\n    } finally {\n        console.log("Proceso de registro finalizado.");\n    }\n}\nregistrarNota(12);`
           },
           {
               id: "sec-18",
@@ -315,7 +332,8 @@
               theory: "Despachadores y gestión concurrente.",
               exerciseTitle: "Desafío Escolar: Teclado de Turnos",
               exerciseDesc: "Crea un administrador concurrente para la reserva de turnos en el laboratorio informático. Utiliza una clase orientada a objetos llamada 'SalaInformatica' que contenga un método 'reservarCompu(alumno, pc)'. Cada vez que un alumno reserve un equipo, captura la hora del sistema en tiempo real utilizando 'toLocaleTimeString()' y guarda la solicitud en un arreglo cronológico imprimiendo el detalle en la consola.",
-              initialCode: `// 1. Simulación de turnos con timestamp`
+              initialCode: `// 1. Simulación de turnos con timestamp`,
+              aiSolution: `class SalaInformatica {\n    constructor() { this.reservas = []; }\n    reservarCompu(alumno, pc) {\n        let timestamp = new Date().toLocaleTimeString();\n        this.reservas.push({ alumno, pc, timestamp });\n        console.log("PC " + pc + " reservada por " + alumno + " a las " + timestamp);\n    }\n}\nlet sala = new SalaInformatica();\nsala.reservarCompu("Lucas", 5);`
           },
           {
               id: "sec-19",
@@ -324,7 +342,8 @@
               theory: "Integración completa de conceptos.",
               exerciseTitle: "PROYECTO FINAL: Centro de Estudiantes",
               exerciseDesc: "Desarrolla el sistema de gestión integral para la administración del Centro de Estudiantes del IPEM 146. Construye un objeto 'centroEstudiantes' que contenga una colección de proyectos institucionales (cada uno con su nombre, presupuesto solicitado y estado de aprobación). Incorpora el método 'generarReporte()' que combine métodos modernos de arreglos (.filter() y .reduce()) para computar el presupuesto total requerido de las iniciativas aprobadas e imprimir la liquidación oficial.",
-              initialCode: `// PROYECTO FINAL\n// 1. centroEstudiantes`
+              initialCode: `// PROYECTO FINAL\n// 1. centroEstudiantes`,
+              aiSolution: `let centroEstudiantes = {\n    proyectos: [\n        { nombre: "Torneo Ajedrez", presupuesto: 15000, aprobado: true },\n        { nombre: "Pintar mural", presupuesto: 25000, aprobado: true },\n        { nombre: "Comprar red voley", presupuesto: 40000, aprobado: false }\n    ],\n    generarReporte: function() {\n        let aprobados = this.proyectos.filter(p => p.aprobado);\n        let totalPresupuesto = aprobados.reduce((acc, p) => acc + p.presupuesto, 0);\n        console.log("Proyectos Aprobados:", aprobados.length);\n        console.log("Presupuesto Total Requerido: $" + totalPresupuesto);\n    }\n};\ncentroEstudiantes.generarReporte();`
           }
       ];
       // Fuente editable externa: desafios.js. Si no está disponible, usa la copia integrada.
@@ -3079,7 +3098,7 @@
                                           <i class="fa-solid fa-star-half-stroke"></i> Nota previa (${3 - contadorPrevisualizaciones[sec.id]})
                                       </button>
                                       <button class="btn btn-ai" id="btn-ai-${sec.id}" onclick="resolverYCompararIA('${sec.id}')" ${isFinalized ? 'disabled' : ''}>
-                                          <i class="fa-solid fa-flag-checkered"></i> Entregar y evaluar
+                                          <i class="fa-solid fa-flag-checkered"></i> Entregar y comparar
                                       </button>
                                       <button class="btn btn-secondary" id="btn-reset-${sec.id}" onclick="restablecerCodigo('${sec.id}')" ${isFinalized ? 'disabled' : ''} title="Volver al código inicial">
                                           <i class="fa-solid fa-rotate-left"></i> Restablecer
@@ -3142,8 +3161,8 @@
                                       <pre id="ai-student-code-${sec.id}">${savedCode}</pre>
                                   </div>
                                   <div class="ai-column">
-                                      <h4><i class="fa-solid fa-shield-halved"></i> Criterios y evidencias</h4>
-                                      <pre id="ai-ideal-code-${sec.id}">La solución de referencia no se envía al navegador. La evaluación utiliza la consigna, criterios, ejecución y pruebas.</pre>
+                                      <h4><i class="fa-solid fa-robot"></i> Solución de referencia</h4>
+                                      <pre id="ai-ideal-code-${sec.id}">${sec.aiSolution}</pre>
                                   </div>
                               </div>
                               <div class="ai-eval-summary" id="ai-text-${sec.id}">${isFinalized ? 'Actividad previamente evaluada de forma estricta y cerrada.' : 'Generando comparativa...'}</div>
@@ -3154,8 +3173,9 @@
                                       Analista de Viabilidad y Excelencia â€” RESPONDE AHORA
                                   </div>
                                   <div style="margin-bottom:0.8rem;color:#cbd5e1;line-height:1.45;">
-                                      Las preguntas se basan en <strong>tu código</strong>, la <strong>consigna</strong>, las <strong>pruebas</strong>
-                                      y el razonamiento sobre tus decisiones. Algunas tienen más de una respuesta correcta.
+                                      ðŸ¤– Al pulsar <strong>IA</strong>, estas preguntas se habilitan para responder.
+                                      Están basadas en <strong>tu código</strong>, en la <strong>solución de la IA</strong>
+                                      y en la <strong>comparación entre ambos</strong>. Algunas tienen más de una respuesta correcta.
                                   </div>
                                   <div class="analyst-score" id="analyst-score-${sec.id}">
                                       <span class="analyst-badge" id="viability-${sec.id}">Viabilidad: pendiente</span>
@@ -3566,7 +3586,7 @@
           const feedbackBox = document.getElementById(`ai-feedback-${sectionId}`);
           const studentCodeDisplay = document.getElementById(`ai-student-code-${sectionId}`);
           const sec = seccionesData.find(s => s.id === sectionId);
-          document.getElementById(`ai-ideal-code-${sectionId}`).innerText = "La solución de referencia no se envía al navegador. Revisá criterios, pruebas y evidencias.";
+          document.getElementById(`ai-ideal-code-${sectionId}`).innerText = sec.aiSolution;
           const feedbackText = document.getElementById(`ai-text-${sectionId}`);
 
           if (feedbackBox) feedbackBox.classList.add('active');
@@ -4495,22 +4515,6 @@
           document.body.classList.remove('student-tabs-summary-open');
       }
 
-      function registrarProcesoEducativo(sectionId, campo, detalle = "") {
-          if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
-          const proceso = historialResultados[sectionId].proceso || {};
-          proceso[campo] = Number(proceso[campo] || 0) + 1;
-          proceso.ultimaActividad = new Date().toISOString();
-          historialResultados[sectionId].proceso = proceso;
-          void window.registrarEventoActividadFirebase?.(campo === "ejecuciones" ? "ejecucion" :
-              campo === "pruebas" ? "prueba" :
-              campo === "ayudas" ? "ayuda" :
-              campo === "correcciones" ? "correccion" : "colaboracion", {
-              sectionId,
-              intento: Number(intentosDesafio[sectionId] || 1),
-              detalle
-          });
-      }
-
       async function solicitarAyudaEditor(sectionId, modo, boton = null) {
           if (!claseHabilitada || actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
           const controles = [...document.querySelectorAll(`#${CSS.escape(sectionId)} [data-ai-editor-action]`)];
@@ -4518,7 +4522,6 @@
           boton?.classList.add("is-loading");
           actualizarEstadoEditorEstudiante(sectionId, "ai", "Analizando tu código");
           try {
-              registrarProcesoEducativo(sectionId, "ayudas", `Ayuda solicitada: ${modo}`);
               await pedirPistaIA(sectionId, modo);
               const chat = document.getElementById(`ai-chat-${sectionId}`);
               chat?.classList.add("is-attention");
@@ -4551,7 +4554,6 @@
           consoleBox.style.color = "#fbbf24";
           consoleBox.textContent = "// Ejecutando en un entorno aislado...";
 
-          registrarProcesoEducativo(sectionId, "ejecuciones", "Ejecución del código");
           const resultado = await ejecutarCodigoAislado(code);
 
           const logs = Array.isArray(resultado.logs) ? resultado.logs : [];
@@ -4684,8 +4686,10 @@
               "interpolacion": /`[\s\S]*\$\{[\s\S]*\}[\s\S]*`/
           };
           const conceptos = Array.isArray(sec?.conceptosDetectar) ? sec.conceptosDetectar : [];
-          const referencia = "";
-          const palabrasClaveReferencia = [];
+          const referencia = normalizarEvaluacion(sec?.aiSolution || "");
+          const palabrasClaveReferencia = [...new Set(
+              (referencia.match(/\b(?:const|let|var|function|if|else|for|while|return|switch|map|filter|reduce|push|pop|shift|replace|trim|tolowercase|touppercase|typeof|prompt|localstorage|innertext|style)\b/g) || [])
+          )];
           const nombresExigidos = [...new Set(
               String(sec?.exerciseDesc || "").match(/['"`]([A-Za-z_$][\w$]*)['"`]/g)?.map(x => x.slice(1, -1)) || []
           )];
@@ -4950,70 +4954,36 @@
           return evaluarCodigoPorEvidencias(code, sec, resultadoEjecucion).nota;
       }
 
-      function obtenerPonderacionesDesafio(sectionId) {
-          const sec = seccionesData.find(item => item.id === sectionId) || {};
-          const esIntegrador = /proyecto|integrador|final/i.test(`${sec.title || ""} ${sec.exerciseTitle || ""}`);
-          let codigo = Number(sec.ponderacionCodigo);
-          let preguntas = Number(sec.ponderacionPreguntas);
-          if (!(codigo > 0)) codigo = esIntegrador ? 0.60 : 0.60;
-          if (!(preguntas > 0)) preguntas = 0.30;
-          codigo = Math.min(0.8, Math.max(0.5, codigo));
-          preguntas = Math.min(0.4, Math.max(0.2, preguntas));
-          if (codigo + preguntas > 1) preguntas = 1 - codigo;
-          return {codigo, preguntas, proceso: Math.max(0, 1 - codigo - preguntas)};
-      }
-
-      function calcularNotaCombinada(notaCodigo, porcentajePreguntas, evaluacionCodigo = null, sectionId = "") {
-          const codigo = Math.max(0, Math.min(10, Number(notaCodigo) || 0));
-          const preguntas = Math.max(0, Math.min(100, Number(porcentajePreguntas) || 0)) / 10;
-          const sec = seccionesData.find(item => item.id === sectionId) || {};
+      function calcularNotaCombinada(notaCodigo, porcentajePreguntas, evaluacionCodigo = null, componentes = {}) {
+          const codigoBase = Math.max(0, Math.min(10, Number(notaCodigo) || 0));
           const metricas = evaluacionCodigo?.metricas || {};
           const evidencia = [
               Number(metricas.requisitos),
-              Number(metricas.comportamiento),
               Number(metricas.estructura),
               Number(metricas.calidad)
           ].filter(Number.isFinite);
-          const evidenciaPromedio = evidencia.length
+          const requisitos = evidencia.length
               ? evidencia.reduce((total, valor) => total + Math.max(0, Math.min(1, valor)), 0) / evidencia.length
-              : codigo / 10;
-          const notaCodigoAjustada = Number((codigo * 0.7 + evidenciaPromedio * 10 * 0.3).toFixed(1));
-
-          // Las ponderaciones se adaptan al tipo de desafío. El proceso no penaliza
-          // el uso de ayuda: solo aporta evidencia cuando existe registro verificable.
-          const ponderaciones = obtenerPonderacionesDesafio(sectionId);
-          const ponderacionCodigo = ponderaciones.codigo;
-          const ponderacionPreguntas = ponderaciones.preguntas;
-          const ponderacionProceso = ponderaciones.proceso;
-          const proceso = historialResultados[sectionId]?.proceso || {};
-          const eventosProceso = Number(proceso.ejecuciones || 0) + Number(proceso.pruebas || 0) +
-              Number(proceso.correcciones || 0) + Number(proceso.ayudas || 0) +
-              Number(proceso.colaboraciones || 0);
-          const evidenciaProceso = eventosProceso > 0
-              ? Math.min(1, (Number(proceso.ejecuciones || 0) * 0.35 +
-                  Number(proceso.pruebas || 0) * 0.25 +
-                  Number(proceso.correcciones || 0) * 0.20 +
-                  Number(proceso.ayudas || 0) * 0.10 +
-                  Number(proceso.colaboraciones || 0) * 0.10) / 3)
-              : null;
-
-          let nota = notaCodigoAjustada * ponderacionCodigo + preguntas * ponderacionPreguntas;
-          let formulaProceso = "evidencia insuficiente";
-          if (ponderacionProceso > 0 && Number.isFinite(evidenciaProceso)) {
-              nota += evidenciaProceso * 10 * ponderacionProceso;
-              formulaProceso = `${(evidenciaProceso * 10).toFixed(1)}/10`;
-          } else if (ponderacionProceso > 0) {
-              // No castigar la falta de telemetría de proceso: se marca como insuficiente.
-              nota += notaCodigoAjustada * ponderacionProceso;
-          }
-
+              : codigoBase / 10;
+          const funcionamiento = Number.isFinite(Number(metricas.comportamiento))
+              ? Math.max(0, Math.min(1, Number(metricas.comportamiento)))
+              : (evaluacionCodigo?.ejecucion?.ok ? 0.8 : 0);
+          const codigo = Number((codigoBase * 0.65 + requisitos * 10 * 0.35).toFixed(1));
+          const multiple = Math.max(0, Math.min(10, Number(componentes.multiple ?? porcentajePreguntas) || 0));
+          const socraticas = Math.max(0, Math.min(10, Number(componentes.socraticas ?? porcentajePreguntas) || 0));
+          const pruebas = Math.max(0, Math.min(10, Number(componentes.pruebas ?? (evaluacionCodigo?.ejecucion?.intentada ? (evaluacionCodigo.ejecucion.ok ? 10 : 2) : 0)) || 0));
+          let nota = (
+              codigo * 0.40 +
+              (funcionamiento * 10) * 0.25 +
+              multiple * 0.15 +
+              socraticas * 0.15 +
+              pruebas * 0.05
+          );
           const sintaxisValida = evaluacionCodigo?.sintaxis?.valida !== false;
           const ejecucionCorrecta = evaluacionCodigo?.ejecucion?.ok !== false;
-          const comportamiento = Number(evaluacionCodigo?.metricas?.comportamiento);
           if (!sintaxisValida) nota = Math.min(nota, 3);
           else if (!ejecucionCorrecta) nota = Math.min(nota, 4);
-          else if (Number.isFinite(comportamiento) && comportamiento < 0.35) nota = Math.min(nota, 6);
-
+          else if (funcionamiento < 0.35) nota = Math.min(nota, 6);
           return Number(Math.max(1, Math.min(10, nota)).toFixed(1));
       }
 
@@ -5071,7 +5041,7 @@
           },
           {
               respuestaAbierta: true,
-              q: () => `Compará dos decisiones concretas de tu propia solución con la consigna. Elegí un criterio â€”claridad, robustez, eficiencia o facilidad de mantenimientoâ€” y defendé cuál decisión es más adecuada y en qué situación podría convenir la otra.`
+              q: () => `Compará una diferencia concreta entre tu solución y la solución de referencia. Elegí un criterio â€”claridad, robustez, eficiencia o facilidad de mantenimientoâ€” y defendé cuál decisión es más adecuada y en qué situación podría convenir la otra.`
           },
           {
               respuestaAbierta: true,
@@ -5128,38 +5098,19 @@
               opciones: code => generarAfirmacionesEstudiante(code)
           },
           {
-              tipo: "CONSIGNA",
-              q: code => `¿Qué requisito concreto de la consigna podés demostrar con una parte observable de tu código?`,
-              opciones: code => {
-                  const features = detectarCaracteristicas(code).filter(x=>x.c).slice(0,3);
-                  return [
-                    ...features.map(x=>({t:`Tu código demuestra que ${x.t.toLowerCase()}`,c:true})),
-                    {t:"El código cumple automáticamente cualquier requisito que no esté escrito.",c:false},
-                    {t:"Una salida correcta demuestra por sí sola todos los conceptos solicitados.",c:false}
-                  ].slice(0,5);
-              }
+              tipo: "IA",
+              q: (code, ideal) => `Al comparar tu solución con la solución programada por la IA, ¿cuáles afirmaciones describen correctamente la solución ideal?`,
+              opciones: (code, ideal) => generarAfirmacionesIA(ideal)
           },
           {
-              tipo: "PRUEBA",
-              q: code => `¿Qué evidencia de prueba sería más útil para comprobar que tu solución funciona y qué debería observarse?`,
-              opciones: code => [
-                {t:"Ejecutar al menos un caso normal y uno límite, comparando el resultado observado con el esperado.",c:true},
-                {t:"Ejecutar una sola vez y asumir que siempre funcionará.",c:false},
-                {t:"Cambiar el código sin volver a ejecutar.",c:false},
-                {t:"Mirar solamente si no aparece texto rojo en pantalla.",c:false}
-              ]
+              tipo: "IA",
+              q: (code, ideal) => `Respecto de la solución de IA mostrada en la evaluación, ¿qué elementos forman parte de su lógica?`,
+              opciones: (code, ideal) => generarAfirmacionesIA(ideal)
           },
           {
-              tipo: "CONCEPTO",
-              q: code => `¿Qué concepto del desafío aparece realmente en tu código y cómo lo podrías justificar?`,
-              opciones: code => {
-                  const features = detectarCaracteristicas(code).filter(x=>x.c).slice(0,2);
-                  return [
-                    ...features.map(x=>({t:x.t,c:true})),
-                    {t:"El código utiliza conceptos que nunca aparecen en ninguna instrucción.",c:false},
-                    {t:"La explicación del código no necesita ninguna evidencia observable.",c:false}
-                  ].slice(0,5);
-              }
+              tipo: "COMPARACION",
+              q: (code, ideal) => `Comparando ambos códigos, ¿qué afirmaciones son verdaderas?`,
+              opciones: (code, ideal) => generarComparaciones(code, ideal)
           }
       ];
 
@@ -5666,6 +5617,43 @@
           return opciones.slice(0,5);
       }
 
+      function generarAfirmacionesIA(ideal) {
+          const reales = detectarCaracteristicas(ideal).filter(x=>x.c).slice(0,3);
+          const opciones = reales.map(x=>({t:x.t,c:true}));
+          opciones.push(
+              {t:"La solución ideal no contiene ninguna instrucción ejecutable.",c:false},
+              {t:"La solución ideal depende obligatoriamente de una base de datos externa.",c:false},
+              {t:"La solución ideal utiliza solamente HTML y nunca JavaScript.",c:false}
+          );
+          return opciones.slice(0,5);
+      }
+
+      function generarComparaciones(code, ideal) {
+          const fc = detectarCaracteristicas(code).filter(x=>x.c);
+          const fi = detectarCaracteristicas(ideal).filter(x=>x.c);
+          const opciones = [];
+
+          const common = fc.find(a => fi.some(b => b.t === a.t));
+          if (common)
+              opciones.push({t:`Ambos códigos ${common.t.toLowerCase()}`,c:true});
+
+          const onlyIA = fi.find(a => !fc.some(b => b.t === a.t));
+          if (onlyIA)
+              opciones.push({t:`La solución de IA ${onlyIA.t.toLowerCase()} y eso no se detecta en tu código entregado.`,c:true});
+
+          const onlyStudent = fc.find(a => !fi.some(b => b.t === a.t));
+          if (onlyStudent)
+              opciones.push({t:`Tu código ${onlyStudent.t.toLowerCase()} y esa característica no se detecta en la solución ideal.`,c:true});
+
+          opciones.push(
+              {t:"Ambos códigos son necesariamente idénticos carácter por carácter.",c:false},
+              {t:"La solución de IA siempre debe tener exactamente la misma cantidad de líneas que tu código.",c:false},
+              {t:"Si dos códigos resuelven el mismo problema, obligatoriamente deben utilizar las mismas variables.",c:false}
+          );
+
+          return opciones.slice(0,5);
+      }
+
       function mezclarArray(arr) {
           const copia = [...arr];
           for (let i = copia.length - 1; i > 0; i--) {
@@ -5709,7 +5697,7 @@
           const sec = seccionesData.find(s => s.id === sectionId);
           if (!box || !container || !sec) return;
 
-          const ideal = "";
+          const ideal = sec.aiSolution || "";
           const preguntas = construirPreguntasAnalista(sectionId, code, ideal);
 
           window.analistaActual = window.analistaActual || {};
@@ -5722,9 +5710,8 @@
                       <span class="analyst-badge">${p.categoria || "ANÁLISIS"}</span>
                       ${p.respuestaAbierta ? "ðŸŸ  Respuesta razonada sobre tu solución" :
                         p.tipo === "ESTUDIANTE" ? "ðŸ”µ Basada en tu código" :
-                        p.tipo === "CONSIGNA" ? "🟢 Basada en la consigna" :
-                        p.tipo === "PRUEBA" ? "🟣 Basada en pruebas" :
-                        "🔵 Basada en tu código"}
+                        p.tipo === "IA" ? "ðŸŸ£ Basada en la solución de IA" :
+                        "ðŸŸ¢ Comparación entre ambos códigos"}
                       <br>${p.respuestaAbierta
                           ? "Incluí una decisión concreta, una justificación, una evidencia y una consecuencia o mejora."
                           : 'Puede haber <strong>más de una respuesta correcta</strong>.'}
@@ -5743,7 +5730,7 @@
                        <button type="button"
                                class="btn btn-secondary analyst-explain-question"
                                onclick="explicarPreguntaAnalista('${sectionId}', ${i}, this)">
-                           <i class="fa-solid fa-lightbulb"></i> ?? EXPLICAME QUÉ PIDE
+                           <i class="fa-solid fa-lightbulb"></i> Explicame qué pide
                        </button>
                        <div class="analyst-question-help" id="analyst-help-${sectionId}-${i}" hidden aria-live="polite"></div>
                    ` : p.opciones.map((op,j) => `
@@ -5758,7 +5745,7 @@
                            class="btn btn-secondary analyst-explain-question"
                            style="${p.respuestaAbierta ? 'display:none' : ''}"
                            onclick="explicarPreguntaAnalista('${sectionId}', ${i}, this)">
-                       <i class="fa-solid fa-lightbulb"></i> ?? EXPLICAME QUÉ PIDE
+                       <i class="fa-solid fa-lightbulb"></i> Explicame las opciones
                    </button>
                    <div class="analyst-question-help" id="analyst-help-${sectionId}-${i}" hidden aria-live="polite"></div>
                    <div class="analyst-question-feedback"
@@ -5796,9 +5783,8 @@
               "Necesito entender una pregunta socrática de una actividad de JavaScript.",
               `Pregunta: ${textoPregunta}`,
               `Consigna del desafío: ${sec.exerciseDesc || ""}`,
-              "Respondé exactamente con estas secciones: PREGUNTA, INTERPRETACIÓN, CONCEPTO, PISTAS, GUÍA, RESPUESTA DEL ESTUDIANTE.",
-              "PREGUNTA: reformulá qué se pregunta. INTERPRETACIÓN: qué acción intelectual se espera. CONCEPTO: qué contenido se evalúa. PISTAS: pistas graduales sin solución. GUÍA: preguntas orientadoras para pensar. RESPUESTA DEL ESTUDIANTE: indicá qué debería justificar con sus propias palabras.",
-              "No respondas la pregunta por el estudiante, no marques la opción correcta, no escribas código completo y no inventes una respuesta."
+              "Explicá con lenguaje claro qué me pide la pregunta, qué parte de mi código debo observar y qué evidencia debería mencionar.",
+              "No respondas la pregunta por mí, no escribas código completo y no inventes una respuesta del estudiante."
           ].join("\n\n");
           const etiquetaOriginal = boton?.innerHTML || "";
           if (boton) {
@@ -5819,12 +5805,9 @@
                   );
               } else {
                   respuesta = [
-                      `PREGUNTA: ${textoPregunta}`,
-                      "INTERPRETACIÓN: identificá qué acción te pide realizar o justificar.",
-                      "CONCEPTO: buscá el tema de JavaScript relacionado con la pregunta.",
-                      "PISTAS: observá una parte concreta de tu código y comparala con la consigna.",
-                      "GUÍA: ¿qué evidencia podés señalar?, ¿qué pasaría si cambiaras esa decisión?, ¿cómo lo comprobarías?",
-                      "RESPUESTA DEL ESTUDIANTE: redactá tu propia explicación con evidencia; no hay una respuesta modelo en esta ayuda."
+                      `Qué te pide: ${textoPregunta}`,
+                      "Cómo encararla: buscá en tu código una decisión concreta, explicá por qué la tomaste y señalá una evidencia observable.",
+                      "Importante: escribí tu propio razonamiento; esta ayuda no incluye una respuesta lista para entregar."
                   ].join("<br>");
               }
               salida.innerHTML = escapeHtml(String(respuesta || "No se pudo generar una explicación.")).replace(/\n/g, "<br>");
@@ -5896,8 +5879,7 @@
                {
                    clave: "desarrollo",
                    nombre: "desarrollo suficiente",
-                   cumple: palabras.length >= 3 &&
-                       /\b(decid|eleg|us|aplic|cambi|prob|comprob|observ|demostr|justific)/.test(normalizada)
+                   cumple: palabras.length >= rubrica.palabrasMinimas
                },
                {
                    clave: "justificacion",
@@ -5920,7 +5902,7 @@
            const cumplidos = criteriosActivos.filter(x => x.cumple);
            const faltantes = criteriosActivos.filter(x => !x.cumple);
 
-           if (!respuesta || palabras.length < 3 || trivial) {
+           if (!respuesta || palabras.length < 6 || trivial) {
                return {
                    nivel: "incorrecta",
                    etiqueta: "Razonamiento insuficiente",
@@ -6045,7 +6027,13 @@
           if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
           const notaCodigo = Number(historialResultados[sectionId].notaCodigo ?? historialResultados[sectionId].notaIA ?? 0);
           const evaluacionCodigo = historialResultados[sectionId].evaluacionCodigo || null;
-          const notaFinal = calcularNotaCombinada(notaCodigo, porcentaje, evaluacionCodigo, sectionId);
+           const notaFinal = calcularNotaCombinada(notaCodigo, porcentaje, evaluacionCodigo, {
+               multiple: porcentaje,
+               socraticas: notaPreguntas,
+               pruebas: evaluacionCodigo?.ejecucion?.intentada
+                   ? (evaluacionCodigo.ejecucion.ok ? 10 : 2)
+                   : 0
+           });
           const metricasCodigoVista = evaluacionCodigo?.metricas || {};
           const evidenciasCodigoVista = [
               Number(metricasCodigoVista.requisitos),
@@ -6056,9 +6044,7 @@
           const evidenciaCodigoVista = evidenciasCodigoVista.length
               ? Number((evidenciasCodigoVista.reduce((total, valor) => total + valor, 0) / evidenciasCodigoVista.length * 10).toFixed(1))
               : notaCodigo;
-          const notaCodigoPonderadaVista = Number(
-              (notaCodigo * 0.75 + evidenciaCodigoVista * 0.25).toFixed(1)
-          );
+           const funcionamientoVista = Number(((evaluacionCodigo?.metricas?.comportamiento || 0) * 10).toFixed(1));
           const limiteFinal = evaluacionCodigo?.sintaxis?.valida === false
               ? "La calificación automática del módulo se limitó a 3 porque el código contiene un error de sintaxis."
               : evaluacionCodigo?.ejecucion?.ok === false
@@ -6067,16 +6053,12 @@
                       ? "La calificación automática del módulo se limitó a 6 porque la salida no demuestra el comportamiento esperado."
                       : "";
 
-           const ponderacionesVista = obtenerPonderacionesDesafio(sectionId);
            result.innerHTML =
                `<strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>` +
-               `Código y evidencias técnicas: <strong>${notaCodigoPonderadaVista}/10</strong> (${Math.round(ponderacionesVista.codigo * 100)}%).<br>` +
-               `Respuestas razonadas: <strong>${notaPreguntas}/10</strong> (${Math.round(ponderacionesVista.preguntas * 100)}%).<br>` +
-               (ponderacionesVista.proceso > 0 ? `Proceso y evidencias registradas: ${historialResultados[sectionId]?.proceso ? "disponible" : "evidencia insuficiente"} (${Math.round(ponderacionesVista.proceso * 100)}%).<br>` : "") +
-               `<strong>Desglose:</strong> ${conteoNiveles.completa} completas (${rubricaAplicada.puntos.completa.toFixed(2)}), ${conteoNiveles.incompleta} correctas incompletas (${rubricaAplicada.puntos.incompleta.toFixed(2)}), ${conteoNiveles.parcial} parciales (${rubricaAplicada.puntos.parcial.toFixed(2)}) y ${conteoNiveles.incorrecta} incorrectas (${rubricaAplicada.puntos.incorrecta.toFixed(2)}).<br>` +
+               `Funcionamiento y pruebas: <strong>${funcionamientoVista}/10</strong> (25%).<br>` +\r\n               `Opción múltiple: <strong>${notaPreguntas}/10</strong> (15%).<br>` +\r\n               `Socráticas: <strong>${notaPreguntas}/10</strong> (15%).<br>` +\r\n               `Proceso y pruebas registradas: <strong>${evaluacionCodigo?.ejecucion?.intentada ? (evaluacionCodigo.ejecucion.ok ? "10.0" : "2.0") : "0.0"}/10</strong> (5%).<br>` +\r\n               `<strong>Desglose:</strong> ${conteoNiveles.completa} completas (${rubricaAplicada.puntos.completa.toFixed(2)}), ${conteoNiveles.incompleta} correctas incompletas (${rubricaAplicada.puntos.incompleta.toFixed(2)}), ${conteoNiveles.parcial} parciales (${rubricaAplicada.puntos.parcial.toFixed(2)}) y ${conteoNiveles.incorrecta} incorrectas (${rubricaAplicada.puntos.incorrecta.toFixed(2)}).<br>` +
                `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
               `Excelencia: <strong>${excelencia}</strong>.<br>` +
-              `Las preguntas combinan evidencias de tu código, la consigna, pruebas y razonamiento socrático.` +
+              `Las preguntas mezclaron evidencias de tu código, de la solución IA, de la comparación entre ambos y situaciones de razonamiento socrático.` +
               (limiteFinal ? `<br><strong>${escaparTextoAnalista(limiteFinal)}</strong>` : "");
 
            resaltarRespuestasAnalista(sectionId);
@@ -6097,47 +6079,12 @@
               ? Number((evidenciasCodigo.reduce((total, valor) => total + valor, 0) / evidenciasCodigo.length * 10).toFixed(1))
               : notaCodigo;
           historialResultados[sectionId].desgloseNota = {
-              formula: "codigo_evidencias_65_respuestas_35",
+              formula: "codigo_40_funcionamiento_25_multiple_15_socraticas_15_pruebas_5",
               notaCodigoBase: notaCodigo,
               evidenciaCodigo,
               notaPreguntas,
               notaFinal
           };
-          void window.registrarEventoActividadFirebase?.("evaluacion", {
-              sectionId,
-              intento: Number(intentosDesafio[sectionId] || 1),
-              detalle: "Evaluación automática basada en evidencias y razonamiento",
-              evidencia: {
-                notaCodigo: notaCodigo,
-                notaPreguntas: notaPreguntas,
-                notaFinal: notaFinal,
-                sintaxisValida: evaluacionCodigo?.sintaxis?.valida !== false,
-                ejecucionCorrecta: evaluacionCodigo?.ejecucion?.ok === true,
-                pruebasRegistradas: Number(historialResultados[sectionId]?.proceso?.pruebas || 0)
-              }
-          });
-          historialResultados[sectionId].entrega = {
-              congelada: true,
-              congeladaEn: new Date().toISOString(),
-              intento: Number(intentosDesafio[sectionId] || 1)
-          };
-          void window.guardarEntregaCongeladaFirebase?.(sectionId, {
-              intento: Number(intentosDesafio[sectionId] || 1),
-              codigo: historialResultados[sectionId].codigo || "",
-              salida: historialResultados[sectionId].salida || "",
-              error: historialResultados[sectionId].error || "",
-              evaluacion: historialResultados[sectionId].evaluacionCodigo || {},
-              respuestas: {
-                  preguntas: resultadosPreguntas
-              }
-          });
-          void window.registrarEventoActividadFirebase?.("entrega", {
-              sectionId,
-              intento: Number(intentosDesafio[sectionId] || 1),
-              detalle: "Entrega congelada para evaluación",
-              evidencia: {notaFinal}
-          });
-
           historialResultados[sectionId].analista = {
               correctas,
               total: preguntas.length,
@@ -6177,7 +6124,7 @@
                   "beforeend",
                   `<div style="margin-top:.8rem;padding:.7rem;border:1px solid rgba(16,185,129,.4);border-radius:6px;color:#a7f3d0">
                       <strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>
-                      La nota integra código, evidencias técnicas, razonamiento y proceso registrado según la ponderación del desafío.
+                      Código ${notaCodigo}/10 Ã— 70% + preguntas ${notaPreguntas}/10 Ã— 30%.
                   </div>`
               );
           }
@@ -6188,7 +6135,7 @@
           if (!claseHabilitada) return;
           if (actividadesFinalizadas[sectionId] || modulosPausados[sectionId]) return;
 
-          if (!confirm("ATENCIÓN: esta acción congelará tu versión para evaluación, ejecutará las pruebas disponibles y realizará una evaluación automática orientativa. ¿Deseas continuar?")) {
+          if (!confirm("ATENCIÃ“N: esta acción mostrará una solución de referencia, realizará una evaluación automática orientativa y bloqueará la actividad. ¿Deseas continuar?")) {
               return;
           }
 
@@ -6202,16 +6149,16 @@
 
           if (!editor || !sec || !feedbackBox || !feedbackText) return;
 
-          if (idealDisplay) {
-              idealDisplay.innerText = "La evaluación utiliza criterios, pruebas y evidencias; no se entrega una solución de referencia al estudiante.";
-          }
+          if (idealDisplay) idealDisplay.innerText = "// La solución de referencia se habilita después de entregar el análisis.";
           feedbackBox.classList.add('active');
           if (studentCodeDisplay) studentCodeDisplay.innerText = code;
           feedbackText.innerHTML = "<i>Ejecutando el código del estudiante y la referencia en entornos aislados...</i>";
 
           await new Promise(resolve => setTimeout(resolve, 300));
-          const resultadoAlumno = await ejecutarCodigoAislado(code);
-          const resultadoReferencia = { ok: false, logs: [] };
+          const [resultadoAlumno, resultadoReferencia] = await Promise.all([
+              ejecutarCodigoAislado(code),
+              ejecutarCodigoAislado(sec.aiSolution || "")
+          ]);
           const salidaAlumno = [
               ...(Array.isArray(resultadoAlumno.logs) ? resultadoAlumno.logs : []),
               ...(!resultadoAlumno.ok && resultadoAlumno.error ? [`[EXCEPCIÃ“N]: ${resultadoAlumno.error}`] : [])
@@ -6253,7 +6200,7 @@
               const objetivos = Array.isArray(sec.objetivosPedagogicos) ? sec.objetivosPedagogicos : [];
               const conceptos = Array.isArray(sec.conceptosDetectar) ? sec.conceptosDetectar : [];
               const errores = Array.isArray(sec.erroresFrecuentes) ? sec.erroresFrecuentes : [];
-              feedbackText.innerHTML = `<strong>Nota del código: ${puntaje}/10 según la ponderación del desafío</strong><br><small>La calificación automática se calculará después de entregar todas las preguntas, que tienen una ponderación definida por el desafío. La nota definitiva requiere confirmación docente.</small><br>${analisis}` +
+              feedbackText.innerHTML = `<strong>Nota del código: ${puntaje}/10 (70% de la calificación automática del módulo)</strong><br><small>La calificación automática se calculará después de entregar todas las preguntas, que representan el 30%. La nota definitiva requiere confirmación docente.</small><br>${analisis}` +
                 (objetivos.length ? `<hr><strong>ðŸŽ¯ Objetivos:</strong><ul>${objetivos.map(x=>`<li>${escaparTextoAnalista(x)}</li>`).join("")}</ul>`:"") +
                 (conceptos.length ? `<strong>ðŸ§  Conceptos que la IA revisa:</strong> ${conceptos.map(x=>escaparTextoAnalista(x)).join(", ")}<br>`:"") +
                 (errores.length ? `<strong>âš ï¸ Errores frecuentes a revisar:</strong> ${errores.slice(0,3).map(x=>escaparTextoAnalista(x)).join(" · ")}<br>`:"") +
@@ -6261,7 +6208,7 @@
 
               construirAnalista(sectionId, code);
               if (idealDisplay) {
-                  idealDisplay.innerText = "La solución de referencia permanece fuera del cliente. Usá la consigna, las pruebas y las evidencias para justificar tu resolución.";
+                  idealDisplay.innerText = `${sec.aiSolution}\n\n// Usá esta referencia para comparar decisiones, no para copiarla.`;
               }
 
               const analystBox = document.getElementById(`analyst-${sectionId}`);
@@ -6286,7 +6233,7 @@
 
               if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
               historialResultados[sectionId].codigo = code;
-              delete historialResultados[sectionId].solucionIA;
+              historialResultados[sectionId].solucionIA = sec.aiSolution;
               historialResultados[sectionId].notaCodigo = puntaje;
               historialResultados[sectionId].evaluacionCodigo = evaluacion;
               historialResultados[sectionId].salida = salidaAlumno;
@@ -11073,7 +11020,7 @@
                   </section>
                   <section>
                       <h5><i class="fa-solid fa-bullseye"></i> Resultado de referencia</h5>
-                      <pre class="teacher-code teacher-code-expected">${escapeHtml(ejecucion.salidaEsperada || '// No hay solución de referencia en el cliente')}</pre>
+                      <pre class="teacher-code teacher-code-expected">${escapeHtml(ejecucion.salidaEsperada || sec?.aiSolution || '// No definido')}</pre>
                   </section>
               </div>
               ${mejoras.length ? `<div class="teacher-evaluation-list is-improvement"><h5><i class="fa-solid fa-arrow-up-right-dots"></i> Mejoras prioritarias</h5><ul>${mejoras.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul></div>` : ''}
@@ -11353,8 +11300,8 @@
                   <div class="teacher-activity-content">
                       <div class="teacher-detail-summary">
                           <div class="teacher-detail-stat"><small>Estado</small><strong>${estado}</strong></div>
-                          <div class="teacher-detail-stat"><small>Nota del código / evidencias</small><strong>${r.notaCodigo !== undefined ? `${r.notaCodigo}/10` : 'Pendiente'}</strong></div>
-                          <div class="teacher-detail-stat"><small>Nota de preguntas razonadas</small><strong>${r.notaPreguntas !== undefined ? `${r.notaPreguntas}/10` : 'Pendiente'}</strong></div>
+                          <div class="teacher-detail-stat"><small>Nota del código (70%)</small><strong>${r.notaCodigo !== undefined ? `${r.notaCodigo}/10` : 'Pendiente'}</strong></div>
+                          <div class="teacher-detail-stat"><small>Nota de preguntas (30%)</small><strong>${r.notaPreguntas !== undefined ? `${r.notaPreguntas}/10` : 'Pendiente'}</strong></div>
                           <div class="teacher-detail-stat"><small>Calificación automática</small><strong>${notaAutomatica !== undefined ? `${notaAutomatica}/10` : 'Pendiente'}</strong></div>
                           <div class="teacher-detail-stat ${tieneNotaDocente ? 'teacher-grade-adjusted' : ''}"><small>Nota vigente</small><strong>${notaFinal !== null ? `${notaFinal}/10` : 'Pendiente'}</strong></div>
                           <div class="teacher-detail-stat"><small>Tiempo restante</small><strong>${formatearTiempoProfesor(tiempos[sec.id] ?? 2400)}</strong></div>
@@ -13404,7 +13351,7 @@
             <div style="grid-column:1/-1"><label>Teoría</label><textarea id="edf_theory">${escapeHtml(d.theory||'')}</textarea></div>
             <div style="grid-column:1/-1"><label>Consigna</label><textarea id="edf_exerciseDesc" style="min-height:120px">${escapeHtml(d.exerciseDesc||'')}</textarea></div>
             <div style="grid-column:1/-1"><label>Código inicial</label><textarea id="edf_initialCode" style="min-height:140px">${escapeHtml(d.initialCode||'')}</textarea></div>
-
+            <div style="grid-column:1/-1"><label>Solución de referencia IA</label><textarea id="edf_aiSolution" style="min-height:160px">${escapeHtml(d.aiSolution||'')}</textarea></div>
             <div style="grid-column:1/-1"><label>ðŸŽ¯ Objetivos pedagógicos</label><textarea id="edf_objetivos">${escapeHtml(textoArray(d.objetivosPedagogicos))}</textarea></div>
             <div style="grid-column:1/-1"><label>ðŸ§  Conceptos que debe detectar la IA</label><textarea id="edf_conceptos">${escapeHtml(textoArray(d.conceptosDetectar))}</textarea></div>
             <div style="grid-column:1/-1"><label>â“ Preguntas socráticas</label><textarea id="edf_preguntas" style="min-height:120px">${escapeHtml(textoArray(d.preguntasSocraticas))}</textarea></div>
@@ -13447,7 +13394,7 @@
       }
       function guardarFormularioDesafioFirebase(){
         const d=desafiosEditorFirebase[desafioEditorActual];if(!d)return;
-        const map={icon:'edf_icon',title:'edf_title',exerciseTitle:'edf_exerciseTitle',theory:'edf_theory',exerciseDesc:'edf_exerciseDesc',initialCode:'edf_initialCode'};
+        const map={icon:'edf_icon',title:'edf_title',exerciseTitle:'edf_exerciseTitle',theory:'edf_theory',exerciseDesc:'edf_exerciseDesc',initialCode:'edf_initialCode',aiSolution:'edf_aiSolution'};
         Object.entries(map).forEach(([k,id])=>d[k]=document.getElementById(id)?.value||'');
         d.objetivosPedagogicos=lineas('edf_objetivos');d.conceptosDetectar=lineas('edf_conceptos');d.preguntasSocraticas=lineas('edf_preguntas');d.erroresFrecuentes=lineas('edf_errores');d.noRevelarIA=lineas('edf_norevelar');d.criteriosEvaluacion=criteriosFirebase();
         return d;
@@ -13886,7 +13833,7 @@
                   doc.setFontSize(8.5);
                   y = agregarTextoPDFProfesor(doc, [
                       `Estado: ${finalizadas[sec.id] ? 'Finalizado' : 'Pendiente'}`,
-                      `Nota del código / evidencias: ${r.notaCodigo ?? 'Pendiente'} · Nota de preguntas razonadas: ${r.notaPreguntas ?? 'Pendiente'} · Nota automática: ${notaAutomatica ?? 'Pendiente'} · Nota vigente: ${notaVigente ?? 'Pendiente'}${ajuste.nota !== undefined && ajuste.nota !== null ? ' (corregida por docente)' : ''}`,
+                      `Nota del código (70%): ${r.notaCodigo ?? 'Pendiente'} · Nota de preguntas (30%): ${r.notaPreguntas ?? 'Pendiente'} · Nota automática: ${notaAutomatica ?? 'Pendiente'} · Nota vigente: ${notaVigente ?? 'Pendiente'}${ajuste.nota !== undefined && ajuste.nota !== null ? ' (corregida por docente)' : ''}`,
                       `Intentos: ${intentosDesafio} · Ãšltima reapertura: ${reaperturaDesafio ? formatearFechaPDF(reaperturaDesafio.item.fecha || reaperturaDesafio.item.en) : 'Sin reaperturas registradas'} · Motivo: ${reaperturaDesafio?.item?.motivo || 'Sin motivo registrado'}`,
                       `Tiempo restante: ${formatearTiempoProfesor(tiempos[sec.id] ?? 2400)} · Consultas de nota previa: ${Number(previews[sec.id] || 0)}/3`,
                       `Ayudas pedagógicas: palabras consultadas ${consultasPalabras} · pasos abiertos ${Number(ayudaModulo.pasosVistos || 0)} · material de apoyo ${Number(ayudaModulo.materialApoyoVistas || 0)} · verificación ${Number(ayudaModulo.verificacion?.intentos || 0)} intento(s)`

@@ -863,70 +863,6 @@ service cloud.firestore {
       }
     }
 
-    match /estudiantes/{uid}/entregas/{sectionId}/versiones/{versionId} {
-      allow get, list: if ownsDocument(uid) || isTeacher();
-      allow create: if ownsDocument(uid) &&
-        request.resource.data.keys().hasAll([
-          'id','sectionId','intento','codigo','salida','error','evaluacion',
-          'respuestas','autorUid','congelada','creadaEn'
-        ]) &&
-        request.resource.data.keys().hasOnly([
-          'id','sectionId','intento','codigo','salida','error','evaluacion',
-          'respuestas','autorUid','congelada','creadaEn'
-        ]) &&
-        request.resource.data.id == versionId &&
-        request.resource.data.sectionId == sectionId &&
-        request.resource.data.intento is number &&
-        request.resource.data.intento >= 1 &&
-        request.resource.data.intento <= 1000 &&
-        request.resource.data.codigo is string &&
-        request.resource.data.codigo.size() <= 30000 &&
-        request.resource.data.salida is string &&
-        request.resource.data.salida.size() <= 12000 &&
-        request.resource.data.error is string &&
-        request.resource.data.error.size() <= 2000 &&
-        request.resource.data.evaluacion is map &&
-        request.resource.data.respuestas is map &&
-        request.resource.data.autorUid == request.auth.uid &&
-        request.resource.data.congelada == true &&
-        request.resource.data.creadaEn == request.time;
-      allow update, delete: if false;
-    }
-
-    match /estudiantes/{uid}/actividadEventos/{eventoId} {
-      allow get, list: if ownsDocument(uid) || isTeacher();
-      allow create: if ownsDocument(uid) &&
-        request.resource.data.keys().hasAll([
-          'id','tipo','uid','sectionId','intento','autorUid','autorRol',
-          'detalle','evidencia','fechaCliente','registradoEn'
-        ]) &&
-        request.resource.data.keys().hasOnly([
-          'id','tipo','uid','sectionId','intento','autorUid','autorRol',
-          'detalle','evidencia','fechaCliente','registradoEn'
-        ]) &&
-        request.resource.data.id == eventoId &&
-        request.resource.data.uid == uid &&
-        request.resource.data.autorUid == request.auth.uid &&
-        request.resource.data.tipo in [
-          'inicio','colaboracion','cambio','ejecucion','prueba','ayuda',
-          'entrega','correccion','evaluacion','explicacion_consigna'
-        ] &&
-        request.resource.data.sectionId is string &&
-        request.resource.data.sectionId.size() <= 120 &&
-        request.resource.data.intento is number &&
-        request.resource.data.intento >= 0 &&
-        request.resource.data.intento <= 1000 &&
-        request.resource.data.autorRol is string &&
-        request.resource.data.autorRol in ['estudiante','docente'] &&
-        request.resource.data.detalle is string &&
-        request.resource.data.detalle.size() <= 1000 &&
-        request.resource.data.evidencia is map &&
-        request.resource.data.fechaCliente is number &&
-        request.resource.data.fechaCliente > 0 &&
-        request.resource.data.registradoEn == request.time;
-      allow update, delete: if false;
-    }
-
     match /estudiantes/{uid}/historialAccesos/{eventoId} {
       allow get, list: if ownsDocument(uid) || isTeacher();
       allow create: if ownsDocument(uid) &&
@@ -1581,10 +1517,7 @@ service cloud.firestore {
              'respondidoPor',
              'motivoRechazo',
              'solicitanteRol',
-             'respuestaEstudianteEn',
-             'ultimoModificadorUid',
-             'ultimoModificador',
-             'ultimoCambioClienteId'
+             'respuestaEstudianteEn'
           ]) &&
           request.resource.data.uid == uid &&
           request.resource.data.sectionId == sectionId &&
@@ -1611,9 +1544,6 @@ service cloud.firestore {
            request.resource.data.get('solicitadoPor', '') is string &&
            request.resource.data.get('solicitadoPor', '').size() <= 254 &&
            request.resource.data.get('solicitanteRol', '') in ['', 'estudiante', 'docente'] &&
-           request.resource.data.get('ultimoModificadorUid', '') is string &&
-           request.resource.data.get('ultimoModificador', '') is string &&
-           request.resource.data.get('ultimoCambioClienteId', '') is string &&
            (
              request.resource.data.get('solicitudEn', request.time) == null ||
              request.resource.data.get('solicitudEn', request.time) is timestamp
@@ -2000,20 +1930,21 @@ service cloud.firestore {
             /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
           ) &&
           (
-            get(
-              /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-            ).data.get('estadoConsentimiento', 'sin_solicitud') == 'aceptado' &&
-            get(
-              /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-            ).data.get('modoCooperacionActiva', false) == true &&
-            get(
-              /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
-            ).data.get('edicionCooperativaPausada', false) == false &&
-            (
-              request.resource.data.rol == 'docente'
-                ? isTeacher()
-                : isActiveStudent(uid)
-            )
+            request.resource.data.rol == 'docente'
+              ? isTeacher()
+              : (
+                  get(
+                    /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
+                  ).data.get('modoCooperacionActiva', false) == false ||
+                  (
+                    get(
+                      /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
+                    ).data.get('estadoConsentimiento', 'sin_solicitud') == 'aceptado' &&
+                    get(
+                      /databases/$(database)/documents/estudiantes/$(uid)/colaboracionCodigo/$(sectionId)
+                    ).data.get('edicionCooperativaPausada', false) == false
+                  )
+                )
           );
         allow update: if false;
         allow delete: if false;
