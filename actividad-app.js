@@ -2191,7 +2191,7 @@
               const editor = document.getElementById(`editor-${sec.id}`);
               codigos[sec.id] = editor ? editor.value : (getLocalStorage(`draft_editor-${sec.id}`) || sec.initialCode);
           });
-          return {
+          const paquete = {
               estudiante: { nombre, curso, division, turno },
               salidasPestana: totalSalidasPestana,
               eventosSalidasPestana: JSON.parse(JSON.stringify(eventosSalidasPestana || [])),
@@ -2213,6 +2213,16 @@
               versionLocalEn,
               versionApp: '8.0-desafios-externos-editables-ia'
           };
+          try {
+              if (typeof window.obtenerEntregasAcademicasEspeciales === 'function') {
+                  const especiales = window.obtenerEntregasAcademicasEspeciales();
+                  if (especiales && typeof especiales === 'object') {
+                      paquete.proyectoFinal = especiales.proyectoFinal || null;
+                      paquete.coloquioExamen = especiales.coloquioExamen || null;
+                  }
+              }
+          } catch (_) {}
+          return paquete;
       }
 
       function programarGuardadoFirebase() {
@@ -2487,6 +2497,10 @@
               typeof datos.estadosRecomendacionesInforme === 'object'
               ? datos.estadosRecomendacionesInforme
               : {};
+          window.restaurarEntregasAcademicasEspeciales?.({
+              proyectoFinal: datos.proyectoFinal || null,
+              coloquioExamen: datos.coloquioExamen || null
+          });
           const tiemposLocales = { ...tiemposRestantes };
           tiemposRestantes = { ...(datos.tiemposRestantes || {}), ...tiemposLocales };
           const pausaGlobalLocal = getLocalStorage('pausa_global');
@@ -9416,8 +9430,18 @@
               return notas;
           }, []);
       }
+      function obtenerNotaEntregaEspecialEstudiante(d, campo) {
+          const entrega = d?.[campo] || {};
+          if (entrega.submitted !== true && !entrega.code && !entrega.challenge) return null;
+          const confirmada = Number(entrega.confirmedGrade);
+          const automatica = Number(entrega.grade);
+          if (Number.isFinite(confirmada)) return Math.max(0, Math.min(10, confirmada));
+          return Number.isFinite(automatica) ? Math.max(0, Math.min(10, automatica)) : null;
+      }
       function calcularNotaEstudiante(d) {
           const notas = obtenerNotasDesafiosFinalizadosEstudiante(d).map(item => item.nota);
+          const notaProyectoFinal = obtenerNotaEntregaEspecialEstudiante(d, 'proyectoFinal');
+          if (notaProyectoFinal !== null) notas.push(notaProyectoFinal);
           if (!notas.length) return 'â€”';
           return (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1);
       }
@@ -9450,6 +9474,16 @@
               };
           });
           const evaluadas = actividades.filter(x => x.nota !== null);
+          const notaProyectoFinal = obtenerNotaEntregaEspecialEstudiante(d, 'proyectoFinal');
+          if (notaProyectoFinal !== null) {
+              actividades.push({
+                  id: 'proyecto-final',
+                  titulo: 'Proyecto Final',
+                  finalizada: true,
+                  nota: notaProyectoFinal
+              });
+              evaluadas.push(actividades[actividades.length - 1]);
+          }
           const suma = evaluadas.reduce((total,x)=>total+x.nota,0);
           return {
               actividades,
@@ -10068,6 +10102,48 @@
           renderPanelProfesor();
           abrirDetalleEstudianteProfesor(indice);
       }
+
+      async function guardarEntregaAcademicaEspecialProfesor(indice, tipo) {
+          const d = estudiantesProfesor[indice];
+          const campo = tipo === 'proyectoFinal' ? 'proyectoFinal' : 'coloquioExamen';
+          const etiqueta = tipo === 'proyectoFinal' ? 'Proyecto Final' : 'COLOQUIO-EXAMEN';
+          const input = document.getElementById(`notaEspecial-${tipo}`);
+          const motivo = document.getElementById(`motivoEspecial-${tipo}`)?.value?.trim() || '';
+          const confirmar = document.getElementById(`confirmarEspecial-${tipo}`)?.checked === true;
+          const estado = document.getElementById(`estadoEspecial-${tipo}`);
+          const nota = Number(input?.value);
+          if (!d?.uid) return alert('No se encontró el identificador Firebase del estudiante.');
+          if (!Number.isFinite(nota) || nota < 0 || nota > 10) {
+              alert(`La nota de ${etiqueta} debe ser un número entre 0 y 10.`);
+              input?.focus();
+              return;
+          }
+          if (!(await window.autorizarDocenteFirebase?.())) {
+              alert('Solo una cuenta docente autorizada puede confirmar estas notas.');
+              return;
+          }
+          if (estado) { estado.className = 'teacher-challenge-grade-status saving'; estado.textContent = 'Guardando...'; }
+          const ok = await window.guardarEntregaAcademicaEspecialFirebase?.(d.uid, tipo, {
+              nota: Number(nota.toFixed(1)), motivo, confirmada: confirmar
+          });
+          if (!ok) {
+              if (estado) { estado.className = 'teacher-challenge-grade-status error'; estado.textContent = 'No se pudo guardar'; }
+              alert('No se pudo guardar la nota especial. Verificá permisos y conexión.');
+              return;
+          }
+          d[campo] = {
+              ...(d[campo] || {}),
+              grade: Number(nota.toFixed(1)),
+              confirmedGrade: confirmar ? Number(nota.toFixed(1)) : null,
+              gradeConfirmed: confirmar,
+              gradeReason: motivo,
+              gradeConfirmedBy: confirmar ? (window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || '') : ''
+          };
+          renderPanelProfesor();
+          abrirDetalleEstudianteProfesor(indice);
+      }
+
+      window.guardarEntregaAcademicaEspecialProfesor = guardarEntregaAcademicaEspecialProfesor;
       async function cargarHistorialNotasDesafioProfesor(indice, sectionId) {
           const d = estudiantesProfesor[indice];
           const contenedor = document.getElementById(`historialNotaDesafio-${sectionId}`);
@@ -11254,6 +11330,39 @@
           const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
           const notaFinalEditable = notaDefinitiva !== 'â€”' ? notaDefinitiva : notaCalculada;
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
+          const proyectoFinal = d.proyectoFinal || {};
+          const coloquioExamen = d.coloquioExamen || {};
+          const renderEntregaEspecial = (tipo, titulo, icono, entrega) => {
+              const enviada = entrega.submitted === true || Boolean(entrega.code || entrega.challenge);
+              const nota = Number(entrega.confirmedGrade ?? entrega.grade);
+              const notaValida = Number.isFinite(nota);
+              const confirmada = entrega.gradeConfirmed === true && Number.isFinite(Number(entrega.confirmedGrade));
+              const contenido = tipo === 'proyectoFinal'
+                  ? (entrega.code || '// Sin código entregado.')
+                  : (entrega.challenge || '// Sin desafío entregado.');
+              return `<section class="teacher-special-assessment">
+                  <div class="teacher-special-assessment-header">
+                      <div><h3><i class="fa-solid ${icono}"></i> ${titulo}</h3><p>${enviada ? `Entrega registrada: ${escapeHtml(String(entrega.submittedAt || 'sin fecha'))}` : 'Sin entrega registrada'}</p></div>
+                      <span class="teacher-activity-badge ${confirmada ? 'is-approved' : (enviada ? 'is-pending' : 'is-muted')}">${confirmada ? 'Nota confirmada' : (enviada ? 'Pendiente de confirmación' : 'Pendiente')}</span>
+                  </div>
+                  <div class="teacher-detail-summary">
+                      <div class="teacher-detail-stat"><small>Nota automática</small><strong>${notaValida ? `${Number(entrega.grade).toFixed(1)}/10` : 'Pendiente'}</strong></div>
+                      <div class="teacher-detail-stat"><small>Nota confirmada</small><strong>${confirmada ? `${Number(entrega.confirmedGrade).toFixed(1)}/10` : 'Pendiente'}</strong></div>
+                      <div class="teacher-detail-stat"><small>Docente</small><strong>${escapeHtml(entrega.gradeConfirmedBy || 'Sin confirmar')}</strong></div>
+                  </div>
+                  <details class="teacher-special-submission"><summary>Ver entrega</summary><pre class="teacher-code">${escapeHtml(contenido)}</pre>${tipo === 'coloquioExamen' && Array.isArray(entrega.answers) ? `<div class="teacher-special-answers">${entrega.answers.map((respuesta, i) => `<p><strong>${i + 1}.</strong> ${escapeHtml(respuesta || 'Sin respuesta')}</p>`).join('')}</div>` : ''}</details>
+                  <div class="teacher-challenge-grade-fields">
+                      <label>Nota docente<input id="notaEspecial-${tipo}" type="number" min="0" max="10" step="0.1" value="${notaValida ? nota.toFixed(1) : ''}" placeholder="0 a 10"></label>
+                      <label>Observación<input id="motivoEspecial-${tipo}" type="text" maxlength="1000" value="${escapeHtml(entrega.gradeReason || '')}" placeholder="Criterio o fundamento"></label>
+                      <label class="teacher-special-confirm"><input id="confirmarEspecial-${tipo}" type="checkbox" ${confirmada ? 'checked' : ''}> Confirmar esta nota</label>
+                  </div>
+                  <div class="teacher-challenge-grade-actions"><button class="btn btn-primary" type="button" onclick="guardarEntregaAcademicaEspecialProfesor(${indice}, '${tipo}')"><i class="fa-solid fa-check-double"></i> Guardar nota</button><span id="estadoEspecial-${tipo}" class="teacher-challenge-grade-status ${confirmada ? 'saved' : ''}">${confirmada ? 'Confirmada' : 'Sin cambios'}</span></div>
+              </section>`;
+          };
+          const entregasEspecialesHtml = [
+              renderEntregaEspecial('proyectoFinal', 'Proyecto Final', 'fa-rocket', proyectoFinal),
+              renderEntregaEspecial('coloquioExamen', 'COLOQUIO-EXAMEN', 'fa-user-graduate', coloquioExamen)
+          ].join('');
           const desafioActualDetalle = obtenerDesafioActualEstudiante(d);
           const graficoNotasDesafios = renderGraficoNotasDesafiosEstudiante(d);
           const resumenConsultasIA = resumirConsultasIAEstudiante(d);
@@ -11577,6 +11686,10 @@
                   <div class="teacher-detail-stat"><small>Desbloqueos</small><strong>${cantidadDesbloqueos}</strong></div>
                    <div class="teacher-detail-stat"><small>Ãšltima actualización</small><strong>${escapeHtml(fecha)}</strong></div>
                </div>
+               <section class="teacher-special-assessments">
+                   <div class="teacher-section-title"><i class="fa-solid fa-award"></i> Evaluaciones especiales</div>
+                   ${entregasEspecialesHtml}
+               </section>
                ${graficoNotasDesafios}
                <button type="button" class="teacher-floating-chart-button" onclick="irAlGraficoNotasEstudiante(this)" title="Ir al gráfico de notas">
                    <i class="fa-solid fa-chart-column"></i><span>Ir al gráfico</span>
@@ -14936,3 +15049,19 @@
       // Exponer explícitamente las acciones docentes usadas por botones dinámicos.
       window.abrirAccionesEstudiante = abrirAccionesEstudiante;
       window.abrirDetalleEstudianteProfesor = abrirDetalleEstudianteProfesor;
+
+      // Puente público para extensiones académicas (proyecto final y coloquio).
+      // Mantiene el estado interno encapsulado y evita duplicar la lógica de notas.
+      window.obtenerEstadoAcademicoActividad = () => ({
+          historialResultados,
+          actividadesFinalizadas,
+          notasDesafiosDocente,
+          secciones: Array.isArray(seccionesData) ? seccionesData.map(sec => ({
+              id: sec.id,
+              title: sec.title
+          })) : []
+      });
+      window.solicitarGuardadoActividad = () => {
+          try { programarGuardadoFirebase(); } catch (_) {}
+          try { guardarAhoraFirebase?.(); } catch (_) {}
+      };

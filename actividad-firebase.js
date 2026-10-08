@@ -3573,6 +3573,42 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
       };
 
+      window.guardarEntregaAcademicaEspecialFirebase = async function(uid, tipo, cambio = {}) {
+        const contexto = contextoDocenteFirebase();
+        const user = contexto.user || await window.firebaseAuthReady;
+        const database = contexto.database;
+        const campo = tipo === "proyectoFinal" ? "proyectoFinal" : (tipo === "coloquioExamen" ? "coloquioExamen" : "");
+        if (!user || !database || !uid || !campo) return false;
+        try {
+          if (!(await verificarUsuarioDocente(user))) return false;
+          const nota = Number(cambio.nota);
+          if (!Number.isFinite(nota) || nota < 0 || nota > 10) throw new Error("invalid-special-grade");
+          const ref = doc(database, "estudiantes", uid);
+          const snapshot = await getDoc(ref);
+          if (!snapshot.exists()) throw new Error("student-not-found");
+          const actual = snapshot.data()?.[campo] || {};
+          const responsable = user.email || user.displayName || user.uid;
+          const confirmada = cambio.confirmada === true;
+          const nueva = {
+            ...actual,
+            grade: Number(nota.toFixed(1)),
+            confirmedGrade: confirmada ? Number(nota.toFixed(1)) : null,
+            gradeConfirmed: confirmada,
+            gradeReason: String(cambio.motivo || "").trim().slice(0, 1000),
+            gradeConfirmedBy: confirmada ? responsable : "",
+            gradeConfirmedByUid: confirmada ? user.uid : "",
+            gradeConfirmedAt: confirmada ? serverTimestamp() : null,
+            gradeUpdatedAt: serverTimestamp()
+          };
+          await setDoc(ref, { [campo]: nueva, actualizadoEn: serverTimestamp() }, { merge: true });
+          return true;
+        } catch (error) {
+          console.error("Error guardando nota académica especial:", error);
+          window.ultimoErrorEntregaAcademicaEspecial = { code: error?.code || "", message: error?.message || "Error desconocido" };
+          return false;
+        }
+      };
+
       window.desbloquearActividadesEstudianteFirebase = async function(uid, sectionId = "", motivo = "") {
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
