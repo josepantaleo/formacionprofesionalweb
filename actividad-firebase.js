@@ -4101,6 +4101,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
       };
 
       window.controlarCronometroEstudianteFirebase = async function(uid, accion) {
+        window.ultimoErrorCronometroIndividual = null;
         const autorizado = await window.autorizarDocenteFirebase?.();
         if (!autorizado) {
           window.ultimoErrorCronometroIndividual = {
@@ -4134,6 +4135,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           }, { merge: true });
           return true;
         } catch (error) {
+          window.ultimoErrorCronometroIndividual = {
+            code: error?.code || "",
+            message: error?.message || "",
+            email: user?.email || "",
+            emailVerified: user?.emailVerified === true,
+            projectId: firebaseConfig.projectId
+          };
           console.error("Error controlando el cronÃƒ³metro individual:", error);
           return false;
         }

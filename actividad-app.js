@@ -4352,7 +4352,15 @@
       }
 
       function actualizarProgreso() {
-          const finalizadasCount = seccionesData.filter(sec => actividadesFinalizadas[sec.id] === true).length;
+          const estadoReal = obtenerFinalizadasEfectivasEstudiante({
+              finalizadas: actividadesFinalizadas,
+              historialResultados,
+              codigos: Object.fromEntries(seccionesData.map(sec => [
+                  sec.id,
+                  document.getElementById(`editor-${sec.id}`)?.value || ''
+              ]))
+          });
+          const finalizadasCount = seccionesData.filter(sec => estadoReal[sec.id] === true).length;
           const porcentaje = Math.round((finalizadasCount / seccionesData.length) * 100);
           document.getElementById('progressBar').style.width = `${porcentaje}%`;
           document.getElementById('progressBarContainer')?.setAttribute('aria-valuenow', String(porcentaje));
@@ -7943,7 +7951,9 @@
                   final: finalTexto === "â€”" ? null : Number(finalTexto),
                   progreso: calcularProgresoEstudiante(estudiante),
                   desafiosConNota: obtenerNotasDesafiosFinalizadosEstudiante(estudiante).length,
-                  desafiosFinalizados: seccionesData.filter(sec => estudiante?.finalizadas?.[sec.id] === true).length
+                  desafiosFinalizados: seccionesData.filter(sec =>
+                      obtenerFinalizadasEfectivasEstudiante(estudiante)[sec.id] === true
+                  ).length
               };
           }).filter(fila => fila.academica !== null || fila.final !== null)
             .sort((a, b) => a.nombre.localeCompare(b.nombre));
@@ -9363,14 +9373,19 @@
       function obtenerFinalizadasEfectivasEstudiante(d = {}) {
           const declaradas = d?.finalizadas && typeof d.finalizadas === 'object' ? d.finalizadas : {};
           const resultados = d?.historialResultados && typeof d.historialResultados === 'object' ? d.historialResultados : {};
-          const notasDocente = d?.notasDesafiosDocente && typeof d.notasDesafiosDocente === 'object' ? d.notasDesafiosDocente : {};
-          const finalizadas = { ...declaradas };
+          const finalizadas = {};
           seccionesData.forEach(sec => {
-              const ajuste = notasDocente[sec.id] || {};
-              const notaDocente = ajuste.nota === null || ajuste.nota === undefined || ajuste.nota === '' ? NaN : Number(ajuste.nota);
               const resultado = resultados[sec.id] || {};
-              const notaAutomatica = Number(resultado.notaFinal ?? resultado.notaIA);
-              if (Number.isFinite(notaDocente) || Number.isFinite(notaAutomatica)) finalizadas[sec.id] = true;
+              const codigo = String(resultado.codigo || d?.codigos?.[sec.id] || '').trim();
+              const ejecucionRegistrada = resultado.exito === true || resultado.exito === false ||
+                  Boolean(resultado.evaluacionCodigo?.ejecucion) ||
+                  Boolean(resultado.salida) || Boolean(resultado.error);
+              const respuestasEvaluadas = Number.isFinite(Number(resultado.notaPreguntas)) ||
+                  (Array.isArray(resultado.analista?.preguntas) && resultado.analista.preguntas.length > 0);
+              finalizadas[sec.id] = declaradas[sec.id] === true &&
+                  codigo.length > 0 &&
+                  ejecucionRegistrada &&
+                  respuestasEvaluadas;
           });
           return finalizadas;
       }
