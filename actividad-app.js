@@ -4187,7 +4187,17 @@
 
       function aplicarControlCronometroIndividual(datos = {}) {
           cronometrosPausadosIndividualmente = Boolean(datos.pausado);
+          // La pausa individual controlada desde el panel docente es la fuente
+          // remota de verdad. Las marcas locales antiguas podían mantener el
+          // banner y el editor bloqueados después de reanudar.
+          seccionesData.forEach(sec => {
+              removeLocalStorage(`pausa_${sec.id}`);
+          });
           establecerPausaGlobal(cronometrosPausadosPorDocente, false);
+          seccionesData.forEach(sec => {
+              actualizarControlesDesafio(sec.id);
+              actualizarBloqueoEditorEstudiante(sec.id);
+          });
           const reinicioId = String(datos.reinicioId || '');
           const ultimoReinicio = getLocalStorage('app_last_individual_timer_reset') || '';
           if (!reinicioId || reinicioId === ultimoReinicio) return;
@@ -10327,6 +10337,30 @@
           };
           if (!confirm(mensajes[accion] || '¿Confirmar la operación?')) return;
           const ok = await window.controlarCronometroEstudianteFirebase?.(d.uid, accion);
+          if (!ok) {
+              const error = window.ultimoErrorCronometroIndividual || {};
+              const codigo = String(error.code || '').trim();
+              const detalle = String(error.message || '').trim();
+              const diagnostico = codigo === 'teacher-not-authorized'
+                  ? 'La sesiÃ³n docente no estÃ¡ autorizada o expirÃ³. IngresÃ¡ nuevamente como docente.'
+                  : codigo === 'permission-denied'
+                      ? 'Firestore rechazÃ³ la escritura. PublicÃ¡ firestore.rules en el proyecto Firebase activo y verificÃ¡ que la cuenta docente figure como autorizada.'
+                      : codigo === 'auth/email-not-verified'
+                          ? 'El correo de la cuenta docente no estÃ¡ verificado.'
+                          : (codigo === 'unavailable' || codigo === 'network-request-failed')
+                              ? 'No se pudo conectar con Firebase. RevisÃ¡ la conexiÃ³n e intentÃ¡ nuevamente.'
+                              : detalle || 'Firebase no devolviÃ³ un motivo detallado.';
+              const contexto = [
+                  codigo ? `CÃ³digo: ${codigo}` : '',
+                  error.projectId ? `Proyecto: ${error.projectId}` : '',
+                  error.email ? `Cuenta: ${error.email}` : ''
+              ].filter(Boolean).join('\n');
+              alert(
+                  `No se pudo ${accion === 'pausar' ? 'pausar' : accion === 'reanudar' ? 'reanudar' : 'reiniciar'} el cronÃ³metro de ${nombre}.\n\n` +
+                  `${diagnostico}${contexto ? `\n\n${contexto}` : ''}`
+              );
+              return;
+          }
           if (!ok) {
               alert('No se pudo actualizar el cronómetro individual. Verificá las reglas de Firestore.');
               return;
