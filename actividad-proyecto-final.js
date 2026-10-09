@@ -41,6 +41,21 @@
   let remoteExam = null;
   const projectData = () => ({ ...read(PROJECT_KEY, {}), ...(remoteProject || {}) });
   const examData = () => ({ ...read(EXAM_KEY, {}), ...(remoteExam || {}) });
+  function evaluarReglaColoquio(notas = [], proyectoEntregado = false) {
+    const valores = (Array.isArray(notas) ? notas : [])
+      .map(Number)
+      .filter((nota) => Number.isFinite(nota))
+      .map((nota) => Math.max(0, Math.min(10, nota)));
+    const promedio = valores.length
+      ? Number((valores.reduce((suma, nota) => suma + nota, 0) / valores.length).toFixed(2))
+      : null;
+    return {
+      promedio,
+      proyectoEntregado: proyectoEntregado === true,
+      habilitado: proyectoEntregado === true && promedio !== null && promedio < 7
+    };
+  }
+  window.evaluarReglaColoquio = evaluarReglaColoquio;
   window.obtenerEntregasAcademicasEspeciales = () => ({
     proyectoFinal: projectData(),
     coloquioExamen: examData()
@@ -65,7 +80,7 @@
     const project = projectData();
     const projectGrade = Number(project.confirmedGrade ?? project.grade);
     if (project.submitted && Number.isFinite(projectGrade)) grades.push(Math.max(0, Math.min(10, projectGrade)));
-    return grades.length ? Number((grades.reduce((a, b) => a + b, 0) / grades.length).toFixed(2)) : null;
+    return evaluarReglaColoquio(grades, project.submitted === true).promedio;
   }
 
   function gradeProject(code, checks) {
@@ -188,7 +203,7 @@
     const button = document.getElementById(`nav-btn-${EXAM_ID}`);
     const card = document.getElementById(EXAM_ID);
     if (!button || !card) return;
-    const enabled = average !== null && average < 7;
+    const enabled = projectData().submitted === true && average !== null && average < 7;
     button.hidden = !enabled;
     if (!enabled) card.classList.remove("active");
     const result = document.getElementById("proyectoFinalResultado");

@@ -4989,28 +4989,18 @@
       function calcularNotaCombinada(notaCodigo, porcentajePreguntas, evaluacionCodigo = null) {
           const codigo = Math.max(0, Math.min(10, Number(notaCodigo) || 0));
           const preguntas = Math.max(0, Math.min(100, Number(porcentajePreguntas) || 0)) / 10;
-          const metricas = evaluacionCodigo?.metricas || {};
-          const evidencia = [
-              Number(metricas.requisitos),
-              Number(metricas.comportamiento),
-              Number(metricas.estructura),
-              Number(metricas.calidad)
-          ].filter(Number.isFinite);
-          const evidenciaPromedio = evidencia.length
-              ? evidencia.reduce((total, valor) => total + Math.max(0, Math.min(1, valor)), 0) / evidencia.length
-              : codigo / 10;
-          const notaCodigoAjustada = Number(
-              (codigo * 0.75 + evidenciaPromedio * 10 * 0.25).toFixed(1)
-          );
-          let nota = notaCodigoAjustada * 0.65 + preguntas * 0.35;
+          // Fórmula institucional única: código 70% + preguntas 30%.
+          // La evaluación de evidencias ya está incorporada en notaCodigo.
+          let nota = codigo * 0.70 + preguntas * 0.30;
           const sintaxisValida = evaluacionCodigo?.sintaxis?.valida !== false;
           const ejecucionCorrecta = evaluacionCodigo?.ejecucion?.ok !== false;
           const comportamiento = Number(evaluacionCodigo?.metricas?.comportamiento);
           if (!sintaxisValida) nota = Math.min(nota, 3);
           else if (!ejecucionCorrecta) nota = Math.min(nota, 4);
           else if (Number.isFinite(comportamiento) && comportamiento < 0.35) nota = Math.min(nota, 6);
-          return Number(Math.max(1, Math.min(10, nota)).toFixed(1));
+          return Number(Math.max(0, Math.min(10, nota)).toFixed(1));
       }
+      window.calcularNotaCombinadaAcademica = calcularNotaCombinada;
 
       function previsualizarNotaIA(sectionId) {
           if (!claseHabilitada) return;
@@ -6076,8 +6066,8 @@
 
            result.innerHTML =
                `<strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>` +
-               `Código y evidencias técnicas: <strong>${notaCodigoPonderadaVista}/10</strong> (65%).<br>` +
-               `Respuestas razonadas: <strong>${notaPreguntas}/10</strong> (35%).<br>` +
+              `Código y evidencias técnicas: <strong>${notaCodigo}/10</strong> (70%).<br>` +
+              `Respuestas razonadas: <strong>${notaPreguntas}/10</strong> (30%).<br>` +
                `<strong>Desglose:</strong> ${conteoNiveles.completa} completas (${rubricaAplicada.puntos.completa.toFixed(2)}), ${conteoNiveles.incompleta} correctas incompletas (${rubricaAplicada.puntos.incompleta.toFixed(2)}), ${conteoNiveles.parcial} parciales (${rubricaAplicada.puntos.parcial.toFixed(2)}) y ${conteoNiveles.incorrecta} incorrectas (${rubricaAplicada.puntos.incorrecta.toFixed(2)}).<br>` +
                `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
               `Excelencia: <strong>${excelencia}</strong>.<br>` +
@@ -6102,7 +6092,7 @@
               ? Number((evidenciasCodigo.reduce((total, valor) => total + valor, 0) / evidenciasCodigo.length * 10).toFixed(1))
               : notaCodigo;
           historialResultados[sectionId].desgloseNota = {
-              formula: "codigo_evidencias_65_respuestas_35",
+              formula: "codigo_70_respuestas_30",
               notaCodigoBase: notaCodigo,
               evidenciaCodigo,
               notaPreguntas,
@@ -14234,7 +14224,7 @@
       }
 
       function obtenerActividadesInformeEstudianteActual() {
-          return seccionesData.map((sec, indice) => {
+          const actividades = seccionesData.map((sec, indice) => {
               const detalleNota = obtenerNotaVigenteModuloEstudiante(sec.id);
               const finalizada = actividadesFinalizadas[sec.id] === true;
               const analista = finalizada ? historialResultados[sec.id]?.analista : null;
@@ -14256,6 +14246,29 @@
                       .reduce((suma, valor) => suma + Number(valor || 0), 0)
               };
           });
+          const proyecto = window.obtenerEntregasAcademicasEspeciales?.()?.proyectoFinal;
+          const notaProyecto = obtenerNotaEntregaEspecialEstudiante(
+              proyecto ? { proyectoFinal: proyecto } : {},
+              'proyectoFinal'
+          );
+          if (notaProyecto !== null) {
+              actividades.push({
+                  indice: actividades.length + 1,
+                  id: 'proyecto-final',
+                  titulo: 'Proyecto Final',
+                  teoria: '',
+                  ejercicio: 'Proyecto Final Integrador',
+                  finalizada: true,
+                  nota: notaProyecto,
+                  notaAutomatica: Number(proyecto.grade),
+                  corregida: Number.isFinite(Number(proyecto.confirmedGrade)),
+                  ajuste: null,
+                  analista: null,
+                  conteoSocratico: { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 },
+                  respuestasSocraticas: 0
+              });
+          }
+          return actividades;
       }
 
       function idRecomendacionInformeEstudiante(recomendacion) {
@@ -14989,7 +15002,7 @@
               if (res.notaCodigo !== undefined || res.notaPreguntas !== undefined) {
                   doc.setFontSize(9);
                   doc.setFont("helvetica", "normal");
-                  const desglose = `Código (70%): ${res.notaCodigo ?? 'Pendiente'}/10 | Preguntas (30%): ${res.notaPreguntas ?? 'Pendiente'}/10`;
+              const desglose = `Código (70%): ${res.notaCodigo ?? 'Pendiente'}/10 | Preguntas (30%): ${res.notaPreguntas ?? 'Pendiente'}/10`;
                   doc.text(desglose, 14, yPos);
                   yPos += 5;
                   if (res.notaCodigo !== undefined && res.notaPreguntas !== undefined && notaFinalModulo !== undefined) {
