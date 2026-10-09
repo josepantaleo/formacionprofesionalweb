@@ -3598,7 +3598,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const contexto = contextoDocenteFirebase();
         const user = contexto.user || await window.firebaseAuthReady;
         const database = contexto.database;
-        const campo = tipo === "proyectoFinal" ? "proyectoFinal" : (tipo === "coloquioExamen" ? "coloquioExamen" : "");
+        const campo = tipo === "coloquioExamen" ? "coloquioExamen" : "";
         if (!user || !database || !uid || !campo) return false;
         try {
           if (!(await verificarUsuarioDocente(user))) return false;

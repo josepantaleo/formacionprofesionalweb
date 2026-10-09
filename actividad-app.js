@@ -2219,7 +2219,7 @@
               if (typeof window.obtenerEntregasAcademicasEspeciales === 'function') {
                   const especiales = window.obtenerEntregasAcademicasEspeciales();
                   if (especiales && typeof especiales === 'object') {
-                      paquete.proyectoFinal = especiales.proyectoFinal || null;
+
                       paquete.coloquioExamen = especiales.coloquioExamen || null;
                   }
               }
@@ -2503,7 +2503,6 @@
               ? datos.estadosRecomendacionesInforme
               : {};
           window.restaurarEntregasAcademicasEspeciales?.({
-              proyectoFinal: datos.proyectoFinal || null,
               coloquioExamen: datos.coloquioExamen || null
           });
           const tiemposLocales = { ...tiemposRestantes };
@@ -9442,8 +9441,6 @@
       }
       function calcularNotaEstudiante(d) {
           const notas = obtenerNotasDesafiosFinalizadosEstudiante(d).map(item => item.nota);
-          const notaProyectoFinal = obtenerNotaEntregaEspecialEstudiante(d, 'proyectoFinal');
-          if (notaProyectoFinal !== null) notas.push(notaProyectoFinal);
           if (!notas.length) return 'â€”';
           return (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1);
       }
@@ -9476,16 +9473,6 @@
               };
           });
           const evaluadas = actividades.filter(x => x.nota !== null);
-          const notaProyectoFinal = obtenerNotaEntregaEspecialEstudiante(d, 'proyectoFinal');
-          if (notaProyectoFinal !== null) {
-              actividades.push({
-                  id: 'proyecto-final',
-                  titulo: 'Proyecto Final',
-                  finalizada: true,
-                  nota: notaProyectoFinal
-              });
-              evaluadas.push(actividades[actividades.length - 1]);
-          }
           const suma = evaluadas.reduce((total,x)=>total+x.nota,0);
           return {
               actividades,
@@ -10120,8 +10107,8 @@
 
       async function guardarEntregaAcademicaEspecialProfesor(indice, tipo) {
           const d = estudiantesProfesor[indice];
-          const campo = tipo === 'proyectoFinal' ? 'proyectoFinal' : 'coloquioExamen';
-          const etiqueta = tipo === 'proyectoFinal' ? 'Proyecto Final' : 'COLOQUIO-EXAMEN';
+          const campo = 'coloquioExamen';
+          const etiqueta = 'COLOQUIO-EXAMEN';
           const input = document.getElementById(`notaEspecial-${tipo}`);
           const motivo = document.getElementById(`motivoEspecial-${tipo}`)?.value?.trim() || '';
           const confirmar = document.getElementById(`confirmarEspecial-${tipo}`)?.checked === true;
@@ -11345,16 +11332,13 @@
           const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
           const notaFinalEditable = notaDefinitiva !== 'â€”' ? notaDefinitiva : notaCalculada;
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
-          const proyectoFinal = d.proyectoFinal || {};
           const coloquioExamen = d.coloquioExamen || {};
           const renderEntregaEspecial = (tipo, titulo, icono, entrega) => {
               const enviada = entrega.submitted === true || Boolean(entrega.code || entrega.challenge);
               const nota = Number(entrega.confirmedGrade ?? entrega.grade);
               const notaValida = Number.isFinite(nota);
               const confirmada = entrega.gradeConfirmed === true && Number.isFinite(Number(entrega.confirmedGrade));
-              const contenido = tipo === 'proyectoFinal'
-                  ? (entrega.code || '// Sin código entregado.')
-                  : (entrega.challenge || '// Sin desafío entregado.');
+              const contenido = entrega.challenge || '// Sin desafío entregado.';
               return `<section class="teacher-special-assessment">
                   <div class="teacher-special-assessment-header">
                       <div><h3><i class="fa-solid ${icono}"></i> ${titulo}</h3><p>${enviada ? `Entrega registrada: ${escapeHtml(String(entrega.submittedAt || 'sin fecha'))}` : 'Sin entrega registrada'}</p></div>
@@ -11374,10 +11358,7 @@
                   <div class="teacher-challenge-grade-actions"><button class="btn btn-primary" type="button" onclick="guardarEntregaAcademicaEspecialProfesor(${indice}, '${tipo}')"><i class="fa-solid fa-check-double"></i> Guardar nota</button><span id="estadoEspecial-${tipo}" class="teacher-challenge-grade-status ${confirmada ? 'saved' : ''}">${confirmada ? 'Confirmada' : 'Sin cambios'}</span></div>
               </section>`;
           };
-          const entregasEspecialesHtml = [
-              renderEntregaEspecial('proyectoFinal', 'Proyecto Final', 'fa-rocket', proyectoFinal),
-              renderEntregaEspecial('coloquioExamen', 'COLOQUIO-EXAMEN', 'fa-user-graduate', coloquioExamen)
-          ].join('');
+          const entregasEspecialesHtml = renderEntregaEspecial('coloquioExamen', 'COLOQUIO-EXAMEN', 'fa-user-graduate', coloquioExamen);
           const desafioActualDetalle = obtenerDesafioActualEstudiante(d);
           const graficoNotasDesafios = renderGraficoNotasDesafiosEstudiante(d);
           const resumenConsultasIA = resumirConsultasIAEstudiante(d);
@@ -14280,28 +14261,6 @@
                       .reduce((suma, valor) => suma + Number(valor || 0), 0)
               };
           });
-          const proyecto = window.obtenerEntregasAcademicasEspeciales?.()?.proyectoFinal;
-          const notaProyecto = obtenerNotaEntregaEspecialEstudiante(
-              proyecto ? { proyectoFinal: proyecto } : {},
-              'proyectoFinal'
-          );
-          if (notaProyecto !== null) {
-              actividades.push({
-                  indice: actividades.length + 1,
-                  id: 'proyecto-final',
-                  titulo: 'Proyecto Final',
-                  teoria: '',
-                  ejercicio: 'Proyecto Final Integrador',
-                  finalizada: true,
-                  nota: notaProyecto,
-                  notaAutomatica: Number(proyecto.grade),
-                  corregida: Number.isFinite(Number(proyecto.confirmedGrade)),
-                  ajuste: null,
-                  analista: null,
-                  conteoSocratico: { completa: 0, incompleta: 0, parcial: 0, incorrecta: 0 },
-                  respuestasSocraticas: 0
-              });
-          }
           return actividades;
       }
 
@@ -15097,7 +15056,7 @@
       window.abrirAccionesEstudiante = abrirAccionesEstudiante;
       window.abrirDetalleEstudianteProfesor = abrirDetalleEstudianteProfesor;
 
-      // Puente público para extensiones académicas (proyecto final y coloquio).
+      // Puente público para la instancia de coloquio.
       // Mantiene el estado interno encapsulado y evita duplicar la lógica de notas.
       window.obtenerEstadoAcademicoActividad = () => ({
           historialResultados,
