@@ -1020,6 +1020,7 @@
 
       let historialResultados = {};
       let notasDesafiosDocente = {};
+      let estadosDesafiosDocente = {};
       let actividadesFinalizadas = {};
       let estadosRecomendacionesInforme = {};
       let contadorPrevisualizaciones = {};
@@ -2202,6 +2203,7 @@
               pausaGlobal: cronometrosPausadosPorDocente === true,
               finalizadas: { ...actividadesFinalizadas },
               historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
+              estadosDesafiosDocente: JSON.parse(JSON.stringify(estadosDesafiosDocente || {})),
               chatIA: JSON.parse(JSON.stringify(historialChatIA || {})),
               ayudasComprension: JSON.parse(JSON.stringify(ayudasComprension || {})),
               contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
@@ -2481,6 +2483,9 @@
           historialResultados = datos.historialResultados || {};
           notasDesafiosDocente = datos.notasDesafiosDocente && typeof datos.notasDesafiosDocente === 'object'
               ? datos.notasDesafiosDocente
+              : {};
+          estadosDesafiosDocente = datos.estadosDesafiosDocente && typeof datos.estadosDesafiosDocente === 'object'
+              ? datos.estadosDesafiosDocente
               : {};
           ayudasComprension = datos.ayudasComprension && typeof datos.ayudasComprension === 'object'
               ? datos.ayudasComprension
@@ -4375,6 +4380,7 @@
               ]))
           });
           const finalizadasCount = seccionesData.filter(sec => estadoReal[sec.id] === true).length;
+          seccionesData.forEach(sec => actualizarIconoEstado(sec.id, estadoReal[sec.id] === true));
           const porcentaje = Math.round((finalizadasCount / seccionesData.length) * 100);
           document.getElementById('progressBar').style.width = `${porcentaje}%`;
           document.getElementById('progressBarContainer')?.setAttribute('aria-valuenow', String(porcentaje));
@@ -9376,6 +9382,9 @@
 
       function obtenerFinalizadasEfectivasEstudiante(d = {}) {
           const declaradas = d?.finalizadas && typeof d.finalizadas === 'object' ? d.finalizadas : {};
+          const estados = d?.estadosDesafiosDocente && typeof d.estadosDesafiosDocente === 'object'
+              ? d.estadosDesafiosDocente
+              : {};
           const resultados = d?.historialResultados && typeof d.historialResultados === 'object' ? d.historialResultados : {};
           const finalizadas = {};
           seccionesData.forEach(sec => {
@@ -9386,10 +9395,13 @@
                   Boolean(resultado.salida) || Boolean(resultado.error);
               const respuestasEvaluadas = Number.isFinite(Number(resultado.notaPreguntas)) ||
                   (Array.isArray(resultado.analista?.preguntas) && resultado.analista.preguntas.length > 0);
-              finalizadas[sec.id] = declaradas[sec.id] === true &&
+              const estadoDocente = String(estados[sec.id]?.estado || '').toLowerCase();
+              const finalizadaPorEstado = estadoDocente === 'finalizado' || estadoDocente === 'aprobado';
+              finalizadas[sec.id] = finalizadaPorEstado ||
+                  (!estadoDocente && declaradas[sec.id] === true &&
                   codigo.length > 0 &&
                   ejecucionRegistrada &&
-                  respuestasEvaluadas;
+                  respuestasEvaluadas);
           });
           return finalizadas;
       }
@@ -9978,6 +9990,7 @@
           const d = estudiantesProfesor[indice];
           const input = document.getElementById(`notaDesafioDocente-${sectionId}`);
           const motivoInput = document.getElementById(`motivoNotaDesafioDocente-${sectionId}`);
+          const estadoSelect = document.getElementById(`estadoDesafioDocente-${sectionId}`);
           const estado = document.getElementById(`estadoNotaDesafioDocente-${sectionId}`);
           const nota = Number(input?.value);
           if (!d?.uid) {
@@ -10000,9 +10013,11 @@
           }
           const notaNormalizada = Number(nota.toFixed(1));
           const motivo = motivoInput?.value.trim() || '';
+          const estadoDesafio = estadoSelect?.value || 'pendiente';
           const ok = await window.guardarNotaDesafioDocenteFirebase?.(d.uid, sectionId, {
               nota: notaNormalizada,
-              motivo
+              motivo,
+              estado: estadoDesafio
           });
           if (!ok) {
               if (estado) {
@@ -10034,6 +10049,16 @@
                   modificadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || ''
               }
           };
+          d.estadosDesafiosDocente = {
+              ...(d.estadosDesafiosDocente || {}),
+              [sectionId]: {
+                  ...(d.estadosDesafiosDocente?.[sectionId] || {}),
+                  estado: estadoDesafio
+              }
+          };
+          d.finalizadas = { ...(d.finalizadas || {}) };
+          if (estadoDesafio === 'finalizado' || estadoDesafio === 'aprobado') d.finalizadas[sectionId] = true;
+          else delete d.finalizadas[sectionId];
           d.revisionSalidas = {
               ...(d.revisionSalidas || {}),
               notaConfirmada: false,
@@ -11399,6 +11424,8 @@
           const actividadesHtml = seccionesData.map((sec, numero) => {
               const r = historial[sec.id] || {};
               const ajusteNotaDocente = d.notasDesafiosDocente?.[sec.id] || null;
+              const estadoDocente = d.estadosDesafiosDocente?.[sec.id]?.estado ||
+                  (finalizadas[sec.id] ? 'finalizado' : 'pendiente');
               const mensajesChat = Array.isArray(chatIA[sec.id]) ? chatIA[sec.id] : [];
               const ayudasAnalista = Array.isArray(r.ayudasAnalista) ? r.ayudasAnalista : [];
               const preguntas = Array.isArray(r.analista?.preguntas) ? r.analista.preguntas : [];
@@ -11438,7 +11465,9 @@
               const fechaDesbloqueoModulo = ultimoDesbloqueoModulo?.fecha
                   ? new Date(ultimoDesbloqueoModulo.fecha).toLocaleString('es-AR')
                   : '';
-              const estado = finalizadas[sec.id] ? 'Finalizada' : (r.notaCodigo !== undefined ? 'Preguntas pendientes' : 'En curso');
+              const estado = estadoDocente === 'finalizado'
+                  ? 'Finalizada'
+                  : (estadoDocente === 'aprobado' ? 'Aprobada' : (estadoDocente === 'en_revision' ? 'En revisión' : (estadoDocente === 'entregado' ? 'Entregada' : (r.notaCodigo !== undefined ? 'Preguntas pendientes' : 'En curso'))));
               const formulaActividad = r.notaCodigo !== undefined && r.notaPreguntas !== undefined
                   ? `(${r.notaCodigo} Ã— 0,70) + (${r.notaPreguntas} Ã— 0,30) = ${notaAutomatica}`
                   : 'La fórmula se completará al entregar código y preguntas.';
@@ -11521,6 +11550,11 @@
                               </span>
                           </div>
                           <div class="teacher-challenge-grade-fields">
+                              <label>Estado docente
+                                  <select id="estadoDesafioDocente-${sec.id}">
+                                      ${['pendiente','entregado','en_revision','aprobado','finalizado'].map(opcion => `<option value="${opcion}" ${estadoDocente === opcion ? 'selected' : ''}>${opcion === 'en_revision' ? 'En revisión' : opcion.charAt(0).toUpperCase() + opcion.slice(1)}</option>`).join('')}
+                                  </select>
+                              </label>
                               <label>
                                   Nota del desafío
                                   <input id="notaDesafioDocente-${sec.id}" type="number" min="0" max="10" step="0.1"

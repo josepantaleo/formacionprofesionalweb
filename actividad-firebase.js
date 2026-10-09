@@ -3503,6 +3503,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               : (Number.isFinite(notaAutomatica) ? notaAutomatica : null);
             let valorNuevo = null;
             let motivoNuevo = String(cambio.motivo || "").trim().slice(0, 1000);
+            const estadosPermitidos = ["pendiente", "entregado", "en_revision", "aprobado", "finalizado"];
+            const estadoAnterior = String(datos.estadosDesafiosDocente?.[sectionId]?.estado || (datos.finalizadas?.[sectionId] ? "finalizado" : "pendiente"));
+            const estadoNuevo = estadosPermitidos.includes(String(cambio.estado || "").toLowerCase())
+              ? String(cambio.estado).toLowerCase()
+              : estadoAnterior;
+            const estadosDocente = { ...(datos.estadosDesafiosDocente || {}) };
+            const finalizadas = { ...(datos.finalizadas || {}) };
             if (cambio.restaurar === true) {
               delete notasDocente[sectionId];
               valorNuevo = Number.isFinite(notaAutomatica) ? notaAutomatica : null;
@@ -3522,6 +3529,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
                 modificadaEn: serverTimestamp()
               };
             }
+            estadosDocente[sectionId] = {
+              ...(estadosDocente[sectionId] || {}),
+              estado: estadoNuevo,
+              estadoAnterior,
+              actualizadoPor: user.email || user.displayName || user.uid,
+              actualizadoPorUid: user.uid,
+              actualizadoEn: serverTimestamp()
+            };
+            if (estadoNuevo === "finalizado" || estadoNuevo === "aprobado") finalizadas[sectionId] = true;
+            else delete finalizadas[sectionId];
             const revisionAnterior = datos.revisionSalidas || {};
             const historialId = `${Date.now()}-${sectionId}-${user.uid}`;
             const historialRef = doc(
@@ -3530,6 +3547,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             );
             transaction.set(estudianteRef, {
               notasDesafiosDocente: notasDocente,
+              estadosDesafiosDocente: estadosDocente,
+              finalizadas,
               revisionSalidas: {
                 ...revisionAnterior,
                 notaConfirmada: false,
@@ -3548,6 +3567,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               estudianteUid: uid,
               sectionId,
               tipo: cambio.restaurar === true ? "restauracion" : "modificacion",
+              estadoAnterior,
+              estadoNuevo,
               valorAnterior,
               valorNuevo,
               notaAutomatica: Number.isFinite(notaAutomatica) ? notaAutomatica : null,
