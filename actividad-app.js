@@ -1020,7 +1020,6 @@
 
       let historialResultados = {};
       let notasDesafiosDocente = {};
-      let estadosDesafiosDocente = {};
       let actividadesFinalizadas = {};
       let estadosRecomendacionesInforme = {};
       let contadorPrevisualizaciones = {};
@@ -2192,7 +2191,7 @@
               const editor = document.getElementById(`editor-${sec.id}`);
               codigos[sec.id] = editor ? editor.value : (getLocalStorage(`draft_editor-${sec.id}`) || sec.initialCode);
           });
-          const paquete = {
+          return {
               estudiante: { nombre, curso, division, turno },
               salidasPestana: totalSalidasPestana,
               eventosSalidasPestana: JSON.parse(JSON.stringify(eventosSalidasPestana || [])),
@@ -2203,7 +2202,6 @@
               pausaGlobal: cronometrosPausadosPorDocente === true,
               finalizadas: { ...actividadesFinalizadas },
               historialResultados: JSON.parse(JSON.stringify(historialResultados || {})),
-              estadosDesafiosDocente: JSON.parse(JSON.stringify(estadosDesafiosDocente || {})),
               chatIA: JSON.parse(JSON.stringify(historialChatIA || {})),
               ayudasComprension: JSON.parse(JSON.stringify(ayudasComprension || {})),
               contadorPrevisualizaciones: { ...contadorPrevisualizaciones },
@@ -2215,16 +2213,6 @@
               versionLocalEn,
               versionApp: '8.0-desafios-externos-editables-ia'
           };
-          try {
-              if (typeof window.obtenerEntregasAcademicasEspeciales === 'function') {
-                  const especiales = window.obtenerEntregasAcademicasEspeciales();
-                  if (especiales && typeof especiales === 'object') {
-
-                      paquete.coloquioExamen = especiales.coloquioExamen || null;
-                  }
-              }
-          } catch (_) {}
-          return paquete;
       }
 
       function programarGuardadoFirebase() {
@@ -2484,9 +2472,6 @@
           notasDesafiosDocente = datos.notasDesafiosDocente && typeof datos.notasDesafiosDocente === 'object'
               ? datos.notasDesafiosDocente
               : {};
-          estadosDesafiosDocente = datos.estadosDesafiosDocente && typeof datos.estadosDesafiosDocente === 'object'
-              ? datos.estadosDesafiosDocente
-              : {};
           ayudasComprension = datos.ayudasComprension && typeof datos.ayudasComprension === 'object'
               ? datos.ayudasComprension
               : {};
@@ -2502,9 +2487,6 @@
               typeof datos.estadosRecomendacionesInforme === 'object'
               ? datos.estadosRecomendacionesInforme
               : {};
-          window.restaurarEntregasAcademicasEspeciales?.({
-              coloquioExamen: datos.coloquioExamen || null
-          });
           const tiemposLocales = { ...tiemposRestantes };
           tiemposRestantes = { ...(datos.tiemposRestantes || {}), ...tiemposLocales };
           const pausaGlobalLocal = getLocalStorage('pausa_global');
@@ -4379,7 +4361,6 @@
               ]))
           });
           const finalizadasCount = seccionesData.filter(sec => estadoReal[sec.id] === true).length;
-          seccionesData.forEach(sec => actualizarIconoEstado(sec.id, estadoReal[sec.id] === true));
           const porcentaje = Math.round((finalizadasCount / seccionesData.length) * 100);
           document.getElementById('progressBar').style.width = `${porcentaje}%`;
           document.getElementById('progressBarContainer')?.setAttribute('aria-valuenow', String(porcentaje));
@@ -4994,18 +4975,28 @@
       function calcularNotaCombinada(notaCodigo, porcentajePreguntas, evaluacionCodigo = null) {
           const codigo = Math.max(0, Math.min(10, Number(notaCodigo) || 0));
           const preguntas = Math.max(0, Math.min(100, Number(porcentajePreguntas) || 0)) / 10;
-          // Fórmula institucional única: código 70% + preguntas 30%.
-          // La evaluación de evidencias ya está incorporada en notaCodigo.
-          let nota = codigo * 0.70 + preguntas * 0.30;
+          const metricas = evaluacionCodigo?.metricas || {};
+          const evidencia = [
+              Number(metricas.requisitos),
+              Number(metricas.comportamiento),
+              Number(metricas.estructura),
+              Number(metricas.calidad)
+          ].filter(Number.isFinite);
+          const evidenciaPromedio = evidencia.length
+              ? evidencia.reduce((total, valor) => total + Math.max(0, Math.min(1, valor)), 0) / evidencia.length
+              : codigo / 10;
+          const notaCodigoAjustada = Number(
+              (codigo * 0.75 + evidenciaPromedio * 10 * 0.25).toFixed(1)
+          );
+          let nota = notaCodigoAjustada * 0.65 + preguntas * 0.35;
           const sintaxisValida = evaluacionCodigo?.sintaxis?.valida !== false;
           const ejecucionCorrecta = evaluacionCodigo?.ejecucion?.ok !== false;
           const comportamiento = Number(evaluacionCodigo?.metricas?.comportamiento);
           if (!sintaxisValida) nota = Math.min(nota, 3);
           else if (!ejecucionCorrecta) nota = Math.min(nota, 4);
           else if (Number.isFinite(comportamiento) && comportamiento < 0.35) nota = Math.min(nota, 6);
-          return Number(Math.max(0, Math.min(10, nota)).toFixed(1));
+          return Number(Math.max(1, Math.min(10, nota)).toFixed(1));
       }
-      window.calcularNotaCombinadaAcademica = calcularNotaCombinada;
 
       function previsualizarNotaIA(sectionId) {
           if (!claseHabilitada) return;
@@ -6071,8 +6062,8 @@
 
            result.innerHTML =
                `<strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>` +
-              `Código y evidencias técnicas: <strong>${notaCodigo}/10</strong> (70%).<br>` +
-              `Respuestas razonadas: <strong>${notaPreguntas}/10</strong> (30%).<br>` +
+               `Código y evidencias técnicas: <strong>${notaCodigoPonderadaVista}/10</strong> (65%).<br>` +
+               `Respuestas razonadas: <strong>${notaPreguntas}/10</strong> (35%).<br>` +
                `<strong>Desglose:</strong> ${conteoNiveles.completa} completas (${rubricaAplicada.puntos.completa.toFixed(2)}), ${conteoNiveles.incompleta} correctas incompletas (${rubricaAplicada.puntos.incompleta.toFixed(2)}), ${conteoNiveles.parcial} parciales (${rubricaAplicada.puntos.parcial.toFixed(2)}) y ${conteoNiveles.incorrecta} incorrectas (${rubricaAplicada.puntos.incorrecta.toFixed(2)}).<br>` +
                `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
               `Excelencia: <strong>${excelencia}</strong>.<br>` +
@@ -6097,7 +6088,7 @@
               ? Number((evidenciasCodigo.reduce((total, valor) => total + valor, 0) / evidenciasCodigo.length * 10).toFixed(1))
               : notaCodigo;
           historialResultados[sectionId].desgloseNota = {
-              formula: "codigo_70_respuestas_30",
+              formula: "codigo_evidencias_65_respuestas_35",
               notaCodigoBase: notaCodigo,
               evidenciaCodigo,
               notaPreguntas,
@@ -9381,9 +9372,6 @@
 
       function obtenerFinalizadasEfectivasEstudiante(d = {}) {
           const declaradas = d?.finalizadas && typeof d.finalizadas === 'object' ? d.finalizadas : {};
-          const estados = d?.estadosDesafiosDocente && typeof d.estadosDesafiosDocente === 'object'
-              ? d.estadosDesafiosDocente
-              : {};
           const resultados = d?.historialResultados && typeof d.historialResultados === 'object' ? d.historialResultados : {};
           const finalizadas = {};
           seccionesData.forEach(sec => {
@@ -9394,13 +9382,10 @@
                   Boolean(resultado.salida) || Boolean(resultado.error);
               const respuestasEvaluadas = Number.isFinite(Number(resultado.notaPreguntas)) ||
                   (Array.isArray(resultado.analista?.preguntas) && resultado.analista.preguntas.length > 0);
-              const estadoDocente = String(estados[sec.id]?.estado || '').toLowerCase();
-              const finalizadaPorEstado = estadoDocente === 'finalizado' || estadoDocente === 'aprobado';
-              finalizadas[sec.id] = finalizadaPorEstado ||
-                  (!estadoDocente && declaradas[sec.id] === true &&
+              finalizadas[sec.id] = declaradas[sec.id] === true &&
                   codigo.length > 0 &&
                   ejecucionRegistrada &&
-                  respuestasEvaluadas);
+                  respuestasEvaluadas;
           });
           return finalizadas;
       }
@@ -9430,14 +9415,6 @@
               if (Number.isFinite(nota)) notas.push({ id: sec.id, titulo: sec.title, nota });
               return notas;
           }, []);
-      }
-      function obtenerNotaEntregaEspecialEstudiante(d, campo) {
-          const entrega = d?.[campo] || {};
-          if (entrega.submitted !== true && !entrega.code && !entrega.challenge) return null;
-          const confirmada = Number(entrega.confirmedGrade);
-          const automatica = Number(entrega.grade);
-          if (Number.isFinite(confirmada)) return Math.max(0, Math.min(10, confirmada));
-          return Number.isFinite(automatica) ? Math.max(0, Math.min(10, automatica)) : null;
       }
       function calcularNotaEstudiante(d) {
           const notas = obtenerNotasDesafiosFinalizadosEstudiante(d).map(item => item.nota);
@@ -9977,7 +9954,6 @@
           const d = estudiantesProfesor[indice];
           const input = document.getElementById(`notaDesafioDocente-${sectionId}`);
           const motivoInput = document.getElementById(`motivoNotaDesafioDocente-${sectionId}`);
-          const estadoSelect = document.getElementById(`estadoDesafioDocente-${sectionId}`);
           const estado = document.getElementById(`estadoNotaDesafioDocente-${sectionId}`);
           const nota = Number(input?.value);
           if (!d?.uid) {
@@ -10000,11 +9976,9 @@
           }
           const notaNormalizada = Number(nota.toFixed(1));
           const motivo = motivoInput?.value.trim() || '';
-          const estadoDesafio = estadoSelect?.value || 'pendiente';
           const ok = await window.guardarNotaDesafioDocenteFirebase?.(d.uid, sectionId, {
               nota: notaNormalizada,
-              motivo,
-              estado: estadoDesafio
+              motivo
           });
           if (!ok) {
               if (estado) {
@@ -10036,16 +10010,6 @@
                   modificadaPor: window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || ''
               }
           };
-          d.estadosDesafiosDocente = {
-              ...(d.estadosDesafiosDocente || {}),
-              [sectionId]: {
-                  ...(d.estadosDesafiosDocente?.[sectionId] || {}),
-                  estado: estadoDesafio
-              }
-          };
-          d.finalizadas = { ...(d.finalizadas || {}) };
-          if (estadoDesafio === 'finalizado' || estadoDesafio === 'aprobado') d.finalizadas[sectionId] = true;
-          else delete d.finalizadas[sectionId];
           d.revisionSalidas = {
               ...(d.revisionSalidas || {}),
               notaConfirmada: false,
@@ -10104,48 +10068,6 @@
           renderPanelProfesor();
           abrirDetalleEstudianteProfesor(indice);
       }
-
-      async function guardarEntregaAcademicaEspecialProfesor(indice, tipo) {
-          const d = estudiantesProfesor[indice];
-          const campo = 'coloquioExamen';
-          const etiqueta = 'COLOQUIO-EXAMEN';
-          const input = document.getElementById(`notaEspecial-${tipo}`);
-          const motivo = document.getElementById(`motivoEspecial-${tipo}`)?.value?.trim() || '';
-          const confirmar = document.getElementById(`confirmarEspecial-${tipo}`)?.checked === true;
-          const estado = document.getElementById(`estadoEspecial-${tipo}`);
-          const nota = Number(input?.value);
-          if (!d?.uid) return alert('No se encontró el identificador Firebase del estudiante.');
-          if (!Number.isFinite(nota) || nota < 0 || nota > 10) {
-              alert(`La nota de ${etiqueta} debe ser un número entre 0 y 10.`);
-              input?.focus();
-              return;
-          }
-          if (!(await window.autorizarDocenteFirebase?.())) {
-              alert('Solo una cuenta docente autorizada puede confirmar estas notas.');
-              return;
-          }
-          if (estado) { estado.className = 'teacher-challenge-grade-status saving'; estado.textContent = 'Guardando...'; }
-          const ok = await window.guardarEntregaAcademicaEspecialFirebase?.(d.uid, tipo, {
-              nota: Number(nota.toFixed(1)), motivo, confirmada: confirmar
-          });
-          if (!ok) {
-              if (estado) { estado.className = 'teacher-challenge-grade-status error'; estado.textContent = 'No se pudo guardar'; }
-              alert('No se pudo guardar la nota especial. Verificá permisos y conexión.');
-              return;
-          }
-          d[campo] = {
-              ...(d[campo] || {}),
-              grade: Number(nota.toFixed(1)),
-              confirmedGrade: confirmar ? Number(nota.toFixed(1)) : null,
-              gradeConfirmed: confirmar,
-              gradeReason: motivo,
-              gradeConfirmedBy: confirmar ? (window.firebaseTeacherUser?.email || window.firebaseCurrentUser?.email || '') : ''
-          };
-          renderPanelProfesor();
-          abrirDetalleEstudianteProfesor(indice);
-      }
-
-      window.guardarEntregaAcademicaEspecialProfesor = guardarEntregaAcademicaEspecialProfesor;
       async function cargarHistorialNotasDesafioProfesor(indice, sectionId) {
           const d = estudiantesProfesor[indice];
           const contenedor = document.getElementById(`historialNotaDesafio-${sectionId}`);
@@ -11332,33 +11254,6 @@
           const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
           const notaFinalEditable = notaDefinitiva !== 'â€”' ? notaDefinitiva : notaCalculada;
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
-          const coloquioExamen = d.coloquioExamen || {};
-          const renderEntregaEspecial = (tipo, titulo, icono, entrega) => {
-              const enviada = entrega.submitted === true || Boolean(entrega.code || entrega.challenge);
-              const nota = Number(entrega.confirmedGrade ?? entrega.grade);
-              const notaValida = Number.isFinite(nota);
-              const confirmada = entrega.gradeConfirmed === true && Number.isFinite(Number(entrega.confirmedGrade));
-              const contenido = entrega.challenge || '// Sin desafío entregado.';
-              return `<section class="teacher-special-assessment">
-                  <div class="teacher-special-assessment-header">
-                      <div><h3><i class="fa-solid ${icono}"></i> ${titulo}</h3><p>${enviada ? `Entrega registrada: ${escapeHtml(String(entrega.submittedAt || 'sin fecha'))}` : 'Sin entrega registrada'}</p></div>
-                      <span class="teacher-activity-badge ${confirmada ? 'is-approved' : (enviada ? 'is-pending' : 'is-muted')}">${confirmada ? 'Nota confirmada' : (enviada ? 'Pendiente de confirmación' : 'Pendiente')}</span>
-                  </div>
-                  <div class="teacher-detail-summary">
-                      <div class="teacher-detail-stat"><small>Nota automática</small><strong>${notaValida ? `${Number(entrega.grade).toFixed(1)}/10` : 'Pendiente'}</strong></div>
-                      <div class="teacher-detail-stat"><small>Nota confirmada</small><strong>${confirmada ? `${Number(entrega.confirmedGrade).toFixed(1)}/10` : 'Pendiente'}</strong></div>
-                      <div class="teacher-detail-stat"><small>Docente</small><strong>${escapeHtml(entrega.gradeConfirmedBy || 'Sin confirmar')}</strong></div>
-                  </div>
-                  <details class="teacher-special-submission"><summary>Ver entrega</summary><pre class="teacher-code">${escapeHtml(contenido)}</pre>${tipo === 'coloquioExamen' && Array.isArray(entrega.answers) ? `<div class="teacher-special-answers">${entrega.answers.map((respuesta, i) => `<p><strong>${i + 1}.</strong> ${escapeHtml(respuesta || 'Sin respuesta')}</p>`).join('')}</div>` : ''}</details>
-                  <div class="teacher-challenge-grade-fields">
-                      <label>Nota docente<input id="notaEspecial-${tipo}" type="number" min="0" max="10" step="0.1" value="${notaValida ? nota.toFixed(1) : ''}" placeholder="0 a 10"></label>
-                      <label>Observación<input id="motivoEspecial-${tipo}" type="text" maxlength="1000" value="${escapeHtml(entrega.gradeReason || '')}" placeholder="Criterio o fundamento"></label>
-                      <label class="teacher-special-confirm"><input id="confirmarEspecial-${tipo}" type="checkbox" ${confirmada ? 'checked' : ''}> Confirmar esta nota</label>
-                  </div>
-                  <div class="teacher-challenge-grade-actions"><button class="btn btn-primary" type="button" onclick="guardarEntregaAcademicaEspecialProfesor(${indice}, '${tipo}')"><i class="fa-solid fa-check-double"></i> Guardar nota</button><span id="estadoEspecial-${tipo}" class="teacher-challenge-grade-status ${confirmada ? 'saved' : ''}">${confirmada ? 'Confirmada' : 'Sin cambios'}</span></div>
-              </section>`;
-          };
-          const entregasEspecialesHtml = renderEntregaEspecial('coloquioExamen', 'COLOQUIO-EXAMEN', 'fa-user-graduate', coloquioExamen);
           const desafioActualDetalle = obtenerDesafioActualEstudiante(d);
           const graficoNotasDesafios = renderGraficoNotasDesafiosEstudiante(d);
           const resumenConsultasIA = resumirConsultasIAEstudiante(d);
@@ -11405,8 +11300,6 @@
           const actividadesHtml = seccionesData.map((sec, numero) => {
               const r = historial[sec.id] || {};
               const ajusteNotaDocente = d.notasDesafiosDocente?.[sec.id] || null;
-              const estadoDocente = d.estadosDesafiosDocente?.[sec.id]?.estado ||
-                  (finalizadas[sec.id] ? 'finalizado' : 'pendiente');
               const mensajesChat = Array.isArray(chatIA[sec.id]) ? chatIA[sec.id] : [];
               const ayudasAnalista = Array.isArray(r.ayudasAnalista) ? r.ayudasAnalista : [];
               const preguntas = Array.isArray(r.analista?.preguntas) ? r.analista.preguntas : [];
@@ -11446,9 +11339,7 @@
               const fechaDesbloqueoModulo = ultimoDesbloqueoModulo?.fecha
                   ? new Date(ultimoDesbloqueoModulo.fecha).toLocaleString('es-AR')
                   : '';
-              const estado = estadoDocente === 'finalizado'
-                  ? 'Finalizada'
-                  : (estadoDocente === 'aprobado' ? 'Aprobada' : (estadoDocente === 'en_revision' ? 'En revisión' : (estadoDocente === 'entregado' ? 'Entregada' : (r.notaCodigo !== undefined ? 'Preguntas pendientes' : 'En curso'))));
+              const estado = finalizadas[sec.id] ? 'Finalizada' : (r.notaCodigo !== undefined ? 'Preguntas pendientes' : 'En curso');
               const formulaActividad = r.notaCodigo !== undefined && r.notaPreguntas !== undefined
                   ? `(${r.notaCodigo} Ã— 0,70) + (${r.notaPreguntas} Ã— 0,30) = ${notaAutomatica}`
                   : 'La fórmula se completará al entregar código y preguntas.';
@@ -11531,11 +11422,6 @@
                               </span>
                           </div>
                           <div class="teacher-challenge-grade-fields">
-                              <label>Estado docente
-                                  <select id="estadoDesafioDocente-${sec.id}">
-                                      ${['pendiente','entregado','en_revision','aprobado','finalizado'].map(opcion => `<option value="${opcion}" ${estadoDocente === opcion ? 'selected' : ''}>${opcion === 'en_revision' ? 'En revisión' : opcion.charAt(0).toUpperCase() + opcion.slice(1)}</option>`).join('')}
-                                  </select>
-                              </label>
                               <label>
                                   Nota del desafío
                                   <input id="notaDesafioDocente-${sec.id}" type="number" min="0" max="10" step="0.1"
@@ -11691,10 +11577,6 @@
                   <div class="teacher-detail-stat"><small>Desbloqueos</small><strong>${cantidadDesbloqueos}</strong></div>
                    <div class="teacher-detail-stat"><small>Ãšltima actualización</small><strong>${escapeHtml(fecha)}</strong></div>
                </div>
-               <section class="teacher-special-assessments">
-                   <div class="teacher-section-title"><i class="fa-solid fa-award"></i> Evaluaciones especiales</div>
-                   ${entregasEspecialesHtml}
-               </section>
                ${graficoNotasDesafios}
                <button type="button" class="teacher-floating-chart-button" onclick="irAlGraficoNotasEstudiante(this)" title="Ir al gráfico de notas">
                    <i class="fa-solid fa-chart-column"></i><span>Ir al gráfico</span>
@@ -14239,7 +14121,7 @@
       }
 
       function obtenerActividadesInformeEstudianteActual() {
-          const actividades = seccionesData.map((sec, indice) => {
+          return seccionesData.map((sec, indice) => {
               const detalleNota = obtenerNotaVigenteModuloEstudiante(sec.id);
               const finalizada = actividadesFinalizadas[sec.id] === true;
               const analista = finalizada ? historialResultados[sec.id]?.analista : null;
@@ -14261,7 +14143,6 @@
                       .reduce((suma, valor) => suma + Number(valor || 0), 0)
               };
           });
-          return actividades;
       }
 
       function idRecomendacionInformeEstudiante(recomendacion) {
@@ -14995,7 +14876,7 @@
               if (res.notaCodigo !== undefined || res.notaPreguntas !== undefined) {
                   doc.setFontSize(9);
                   doc.setFont("helvetica", "normal");
-              const desglose = `Código (70%): ${res.notaCodigo ?? 'Pendiente'}/10 | Preguntas (30%): ${res.notaPreguntas ?? 'Pendiente'}/10`;
+                  const desglose = `Código (70%): ${res.notaCodigo ?? 'Pendiente'}/10 | Preguntas (30%): ${res.notaPreguntas ?? 'Pendiente'}/10`;
                   doc.text(desglose, 14, yPos);
                   yPos += 5;
                   if (res.notaCodigo !== undefined && res.notaPreguntas !== undefined && notaFinalModulo !== undefined) {
@@ -15055,19 +14936,3 @@
       // Exponer explícitamente las acciones docentes usadas por botones dinámicos.
       window.abrirAccionesEstudiante = abrirAccionesEstudiante;
       window.abrirDetalleEstudianteProfesor = abrirDetalleEstudianteProfesor;
-
-      // Puente público para la instancia de coloquio.
-      // Mantiene el estado interno encapsulado y evita duplicar la lógica de notas.
-      window.obtenerEstadoAcademicoActividad = () => ({
-          historialResultados,
-          actividadesFinalizadas,
-          notasDesafiosDocente,
-          secciones: Array.isArray(seccionesData) ? seccionesData.map(sec => ({
-              id: sec.id,
-              title: sec.title
-          })) : []
-      });
-      window.solicitarGuardadoActividad = () => {
-          try { programarGuardadoFirebase(); } catch (_) {}
-          try { guardarAhoraFirebase?.(); } catch (_) {}
-      };
