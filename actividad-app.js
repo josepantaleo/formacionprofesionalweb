@@ -1222,6 +1222,10 @@
       let intervaloConexionEstudiante = null;
       let temporizadorDesconexionSegundoPlano = null;
       let claseHabilitada = false;
+      // Evita que la inicialización de Firebase pise el estado real de la clase
+      // antes de recibir el primer snapshot de controlClase.
+      let estadoInicioClaseRecibido = false;
+      let ultimoEstadoInicioClase = null;
       let cuentaEstudianteActiva = false;
 
       function actualizarBloqueoEditorEstudiante(sectionId, bloqueoCooperacion = null) {
@@ -1715,6 +1719,15 @@
       inicializarMonitorSalidasPestana();
 
       function aplicarEstadoInicioClase(iniciada, datos = {}) {
+          estadoInicioClaseRecibido = true;
+          ultimoEstadoInicioClase = {
+              iniciada: Boolean(iniciada),
+              ...datos
+          };
+          try {
+              const claseId = window.idClaseActual?.() || 'actual';
+              setLocalStorage(`estado_inicio_clase_${claseId}`, JSON.stringify(ultimoEstadoInicioClase));
+          } catch {}
           const configuracionRecibida = datos.configuracionSeguimiento || {};
           configuracionSeguimientoActual = {
               ...configuracionSeguimientoActual,
@@ -1761,7 +1774,18 @@
           aplicarControlCronometrosDocente(datos);
       });
       window.addEventListener('estado-inicio-clase-error', event => {
-          aplicarEstadoInicioClase(false);
+          // Un fallo transitorio de red no debe convertir una clase iniciada
+          // en una pantalla bloqueada.
+          if (!estadoInicioClaseRecibido) {
+              try {
+                  const claseId = window.idClaseActual?.() || 'actual';
+                  const cache = getLocalStorage(`estado_inicio_clase_${claseId}`);
+                  const datosCache = cache ? JSON.parse(cache) : null;
+                  if (datosCache && typeof datosCache.iniciada === 'boolean') {
+                      aplicarEstadoInicioClase(datosCache.iniciada, datosCache);
+                  }
+              } catch {}
+          }
           const mensaje = document.getElementById('classStartMessage');
           if (mensaje) mensaje.textContent = `No se pudo consultar el inicio de clase: ${event.detail}.`;
       });
@@ -2816,7 +2840,18 @@
           cuentaEstudianteActiva = true;
           firebaseInitialized = true;
           overlay.classList.add('hidden');
-          aplicarEstadoInicioClase(false);
+          // No asumir que la clase está finalizada mientras llega el primer
+          // snapshot de controlClase. Recuperar el estado de hoy si existe.
+          if (!estadoInicioClaseRecibido) {
+              try {
+                  const claseId = window.idClaseActual?.() || 'actual';
+                  const cache = getLocalStorage(`estado_inicio_clase_${claseId}`);
+                  const datosCache = cache ? JSON.parse(cache) : null;
+                  if (datosCache && typeof datosCache.iniciada === 'boolean') {
+                      aplicarEstadoInicioClase(datosCache.iniciada, datosCache);
+                  }
+              } catch {}
+          }
           window.escucharInicioClaseFirebase?.();
           window.escucharReinicioSalidasFirebase?.();
           window.escucharNotasDocenteEstudianteFirebase?.();
