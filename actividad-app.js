@@ -13742,7 +13742,7 @@
           const promedioProgreso = progreso.length ? Math.round(progreso.reduce((a, b) => a + b, 0) / progreso.length) : 0;
           const promedio = valores => valores.length ? Number((valores.reduce((a, b) => a + b, 0) / valores.length).toFixed(2)) : null;
           return {
-              curso, division, turno, estudiantes, progreso, notasAutomaticas, notasCalculadas, notasDocente,
+              curso, division, turno, estudiantes, progreso,
               conectados, bloqueados, estados, promedioProgreso,
               promedioVigente: promedio(notasVigentes),
               notaVigente
@@ -13798,6 +13798,9 @@
               const e = d.estudiante || {};
               const p = Number(calcularProgresoEstudiante(d)) || 0;
               const vigente = datos.notaVigente(d);
+              const auto = vigente;
+              const calc = NaN;
+              const docente = NaN;
               const situacion = d.pantallaBloqueada ? 'Pantalla bloqueada' : (p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento');
               return `<tr><td><strong>${escaparInforme(e.nombre || d.nombreGoogle || d.email || 'Sin nombre')}</strong><br><small>${escaparInforme(d.email || '')}</small></td><td>${escaparInforme(e.curso || 'Sin curso')} ${escaparInforme(e.division || '')}</td><td>${escaparInforme(e.turno || 'Sin turno')}</td><td>${escaparInforme(d.estadoCuenta || 'Sin estado')}</td><td>${p}%</td><td>${Number.isFinite(vigente) ? `${vigente.toFixed(1)}/10` : 'Pendiente'}</td><td>${situacion}</td></tr>`;
             }).join('') : '<tr><td colspan="7">No hay estudiantes para los filtros seleccionados.</td></tr>'}</tbody></table></div>`;
@@ -13902,7 +13905,7 @@
           let y = 99;
           doc.setFontSize(9);
           doc.setFont('helvetica', 'bold');
-          doc.text('Estudiante', 15, y); doc.text('Grupo', 63, y); doc.text('Estado', 101, y); doc.text('Prog.', 133, y); doc.text('Auto.', 149, y); doc.text('Calc.', 166, y); doc.text('Doc.', 183, y);
+          doc.text('Estudiante', 15, y); doc.text('Grupo', 63, y); doc.text('Estado', 101, y); doc.text('Prog.', 133, y); doc.text('Promedio vigente', 153, y);
           y += 6;
           doc.setFont('helvetica', 'normal');
           datos.estudiantes.forEach(d => {
