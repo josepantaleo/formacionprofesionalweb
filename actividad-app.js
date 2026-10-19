@@ -13886,6 +13886,18 @@
       }
       window.exportarInformePreceptorTutoresPDF = exportarInformePreceptorTutoresPDF;
 
+      document.addEventListener('click', evento => {
+          const boton = evento.target.closest?.('#btnInformePreceptorTutores');
+          if (!boton) return;
+          evento.preventDefault();
+          evento.stopPropagation();
+          if (typeof window.abrirInformePreceptorTutores === 'function') {
+              window.abrirInformePreceptorTutores();
+          } else {
+              alert('El informe todavía no terminó de cargarse. Recargá la página con Ctrl+F5.');
+          }
+      }, true);
+
       async function exportarCursoProfesorPDF() {
           try { await asegurarLibreriasPdf(); } catch (_) { alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.'); return; }
           if (!window.jspdf?.jsPDF) {
