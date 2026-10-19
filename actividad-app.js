@@ -13758,6 +13758,10 @@
           const contenedor = document.getElementById('informePreceptorTutoresContenido');
           if (!contenedor) return;
           const datos = obtenerDatosInformePreceptorTutores();
+          if (!datos.estudiantes.length) {
+              contenedor.innerHTML = '<div class="teacher-report-diagnostic is-warning" style="margin-top:1rem;padding:.8rem;border:1px solid rgba(251,191,36,.35);border-radius:8px;color:#fde68a"><i class="fa-solid fa-circle-info"></i> No hay estudiantes cargados para los filtros seleccionados. Esperá la sincronización del panel o elegí “Todos” en curso, división y turno.</div>';
+              return;
+          }
           const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los cursos, divisiones y turnos';
           const promedioNota = datos.promedioNota === null ? 'Sin datos' : `${datos.promedioNota}/10`;
           const filas = datos.estudiantes.slice().sort((a, b) => String(a.estudiante?.nombre || a.nombreGoogle || a.email || '').localeCompare(String(b.estudiante?.nombre || b.nombreGoogle || b.email || ''), 'es'));
@@ -13785,14 +13789,21 @@
       function abrirInformePreceptorTutores() {
           llenarFiltrosInformePreceptorTutores();
           const modal = document.getElementById('informePreceptorTutoresModal');
-          if (!modal) return;
+          if (!modal) {
+              alert('No se encontró la ventana del informe. Recargá la página para actualizar la interfaz.');
+              return;
+          }
+          modal.style.display = 'flex';
           modal.classList.add('active');
           renderInformePreceptorTutores();
       }
       window.abrirInformePreceptorTutores = abrirInformePreceptorTutores;
       window.renderInformePreceptorTutores = renderInformePreceptorTutores;
       function cerrarInformePreceptorTutores() {
-          document.getElementById('informePreceptorTutoresModal')?.classList.remove('active');
+          const modal = document.getElementById('informePreceptorTutoresModal');
+          if (!modal) return;
+          modal.classList.remove('active');
+          modal.style.display = 'none';
       }
       window.cerrarInformePreceptorTutores = cerrarInformePreceptorTutores;
 
@@ -13825,10 +13836,41 @@
           }
           const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
           const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los grupos';
-          doc.setFontSize(16); doc.text('Informe para preceptoría y tutores', 15, 18);
+          doc.setFontSize(16); doc.text('Informe para preceptoría y tutores/padres', 15, 18);
           doc.setFontSize(10); doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')} · ${alcance}`, 15, 26);
           doc.text(`Estudiantes: ${datos.estudiantes.length} · Progreso promedio: ${datos.promedioProgreso}% · Nota promedio: ${datos.promedioNota ?? 'Sin datos'}`, 15, 33);
-          let y = 44;
+          const dibujarBarras = (titulo, items, x, y, ancho, color) => {
+              doc.setFontSize(10);
+              doc.text(titulo, x, y);
+              const maximo = Math.max(1, ...items.map(item => Number(item.valor) || 0));
+              let cursorY = y + 7;
+              items.forEach(item => {
+                  const valor = Math.max(0, Number(item.valor) || 0);
+                  const porcentaje = item.porcentaje ?? (valor / maximo * 100);
+                  doc.setFontSize(8);
+                  doc.text(String(item.etiqueta).slice(0, 28), x, cursorY);
+                  doc.text(String(item.texto ?? valor), x + ancho + 3, cursorY);
+                  doc.setFillColor(228, 232, 240);
+                  doc.roundedRect(x, cursorY + 2, ancho, 4, 1, 1, 'F');
+                  doc.setFillColor(...color);
+                  doc.roundedRect(x, cursorY + 2, Math.max(0.5, ancho * Math.min(100, porcentaje) / 100), 4, 1, 1, 'F');
+                  cursorY += 11;
+              });
+              return cursorY;
+          };
+          const anchoGrafico = 72;
+          const yGrafico = 45;
+          dibujarBarras('Progreso promedio', [
+              { etiqueta: 'Avance del grupo', valor: datos.promedioProgreso, porcentaje: datos.promedioProgreso, texto: `${datos.promedioProgreso}%` },
+              { etiqueta: 'Conectados recientes', valor: datos.estudiantes.length ? datos.conectados / datos.estudiantes.length * 100 : 0, porcentaje: datos.estudiantes.length ? datos.conectados / datos.estudiantes.length * 100 : 0, texto: `${datos.conectados}/${datos.estudiantes.length}` },
+              { etiqueta: 'Sin bloqueo de pantalla', valor: datos.estudiantes.length ? (datos.estudiantes.length - datos.bloqueados) / datos.estudiantes.length * 100 : 0, porcentaje: datos.estudiantes.length ? (datos.estudiantes.length - datos.bloqueados) / datos.estudiantes.length * 100 : 0, texto: `${datos.estudiantes.length - datos.bloqueados}/${datos.estudiantes.length}` }
+          ], 15, yGrafico, anchoGrafico, [14, 165, 233]);
+          dibujarBarras('Estados del grupo', [
+              { etiqueta: 'Activas', valor: datos.estados.activos, texto: datos.estados.activos },
+              { etiqueta: 'Pendientes', valor: datos.estados.pendientes, texto: datos.estados.pendientes },
+              { etiqueta: 'Inactivas', valor: datos.estados.inactivos, texto: datos.estados.inactivos }
+          ], 105, yGrafico, anchoGrafico, [52, 211, 153]);
+          let y = 94;
           doc.setFontSize(9);
           doc.text('Estudiante', 15, y); doc.text('Grupo', 75, y); doc.text('Estado', 115, y); doc.text('Prog.', 150, y); doc.text('Nota', 175, y);
           y += 6;
