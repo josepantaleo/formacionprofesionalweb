@@ -772,8 +772,8 @@
       </div>
     </div>
 
-    <div class="modal-overlay" id="informePreceptorTutoresModal" role="dialog" aria-modal="true" aria-labelledby="informePreceptorTutoresTitulo" style="display:none;z-index:12000;">
-      <div class="modal-box" style="width:min(1180px,96vw);max-height:94vh;overflow:auto;">
+    <div class="modal-overlay" id="informePreceptorTutoresModal" role="dialog" aria-modal="true" aria-labelledby="informePreceptorTutoresTitulo" style="display:none;z-index:12000;padding:0;">
+      <div class="modal-box" style="width:100vw;max-width:none;height:100dvh;max-height:none;overflow:auto;border-radius:0;padding:clamp(1rem,2vw,2rem);">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
           <div>
             <h3 id="informePreceptorTutoresTitulo" style="margin:.1rem 0"><i class="fa-solid fa-file-chart-column"></i> Informe para preceptoría y tutores/padres</h3>
@@ -781,10 +781,10 @@
           </div>
           <button class="btn btn-secondary" type="button" onclick="cerrarInformePreceptorTutores()" aria-label="Cerrar informe"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="teacher-filter-workspace" style="margin-top:1rem;">
+        <div class="teacher-filter-workspace" style="margin-top:1rem;display:grid;grid-template-columns:1fr;gap:1rem;">
           <section class="teacher-filter-group">
             <h4><i class="fa-solid fa-users-rectangle"></i> Alcance del informe</h4>
-            <div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.8rem;">
               <label>Curso<select id="informePreceptorCurso" onchange="renderInformePreceptorTutores()"><option value="">Todos los cursos</option></select></label>
               <label>División<select id="informePreceptorDivision" onchange="renderInformePreceptorTutores()"><option value="">Todas las divisiones</option></select></label>
               <label>Turno<select id="informePreceptorTurno" onchange="renderInformePreceptorTutores()"><option value="">Todos los turnos</option></select></label>

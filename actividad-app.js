@@ -13716,7 +13716,9 @@
                   (!turno || String(e.turno || '') === turno);
           });
           const progreso = estudiantes.map(d => Number(calcularProgresoEstudiante(d)) || 0);
-          const notas = estudiantes.map(d => Number(calcularNotaDefinitivaEstudiante(d))).filter(Number.isFinite);
+          const notasAutomaticas = estudiantes.map(d => Number(calcularNotaEstudiante(d))).filter(Number.isFinite);
+          const notasCalculadas = estudiantes.map(d => Number(calcularNotaProvisionalEstudiante(d))).filter(Number.isFinite);
+          const notasDocente = estudiantes.map(d => Number(calcularNotaDefinitivaEstudiante(d))).filter(Number.isFinite);
           const conectados = estudiantes.filter(d => {
               const ms = d.ultimaConexion?.toMillis?.() || Date.parse(d.ultimaConexion || d.ultimaActividad || '') || 0;
               return ms && Date.now() - ms <= 120000;
@@ -13728,8 +13730,14 @@
               inactivos: estudiantes.filter(d => d.estadoCuenta === 'inactivo').length
           };
           const promedioProgreso = progreso.length ? Math.round(progreso.reduce((a, b) => a + b, 0) / progreso.length) : 0;
-          const promedioNota = notas.length ? Number((notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(2)) : null;
-          return { curso, division, turno, estudiantes, progreso, notas, conectados, bloqueados, estados, promedioProgreso, promedioNota };
+          const promedio = valores => valores.length ? Number((valores.reduce((a, b) => a + b, 0) / valores.length).toFixed(2)) : null;
+          return {
+              curso, division, turno, estudiantes, progreso, notasAutomaticas, notasCalculadas, notasDocente,
+              conectados, bloqueados, estados, promedioProgreso,
+              promedioAutomatico: promedio(notasAutomaticas),
+              promedioCalculado: promedio(notasCalculadas),
+              promedioDocente: promedio(notasDocente)
+          };
       }
 
       function escaparInforme(valor) {
@@ -13763,13 +13771,16 @@
               return;
           }
           const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los cursos, divisiones y turnos';
-          const promedioNota = datos.promedioNota === null ? 'Sin datos' : `${datos.promedioNota}/10`;
+          const mostrarNota = valor => valor === null ? 'Sin datos' : `${valor}/10`;
           const filas = datos.estudiantes.slice().sort((a, b) => String(a.estudiante?.nombre || a.nombreGoogle || a.email || '').localeCompare(String(b.estudiante?.nombre || b.nombreGoogle || b.email || ''), 'es'));
           contenedor.innerHTML = `
             <div style="margin:1rem 0;padding:.7rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06)"><strong>Alcance:</strong> ${escaparInforme(alcance)} · ${datos.estudiantes.length} estudiante${datos.estudiantes.length === 1 ? '' : 's'}</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.65rem;margin-bottom:1rem">
               <div class="teacher-group-report-summary"><small>Progreso promedio</small><strong>${datos.promedioProgreso}%</strong></div>
-              <div class="teacher-group-report-summary"><small>Nota promedio</small><strong>${promedioNota}</strong></div>
+              <div class="teacher-group-report-summary"><small>Promedio automático</small><strong>${mostrarNota(datos.promedioAutomatico)}</strong></div>
+              <div class="teacher-group-report-summary"><small>Promedio calculado</small><strong>${mostrarNota(datos.promedioCalculado)}</strong></div>
+              <div class="teacher-group-report-summary"><small>Promedio docente</small><strong>${mostrarNota(datos.promedioDocente)}</strong></div>
+              <div class="teacher-group-report-summary"><small>Notas docentes</small><strong>${datos.notasDocente.length}</strong></div>
               <div class="teacher-group-report-summary"><small>Conectados</small><strong>${datos.conectados}/${datos.estudiantes.length}</strong></div>
               <div class="teacher-group-report-summary"><small>Pantallas bloqueadas</small><strong>${datos.bloqueados}</strong></div>
             </div>
@@ -13777,13 +13788,15 @@
               <section style="padding:.8rem;border:1px solid rgba(148,163,184,.25);border-radius:8px"><h4><i class="fa-solid fa-chart-line"></i> Progreso del grupo</h4>${barraInforme('Promedio de avance', datos.promedioProgreso, '#38bdf8')}${barraInforme('Conectados en los últimos 2 minutos', datos.estudiantes.length ? datos.conectados * 100 / datos.estudiantes.length : 0, '#34d399')}${barraInforme('Sin bloqueo de pantalla', datos.estudiantes.length ? (datos.estudiantes.length - datos.bloqueados) * 100 / datos.estudiantes.length : 0, '#a78bfa')}</section>
               <section style="padding:.8rem;border:1px solid rgba(148,163,184,.25);border-radius:8px"><h4><i class="fa-solid fa-users"></i> Estado de cuentas</h4>${barraInforme('Activas', datos.estudiantes.length ? datos.estados.activos * 100 / datos.estudiantes.length : 0, '#34d399')}${barraInforme('Pendientes', datos.estudiantes.length ? datos.estados.pendientes * 100 / datos.estudiantes.length : 0, '#fbbf24')}${barraInforme('Inactivas', datos.estudiantes.length ? datos.estados.inactivos * 100 / datos.estudiantes.length : 0, '#f87171')}</section>
             </div>
-            <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Estudiante</th><th>Curso</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota</th><th>Situación</th></tr></thead><tbody>${filas.length ? filas.map(d => {
+            <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Estudiante</th><th>Curso</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Automática</th><th>Calculada</th><th>Docente</th><th>Situación</th></tr></thead><tbody>${filas.length ? filas.map(d => {
               const e = d.estudiante || {};
               const p = Number(calcularProgresoEstudiante(d)) || 0;
-              const n = Number(calcularNotaDefinitivaEstudiante(d));
+              const automatica = Number(calcularNotaEstudiante(d));
+              const calculada = Number(calcularNotaProvisionalEstudiante(d));
+              const docente = Number(calcularNotaDefinitivaEstudiante(d));
               const situacion = d.pantallaBloqueada ? 'Pantalla bloqueada' : (p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento');
-              return `<tr><td><strong>${escaparInforme(e.nombre || d.nombreGoogle || d.email || 'Sin nombre')}</strong><br><small>${escaparInforme(d.email || '')}</small></td><td>${escaparInforme(e.curso || 'Sin curso')} ${escaparInforme(e.division || '')}</td><td>${escaparInforme(e.turno || 'Sin turno')}</td><td>${escaparInforme(d.estadoCuenta || 'Sin estado')}</td><td>${p}%</td><td>${Number.isFinite(n) ? `${n}/10` : 'Pendiente'}</td><td>${situacion}</td></tr>`;
-            }).join('') : '<tr><td colspan="7">No hay estudiantes para los filtros seleccionados.</td></tr>'}</tbody></table></div>`;
+              return `<tr><td><strong>${escaparInforme(e.nombre || d.nombreGoogle || d.email || 'Sin nombre')}</strong><br><small>${escaparInforme(d.email || '')}</small></td><td>${escaparInforme(e.curso || 'Sin curso')} ${escaparInforme(e.division || '')}</td><td>${escaparInforme(e.turno || 'Sin turno')}</td><td>${escaparInforme(d.estadoCuenta || 'Sin estado')}</td><td>${p}%</td><td>${Number.isFinite(automatica) ? `${automatica.toFixed(1)}/10` : 'Pendiente'}</td><td>${Number.isFinite(calculada) ? `${calculada.toFixed(1)}/10` : 'Pendiente'}</td><td>${Number.isFinite(docente) ? `${docente.toFixed(1)}/10` : 'Pendiente'}</td><td>${situacion}</td></tr>`;
+            }).join('') : '<tr><td colspan="9">No hay estudiantes para los filtros seleccionados.</td></tr>'}</tbody></table></div>`;
       }
 
       function abrirInformePreceptorTutores() {
@@ -13838,7 +13851,7 @@
           const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los grupos';
           doc.setFontSize(16); doc.text('Informe para preceptoría y tutores/padres', 15, 18);
           doc.setFontSize(10); doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')} · ${alcance}`, 15, 26);
-          doc.text(`Estudiantes: ${datos.estudiantes.length} · Progreso promedio: ${datos.promedioProgreso}% · Nota promedio: ${datos.promedioNota ?? 'Sin datos'}`, 15, 33);
+          doc.text(`Estudiantes: ${datos.estudiantes.length} · Progreso: ${datos.promedioProgreso}% · Automática: ${datos.promedioAutomatico ?? 'Sin datos'} · Calculada: ${datos.promedioCalculado ?? 'Sin datos'} · Docente: ${datos.promedioDocente ?? 'Sin datos'}`, 15, 33);
           const dibujarBarras = (titulo, items, x, y, ancho, color) => {
               doc.setFontSize(10);
               doc.text(titulo, x, y);
