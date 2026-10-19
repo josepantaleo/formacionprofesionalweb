@@ -12504,6 +12504,10 @@
               principales.push(botonAccion('btn-success', 'fa-unlock-keyhole', 'Desbloquear todas', `desbloquearActividadesEstudianteProfesor(${indice}, 'todas')`, true, 'Volvé a habilitar todas las actividades finalizadas'));
           }
 
+          if (disponibles('exportarInformeIndividualEstudiantePDF')) {
+              principales.push(botonAccion('btn-success', 'fa-file-pdf', 'Exportar informe individual', `exportarInformeIndividualEstudiantePDF(${indice})`, false, 'PDF con actividades, notas automáticas y correcciones docentes'));
+          }
+
           const comunicacion = [];
           if (disponibles('abrirMensajeriaDocente')) {
               comunicacion.push(botonAccion('btn-primary', 'fa-message', 'Enviar mensaje', `abrirMensajeriaDocente('${escapeHtml(d.uid)}')`, false, 'Mostrá un aviso en la pantalla del estudiante'));
@@ -13851,7 +13855,19 @@
           const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los grupos';
           doc.setFontSize(16); doc.text('Informe para preceptoría y tutores/padres', 15, 18);
           doc.setFontSize(10); doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')} · ${alcance}`, 15, 26);
-          doc.text(`Estudiantes: ${datos.estudiantes.length} · Progreso: ${datos.promedioProgreso}% · Automática: ${datos.promedioAutomatico ?? 'Sin datos'} · Calculada: ${datos.promedioCalculado ?? 'Sin datos'} · Docente: ${datos.promedioDocente ?? 'Sin datos'}`, 15, 33);
+          const resumenPDF = doc.splitTextToSize(
+              `Estudiantes: ${datos.estudiantes.length} · Progreso: ${datos.promedioProgreso}% · Promedio automático: ${datos.promedioAutomatico ?? 'Sin datos'}/10 · Promedio calculado: ${datos.promedioCalculado ?? 'Sin datos'}/10 · Promedio docente: ${datos.promedioDocente ?? 'Sin datos'}/10 · Notas docentes: ${datos.notasDocente.length}`,
+              180
+          );
+          doc.text(resumenPDF, 15, 33);
+          doc.setFontSize(7.5);
+          doc.setTextColor(71, 85, 105);
+          const leyendaGrupo = doc.splitTextToSize(
+              'Leyenda: automática = resultado de la evaluación; calculada = automática ajustada por descuentos o criterios de seguimiento; docente = calificación revisada y confirmada manualmente. Cuando existe una nota docente, es la nota vigente.',
+              180
+          );
+          doc.text(leyendaGrupo, 15, 39);
+          doc.setTextColor(15, 23, 42);
           const dibujarBarras = (titulo, items, x, y, ancho, color) => {
               doc.setFontSize(10);
               doc.text(titulo, x, y);
@@ -13872,7 +13888,7 @@
               return cursorY;
           };
           const anchoGrafico = 72;
-          const yGrafico = 45;
+          const yGrafico = 51 + leyendaGrupo.length * 3;
           dibujarBarras('Progreso promedio', [
               { etiqueta: 'Avance del grupo', valor: datos.promedioProgreso, porcentaje: datos.promedioProgreso, texto: `${datos.promedioProgreso}%` },
               { etiqueta: 'Conectados recientes', valor: datos.estudiantes.length ? datos.conectados / datos.estudiantes.length * 100 : 0, porcentaje: datos.estudiantes.length ? datos.conectados / datos.estudiantes.length * 100 : 0, texto: `${datos.conectados}/${datos.estudiantes.length}` },
@@ -13883,21 +13899,122 @@
               { etiqueta: 'Pendientes', valor: datos.estados.pendientes, texto: datos.estados.pendientes },
               { etiqueta: 'Inactivas', valor: datos.estados.inactivos, texto: datos.estados.inactivos }
           ], 105, yGrafico, anchoGrafico, [52, 211, 153]);
-          let y = 94;
+          let y = 99;
           doc.setFontSize(9);
-          doc.text('Estudiante', 15, y); doc.text('Grupo', 75, y); doc.text('Estado', 115, y); doc.text('Prog.', 150, y); doc.text('Nota', 175, y);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Estudiante', 15, y); doc.text('Grupo', 63, y); doc.text('Estado', 101, y); doc.text('Prog.', 133, y); doc.text('Auto.', 149, y); doc.text('Calc.', 166, y); doc.text('Doc.', 183, y);
           y += 6;
+          doc.setFont('helvetica', 'normal');
           datos.estudiantes.forEach(d => {
               if (y > 280) { doc.addPage(); y = 18; }
-              const e = d.estudiante || {}; const p = Number(calcularProgresoEstudiante(d)) || 0; const n = Number(calcularNotaDefinitivaEstudiante(d));
-              doc.text(String(e.nombre || d.nombreGoogle || d.email || 'Sin nombre').slice(0, 32), 15, y);
-              doc.text(`${e.curso || ''} ${e.division || ''} ${e.turno || ''}`.trim().slice(0, 22), 75, y);
-              doc.text(String(d.pantallaBloqueada ? 'Bloqueada' : d.estadoCuenta || 'Sin estado').slice(0, 18), 115, y);
-              doc.text(`${p}%`, 150, y); doc.text(Number.isFinite(n) ? `${n}/10` : 'Pend.', 175, y); y += 5;
+              const e = d.estudiante || {};
+              const p = Number(calcularProgresoEstudiante(d)) || 0;
+              const auto = Number(calcularNotaEstudiante(d));
+              const calc = Number(calcularNotaProvisionalEstudiante(d));
+              const docente = Number(calcularNotaDefinitivaEstudiante(d));
+              doc.text(String(e.nombre || d.nombreGoogle || d.email || 'Sin nombre').slice(0, 25), 15, y);
+              doc.text(`${e.curso || ''} ${e.division || ''} ${e.turno || ''}`.trim().slice(0, 20), 63, y);
+              doc.text(String(d.pantallaBloqueada ? 'Bloqueada' : d.estadoCuenta || 'Sin estado').slice(0, 15), 101, y);
+              doc.text(`${p}%`, 133, y);
+              doc.text(Number.isFinite(auto) ? auto.toFixed(1) : '—', 149, y);
+              doc.text(Number.isFinite(calc) ? calc.toFixed(1) : '—', 166, y);
+              doc.text(Number.isFinite(docente) ? docente.toFixed(1) : '—', 183, y);
+              y += 5;
           });
           doc.save(`informe-preceptoria-${new Date().toISOString().slice(0, 10)}.pdf`);
       }
       window.exportarInformePreceptorTutoresPDF = exportarInformePreceptorTutoresPDF;
+
+      async function exportarInformeIndividualEstudiantePDF(indice) {
+          const estudiante = estudiantesProfesor[Number(indice)];
+          if (!estudiante) {
+              alert('No se pudo identificar al estudiante seleccionado.');
+              return;
+          }
+          if (typeof asegurarLibreriasPdf === 'function') {
+              try { await asegurarLibreriasPdf(); } catch (_) {}
+          }
+          if (!window.jspdf?.jsPDF) {
+              alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.');
+              return;
+          }
+          const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+          const e = estudiante.estudiante || {};
+          const nombre = e.nombre || estudiante.nombreGoogle || estudiante.email || 'Estudiante';
+          const grupo = [e.curso, e.division, e.turno].filter(Boolean).join(' · ') || 'Sin grupo';
+          const actividades = seccionesData.map(sec => {
+              const resultado = estudiante.historialResultados?.[sec.id] || {};
+              const notaAutomatica = Number(resultado.notaFinal ?? resultado.notaIA);
+              const ajuste = estudiante.notasDesafiosDocente?.[sec.id] || {};
+              const notaDocente = Number(ajuste.nota);
+              const finalizada = estudiante.finalizadas?.[sec.id] === true;
+              return {
+                  titulo: sec.title || sec.id,
+                  estado: finalizada ? 'Finalizada' : 'Pendiente',
+                  automatica: Number.isFinite(notaAutomatica) ? notaAutomatica : null,
+                  docente: Number.isFinite(notaDocente) ? notaDocente : null,
+                  vigente: Number.isFinite(notaDocente) ? notaDocente : (Number.isFinite(notaAutomatica) ? notaAutomatica : null)
+              };
+          });
+          const notasAutomaticas = actividades.map(a => a.automatica).filter(Number.isFinite);
+          const notasDocente = actividades.map(a => a.docente).filter(Number.isFinite);
+          const promedio = valores => valores.length ? (valores.reduce((a, b) => a + b, 0) / valores.length).toFixed(2) : 'Sin datos';
+          const progreso = Number(calcularProgresoEstudiante(estudiante)) || 0;
+          doc.setFillColor(15, 23, 42);
+          doc.rect(0, 0, 210, 35, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(16);
+          doc.text('Informe individual de seguimiento', 15, 16);
+          doc.setFontSize(10);
+          doc.text(`${nombre} · ${grupo}`, 15, 25);
+          doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')}`, 15, 31);
+          doc.setTextColor(15, 23, 42);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(10);
+          doc.text(`Progreso: ${progreso}%`, 15, 46);
+          doc.text(`Promedio automático: ${promedio(notasAutomaticas)}/10`, 65, 46);
+          doc.text(`Promedio docente: ${promedio(notasDocente)}/10`, 135, 46);
+          doc.setFontSize(8);
+          doc.setTextColor(71, 85, 105);
+          const leyenda = doc.splitTextToSize(
+              'Nota automática: resultado generado por la evaluación de la actividad. Nota calculada: nota automática ajustada por descuentos o criterios de seguimiento. Nota docente: calificación revisada y confirmada manualmente por el docente; cuando existe, es la nota vigente.',
+              180
+          );
+          doc.text(leyenda, 15, 55);
+          let y = 70 + leyenda.length * 4;
+          doc.setFillColor(15, 23, 42);
+          doc.rect(12, y, 186, 9, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8);
+          doc.text('Actividad', 15, y + 6);
+          doc.text('Estado', 88, y + 6);
+          doc.text('Auto.', 125, y + 6);
+          doc.text('Docente', 150, y + 6);
+          doc.text('Vigente', 178, y + 6);
+          y += 15;
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(15, 23, 42);
+          actividades.forEach((actividad, indiceActividad) => {
+              if (y > 280) {
+                  doc.addPage();
+                  y = 18;
+              }
+              if (indiceActividad % 2 === 0) {
+                  doc.setFillColor(241, 245, 249);
+                  doc.rect(12, y - 4, 186, 8, 'F');
+              }
+              doc.text(doc.splitTextToSize(`${indiceActividad + 1}. ${actividad.titulo}`, 68)[0], 15, y);
+              doc.text(actividad.estado, 88, y);
+              doc.text(actividad.automatica === null ? '—' : `${actividad.automatica.toFixed(1)}/10`, 125, y);
+              doc.text(actividad.docente === null ? '—' : `${actividad.docente.toFixed(1)}/10`, 150, y);
+              doc.text(actividad.vigente === null ? 'Pend.' : `${actividad.vigente.toFixed(1)}/10`, 178, y);
+              y += 8;
+          });
+          doc.save(`informe-individual-${String(nombre).replace(/[^\wáéíóúñü-]+/gi, '_')}.pdf`);
+      }
+      window.exportarInformeIndividualEstudiantePDF = exportarInformeIndividualEstudiantePDF;
 
       document.addEventListener('click', evento => {
           const boton = evento.target.closest?.('#btnInformePreceptorTutores');
