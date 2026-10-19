@@ -13704,6 +13704,146 @@
           guardarPDFProfesor(doc, `Detalle_docente_${nombre}_${e.curso || ''}_${e.division || ''}`);
       }
 
+      function obtenerDatosInformePreceptorTutores() {
+          const curso = String(document.getElementById('informePreceptorCurso')?.value || '');
+          const division = String(document.getElementById('informePreceptorDivision')?.value || '');
+          const turno = String(document.getElementById('informePreceptorTurno')?.value || '');
+          const estudiantes = estudiantesProfesor.filter(d => {
+              if (d?.estadoCuenta === 'rechazado') return false;
+              const e = d.estudiante || {};
+              return (!curso || String(e.curso || '') === curso) &&
+                  (!division || String(e.division || '') === division) &&
+                  (!turno || String(e.turno || '') === turno);
+          });
+          const progreso = estudiantes.map(d => Number(calcularProgresoEstudiante(d)) || 0);
+          const notas = estudiantes.map(d => Number(calcularNotaDefinitivaEstudiante(d))).filter(Number.isFinite);
+          const conectados = estudiantes.filter(d => {
+              const ms = d.ultimaConexion?.toMillis?.() || Date.parse(d.ultimaConexion || d.ultimaActividad || '') || 0;
+              return ms && Date.now() - ms <= 120000;
+          }).length;
+          const bloqueados = estudiantes.filter(d => d.pantallaBloqueada === true).length;
+          const estados = {
+              activos: estudiantes.filter(d => d.estadoCuenta === 'activo').length,
+              pendientes: estudiantes.filter(d => d.estadoCuenta === 'pendiente').length,
+              inactivos: estudiantes.filter(d => d.estadoCuenta === 'inactivo').length
+          };
+          const promedioProgreso = progreso.length ? Math.round(progreso.reduce((a, b) => a + b, 0) / progreso.length) : 0;
+          const promedioNota = notas.length ? Number((notas.reduce((a, b) => a + b, 0) / notas.length).toFixed(2)) : null;
+          return { curso, division, turno, estudiantes, progreso, notas, conectados, bloqueados, estados, promedioProgreso, promedioNota };
+      }
+
+      function escaparInforme(valor) {
+          return escapeHtml(String(valor ?? ''));
+      }
+
+      function llenarFiltrosInformePreceptorTutores() {
+          const valores = id => [...new Set(estudiantesProfesor.map(d => String(d.estudiante?.[id] || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+          [['informePreceptorCurso', 'curso'], ['informePreceptorDivision', 'division'], ['informePreceptorTurno', 'turno']].forEach(([id, campo]) => {
+              const select = document.getElementById(id);
+              if (!select) return;
+              const actual = select.value;
+              const etiqueta = campo === 'curso' ? 'Todos los cursos' : campo === 'division' ? 'Todas las divisiones' : 'Todos los turnos';
+              select.innerHTML = `<option value="">${etiqueta}</option>` +
+                  valores(campo).map(v => `<option value="${escaparInforme(v)}">${escaparInforme(v)}</option>`).join('');
+              if (valores(campo).includes(actual)) select.value = actual;
+          });
+      }
+
+      function barraInforme(etiqueta, valor, color) {
+          const seguro = Math.max(0, Math.min(100, Number(valor) || 0));
+          return `<div style="margin:.45rem 0"><div style="display:flex;justify-content:space-between;gap:.5rem;font-size:.78rem"><span>${escaparInforme(etiqueta)}</span><strong>${seguro}%</strong></div><div style="height:10px;background:rgba(148,163,184,.2);border-radius:5px;overflow:hidden"><span style="display:block;width:${seguro}%;height:100%;background:${color};"></span></div></div>`;
+      }
+
+      function renderInformePreceptorTutores() {
+          const contenedor = document.getElementById('informePreceptorTutoresContenido');
+          if (!contenedor) return;
+          const datos = obtenerDatosInformePreceptorTutores();
+          const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los cursos, divisiones y turnos';
+          const promedioNota = datos.promedioNota === null ? 'Sin datos' : `${datos.promedioNota}/10`;
+          const filas = datos.estudiantes.slice().sort((a, b) => String(a.estudiante?.nombre || a.nombreGoogle || a.email || '').localeCompare(String(b.estudiante?.nombre || b.nombreGoogle || b.email || ''), 'es'));
+          contenedor.innerHTML = `
+            <div style="margin:1rem 0;padding:.7rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06)"><strong>Alcance:</strong> ${escaparInforme(alcance)} · ${datos.estudiantes.length} estudiante${datos.estudiantes.length === 1 ? '' : 's'}</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.65rem;margin-bottom:1rem">
+              <div class="teacher-group-report-summary"><small>Progreso promedio</small><strong>${datos.promedioProgreso}%</strong></div>
+              <div class="teacher-group-report-summary"><small>Nota promedio</small><strong>${promedioNota}</strong></div>
+              <div class="teacher-group-report-summary"><small>Conectados</small><strong>${datos.conectados}/${datos.estudiantes.length}</strong></div>
+              <div class="teacher-group-report-summary"><small>Pantallas bloqueadas</small><strong>${datos.bloqueados}</strong></div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:1rem">
+              <section style="padding:.8rem;border:1px solid rgba(148,163,184,.25);border-radius:8px"><h4><i class="fa-solid fa-chart-line"></i> Progreso del grupo</h4>${barraInforme('Promedio de avance', datos.promedioProgreso, '#38bdf8')}${barraInforme('Conectados en los últimos 2 minutos', datos.estudiantes.length ? datos.conectados * 100 / datos.estudiantes.length : 0, '#34d399')}${barraInforme('Sin bloqueo de pantalla', datos.estudiantes.length ? (datos.estudiantes.length - datos.bloqueados) * 100 / datos.estudiantes.length : 0, '#a78bfa')}</section>
+              <section style="padding:.8rem;border:1px solid rgba(148,163,184,.25);border-radius:8px"><h4><i class="fa-solid fa-users"></i> Estado de cuentas</h4>${barraInforme('Activas', datos.estudiantes.length ? datos.estados.activos * 100 / datos.estudiantes.length : 0, '#34d399')}${barraInforme('Pendientes', datos.estudiantes.length ? datos.estados.pendientes * 100 / datos.estudiantes.length : 0, '#fbbf24')}${barraInforme('Inactivas', datos.estudiantes.length ? datos.estados.inactivos * 100 / datos.estudiantes.length : 0, '#f87171')}</section>
+            </div>
+            <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Estudiante</th><th>Curso</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Nota</th><th>Situación</th></tr></thead><tbody>${filas.length ? filas.map(d => {
+              const e = d.estudiante || {};
+              const p = Number(calcularProgresoEstudiante(d)) || 0;
+              const n = Number(calcularNotaDefinitivaEstudiante(d));
+              const situacion = d.pantallaBloqueada ? 'Pantalla bloqueada' : (p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento');
+              return `<tr><td><strong>${escaparInforme(e.nombre || d.nombreGoogle || d.email || 'Sin nombre')}</strong><br><small>${escaparInforme(d.email || '')}</small></td><td>${escaparInforme(e.curso || 'Sin curso')} ${escaparInforme(e.division || '')}</td><td>${escaparInforme(e.turno || 'Sin turno')}</td><td>${escaparInforme(d.estadoCuenta || 'Sin estado')}</td><td>${p}%</td><td>${Number.isFinite(n) ? `${n}/10` : 'Pendiente'}</td><td>${situacion}</td></tr>`;
+            }).join('') : '<tr><td colspan="7">No hay estudiantes para los filtros seleccionados.</td></tr>'}</tbody></table></div>`;
+      }
+
+      function abrirInformePreceptorTutores() {
+          llenarFiltrosInformePreceptorTutores();
+          const modal = document.getElementById('informePreceptorTutoresModal');
+          if (!modal) return;
+          modal.classList.add('active');
+          renderInformePreceptorTutores();
+      }
+      window.abrirInformePreceptorTutores = abrirInformePreceptorTutores;
+      window.renderInformePreceptorTutores = renderInformePreceptorTutores;
+      function cerrarInformePreceptorTutores() {
+          document.getElementById('informePreceptorTutoresModal')?.classList.remove('active');
+      }
+      window.cerrarInformePreceptorTutores = cerrarInformePreceptorTutores;
+
+      function exportarInformePreceptorTutoresCSV() {
+          const datos = obtenerDatosInformePreceptorTutores();
+          const filas = [['Estudiante', 'Email', 'Curso', 'Division', 'Turno', 'Estado', 'Progreso', 'Nota', 'Situacion']];
+          datos.estudiantes.forEach(d => {
+              const e = d.estudiante || {};
+              const p = Number(calcularProgresoEstudiante(d)) || 0;
+              const n = Number(calcularNotaDefinitivaEstudiante(d));
+              filas.push([e.nombre || d.nombreGoogle || d.email || '', d.email || '', e.curso || '', e.division || '', e.turno || '', d.estadoCuenta || '', `${p}%`, Number.isFinite(n) ? n : '', d.pantallaBloqueada ? 'Pantalla bloqueada' : p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento']);
+          });
+          const csv = filas.map(fila => fila.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
+          const enlace = document.createElement('a');
+          enlace.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+          enlace.download = `informe-preceptoria-${new Date().toISOString().slice(0, 10)}.csv`;
+          enlace.click();
+          setTimeout(() => URL.revokeObjectURL(enlace.href), 1000);
+      }
+      window.exportarInformePreceptorTutoresCSV = exportarInformePreceptorTutoresCSV;
+
+      async function exportarInformePreceptorTutoresPDF() {
+          const datos = obtenerDatosInformePreceptorTutores();
+          if (typeof asegurarLibreriasPdf === 'function') {
+              try { await asegurarLibreriasPdf(); } catch (_) {}
+          }
+          if (!window.jspdf?.jsPDF) {
+              alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.');
+              return;
+          }
+          const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
+          const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los grupos';
+          doc.setFontSize(16); doc.text('Informe para preceptoría y tutores', 15, 18);
+          doc.setFontSize(10); doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')} · ${alcance}`, 15, 26);
+          doc.text(`Estudiantes: ${datos.estudiantes.length} · Progreso promedio: ${datos.promedioProgreso}% · Nota promedio: ${datos.promedioNota ?? 'Sin datos'}`, 15, 33);
+          let y = 44;
+          doc.setFontSize(9);
+          doc.text('Estudiante', 15, y); doc.text('Grupo', 75, y); doc.text('Estado', 115, y); doc.text('Prog.', 150, y); doc.text('Nota', 175, y);
+          y += 6;
+          datos.estudiantes.forEach(d => {
+              if (y > 280) { doc.addPage(); y = 18; }
+              const e = d.estudiante || {}; const p = Number(calcularProgresoEstudiante(d)) || 0; const n = Number(calcularNotaDefinitivaEstudiante(d));
+              doc.text(String(e.nombre || d.nombreGoogle || d.email || 'Sin nombre').slice(0, 32), 15, y);
+              doc.text(`${e.curso || ''} ${e.division || ''} ${e.turno || ''}`.trim().slice(0, 22), 75, y);
+              doc.text(String(d.pantallaBloqueada ? 'Bloqueada' : d.estadoCuenta || 'Sin estado').slice(0, 18), 115, y);
+              doc.text(`${p}%`, 150, y); doc.text(Number.isFinite(n) ? `${n}/10` : 'Pend.', 175, y); y += 5;
+          });
+          doc.save(`informe-preceptoria-${new Date().toISOString().slice(0, 10)}.pdf`);
+      }
+      window.exportarInformePreceptorTutoresPDF = exportarInformePreceptorTutoresPDF;
+
       async function exportarCursoProfesorPDF() {
           try { await asegurarLibreriasPdf(); } catch (_) { alert('No se pudo cargar el generador de PDF. Verificá la conexión e intentá nuevamente.'); return; }
           if (!window.jspdf?.jsPDF) {
