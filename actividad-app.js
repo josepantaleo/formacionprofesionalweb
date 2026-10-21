@@ -13720,13 +13720,17 @@
                   (!turno || String(e.turno || '') === turno);
           });
           const progreso = estudiantes.map(d => Number(calcularProgresoEstudiante(d)) || 0);
+          const notaValida = valor => {
+              if (valor === null || valor === undefined || valor === '' || valor === '—' || valor === 'â€”') return null;
+              const numero = Number(valor);
+              return Number.isFinite(numero) && numero >= 0 && numero <= 10 ? numero : null;
+          };
           const notaVigente = d => {
-              const docente = Number(calcularNotaDefinitivaEstudiante(d));
-              if (Number.isFinite(docente)) return docente;
-              const calculada = Number(calcularNotaProvisionalEstudiante(d));
-              if (Number.isFinite(calculada)) return calculada;
-              const automatica = Number(calcularNotaEstudiante(d));
-              return Number.isFinite(automatica) ? automatica : null;
+              const docente = notaValida(calcularNotaDefinitivaEstudiante(d));
+              if (docente !== null) return docente;
+              const calculada = notaValida(calcularNotaProvisionalEstudiante(d));
+              if (calculada !== null) return calculada;
+              return notaValida(calcularNotaEstudiante(d));
           };
           const notasVigentes = estudiantes.map(notaVigente).filter(Number.isFinite);
           const conectados = estudiantes.filter(d => {
@@ -13780,30 +13784,37 @@
               return;
           }
           const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los cursos, divisiones y turnos';
-          const mostrarNota = valor => valor === null ? 'Sin datos' : `${valor}/10`;
+          const mostrarNota = valor => valor === null || !Number.isFinite(valor) ? 'Pendiente' : `${valor.toFixed(2)}/10`;
           const filas = datos.estudiantes.slice().sort((a, b) => String(a.estudiante?.nombre || a.nombreGoogle || a.email || '').localeCompare(String(b.estudiante?.nombre || b.nombreGoogle || b.email || ''), 'es'));
+          const grafico = filas.map((d, i) => {
+              const e = d.estudiante || {};
+              const nota = datos.notaVigente(d);
+              const nombre = e.nombre || d.nombreGoogle || d.email || `Estudiante ${i + 1}`;
+              const x = 185, ancho = 460;
+              const largo = Number.isFinite(nota) ? Math.max(0, Math.min(10, nota)) / 10 * ancho : 0;
+              return `<g><text x="8" y="${i * 34 + 20}" font-size="12" fill="currentColor">${escaparInforme(String(nombre).slice(0, 25))}</text><rect x="${x}" y="${i * 34 + 7}" width="${ancho}" height="18" rx="4" fill="#e2e8f0" opacity=".22"/><rect x="${x}" y="${i * 34 + 7}" width="${largo}" height="18" rx="4" fill="#38bdf8"/><text x="${x + ancho + 9}" y="${i * 34 + 20}" font-size="12" fill="currentColor">${Number.isFinite(nota) ? nota.toFixed(2) : 'S/D'}</text></g>`;
+          }).join('');
+          const altoGrafico = Math.max(100, filas.length * 34 + 12);
           contenedor.innerHTML = `
             <div style="margin:1rem 0;padding:.7rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06)"><strong>Alcance:</strong> ${escaparInforme(alcance)} · ${datos.estudiantes.length} estudiante${datos.estudiantes.length === 1 ? '' : 's'}</div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.65rem;margin-bottom:1rem">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.65rem;margin-bottom:1rem">
+              <div class="teacher-group-report-summary"><small>Estudiantes incluidos</small><strong>${datos.estudiantes.length}</strong></div>
+              <div class="teacher-group-report-summary"><small>Promedio real del grupo</small><strong>${mostrarNota(datos.promedioVigente)}</strong></div>
               <div class="teacher-group-report-summary"><small>Progreso promedio</small><strong>${datos.promedioProgreso}%</strong></div>
-              <div class="teacher-group-report-summary"><small>Promedio vigente</small><strong>${mostrarNota(datos.promedioVigente)}</strong></div>
               <div class="teacher-group-report-summary"><small>Conectados</small><strong>${datos.conectados}/${datos.estudiantes.length}</strong></div>
-              <div class="teacher-group-report-summary"><small>Pantallas bloqueadas</small><strong>${datos.bloqueados}</strong></div>
             </div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:1rem">
-              <section style="padding:.8rem;border:1px solid rgba(148,163,184,.25);border-radius:8px"><h4><i class="fa-solid fa-chart-line"></i> Progreso del grupo</h4>${barraInforme('Promedio de avance', datos.promedioProgreso, '#38bdf8')}${barraInforme('Conectados en los últimos 2 minutos', datos.estudiantes.length ? datos.conectados * 100 / datos.estudiantes.length : 0, '#34d399')}${barraInforme('Sin bloqueo de pantalla', datos.estudiantes.length ? (datos.estudiantes.length - datos.bloqueados) * 100 / datos.estudiantes.length : 0, '#a78bfa')}</section>
-              <section style="padding:.8rem;border:1px solid rgba(148,163,184,.25);border-radius:8px"><h4><i class="fa-solid fa-users"></i> Estado de cuentas</h4>${barraInforme('Activas', datos.estudiantes.length ? datos.estados.activos * 100 / datos.estudiantes.length : 0, '#34d399')}${barraInforme('Pendientes', datos.estudiantes.length ? datos.estados.pendientes * 100 / datos.estudiantes.length : 0, '#fbbf24')}${barraInforme('Inactivas', datos.estudiantes.length ? datos.estados.inactivos * 100 / datos.estudiantes.length : 0, '#f87171')}</section>
-            </div>
-            <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Estudiante</th><th>Curso</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Promedio vigente</th><th>Situación</th></tr></thead><tbody>${filas.length ? filas.map(d => {
+            <section style="padding:.8rem;border:1px solid rgba(148,163,184,.25);border-radius:8px;margin-bottom:1rem">
+              <h4 style="margin:.2rem 0 .6rem"><i class="fa-solid fa-chart-column"></i> Promedio real por estudiante</h4>
+              <p style="font-size:.82rem;color:var(--text-muted)">Se muestra una sola nota por estudiante: la calificación vigente, priorizando la nota confirmada por el docente y, si no existe, la calculada o automática. Escala de 0 a 10.</p>
+              <div style="overflow-x:auto"><svg role="img" aria-label="Gráfico de promedio real por estudiante" viewBox="0 0 720 ${altoGrafico}" style="width:100%;min-width:560px;height:auto;max-height:900px">${grafico}</svg></div>
+            </section>
+            <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Estudiante</th><th>Curso</th><th>División</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Promedio real</th><th>Situación</th></tr></thead><tbody>${filas.map(d => {
               const e = d.estudiante || {};
               const p = Number(calcularProgresoEstudiante(d)) || 0;
               const vigente = datos.notaVigente(d);
-              const auto = vigente;
-              const calc = NaN;
-              const docente = NaN;
               const situacion = d.pantallaBloqueada ? 'Pantalla bloqueada' : (p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento');
-              return `<tr><td><strong>${escaparInforme(e.nombre || d.nombreGoogle || d.email || 'Sin nombre')}</strong><br><small>${escaparInforme(d.email || '')}</small></td><td>${escaparInforme(e.curso || 'Sin curso')} ${escaparInforme(e.division || '')}</td><td>${escaparInforme(e.turno || 'Sin turno')}</td><td>${escaparInforme(d.estadoCuenta || 'Sin estado')}</td><td>${p}%</td><td>${Number.isFinite(vigente) ? `${vigente.toFixed(1)}/10` : 'Pendiente'}</td><td>${situacion}</td></tr>`;
-            }).join('') : '<tr><td colspan="7">No hay estudiantes para los filtros seleccionados.</td></tr>'}</tbody></table></div>`;
+              return `<tr><td><strong>${escaparInforme(e.nombre || d.nombreGoogle || d.email || 'Sin nombre')}</strong><br><small>${escaparInforme(d.email || '')}</small></td><td>${escaparInforme(e.curso || 'Sin curso')}</td><td>${escaparInforme(e.division || '—')}</td><td>${escaparInforme(e.turno || 'Sin turno')}</td><td>${escaparInforme(d.estadoCuenta || 'Sin estado')}</td><td>${p}%</td><td><strong>${mostrarNota(vigente)}</strong></td><td>${situacion}</td></tr>`;
+            }).join('')}</tbody></table></div>`;
       }
 
       function abrirInformePreceptorTutores() {
@@ -13829,11 +13840,11 @@
 
       function exportarInformePreceptorTutoresCSV() {
           const datos = obtenerDatosInformePreceptorTutores();
-          const filas = [['Estudiante', 'Email', 'Curso', 'Division', 'Turno', 'Estado', 'Progreso', 'Nota', 'Situacion']];
+          const filas = [['Estudiante', 'Email', 'Curso', 'Division', 'Turno', 'Estado', 'Progreso', 'Promedio real', 'Situacion']];
           datos.estudiantes.forEach(d => {
               const e = d.estudiante || {};
               const p = Number(calcularProgresoEstudiante(d)) || 0;
-              const n = Number(calcularNotaDefinitivaEstudiante(d));
+              const n = datos.notaVigente(d);
               filas.push([e.nombre || d.nombreGoogle || d.email || '', d.email || '', e.curso || '', e.division || '', e.turno || '', d.estadoCuenta || '', `${p}%`, Number.isFinite(n) ? n : '', d.pantallaBloqueada ? 'Pantalla bloqueada' : p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento']);
           });
           const csv = filas.map(fila => fila.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
@@ -13856,72 +13867,46 @@
           }
           const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
           const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los grupos';
+          const notaTexto = n => Number.isFinite(n) ? `${n.toFixed(2)}/10` : 'Pendiente';
           doc.setFontSize(16); doc.text('Informe para preceptoría y tutores/padres', 15, 18);
           doc.setFontSize(10); doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')} · ${alcance}`, 15, 26);
-          const resumenPDF = doc.splitTextToSize(
-              `Estudiantes: ${datos.estudiantes.length} · Progreso: ${datos.promedioProgreso}% · Promedio vigente: ${datos.promedioVigente ?? 'Sin datos'}/10`,
-              180
-          );
-          doc.text(resumenPDF, 15, 33);
-          doc.setFontSize(7.5);
-          doc.setTextColor(71, 85, 105);
-          const leyendaGrupo = doc.splitTextToSize(
-              'Leyenda: automática = resultado de la evaluación; calculada = automática ajustada por descuentos o criterios de seguimiento; docente = calificación revisada y confirmada manualmente. Cuando existe una nota docente, es la nota vigente.',
-              180
-          );
-          doc.text(leyendaGrupo, 15, 39);
+          doc.setFontSize(10);
+          doc.text(doc.splitTextToSize(`Estudiantes: ${datos.estudiantes.length} · Promedio real del grupo: ${notaTexto(datos.promedioVigente)} · Progreso promedio: ${datos.promedioProgreso}%`, 180), 15, 34);
+          doc.setFontSize(8); doc.setTextColor(71, 85, 105);
+          doc.text(doc.splitTextToSize('Promedio real: una única calificación vigente por estudiante. Se prioriza la nota confirmada por el docente; si no existe, se utiliza la nota calculada y luego la automática. Los estudiantes sin nota aparecen como pendientes y no se incluyen en el promedio grupal.', 180), 15, 43);
           doc.setTextColor(15, 23, 42);
-          const dibujarBarras = (titulo, items, x, y, ancho, color) => {
-              doc.setFontSize(10);
-              doc.text(titulo, x, y);
-              const maximo = Math.max(1, ...items.map(item => Number(item.valor) || 0));
-              let cursorY = y + 7;
-              items.forEach(item => {
-                  const valor = Math.max(0, Number(item.valor) || 0);
-                  const porcentaje = item.porcentaje ?? (valor / maximo * 100);
-                  doc.setFontSize(8);
-                  doc.text(String(item.etiqueta).slice(0, 28), x, cursorY);
-                  doc.text(String(item.texto ?? valor), x + ancho + 3, cursorY);
-                  doc.setFillColor(228, 232, 240);
-                  doc.roundedRect(x, cursorY + 2, ancho, 4, 1, 1, 'F');
-                  doc.setFillColor(...color);
-                  doc.roundedRect(x, cursorY + 2, Math.max(0.5, ancho * Math.min(100, porcentaje) / 100), 4, 1, 1, 'F');
-                  cursorY += 11;
+          let y = 62;
+          doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.text('Gráfico: promedio real por estudiante (escala 0 a 10)', 15, y); y += 8;
+          const ordenados = datos.estudiantes.slice().sort((a, b) => String(a.estudiante?.nombre || a.nombreGoogle || a.email || '').localeCompare(String(b.estudiante?.nombre || b.nombreGoogle || b.email || ''), 'es'));
+          const dibujarGrafico = () => {
+              ordenados.forEach(d => {
+                  if (y > 265) { doc.addPage(); y = 18; }
+                  const e = d.estudiante || {};
+                  const nombre = String(e.nombre || d.nombreGoogle || d.email || 'Sin nombre').slice(0, 34);
+                  const nota = datos.notaVigente(d);
+                  doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+                  doc.text(nombre, 15, y);
+                  doc.setFillColor(226, 232, 240); doc.roundedRect(80, y - 3.5, 90, 4, 1, 1, 'F');
+                  if (Number.isFinite(nota)) {
+                      doc.setFillColor(14, 165, 233); doc.roundedRect(80, y - 3.5, Math.max(.5, 90 * Math.max(0, Math.min(10, nota)) / 10), 4, 1, 1, 'F');
+                  }
+                  doc.text(Number.isFinite(nota) ? nota.toFixed(2) : 'Pend.', 174, y);
+                  y += 7;
               });
-              return cursorY;
           };
-          const anchoGrafico = 72;
-          const yGrafico = 51 + leyendaGrupo.length * 3;
-          dibujarBarras('Progreso promedio', [
-              { etiqueta: 'Avance del grupo', valor: datos.promedioProgreso, porcentaje: datos.promedioProgreso, texto: `${datos.promedioProgreso}%` },
-              { etiqueta: 'Conectados recientes', valor: datos.estudiantes.length ? datos.conectados / datos.estudiantes.length * 100 : 0, porcentaje: datos.estudiantes.length ? datos.conectados / datos.estudiantes.length * 100 : 0, texto: `${datos.conectados}/${datos.estudiantes.length}` },
-              { etiqueta: 'Sin bloqueo de pantalla', valor: datos.estudiantes.length ? (datos.estudiantes.length - datos.bloqueados) / datos.estudiantes.length * 100 : 0, porcentaje: datos.estudiantes.length ? (datos.estudiantes.length - datos.bloqueados) / datos.estudiantes.length * 100 : 0, texto: `${datos.estudiantes.length - datos.bloqueados}/${datos.estudiantes.length}` }
-          ], 15, yGrafico, anchoGrafico, [14, 165, 233]);
-          dibujarBarras('Estados del grupo', [
-              { etiqueta: 'Activas', valor: datos.estados.activos, texto: datos.estados.activos },
-              { etiqueta: 'Pendientes', valor: datos.estados.pendientes, texto: datos.estados.pendientes },
-              { etiqueta: 'Inactivas', valor: datos.estados.inactivos, texto: datos.estados.inactivos }
-          ], 105, yGrafico, anchoGrafico, [52, 211, 153]);
-          let y = 99;
-          doc.setFontSize(9);
-          doc.setFont('helvetica', 'bold');
-          doc.text('Estudiante', 15, y); doc.text('Grupo', 63, y); doc.text('Estado', 101, y); doc.text('Prog.', 133, y); doc.text('Promedio vigente', 153, y);
-          y += 6;
+          dibujarGrafico();
+          if (y > 260) { doc.addPage(); y = 18; } else { y += 5; }
+          doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.text('Detalle de seguimiento', 15, y); y += 7;
+          doc.setFontSize(8); doc.text('Estudiante', 15, y); doc.text('Grupo', 78, y); doc.text('Progreso', 126, y); doc.text('Promedio real', 153, y); y += 5;
           doc.setFont('helvetica', 'normal');
-          datos.estudiantes.forEach(d => {
+          ordenados.forEach(d => {
               if (y > 280) { doc.addPage(); y = 18; }
               const e = d.estudiante || {};
               const p = Number(calcularProgresoEstudiante(d)) || 0;
-              const auto = Number(calcularNotaEstudiante(d));
-              const calc = Number(calcularNotaProvisionalEstudiante(d));
-              const docente = Number(calcularNotaDefinitivaEstudiante(d));
-              doc.text(String(e.nombre || d.nombreGoogle || d.email || 'Sin nombre').slice(0, 25), 15, y);
-              doc.text(`${e.curso || ''} ${e.division || ''} ${e.turno || ''}`.trim().slice(0, 20), 63, y);
-              doc.text(String(d.pantallaBloqueada ? 'Bloqueada' : d.estadoCuenta || 'Sin estado').slice(0, 15), 101, y);
-              doc.text(`${p}%`, 133, y);
-              doc.text(Number.isFinite(auto) ? auto.toFixed(1) : '—', 149, y);
-              doc.text(Number.isFinite(calc) ? calc.toFixed(1) : '—', 166, y);
-              doc.text(Number.isFinite(docente) ? docente.toFixed(1) : '—', 183, y);
+              doc.text(String(e.nombre || d.nombreGoogle || d.email || 'Sin nombre').slice(0, 32), 15, y);
+              doc.text(`${e.curso || ''} ${e.division || ''} ${e.turno || ''}`.trim().slice(0, 25), 78, y);
+              doc.text(`${p}%`, 126, y);
+              doc.text(notaTexto(datos.notaVigente(d)), 153, y);
               y += 5;
           });
           doc.save(`informe-preceptoria-${new Date().toISOString().slice(0, 10)}.pdf`);
