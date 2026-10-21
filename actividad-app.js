@@ -13740,7 +13740,7 @@
           guardarPDFProfesor(doc, `Detalle_docente_${nombre}_${e.curso || ''}_${e.division || ''}`);
       }
 
-      const filtrosAvanzadosPreceptor = { buscar: '', estado: '', progreso: '', nota: '', conexion: '' };
+      const filtrosAvanzadosPreceptor = { buscar: '', estado: '', progreso: '', nota: '', conexion: '', situacion: '', orden: 'apellido' };
 
       function obtenerDatosInformePreceptorTutores() {
           const curso = String(document.getElementById('informePreceptorCurso')?.value || '');
@@ -13788,6 +13788,8 @@
               if (filtrosAvanzadosPreceptor.conexion === 'conectado' && !conectado) return false;
               if (filtrosAvanzadosPreceptor.conexion === 'sin-conexion' && conectado) return false;
               if (filtrosAvanzadosPreceptor.conexion === 'bloqueado' && d.pantallaBloqueada !== true) return false;
+              const situacion = d.pantallaBloqueada ? 'bloqueado' : avance < 40 ? 'prioridad' : avance < 75 ? 'seguimiento' : 'favorable';
+              if (filtrosAvanzadosPreceptor.situacion && situacion !== filtrosAvanzadosPreceptor.situacion) return false;
               return true;
           });
           const progresoFiltrado = estudiantes.map(d => Number(calcularProgresoEstudiante(d)) || 0);
@@ -13822,32 +13824,66 @@
 
       function clavesNombreInformePreceptor(d) {
           const e = d?.estudiante || {};
-          const nombreCompleto = String(e.nombre || d?.nombreGoogle || d?.email || '').trim();
-          const apellidoCampo = String(e.apellido || e.apellidos || d?.apellido || d?.apellidos || '').trim();
-          const nombreCampo = String(e.nombres || e.nombrePila || '').trim();
+          const nombreCompleto = String(e.nombre || d?.nombreGoogle || d?.email || '').trim().replace(/\s+/g, ' ');
+          const apellidoCampo = String(e.apellido || e.apellidos || d?.apellido || d?.apellidos || '').trim().replace(/\s+/g, ' ');
+          const nombreCampo = String(e.nombres || e.nombrePila || e.nombreDePila || '').trim().replace(/\s+/g, ' ');
+
+          // Si la base ya separa apellido y nombres, esos campos tienen prioridad.
           if (apellidoCampo) {
-              return { apellido: apellidoCampo, nombre: nombreCampo || nombreCompleto };
+              let nombre = nombreCampo;
+              if (!nombre && nombreCompleto) {
+                  // Evita usar el nombre completo como nombre de pila cuando el apellido ya está separado.
+                  const completoMinusculas = nombreCompleto.toLocaleLowerCase('es');
+                  const apellidoMinusculas = apellidoCampo.toLocaleLowerCase('es');
+                  nombre = completoMinusculas.endsWith(apellidoMinusculas)
+                      ? nombreCompleto.slice(0, nombreCompleto.length - apellidoCampo.length).trim().replace(/[ ,]+$/, '')
+                      : nombreCompleto;
+              }
+              return { apellido: apellidoCampo, nombre: nombre || nombreCompleto };
           }
+
+          // También acepta el formato "Apellido, Nombre".
           if (nombreCompleto.includes(',')) {
               const partes = nombreCompleto.split(',');
               return { apellido: partes.shift().trim(), nombre: partes.join(' ').trim() };
           }
+
+          // Cuando solo existe un campo "Nombre y Apellido", se toma el último apellido.
+          // Se contemplan partículas frecuentes en apellidos compuestos (p. ej., "de la Cruz").
           const partes = nombreCompleto.split(/\s+/).filter(Boolean);
           if (partes.length > 1) {
-              return { apellido: partes.pop(), nombre: partes.join(' ') };
+              let inicioApellido = partes.length - 1;
+              const ultimaParticula = new Set(['de', 'del', 'la', 'las', 'los', 'da', 'das', 'do', 'dos', 'di', 'van', 'von']);
+              while (inicioApellido > 0 && ultimaParticula.has(partes[inicioApellido - 1].toLocaleLowerCase('es'))) {
+                  inicioApellido--;
+              }
+              // Incluye "de la", "de los" y "de las" como parte del apellido.
+              if (inicioApellido >= 2 && partes[inicioApellido - 2].toLocaleLowerCase('es') === 'de' && ['la', 'los', 'las'].includes(partes[inicioApellido - 1].toLocaleLowerCase('es'))) {
+                  inicioApellido -= 2;
+              }
+              return {
+                  apellido: partes.slice(inicioApellido).join(' '),
+                  nombre: partes.slice(0, inicioApellido).join(' ')
+              };
           }
           return { apellido: nombreCompleto, nombre: '' };
       }
 
+      function nombreOrdenApellidosInformePreceptor(d) {
+          const partes = clavesNombreInformePreceptor(d);
+          return [partes.apellido, partes.nombre].filter(Boolean).join(', ') || String(d?.email || 'Sin nombre');
+      }
+
       function ordenarEstudiantesInformePreceptorTutores(estudiantes) {
+          const compararTexto = new Intl.Collator('es', { sensitivity: 'base', numeric: true });
           return estudiantes.slice().sort((a, b) => {
               const ka = clavesNombreInformePreceptor(a);
               const kb = clavesNombreInformePreceptor(b);
-              const porApellido = ka.apellido.localeCompare(kb.apellido, 'es', { sensitivity: 'base' });
+              const porApellido = compararTexto.compare(ka.apellido, kb.apellido);
               if (porApellido) return porApellido;
-              const porNombre = ka.nombre.localeCompare(kb.nombre, 'es', { sensitivity: 'base' });
+              const porNombre = compararTexto.compare(ka.nombre, kb.nombre);
               if (porNombre) return porNombre;
-              return String(a?.email || '').localeCompare(String(b?.email || ''), 'es', { sensitivity: 'base' });
+              return compararTexto.compare(String(a?.email || ''), String(b?.email || ''));
           });
       }
 
@@ -13880,6 +13916,14 @@
           const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los cursos, divisiones y turnos';
           const mostrarNota = valor => valor === null || !Number.isFinite(valor) ? 'Pendiente' : `${valor.toFixed(2)}/10`;
           const filas = ordenarEstudiantesInformePreceptorTutores(datos.estudiantes);
+          const ordenSeleccionado = filtrosAvanzadosPreceptor.orden || 'apellido';
+          filas.sort((a, b) => {
+              if (ordenSeleccionado === 'progreso-menor') return (Number(calcularProgresoEstudiante(a)) || 0) - (Number(calcularProgresoEstudiante(b)) || 0);
+              if (ordenSeleccionado === 'progreso-mayor') return (Number(calcularProgresoEstudiante(b)) || 0) - (Number(calcularProgresoEstudiante(a)) || 0);
+              if (ordenSeleccionado === 'nota-menor') return (Number.isFinite(datos.notaVigente(a)) ? datos.notaVigente(a) : -1) - (Number.isFinite(datos.notaVigente(b)) ? datos.notaVigente(b) : -1);
+              if (ordenSeleccionado === 'nota-mayor') return (Number.isFinite(datos.notaVigente(b)) ? datos.notaVigente(b) : -1) - (Number.isFinite(datos.notaVigente(a)) ? datos.notaVigente(a) : -1);
+              return 0;
+          });
           const grafico = filas.map((d, i) => {
               const e = d.estudiante || {};
               const nota = datos.notaVigente(d);
@@ -13898,6 +13942,8 @@
                 <label>Progreso<select id="filtroPreceptorProgreso" style="display:block;width:100%;margin-top:.25rem"><option value="">Todos los niveles</option><option value="inicial">Inicial: menos de 20%</option><option value="desarrollo">En desarrollo: 20–39%</option><option value="avanzado">Avanzado: 40–59%</option><option value="muy-avanzado">Muy avanzado: 60% o más</option></select></label>
                 <label>Promedio vigente<select id="filtroPreceptorNota" style="display:block;width:100%;margin-top:.25rem"><option value="">Todas las notas</option><option value="sin-nota">Sin nota</option><option value="baja">Menos de 4</option><option value="regular">4 a menos de 6</option><option value="buena">6 a menos de 8</option><option value="alta">8 a 10</option></select></label>
                 <label>Conexión / dispositivo<select id="filtroPreceptorConexion" style="display:block;width:100%;margin-top:.25rem"><option value="">Todos</option><option value="conectado">Conectados ahora</option><option value="sin-conexion">Sin conexión reciente</option><option value="bloqueado">Pantalla bloqueada</option></select></label>
+                <label>Situación de seguimiento<select id="filtroPreceptorSituacion" style="display:block;width:100%;margin-top:.25rem"><option value="">Todas las situaciones</option><option value="prioridad">Prioridad: menos de 40%</option><option value="seguimiento">Requiere seguimiento: 40–74%</option><option value="favorable">Avance favorable: 75% o más</option><option value="bloqueado">Pantalla bloqueada</option></select></label>
+                <label>Ordenar resultados<select id="filtroPreceptorOrden" style="display:block;width:100%;margin-top:.25rem"><option value="apellido">Apellido y nombre (A–Z)</option><option value="progreso-menor">Menor progreso primero</option><option value="progreso-mayor">Mayor progreso primero</option><option value="nota-menor">Menor nota primero</option><option value="nota-mayor">Mayor nota primero</option></select></label>
               </div>
               <button type="button" id="limpiarFiltrosPreceptor" class="btn btn-secondary" style="margin-top:.7rem">Limpiar filtros</button>
             </section>
@@ -13925,7 +13971,8 @@
           const controles = [
               ['filtroPreceptorBuscar', 'buscar'], ['filtroPreceptorEstado', 'estado'],
               ['filtroPreceptorProgreso', 'progreso'], ['filtroPreceptorNota', 'nota'],
-              ['filtroPreceptorConexion', 'conexion']
+              ['filtroPreceptorConexion', 'conexion'], ['filtroPreceptorSituacion', 'situacion'],
+              ['filtroPreceptorOrden', 'orden']
           ];
           controles.forEach(([id, campo]) => {
               const el = document.getElementById(id);
@@ -13971,7 +14018,7 @@
               const resumenProgreso = obtenerResumenProgresoEstudiante(d);
               const p = resumenProgreso.porcentaje;
               const n = datos.notaVigente(d);
-              filas.push([e.nombre || d.nombreGoogle || d.email || '', d.email || '', e.curso || '', e.division || '', e.turno || '', d.estadoCuenta || '', `${resumenProgreso.completadas}/${resumenProgreso.total} desafíos (${p}%)`, Number.isFinite(n) ? n : '', d.pantallaBloqueada ? 'Pantalla bloqueada' : p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento']);
+              filas.push([nombreOrdenApellidosInformePreceptor(d), d.email || '', e.curso || '', e.division || '', e.turno || '', d.estadoCuenta || '', `${resumenProgreso.completadas}/${resumenProgreso.total} desafíos (${p}%)`, Number.isFinite(n) ? n : '', d.pantallaBloqueada ? 'Pantalla bloqueada' : p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento']);
           });
           const csv = filas.map(fila => fila.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
           const enlace = document.createElement('a');
@@ -13999,7 +14046,7 @@
           const ordenados = ordenarEstudiantesInformePreceptorTutores(datos.estudiantes);
           const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los cursos, divisiones y turnos';
           const notaTexto = n => Number.isFinite(n) ? `${n.toFixed(2)}/10` : 'Pendiente';
-          const nombreDe = d => String(d.estudiante?.nombre || d.nombreGoogle || d.email || 'Sin nombre');
+          const nombreDe = d => nombreOrdenApellidosInformePreceptor(d);
           const grupoDe = d => [d.estudiante?.curso, d.estudiante?.division, d.estudiante?.turno].filter(Boolean).join(' · ') || 'Sin grupo informado';
           const escribirLinea = (texto, x, y, ancho=180, alto=5) => {
               const lineas = doc.splitTextToSize(String(texto ?? ''), ancho);
