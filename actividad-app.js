@@ -13740,7 +13740,38 @@
           guardarPDFProfesor(doc, `Detalle_docente_${nombre}_${e.curso || ''}_${e.division || ''}`);
       }
 
-      const filtrosAvanzadosPreceptor = { buscar: '', estado: '', progreso: '', nota: '', conexion: '', situacion: '', orden: 'apellido' };
+      const filtrosAvanzadosPreceptor = { buscar: '', estado: '', progreso: '', nota: '', conexion: '', situacion: '', actividad: '', proyecto: '', orden: 'apellido' };
+      let estudianteDetallePreceptorUid = '';
+      const CLAVE_SEGUIMIENTO_PRECEPTORIA = 'ipem146_preceptoria_intervenciones_v1';
+      function obtenerClaveEstudiantePreceptor(d) { return String(d?.uid || d?.email || d?.estudiante?.email || d?.estudiante?.nombre || 'sin-identificador'); }
+      function leerIntervencionesPreceptor() { try { const raw = sessionStorage.getItem(CLAVE_SEGUIMIENTO_PRECEPTORIA); const data = raw ? JSON.parse(raw) : {}; return data && typeof data === 'object' ? data : {}; } catch (_) { return {}; } }
+      function guardarIntervencionPreceptor(clave, registro) { const data = leerIntervencionesPreceptor(); data[clave] = Array.isArray(data[clave]) ? data[clave] : []; data[clave].unshift(registro); try { sessionStorage.setItem(CLAVE_SEGUIMIENTO_PRECEPTORIA, JSON.stringify(data)); return true; } catch (_) { return false; } }
+      function obtenerFechaActividadPreceptor(d) {
+          const posibles = [d?.ultimaActividad, d?.ultimaConexion, d?.ultimaActividadEn, d?.actualizadoEn, d?.ultimoAcceso, d?.seguimientoExtension?.ultimaActividad];
+          for (const v of posibles) { if (v?.toMillis) { const n = v.toMillis(); if (Number.isFinite(n)) return n; } if (v?.seconds) { const n = Number(v.seconds) * 1000; if (Number.isFinite(n)) return n; } const n = typeof v === 'number' ? (v < 1e12 ? v * 1000 : v) : Date.parse(v || ''); if (Number.isFinite(n) && n > 0) return n; }
+          return 0;
+      }
+      function obtenerEstadoProyectoFinalPreceptor(d) {
+          const e = d?.estudiante || {}; const raw = d?.proyectoFinalEstado ?? d?.estadoProyectoFinal ?? e?.proyectoFinalEstado ?? e?.estadoProyectoFinal ?? d?.proyectoFinal?.estado ?? e?.proyectoFinal?.estado;
+          if (typeof raw === 'string' && raw.trim()) { const normal = raw.trim().toLocaleLowerCase('es'); if (/entreg|presentad|finaliz|aprob/.test(normal)) return 'entregado'; if (/pendient|no entreg|en curso|desarrollo/.test(normal)) return 'pendiente'; return normal; }
+          const entregado = d?.proyectoFinalEntregado ?? e?.proyectoFinalEntregado ?? d?.proyectoFinal?.entregado ?? e?.proyectoFinal?.entregado;
+          if (entregado === true) return 'entregado'; if (entregado === false) return 'pendiente'; return 'sin-dato';
+      }
+      function formatearFechaPreceptor(valor) { const ms = typeof valor === 'number' ? valor : Date.parse(valor || ''); return Number.isFinite(ms) && ms > 0 ? new Date(ms).toLocaleString('es-AR') : 'Sin registro'; }
+      function renderDetalleEstudiantePreceptor(d) {
+          const e = d?.estudiante || {}; const key = obtenerClaveEstudiantePreceptor(d); const intervenciones = leerIntervencionesPreceptor()[key] || [];
+          const progreso = Math.max(0, Math.min(100, Number(calcularProgresoEstudiante(d)) || 0)); const resumen = obtenerResumenProgresoEstudiante(d);
+          const actividad = obtenerFechaActividadPreceptor(d); const proyecto = obtenerEstadoProyectoFinalPreceptor(d);
+          const indice = estudiantesProfesor.findIndex(x => String(x?.uid || x?.email || '') === String(d?.uid || d?.email || ''));
+          return `<tr class="fila-detalle-preceptor"><td colspan="9"><section style="padding:1rem;border:1px solid rgba(56,189,248,.35);border-radius:10px;margin:.35rem 0 1rem">
+            <div style="display:flex;justify-content:space-between;gap:1rem;align-items:start;flex-wrap:wrap"><div><h4 style="margin:.1rem 0 .35rem">Ficha individual: ${escaparInforme(nombreOrdenApellidosInformePreceptor(d))}</h4><div>${escaparInforme(d.email || e.email || 'Sin correo')} · ${escaparInforme([e.curso,e.division,e.turno].filter(Boolean).join(' / ') || 'Grupo sin especificar')}</div></div><button type="button" class="btn btn-secondary" data-preceptor-cerrar-detalle>Cerrar ficha</button></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.65rem;margin:.8rem 0"><div class="teacher-group-report-summary"><small>Progreso</small><strong>${progreso}%</strong><small>${resumen.completadas}/${resumen.total} desafíos</small></div><div class="teacher-group-report-summary"><small>Estado de cuenta</small><strong>${escaparInforme(d.estadoCuenta || 'Sin dato')}</strong></div><div class="teacher-group-report-summary"><small>Última actividad conocida</small><strong style="font-size:.9rem">${escaparInforme(formatearFechaPreceptor(actividad))}</strong></div><div class="teacher-group-report-summary"><small>Proyecto final</small><strong>${escaparInforme(proyecto === 'sin-dato' ? 'Sin dato en la fuente' : proyecto)}</strong></div></div>
+            <p style="font-size:.82rem;color:var(--text-muted)">“Sin dato” indica que no se encontró un campo reconocible en el registro, no que la actividad no se haya realizado.</p>
+            <h5>Registro de intervenciones</h5><p style="font-size:.82rem;color:var(--text-muted)">Por seguridad, este registro se conserva solo en esta pestaña del navegador; no se sincroniza con Firebase ni con otros preceptores.</p>
+            <form data-preceptor-intervencion-form data-preceptor-key="${escaparInforme(key)}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.6rem"><label>Tipo<select name="tipo" required><option>Seguimiento académico</option><option>Entrevista con estudiante</option><option>Comunicación familiar</option><option>Acuerdo de trabajo</option><option>Otra intervención</option></select></label><label>Próxima revisión<input name="proximaFecha" type="date"></label><label style="grid-column:1/-1">Intervención / acuerdo<textarea name="detalle" rows="2" maxlength="1200" required placeholder="Registrar hechos observables, acción acordada y próximo paso; evitar datos sensibles innecesarios." style="display:block;width:100%"></textarea></label><button type="submit" class="btn btn-primary">Guardar en esta sesión</button></form>
+            <div style="margin-top:.8rem"><strong>Historial de esta sesión (${intervenciones.length})</strong>${intervenciones.length ? `<ol>${intervenciones.map(it => `<li style="margin:.5rem 0"><strong>${escaparInforme(it.tipo)}</strong> · ${escaparInforme(it.fecha)}${it.proximaFecha ? ` · Próxima revisión: ${escaparInforme(it.proximaFecha)}` : ''}<br>${escaparInforme(it.detalle)}<br><small>Responsable: ${escaparInforme(it.responsable || 'No especificado')}</small></li>`).join('')}</ol>` : '<p style="font-size:.85rem">Todavía no hay intervenciones en esta sesión.</p>'}</div>
+            ${indice >= 0 ? `<button type="button" class="btn btn-secondary" data-preceptor-pdf-individual="${indice}">Exportar ficha académica a PDF</button>` : ''}</section></td></tr>`;
+      }
 
       function obtenerDatosInformePreceptorTutores() {
           const curso = String(document.getElementById('informePreceptorCurso')?.value || '');
@@ -13783,19 +13814,24 @@
               if (filtrosAvanzadosPreceptor.nota === 'regular' && (!Number.isFinite(nota) || nota < 4 || nota >= 6)) return false;
               if (filtrosAvanzadosPreceptor.nota === 'buena' && (!Number.isFinite(nota) || nota < 6 || nota >= 8)) return false;
               if (filtrosAvanzadosPreceptor.nota === 'alta' && (!Number.isFinite(nota) || nota < 8)) return false;
-              const ms = d.ultimaConexion?.toMillis?.() || Date.parse(d.ultimaConexion || d.ultimaActividad || '') || 0;
+              const ms = obtenerFechaActividadPreceptor(d) || 0;
               const conectado = Boolean(ms && Date.now() - ms <= 120000);
               if (filtrosAvanzadosPreceptor.conexion === 'conectado' && !conectado) return false;
               if (filtrosAvanzadosPreceptor.conexion === 'sin-conexion' && conectado) return false;
               if (filtrosAvanzadosPreceptor.conexion === 'bloqueado' && d.pantallaBloqueada !== true) return false;
               const situacion = d.pantallaBloqueada ? 'bloqueado' : avance < 40 ? 'prioridad' : avance < 75 ? 'seguimiento' : 'favorable';
               if (filtrosAvanzadosPreceptor.situacion && situacion !== filtrosAvanzadosPreceptor.situacion) return false;
+              const ultimaActividad = obtenerFechaActividadPreceptor(d); const dias = ultimaActividad ? (Date.now() - ultimaActividad) / 86400000 : Infinity;
+              if (filtrosAvanzadosPreceptor.actividad === 'reciente' && (!ultimaActividad || dias > 7)) return false;
+              if (filtrosAvanzadosPreceptor.actividad === 'inactiva' && ultimaActividad && dias <= 7) return false;
+              const proyecto = obtenerEstadoProyectoFinalPreceptor(d);
+              if (filtrosAvanzadosPreceptor.proyecto && proyecto !== filtrosAvanzadosPreceptor.proyecto) return false;
               return true;
           });
           const progresoFiltrado = estudiantes.map(d => Number(calcularProgresoEstudiante(d)) || 0);
           const notasVigentes = estudiantes.map(notaVigente).filter(Number.isFinite);
           const conectados = estudiantes.filter(d => {
-              const ms = d.ultimaConexion?.toMillis?.() || Date.parse(d.ultimaConexion || d.ultimaActividad || '') || 0;
+              const ms = obtenerFechaActividadPreceptor(d) || 0;
               return ms && Date.now() - ms <= 120000;
           }).length;
           const bloqueados = estudiantes.filter(d => d.pantallaBloqueada === true).length;
@@ -13910,7 +13946,8 @@
           if (!contenedor) return;
           const datos = obtenerDatosInformePreceptorTutores();
           if (!datos.estudiantes.length) {
-              contenedor.innerHTML = '<div class="teacher-report-diagnostic is-warning" style="margin-top:1rem;padding:.8rem;border:1px solid rgba(251,191,36,.35);border-radius:8px;color:#fde68a"><i class="fa-solid fa-circle-info"></i> No hay estudiantes cargados para los filtros seleccionados. Esperá la sincronización del panel o elegí “Todos” en curso, división y turno.</div>';
+              contenedor.innerHTML = '<div class="teacher-report-diagnostic is-warning" style="margin-top:1rem;padding:.8rem;border:1px solid rgba(251,191,36,.35);border-radius:8px"><i class="fa-solid fa-circle-info"></i> No hay estudiantes para los filtros seleccionados. <button type="button" id="limpiarFiltrosPreceptorVacio" class="btn btn-secondary">Limpiar filtros</button></div>';
+              document.getElementById('limpiarFiltrosPreceptorVacio')?.addEventListener('click', () => { Object.keys(filtrosAvanzadosPreceptor).forEach(k => filtrosAvanzadosPreceptor[k] = ''); filtrosAvanzadosPreceptor.orden = 'apellido'; ['informePreceptorCurso','informePreceptorDivision','informePreceptorTurno'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); llenarFiltrosInformePreceptorTutores(); renderInformePreceptorTutores(); });
               return;
           }
           const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los cursos, divisiones y turnos';
@@ -13943,6 +13980,8 @@
                 <label>Promedio vigente<select id="filtroPreceptorNota" style="display:block;width:100%;margin-top:.25rem"><option value="">Todas las notas</option><option value="sin-nota">Sin nota</option><option value="baja">Menos de 4</option><option value="regular">4 a menos de 6</option><option value="buena">6 a menos de 8</option><option value="alta">8 a 10</option></select></label>
                 <label>Conexión / dispositivo<select id="filtroPreceptorConexion" style="display:block;width:100%;margin-top:.25rem"><option value="">Todos</option><option value="conectado">Conectados ahora</option><option value="sin-conexion">Sin conexión reciente</option><option value="bloqueado">Pantalla bloqueada</option></select></label>
                 <label>Situación de seguimiento<select id="filtroPreceptorSituacion" style="display:block;width:100%;margin-top:.25rem"><option value="">Todas las situaciones</option><option value="prioridad">Prioridad: menos de 40%</option><option value="seguimiento">Requiere seguimiento: 40–74%</option><option value="favorable">Avance favorable: 75% o más</option><option value="bloqueado">Pantalla bloqueada</option></select></label>
+                <label>Actividad reciente<select id="filtroPreceptorActividad" style="display:block;width:100%;margin-top:.25rem"><option value="">Todas las fechas</option><option value="reciente">Actividad en últimos 7 días</option><option value="inactiva">Sin actividad conocida en últimos 7 días</option></select></label>
+                <label>Proyecto final<select id="filtroPreceptorProyecto" style="display:block;width:100%;margin-top:.25rem"><option value="">Todos / sin filtrar</option><option value="entregado">Entregado</option><option value="pendiente">Pendiente</option><option value="sin-dato">Sin dato registrado</option></select></label>
                 <label>Ordenar resultados<select id="filtroPreceptorOrden" style="display:block;width:100%;margin-top:.25rem"><option value="apellido">Apellido y nombre (A–Z)</option><option value="progreso-menor">Menor progreso primero</option><option value="progreso-mayor">Mayor progreso primero</option><option value="nota-menor">Menor nota primero</option><option value="nota-mayor">Mayor nota primero</option></select></label>
               </div>
               <button type="button" id="limpiarFiltrosPreceptor" class="btn btn-secondary" style="margin-top:.7rem">Limpiar filtros</button>
@@ -13954,39 +13993,34 @@
               <div class="teacher-group-report-summary"><small>Avance global del grupo</small><strong>${datos.progresoGlobalGrupo}%</strong><small>${datos.desafiosCompletadosGrupo}/${datos.desafiosPosiblesGrupo} desafíos</small></div>
               <div class="teacher-group-report-summary"><small>Promedio de avance individual</small><strong>${datos.promedioProgreso}%</strong></div>
               <div class="teacher-group-report-summary"><small>Conectados</small><strong>${datos.conectados}/${datos.estudiantes.length}</strong></div>
+              <div class="teacher-group-report-summary"><small>Progreso menor al 20%</small><strong>${datos.estudiantes.filter(d => (Number(calcularProgresoEstudiante(d)) || 0) < 20).length}</strong></div>
+              <div class="teacher-group-report-summary"><small>Sin actividad registrada en 7 días</small><strong>${datos.estudiantes.filter(d => { const t = obtenerFechaActividadPreceptor(d); return !t || Date.now() - t > 7 * 86400000; }).length}</strong></div>
+              <div class="teacher-group-report-summary"><small>Pantalla bloqueada</small><strong>${datos.bloqueados}</strong></div>
             </div>
             <section style="padding:.8rem;border:1px solid rgba(148,163,184,.25);border-radius:8px;margin-bottom:1rem">
               <h4 style="margin:.2rem 0 .6rem"><i class="fa-solid fa-chart-column"></i> Promedio real por estudiante</h4>
               <p style="font-size:.82rem;color:var(--text-muted)">Se muestra una sola nota por estudiante: la calificación vigente, priorizando la nota confirmada por el docente y, si no existe, la calculada o automática. Escala de 0 a 10.</p>
               <div style="overflow-x:auto"><svg role="img" aria-label="Gráfico de promedio real por estudiante" viewBox="0 0 720 ${altoGrafico}" style="width:100%;min-width:560px;height:auto;max-height:900px">${grafico}</svg></div>
             </section>
-            <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Estudiante</th><th>Curso</th><th>División</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Promedio real</th><th>Situación</th></tr></thead><tbody>${filas.map(d => {
+            <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Estudiante (apellido y nombre)</th><th>Curso</th><th>División</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Promedio real</th><th>Situación</th><th>Ficha</th></tr></thead><tbody>${filas.map(d => {
               const e = d.estudiante || {};
               const resumenProgreso = obtenerResumenProgresoEstudiante(d);
               const p = resumenProgreso.porcentaje;
               const vigente = datos.notaVigente(d);
               const situacion = d.pantallaBloqueada ? 'Pantalla bloqueada' : (p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento');
-              return `<tr><td><strong>${escaparInforme(e.nombre || d.nombreGoogle || d.email || 'Sin nombre')}</strong><br><small>${escaparInforme(d.email || '')}</small></td><td>${escaparInforme(e.curso || 'Sin curso')}</td><td>${escaparInforme(e.division || '—')}</td><td>${escaparInforme(e.turno || 'Sin turno')}</td><td>${escaparInforme(d.estadoCuenta || 'Sin estado')}</td><td><strong>${p}%</strong><br><small>${resumenProgreso.completadas}/${resumenProgreso.total} desafíos</small><div aria-label="Progreso ${p}%" style="margin-top:4px;height:6px;min-width:65px;background:rgba(148,163,184,.22);border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:${p}%;background:${p >= 75 ? '#22c55e' : p >= 40 ? '#f59e0b' : '#38bdf8'}"></span></div></td><td><strong>${mostrarNota(vigente)}</strong></td><td>${situacion}</td></tr>`;
+              const clave = obtenerClaveEstudiantePreceptor(d); const abierta = estudianteDetallePreceptorUid === clave;
+              return `<tr><td><strong>${escaparInforme(nombreOrdenApellidosInformePreceptor(d))}</strong><br><small>${escaparInforme(d.email || '')}</small></td><td>${escaparInforme(e.curso || 'Sin curso')}</td><td>${escaparInforme(e.division || '—')}</td><td>${escaparInforme(e.turno || 'Sin turno')}</td><td>${escaparInforme(d.estadoCuenta || 'Sin estado')}</td><td><strong>${p}%</strong><br><small>${resumenProgreso.completadas}/${resumenProgreso.total} desafíos</small><div aria-label="Progreso ${p}%" style="margin-top:4px;height:6px;min-width:65px;background:rgba(148,163,184,.22);border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:${p}%;background:${p >= 75 ? '#22c55e' : p >= 40 ? '#f59e0b' : '#38bdf8'}"></span></div></td><td><strong>${mostrarNota(vigente)}</strong></td><td>${situacion}</td><td><button type="button" class="btn btn-secondary" data-preceptor-detalle="${escaparInforme(clave)}">${abierta ? 'Ocultar' : 'Ver ficha'}</button></td></tr>${abierta ? renderDetalleEstudiantePreceptor(d) : ''}`;
             }).join('')}</tbody></table></div>`;
           const controles = [
-              ['filtroPreceptorBuscar', 'buscar'], ['filtroPreceptorEstado', 'estado'],
-              ['filtroPreceptorProgreso', 'progreso'], ['filtroPreceptorNota', 'nota'],
-              ['filtroPreceptorConexion', 'conexion'], ['filtroPreceptorSituacion', 'situacion'],
-              ['filtroPreceptorOrden', 'orden']
+              ['filtroPreceptorBuscar', 'buscar'], ['filtroPreceptorEstado', 'estado'], ['filtroPreceptorProgreso', 'progreso'], ['filtroPreceptorNota', 'nota'],
+              ['filtroPreceptorConexion', 'conexion'], ['filtroPreceptorSituacion', 'situacion'], ['filtroPreceptorActividad', 'actividad'], ['filtroPreceptorProyecto', 'proyecto'], ['filtroPreceptorOrden', 'orden']
           ];
-          controles.forEach(([id, campo]) => {
-              const el = document.getElementById(id);
-              if (!el) return;
-              el.value = filtrosAvanzadosPreceptor[campo];
-              el.addEventListener('change', () => {
-                  filtrosAvanzadosPreceptor[campo] = el.value;
-                  renderInformePreceptorTutores();
-              }, { once: true });
-          });
-          document.getElementById('limpiarFiltrosPreceptor')?.addEventListener('click', () => {
-              Object.keys(filtrosAvanzadosPreceptor).forEach(k => filtrosAvanzadosPreceptor[k] = '');
-              renderInformePreceptorTutores();
-          }, { once: true });
+          controles.forEach(([id, campo]) => { const el = document.getElementById(id); if (!el) return; el.value = filtrosAvanzadosPreceptor[campo]; el.addEventListener(campo === 'buscar' ? 'input' : 'change', () => { const cursor = campo === 'buscar' ? el.selectionStart : null; filtrosAvanzadosPreceptor[campo] = el.value; estudianteDetallePreceptorUid = ''; renderInformePreceptorTutores(); if (campo === 'buscar') { const siguiente = document.getElementById(id); if (siguiente) { siguiente.focus(); try { siguiente.setSelectionRange(cursor, cursor); } catch (_) {} } } }); });
+          document.getElementById('limpiarFiltrosPreceptor')?.addEventListener('click', () => { Object.keys(filtrosAvanzadosPreceptor).forEach(k => filtrosAvanzadosPreceptor[k] = ''); filtrosAvanzadosPreceptor.orden = 'apellido'; estudianteDetallePreceptorUid = ''; llenarFiltrosInformePreceptorTutores(); renderInformePreceptorTutores(); });
+          contenedor.querySelectorAll('[data-preceptor-detalle]').forEach(btn => btn.addEventListener('click', () => { const key = btn.getAttribute('data-preceptor-detalle') || ''; estudianteDetallePreceptorUid = estudianteDetallePreceptorUid === key ? '' : key; renderInformePreceptorTutores(); }));
+          contenedor.querySelectorAll('[data-preceptor-cerrar-detalle]').forEach(btn => btn.addEventListener('click', () => { estudianteDetallePreceptorUid = ''; renderInformePreceptorTutores(); }));
+          contenedor.querySelectorAll('[data-preceptor-pdf-individual]').forEach(btn => btn.addEventListener('click', () => { if (typeof window.exportarInformeIndividualEstudiantePDF === 'function') window.exportarInformeIndividualEstudiantePDF(Number(btn.getAttribute('data-preceptor-pdf-individual'))); }));
+          contenedor.querySelectorAll('[data-preceptor-intervencion-form]').forEach(form => form.addEventListener('submit', evento => { evento.preventDefault(); const fd = new FormData(form); const detalle = String(fd.get('detalle') || '').trim(); if (!detalle) { alert('Escribí la intervención o el acuerdo antes de guardar.'); return; } const registro = { tipo: String(fd.get('tipo') || 'Seguimiento'), detalle, proximaFecha: String(fd.get('proximaFecha') || ''), fecha: new Date().toLocaleString('es-AR'), responsable: String(window.usuarioActual?.email || window.auth?.currentUser?.email || 'Sesión docente') }; if (!guardarIntervencionPreceptor(form.getAttribute('data-preceptor-key') || '', registro)) { alert('No se pudo guardar la nota temporalmente. Copiá el texto antes de cerrar.'); return; } renderInformePreceptorTutores(); }));
       }
 
       function abrirInformePreceptorTutores() {
@@ -14012,13 +14046,16 @@
 
       function exportarInformePreceptorTutoresCSV() {
           const datos = obtenerDatosInformePreceptorTutores();
-          const filas = [['Estudiante', 'Email', 'Curso', 'Division', 'Turno', 'Estado', 'Progreso', 'Promedio real', 'Situacion']];
-          ordenarEstudiantesInformePreceptorTutores(datos.estudiantes).forEach(d => {
+          const filas = [['Estudiante (apellido, nombre)', 'Email', 'Curso', 'Division', 'Turno', 'Estado', 'Progreso', 'Promedio real', 'Situacion', 'Proyecto final', 'Ultima actividad', 'Intervenciones en esta sesion']];
+          const estudiantesCSV = ordenarEstudiantesInformePreceptorTutores(datos.estudiantes);
+          if (filtrosAvanzadosPreceptor.orden === 'progreso-menor') estudiantesCSV.sort((a,b)=>(Number(calcularProgresoEstudiante(a))||0)-(Number(calcularProgresoEstudiante(b))||0)); else if (filtrosAvanzadosPreceptor.orden === 'progreso-mayor') estudiantesCSV.sort((a,b)=>(Number(calcularProgresoEstudiante(b))||0)-(Number(calcularProgresoEstudiante(a))||0)); else if (filtrosAvanzadosPreceptor.orden === 'nota-menor') estudiantesCSV.sort((a,b)=>(Number.isFinite(datos.notaVigente(a))?datos.notaVigente(a):-1)-(Number.isFinite(datos.notaVigente(b))?datos.notaVigente(b):-1)); else if (filtrosAvanzadosPreceptor.orden === 'nota-mayor') estudiantesCSV.sort((a,b)=>(Number.isFinite(datos.notaVigente(b))?datos.notaVigente(b):-1)-(Number.isFinite(datos.notaVigente(a))?datos.notaVigente(a):-1));
+          estudiantesCSV.forEach(d => {
               const e = d.estudiante || {};
               const resumenProgreso = obtenerResumenProgresoEstudiante(d);
               const p = resumenProgreso.porcentaje;
               const n = datos.notaVigente(d);
-              filas.push([nombreOrdenApellidosInformePreceptor(d), d.email || '', e.curso || '', e.division || '', e.turno || '', d.estadoCuenta || '', `${resumenProgreso.completadas}/${resumenProgreso.total} desafíos (${p}%)`, Number.isFinite(n) ? n : '', d.pantallaBloqueada ? 'Pantalla bloqueada' : p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento']);
+              const clave = obtenerClaveEstudiantePreceptor(d); const intervenciones = leerIntervencionesPreceptor()[clave] || []; const actividad = obtenerFechaActividadPreceptor(d);
+              filas.push([nombreOrdenApellidosInformePreceptor(d), d.email || '', e.curso || '', e.division || '', e.turno || '', d.estadoCuenta || '', `${resumenProgreso.completadas}/${resumenProgreso.total} desafíos (${p}%)`, Number.isFinite(n) ? n : '', d.pantallaBloqueada ? 'Pantalla bloqueada' : p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento', obtenerEstadoProyectoFinalPreceptor(d), actividad ? formatearFechaPreceptor(actividad) : 'Sin registro', intervenciones.length]);
           });
           const csv = filas.map(fila => fila.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
           const enlace = document.createElement('a');
@@ -14044,6 +14081,7 @@
           }
           const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
           const ordenados = ordenarEstudiantesInformePreceptorTutores(datos.estudiantes);
+          if (filtrosAvanzadosPreceptor.orden === 'progreso-menor') ordenados.sort((a,b)=>(Number(calcularProgresoEstudiante(a))||0)-(Number(calcularProgresoEstudiante(b))||0)); else if (filtrosAvanzadosPreceptor.orden === 'progreso-mayor') ordenados.sort((a,b)=>(Number(calcularProgresoEstudiante(b))||0)-(Number(calcularProgresoEstudiante(a))||0)); else if (filtrosAvanzadosPreceptor.orden === 'nota-menor') ordenados.sort((a,b)=>(Number.isFinite(datos.notaVigente(a))?datos.notaVigente(a):-1)-(Number.isFinite(datos.notaVigente(b))?datos.notaVigente(b):-1)); else if (filtrosAvanzadosPreceptor.orden === 'nota-mayor') ordenados.sort((a,b)=>(Number.isFinite(datos.notaVigente(b))?datos.notaVigente(b):-1)-(Number.isFinite(datos.notaVigente(a))?datos.notaVigente(a):-1));
           const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los cursos, divisiones y turnos';
           const notaTexto = n => Number.isFinite(n) ? `${n.toFixed(2)}/10` : 'Pendiente';
           const nombreDe = d => nombreOrdenApellidosInformePreceptor(d);
@@ -14158,7 +14196,7 @@
           }
           const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
           const e = estudiante.estudiante || {};
-          const nombre = e.nombre || estudiante.nombreGoogle || estudiante.email || 'Estudiante';
+          const nombre = nombreOrdenApellidosInformePreceptor(estudiante) || e.nombre || estudiante.nombreGoogle || estudiante.email || 'Estudiante';
           const grupo = [e.curso, e.division, e.turno].filter(Boolean).join(' · ') || 'Sin grupo';
           const finalizadasEfectivas = obtenerFinalizadasEfectivasEstudiante(estudiante);
           const actividades = seccionesData.map(sec => {
