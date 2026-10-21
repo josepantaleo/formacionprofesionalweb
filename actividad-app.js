@@ -9406,21 +9406,13 @@
       }
 
       function obtenerFinalizadasEfectivasEstudiante(d = {}) {
+          // La marca finalizada es el estado oficial del desafío. No exigir
+          // código, salida ni evaluación adicional: esos datos pueden faltar
+          // en registros antiguos o en desafíos finalizados por tiempo/docente.
           const declaradas = d?.finalizadas && typeof d.finalizadas === 'object' ? d.finalizadas : {};
-          const resultados = d?.historialResultados && typeof d.historialResultados === 'object' ? d.historialResultados : {};
           const finalizadas = {};
           seccionesData.forEach(sec => {
-              const resultado = resultados[sec.id] || {};
-              const codigo = String(resultado.codigo || d?.codigos?.[sec.id] || '').trim();
-              const ejecucionRegistrada = resultado.exito === true || resultado.exito === false ||
-                  Boolean(resultado.evaluacionCodigo?.ejecucion) ||
-                  Boolean(resultado.salida) || Boolean(resultado.error);
-              const respuestasEvaluadas = Number.isFinite(Number(resultado.notaPreguntas)) ||
-                  (Array.isArray(resultado.analista?.preguntas) && resultado.analista.preguntas.length > 0);
-              finalizadas[sec.id] = declaradas[sec.id] === true &&
-                  codigo.length > 0 &&
-                  ejecucionRegistrada &&
-                  respuestasEvaluadas;
+              finalizadas[sec.id] = declaradas[sec.id] === true;
           });
           return finalizadas;
       }
