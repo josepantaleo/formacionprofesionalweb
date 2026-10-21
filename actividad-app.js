@@ -4858,8 +4858,8 @@
           let nota = Number((porcentajeBase / 10).toFixed(1));
           const limites = [];
           if (esPlantilla) {
-              nota = 1;
-              limites.push("Plantilla inicial o editor vacío: nota máxima 1.");
+              nota = 0;
+              limites.push("Plantilla inicial o editor vacío: no hay evidencia suficiente para asignar puntos.");
           } else if (!sintaxis.valida) {
               nota = Math.min(nota, 3);
               limites.push("Error de sintaxis: nota máxima 3.");
@@ -4890,7 +4890,7 @@
               nota = Math.min(nota, 7);
               limites.push("Persisten marcadores de código pendiente: nota máxima 7.");
           }
-          nota = Number(Math.max(1, Math.min(10, nota)).toFixed(1));
+          nota = Number(Math.max(0, Math.min(10, nota)).toFixed(1));
           const porcentaje = Number((nota * 10).toFixed(1));
 
           const fortalezas = [];
@@ -5000,30 +5000,27 @@
           return evaluarCodigoPorEvidencias(code, sec, resultadoEjecucion).nota;
       }
 
+      // Fórmula oficial del desafío: código 70% + preguntas 30%.
+      // La nota del código ya proviene de la rúbrica de evidencias; no se vuelve a ponderar
+      // con las mismas métricas para evitar contar dos veces requisitos/comportamiento/calidad.
       function calcularNotaCombinada(notaCodigo, porcentajePreguntas, evaluacionCodigo = null) {
-          const codigo = Math.max(0, Math.min(10, Number(notaCodigo) || 0));
-          const preguntas = Math.max(0, Math.min(100, Number(porcentajePreguntas) || 0)) / 10;
-          const metricas = evaluacionCodigo?.metricas || {};
-          const evidencia = [
-              Number(metricas.requisitos),
-              Number(metricas.comportamiento),
-              Number(metricas.estructura),
-              Number(metricas.calidad)
-          ].filter(Number.isFinite);
-          const evidenciaPromedio = evidencia.length
-              ? evidencia.reduce((total, valor) => total + Math.max(0, Math.min(1, valor)), 0) / evidencia.length
-              : codigo / 10;
-          const notaCodigoAjustada = Number(
-              (codigo * 0.75 + evidenciaPromedio * 10 * 0.25).toFixed(1)
-          );
-          let nota = notaCodigoAjustada * 0.65 + preguntas * 0.35;
-          const sintaxisValida = evaluacionCodigo?.sintaxis?.valida !== false;
-          const ejecucionCorrecta = evaluacionCodigo?.ejecucion?.ok !== false;
+          const numeroSeguro = (valor, minimo, maximo) => {
+              const n = valor === null || valor === undefined || valor === '' ? NaN : Number(valor);
+              return Number.isFinite(n) ? Math.max(minimo, Math.min(maximo, n)) : null;
+          };
+          const codigo = numeroSeguro(notaCodigo, 0, 10);
+          const porcentaje = numeroSeguro(porcentajePreguntas, 0, 100);
+          // No inventar una nota cuando falta alguno de los dos componentes.
+          if (codigo === null || porcentaje === null) return null;
+          const preguntas = porcentaje / 10;
+          let nota = codigo * 0.70 + preguntas * 0.30;
+          const sintaxisValida = evaluacionCodigo?.sintaxis?.valida;
+          const ejecucionCorrecta = evaluacionCodigo?.ejecucion?.ok;
           const comportamiento = Number(evaluacionCodigo?.metricas?.comportamiento);
-          if (!sintaxisValida) nota = Math.min(nota, 3);
-          else if (!ejecucionCorrecta) nota = Math.min(nota, 4);
+          if (sintaxisValida === false) nota = Math.min(nota, 3);
+          else if (ejecucionCorrecta === false) nota = Math.min(nota, 4);
           else if (Number.isFinite(comportamiento) && comportamiento < 0.35) nota = Math.min(nota, 6);
-          return Number(Math.max(1, Math.min(10, nota)).toFixed(1));
+          return Number(Math.max(0, Math.min(10, nota)).toFixed(1));
       }
 
       function previsualizarNotaIA(sectionId) {
@@ -6053,8 +6050,11 @@
                    `<span>${escaparTextoAnalista(resultadoPregunta.detalle)}</span>`;
            });
 
-           const porcentaje = Math.round((puntosObtenidos / maxPuntos) * 100);
-          const notaPreguntas = Number((porcentaje / 10).toFixed(1));
+           const porcentajeExacto = maxPuntos > 0
+              ? Math.max(0, Math.min(100, (puntosObtenidos / maxPuntos) * 100))
+              : 0;
+          const porcentaje = Math.round(porcentajeExacto);
+          const notaPreguntas = Number((porcentajeExacto / 10).toFixed(1));
           const viabilidad = porcentaje >= 80 ? "ALTA" : porcentaje >= 60 ? "MEDIA" : "BAJA";
           const excelencia = porcentaje === 100 ? "EXCELENTE" :
                              porcentaje >= 80 ? "MUY BUENA" :
@@ -6066,20 +6066,11 @@
           if (!historialResultados[sectionId]) historialResultados[sectionId] = {};
           const notaCodigo = Number(historialResultados[sectionId].notaCodigo ?? historialResultados[sectionId].notaIA ?? 0);
           const evaluacionCodigo = historialResultados[sectionId].evaluacionCodigo || null;
-          const notaFinal = calcularNotaCombinada(notaCodigo, porcentaje, evaluacionCodigo);
-          const metricasCodigoVista = evaluacionCodigo?.metricas || {};
-          const evidenciasCodigoVista = [
-              Number(metricasCodigoVista.requisitos),
-              Number(metricasCodigoVista.comportamiento),
-              Number(metricasCodigoVista.estructura),
-              Number(metricasCodigoVista.calidad)
-          ].filter(Number.isFinite);
-          const evidenciaCodigoVista = evidenciasCodigoVista.length
-              ? Number((evidenciasCodigoVista.reduce((total, valor) => total + valor, 0) / evidenciasCodigoVista.length * 10).toFixed(1))
-              : notaCodigo;
-          const notaCodigoPonderadaVista = Number(
-              (notaCodigo * 0.75 + evidenciaCodigoVista * 0.25).toFixed(1)
-          );
+          const notaFinal = calcularNotaCombinada(notaCodigo, notaPreguntas * 10, evaluacionCodigo);
+          // La nota del código ya está calculada por la rúbrica; se presenta sin una segunda ponderación.
+          const notaCodigoPonderadaVista = Math.max(0, Math.min(10, Number(notaCodigo) || 0));
+          const aporteCodigo = Number((notaCodigoPonderadaVista * 0.70).toFixed(2));
+          const aportePreguntas = Number((notaPreguntas * 0.30).toFixed(2));
           const limiteFinal = evaluacionCodigo?.sintaxis?.valida === false
               ? "La calificación automática del módulo se limitó a 3 porque el código contiene un error de sintaxis."
               : evaluacionCodigo?.ejecucion?.ok === false
@@ -6090,8 +6081,9 @@
 
            result.innerHTML =
                `<strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>` +
-               `Código y evidencias técnicas: <strong>${notaCodigoPonderadaVista}/10</strong> (65%).<br>` +
-               `Respuestas razonadas: <strong>${notaPreguntas}/10</strong> (35%).<br>` +
+               `Código (70%): <strong>${notaCodigoPonderadaVista}/10</strong> → aporta ${aporteCodigo} puntos.<br>` +
+               `Preguntas (30%): <strong>${notaPreguntas}/10</strong> → aporta ${aportePreguntas} puntos.<br>` +
+               `Cálculo: (${notaCodigoPonderadaVista} × 0,70) + (${notaPreguntas} × 0,30) = <strong>${notaFinal}/10</strong>.<br>` +
                `<strong>Desglose:</strong> ${conteoNiveles.completa} completas (${rubricaAplicada.puntos.completa.toFixed(2)}), ${conteoNiveles.incompleta} correctas incompletas (${rubricaAplicada.puntos.incompleta.toFixed(2)}), ${conteoNiveles.parcial} parciales (${rubricaAplicada.puntos.parcial.toFixed(2)}) y ${conteoNiveles.incorrecta} incorrectas (${rubricaAplicada.puntos.incorrecta.toFixed(2)}).<br>` +
                `Viabilidad: <strong>${viabilidad}</strong>.<br>` +
               `Excelencia: <strong>${excelencia}</strong>.<br>` +
@@ -6116,10 +6108,14 @@
               ? Number((evidenciasCodigo.reduce((total, valor) => total + valor, 0) / evidenciasCodigo.length * 10).toFixed(1))
               : notaCodigo;
           historialResultados[sectionId].desgloseNota = {
-              formula: "codigo_evidencias_65_respuestas_35",
+              formula: "codigo_70_respuestas_30",
               notaCodigoBase: notaCodigo,
-              evidenciaCodigo,
+              notaCodigoPonderada: notaCodigoPonderadaVista,
+              porcentajePreguntas: porcentaje,
               notaPreguntas,
+              aporteCodigo,
+              aportePreguntas,
+              limitesAplicados: evaluacionCodigo?.limites || [],
               notaFinal
           };
           historialResultados[sectionId].analista = {
@@ -6161,7 +6157,7 @@
                   "beforeend",
                   `<div style="margin-top:.8rem;padding:.7rem;border:1px solid rgba(16,185,129,.4);border-radius:6px;color:#a7f3d0">
                       <strong>Calificación automática del módulo: ${notaFinal}/10</strong><br>
-                      Código ${notaCodigo}/10 Ã— 70% + preguntas ${notaPreguntas}/10 Ã— 30%.
+                      Código ${notaCodigo}/10 × 70% + preguntas ${notaPreguntas}/10 × 30%.
                   </div>`
               );
           }
@@ -6218,7 +6214,7 @@
               const puntaje = evaluacion.nota;
               let analisis = "";
 
-              if (puntaje === 1) analisis = "âŒ <strong>Evaluación Estricta (1/10):</strong> Plantilla inicial sin resolver.";
+              if (puntaje === 0) analisis = "âŒ <strong>Evaluación Estricta (0/10):</strong> No se encontraron evidencias suficientes en el código entregado.";
               else if (puntaje === 4) analisis = "âš ï¸ <strong>Evaluación Estricta (4/10):</strong> Código sin estructuras lógicas requeridas.";
               else if (puntaje === 7) analisis = "ðŸŽ¯ <strong>Evaluación Estricta (7/10):</strong> Alcanza o supera el 70% de desarrollo.";
               else if (puntaje === 5) analisis = "ðŸ” <strong>Evaluación Estricta (5/10):</strong> Resolución parcial por debajo del 70%.";
