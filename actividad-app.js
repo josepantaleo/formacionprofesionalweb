@@ -13752,6 +13752,14 @@
           return 0;
       }
       function obtenerEstadoProyectoFinalPreceptor(d) {
+          // El Proyecto Final corresponde al Desafío 19: leer su estado desde el registro real del desafío.
+          const desafio19 = Array.isArray(seccionesData) ? seccionesData[18] : null;
+          if (desafio19?.id !== undefined && desafio19?.id !== null) {
+              const id = String(desafio19.id);
+              const finalizadas = obtenerFinalizadasEfectivasEstudiante(d || {});
+              return finalizadas[id] === true ? 'entregado' : 'pendiente';
+          }
+          // Compatibilidad defensiva si la configuración no contiene 19 desafíos.
           const e = d?.estudiante || {}; const raw = d?.proyectoFinalEstado ?? d?.estadoProyectoFinal ?? e?.proyectoFinalEstado ?? e?.estadoProyectoFinal ?? d?.proyectoFinal?.estado ?? e?.proyectoFinal?.estado;
           if (typeof raw === 'string' && raw.trim()) { const normal = raw.trim().toLocaleLowerCase('es'); if (/entreg|presentad|finaliz|aprob/.test(normal)) return 'entregado'; if (/pendient|no entreg|en curso|desarrollo/.test(normal)) return 'pendiente'; return normal; }
           const entregado = d?.proyectoFinalEntregado ?? e?.proyectoFinalEntregado ?? d?.proyectoFinal?.entregado ?? e?.proyectoFinal?.entregado;
@@ -13765,7 +13773,7 @@
           const indice = estudiantesProfesor.findIndex(x => String(x?.uid || x?.email || '') === String(d?.uid || d?.email || ''));
           return `<tr class="fila-detalle-preceptor"><td colspan="9"><section style="padding:1rem;border:1px solid rgba(56,189,248,.35);border-radius:10px;margin:.35rem 0 1rem">
             <div style="display:flex;justify-content:space-between;gap:1rem;align-items:start;flex-wrap:wrap"><div><h4 style="margin:.1rem 0 .35rem">Ficha individual: ${escaparInforme(nombreOrdenApellidosInformePreceptor(d))}</h4><div>${escaparInforme(d.email || e.email || 'Sin correo')} · ${escaparInforme([e.curso,e.division,e.turno].filter(Boolean).join(' / ') || 'Grupo sin especificar')}</div></div><button type="button" class="btn btn-secondary" data-preceptor-cerrar-detalle>Cerrar ficha</button></div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.65rem;margin:.8rem 0"><div class="teacher-group-report-summary"><small>Progreso</small><strong>${progreso}%</strong><small>${resumen.completadas}/${resumen.total} desafíos</small></div><div class="teacher-group-report-summary"><small>Estado de cuenta</small><strong>${escaparInforme(d.estadoCuenta || 'Sin dato')}</strong></div><div class="teacher-group-report-summary"><small>Última actividad conocida</small><strong style="font-size:.9rem">${escaparInforme(formatearFechaPreceptor(actividad))}</strong></div><div class="teacher-group-report-summary"><small>Proyecto final</small><strong>${escaparInforme(proyecto === 'sin-dato' ? 'Sin dato en la fuente' : proyecto)}</strong></div></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.65rem;margin:.8rem 0"><div class="teacher-group-report-summary"><small>Progreso</small><strong>${progreso}%</strong><small>${resumen.completadas}/${resumen.total} desafíos</small></div><div class="teacher-group-report-summary"><small>Estado de cuenta</small><strong>${escaparInforme(d.estadoCuenta || 'Sin dato')}</strong></div><div class="teacher-group-report-summary"><small>Última actividad conocida</small><strong style="font-size:.9rem">${escaparInforme(formatearFechaPreceptor(actividad))}</strong></div><div class="teacher-group-report-summary"><small>Desafío 19 · Proyecto Final</small><strong>${escaparInforme(proyecto === 'sin-dato' ? 'Sin dato en la fuente' : proyecto === 'entregado' ? 'Finalizado/entregado' : 'Pendiente')}</strong></div></div>
             <p style="font-size:.82rem;color:var(--text-muted)">“Sin dato” indica que no se encontró un campo reconocible en el registro, no que la actividad no se haya realizado.</p>
             <h5>Registro de intervenciones</h5><p style="font-size:.82rem;color:var(--text-muted)">Por seguridad, este registro se conserva solo en esta pestaña del navegador; no se sincroniza con Firebase ni con otros preceptores.</p>
             <form data-preceptor-intervencion-form data-preceptor-key="${escaparInforme(key)}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.6rem"><label>Tipo<select name="tipo" required><option>Seguimiento académico</option><option>Entrevista con estudiante</option><option>Comunicación familiar</option><option>Acuerdo de trabajo</option><option>Otra intervención</option></select></label><label>Próxima revisión<input name="proximaFecha" type="date"></label><label style="grid-column:1/-1">Intervención / acuerdo<textarea name="detalle" rows="2" maxlength="1200" required placeholder="Registrar hechos observables, acción acordada y próximo paso; evitar datos sensibles innecesarios." style="display:block;width:100%"></textarea></label><button type="submit" class="btn btn-primary">Guardar en esta sesión</button></form>
@@ -13951,6 +13959,20 @@
               return;
           }
           const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los cursos, divisiones y turnos';
+          const etiquetasFiltrosPreceptor = [];
+          const opcionesTitulo = {
+              estado: { activo: 'Cuenta activa', pendiente: 'Cuenta pendiente', inactivo: 'Cuenta inactiva', 'sin-estado': 'Sin estado de cuenta' },
+              progreso: { inicial: 'Progreso inicial (<20%)', desarrollo: 'Progreso en desarrollo (20–39%)', avanzado: 'Progreso avanzado (40–59%)', 'muy-avanzado': 'Progreso muy avanzado (60% o más)' },
+              nota: { 'sin-nota': 'Sin nota vigente', baja: 'Nota menor de 4', regular: 'Nota de 4 a menos de 6', buena: 'Nota de 6 a menos de 8', alta: 'Nota de 8 a 10' },
+              conexion: { conectado: 'Conectados ahora', 'sin-conexion': 'Sin conexión reciente', bloqueado: 'Pantalla bloqueada' },
+              situacion: { prioridad: 'Prioridad de acompañamiento', seguimiento: 'Requiere seguimiento', favorable: 'Avance favorable', bloqueado: 'Pantalla bloqueada' },
+              actividad: { reciente: 'Actividad en los últimos 7 días', inactiva: 'Sin actividad conocida en los últimos 7 días' },
+              proyecto: { entregado: 'Desafío 19: finalizado/entregado', pendiente: 'Desafío 19: pendiente', 'sin-dato': 'Desafío 19: sin dato' }
+          };
+          for (const campo of Object.keys(opcionesTitulo)) if (filtrosAvanzadosPreceptor[campo]) etiquetasFiltrosPreceptor.push(opcionesTitulo[campo][filtrosAvanzadosPreceptor[campo]] || filtrosAvanzadosPreceptor[campo]);
+          if (filtrosAvanzadosPreceptor.buscar.trim()) etiquetasFiltrosPreceptor.push(`Búsqueda: “${filtrosAvanzadosPreceptor.buscar.trim()}”`);
+          const tituloDinamico = etiquetasFiltrosPreceptor.length ? `Informe de preceptoría — ${etiquetasFiltrosPreceptor.join(' · ')}` : 'Informe general de preceptoría';
+          const tituloGrafico = filtrosAvanzadosPreceptor.nota ? `Promedio real por estudiante — ${opcionesTitulo.nota[filtrosAvanzadosPreceptor.nota] || 'filtro de notas'}` : filtrosAvanzadosPreceptor.progreso ? `Promedio real por estudiante — ${opcionesTitulo.progreso[filtrosAvanzadosPreceptor.progreso] || 'filtro de progreso'}` : filtrosAvanzadosPreceptor.proyecto ? `Seguimiento del Desafío 19 — ${opcionesTitulo.proyecto[filtrosAvanzadosPreceptor.proyecto] || 'Proyecto Final'}` : 'Promedio real por estudiante';
           const mostrarNota = valor => valor === null || !Number.isFinite(valor) ? 'Pendiente' : `${valor.toFixed(2)}/10`;
           const filas = ordenarEstudiantesInformePreceptorTutores(datos.estudiantes);
           const ordenSeleccionado = filtrosAvanzadosPreceptor.orden || 'apellido';
@@ -13981,12 +14003,12 @@
                 <label>Conexión / dispositivo<select id="filtroPreceptorConexion" style="display:block;width:100%;margin-top:.25rem"><option value="">Todos</option><option value="conectado">Conectados ahora</option><option value="sin-conexion">Sin conexión reciente</option><option value="bloqueado">Pantalla bloqueada</option></select></label>
                 <label>Situación de seguimiento<select id="filtroPreceptorSituacion" style="display:block;width:100%;margin-top:.25rem"><option value="">Todas las situaciones</option><option value="prioridad">Prioridad: menos de 40%</option><option value="seguimiento">Requiere seguimiento: 40–74%</option><option value="favorable">Avance favorable: 75% o más</option><option value="bloqueado">Pantalla bloqueada</option></select></label>
                 <label>Actividad reciente<select id="filtroPreceptorActividad" style="display:block;width:100%;margin-top:.25rem"><option value="">Todas las fechas</option><option value="reciente">Actividad en últimos 7 días</option><option value="inactiva">Sin actividad conocida en últimos 7 días</option></select></label>
-                <label>Proyecto final<select id="filtroPreceptorProyecto" style="display:block;width:100%;margin-top:.25rem"><option value="">Todos / sin filtrar</option><option value="entregado">Entregado</option><option value="pendiente">Pendiente</option><option value="sin-dato">Sin dato registrado</option></select></label>
+                <label>Desafío 19 · Proyecto Final<select id="filtroPreceptorProyecto" style="display:block;width:100%;margin-top:.25rem"><option value="">Todos / sin filtrar</option><option value="entregado">Desafío 19 finalizado/entregado</option><option value="pendiente">Desafío 19 pendiente</option><option value="sin-dato">Sin dato registrado</option></select></label>
                 <label>Ordenar resultados<select id="filtroPreceptorOrden" style="display:block;width:100%;margin-top:.25rem"><option value="apellido">Apellido y nombre (A–Z)</option><option value="progreso-menor">Menor progreso primero</option><option value="progreso-mayor">Mayor progreso primero</option><option value="nota-menor">Menor nota primero</option><option value="nota-mayor">Mayor nota primero</option></select></label>
               </div>
               <button type="button" id="limpiarFiltrosPreceptor" class="btn btn-secondary" style="margin-top:.7rem">Limpiar filtros</button>
             </section>
-            <div style="margin:1rem 0;padding:.7rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06)"><strong>Alcance:</strong> ${escaparInforme(alcance)} · ${datos.estudiantes.length} estudiante${datos.estudiantes.length === 1 ? '' : 's'}</div>
+            <div style="margin:1rem 0;padding:.7rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06)"><h3 style="margin:.1rem 0 .35rem;font-size:1.05rem">${escaparInforme(tituloDinamico)}</h3><strong>Alcance:</strong> ${escaparInforme(alcance)} · ${datos.estudiantes.length} estudiante${datos.estudiantes.length === 1 ? '' : 's'}${etiquetasFiltrosPreceptor.length ? `<div style="margin-top:.35rem;font-size:.85rem"><strong>Filtros activos:</strong> ${escaparInforme(etiquetasFiltrosPreceptor.join(' · '))}</div>` : ''}</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.65rem;margin-bottom:1rem">
               <div class="teacher-group-report-summary"><small>Estudiantes incluidos</small><strong>${datos.estudiantes.length}</strong></div>
               <div class="teacher-group-report-summary"><small>Promedio real del grupo</small><strong>${mostrarNota(datos.promedioVigente)}</strong></div>
@@ -13998,7 +14020,7 @@
               <div class="teacher-group-report-summary"><small>Pantalla bloqueada</small><strong>${datos.bloqueados}</strong></div>
             </div>
             <section style="padding:.8rem;border:1px solid rgba(148,163,184,.25);border-radius:8px;margin-bottom:1rem">
-              <h4 style="margin:.2rem 0 .6rem"><i class="fa-solid fa-chart-column"></i> Promedio real por estudiante</h4>
+              <h4 style="margin:.2rem 0 .6rem"><i class="fa-solid fa-chart-column"></i> ${escaparInforme(tituloGrafico)}</h4>
               <p style="font-size:.82rem;color:var(--text-muted)">Se muestra una sola nota por estudiante: la calificación vigente, priorizando la nota confirmada por el docente y, si no existe, la calculada o automática. Escala de 0 a 10.</p>
               <div style="overflow-x:auto"><svg role="img" aria-label="Gráfico de promedio real por estudiante" viewBox="0 0 720 ${altoGrafico}" style="width:100%;min-width:560px;height:auto;max-height:900px">${grafico}</svg></div>
             </section>
@@ -14046,7 +14068,7 @@
 
       function exportarInformePreceptorTutoresCSV() {
           const datos = obtenerDatosInformePreceptorTutores();
-          const filas = [['Estudiante (apellido, nombre)', 'Email', 'Curso', 'Division', 'Turno', 'Estado', 'Progreso', 'Promedio real', 'Situacion', 'Proyecto final', 'Ultima actividad', 'Intervenciones en esta sesion']];
+          const filas = [['Estudiante (apellido, nombre)', 'Email', 'Curso', 'Division', 'Turno', 'Estado', 'Progreso', 'Promedio real', 'Situacion', 'Desafio 19 - Proyecto Final', 'Ultima actividad', 'Intervenciones en esta sesion']];
           const estudiantesCSV = ordenarEstudiantesInformePreceptorTutores(datos.estudiantes);
           if (filtrosAvanzadosPreceptor.orden === 'progreso-menor') estudiantesCSV.sort((a,b)=>(Number(calcularProgresoEstudiante(a))||0)-(Number(calcularProgresoEstudiante(b))||0)); else if (filtrosAvanzadosPreceptor.orden === 'progreso-mayor') estudiantesCSV.sort((a,b)=>(Number(calcularProgresoEstudiante(b))||0)-(Number(calcularProgresoEstudiante(a))||0)); else if (filtrosAvanzadosPreceptor.orden === 'nota-menor') estudiantesCSV.sort((a,b)=>(Number.isFinite(datos.notaVigente(a))?datos.notaVigente(a):-1)-(Number.isFinite(datos.notaVigente(b))?datos.notaVigente(b):-1)); else if (filtrosAvanzadosPreceptor.orden === 'nota-mayor') estudiantesCSV.sort((a,b)=>(Number.isFinite(datos.notaVigente(b))?datos.notaVigente(b):-1)-(Number.isFinite(datos.notaVigente(a))?datos.notaVigente(a):-1));
           estudiantesCSV.forEach(d => {
