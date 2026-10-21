@@ -9405,6 +9405,20 @@
           document.getElementById('btnLimpiarFiltrosProfesor')?.focus({ preventScroll: true });
       }
 
+      function esDesafioFinalizado(valor) {
+          // Acepta el booleano normal de Firestore y formatos equivalentes
+          // que pueden aparecer en datos antiguos/importados. No acepta objetos
+          // ni textos arbitrarios para evitar contar desafíos pendientes.
+          if (valor === true || valor === 1) return true;
+          if (typeof valor === 'string') {
+              const normalizado = valor.trim().toLowerCase();
+              return normalizado === 'true' || normalizado === '1' ||
+                  normalizado === 'finalizado' || normalizado === 'finalizada' ||
+                  normalizado === 'completado' || normalizado === 'completada';
+          }
+          return false;
+      }
+
       function obtenerFinalizadasEfectivasEstudiante(d = {}) {
           // La marca finalizada es el estado oficial del desafío. No exigir
           // código, salida ni evaluación adicional: esos datos pueden faltar
@@ -9412,16 +9426,24 @@
           const declaradas = d?.finalizadas && typeof d.finalizadas === 'object' ? d.finalizadas : {};
           const finalizadas = {};
           seccionesData.forEach(sec => {
-              finalizadas[sec.id] = declaradas[sec.id] === true;
+              finalizadas[sec.id] = esDesafioFinalizado(declaradas[sec.id]);
           });
           return finalizadas;
       }
 
-      function calcularProgresoEstudiante(d) {
+      function obtenerResumenProgresoEstudiante(d = {}) {
           const finalizadas = obtenerFinalizadasEfectivasEstudiante(d);
-          const total = seccionesData.length || 1;
-          const completadasValidas = seccionesData.filter(sec => finalizadas[sec.id] === true).length;
-          return Math.round((completadasValidas / total) * 100);
+          const total = seccionesData.length;
+          const completadas = seccionesData.filter(sec => finalizadas[sec.id] === true).length;
+          return {
+              completadas,
+              total,
+              porcentaje: total ? Math.round((completadas / total) * 100) : 0
+          };
+      }
+
+      function calcularProgresoEstudiante(d) {
+          return obtenerResumenProgresoEstudiante(d).porcentaje;
       }
       function obtenerNotaDesafioEstudiante(d, sectionId, resultado = null) {
           const ajuste = d?.notasDesafiosDocente?.[sectionId];
@@ -13802,10 +13824,11 @@
             </section>
             <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Estudiante</th><th>Curso</th><th>División</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Promedio real</th><th>Situación</th></tr></thead><tbody>${filas.map(d => {
               const e = d.estudiante || {};
-              const p = Number(calcularProgresoEstudiante(d)) || 0;
+              const resumenProgreso = obtenerResumenProgresoEstudiante(d);
+              const p = resumenProgreso.porcentaje;
               const vigente = datos.notaVigente(d);
               const situacion = d.pantallaBloqueada ? 'Pantalla bloqueada' : (p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento');
-              return `<tr><td><strong>${escaparInforme(e.nombre || d.nombreGoogle || d.email || 'Sin nombre')}</strong><br><small>${escaparInforme(d.email || '')}</small></td><td>${escaparInforme(e.curso || 'Sin curso')}</td><td>${escaparInforme(e.division || '—')}</td><td>${escaparInforme(e.turno || 'Sin turno')}</td><td>${escaparInforme(d.estadoCuenta || 'Sin estado')}</td><td>${p}%</td><td><strong>${mostrarNota(vigente)}</strong></td><td>${situacion}</td></tr>`;
+              return `<tr><td><strong>${escaparInforme(e.nombre || d.nombreGoogle || d.email || 'Sin nombre')}</strong><br><small>${escaparInforme(d.email || '')}</small></td><td>${escaparInforme(e.curso || 'Sin curso')}</td><td>${escaparInforme(e.division || '—')}</td><td>${escaparInforme(e.turno || 'Sin turno')}</td><td>${escaparInforme(d.estadoCuenta || 'Sin estado')}</td><td><strong>${p}%</strong><br><small>${resumenProgreso.completadas}/${resumenProgreso.total} desafíos</small><div aria-label="Progreso ${p}%" style="margin-top:4px;height:6px;min-width:65px;background:rgba(148,163,184,.22);border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:${p}%;background:${p >= 75 ? '#22c55e' : p >= 40 ? '#f59e0b' : '#38bdf8'}"></span></div></td><td><strong>${mostrarNota(vigente)}</strong></td><td>${situacion}</td></tr>`;
             }).join('')}</tbody></table></div>`;
       }
 
@@ -13835,9 +13858,10 @@
           const filas = [['Estudiante', 'Email', 'Curso', 'Division', 'Turno', 'Estado', 'Progreso', 'Promedio real', 'Situacion']];
           datos.estudiantes.forEach(d => {
               const e = d.estudiante || {};
-              const p = Number(calcularProgresoEstudiante(d)) || 0;
+              const resumenProgreso = obtenerResumenProgresoEstudiante(d);
+              const p = resumenProgreso.porcentaje;
               const n = datos.notaVigente(d);
-              filas.push([e.nombre || d.nombreGoogle || d.email || '', d.email || '', e.curso || '', e.division || '', e.turno || '', d.estadoCuenta || '', `${p}%`, Number.isFinite(n) ? n : '', d.pantallaBloqueada ? 'Pantalla bloqueada' : p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento']);
+              filas.push([e.nombre || d.nombreGoogle || d.email || '', d.email || '', e.curso || '', e.division || '', e.turno || '', d.estadoCuenta || '', `${resumenProgreso.completadas}/${resumenProgreso.total} desafíos (${p}%)`, Number.isFinite(n) ? n : '', d.pantallaBloqueada ? 'Pantalla bloqueada' : p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento']);
           });
           const csv = filas.map(fila => fila.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
           const enlace = document.createElement('a');
@@ -13889,15 +13913,16 @@
           dibujarGrafico();
           if (y > 260) { doc.addPage(); y = 18; } else { y += 5; }
           doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.text('Detalle de seguimiento', 15, y); y += 7;
-          doc.setFontSize(8); doc.text('Estudiante', 15, y); doc.text('Grupo', 78, y); doc.text('Progreso', 126, y); doc.text('Promedio real', 153, y); y += 5;
+          doc.setFontSize(8); doc.text('Estudiante', 15, y); doc.text('Grupo', 78, y); doc.text('Desafíos completados', 122, y); doc.text('Promedio real', 153, y); y += 5;
           doc.setFont('helvetica', 'normal');
           ordenados.forEach(d => {
               if (y > 280) { doc.addPage(); y = 18; }
               const e = d.estudiante || {};
-              const p = Number(calcularProgresoEstudiante(d)) || 0;
+              const resumenProgreso = obtenerResumenProgresoEstudiante(d);
+              const p = resumenProgreso.porcentaje;
               doc.text(String(e.nombre || d.nombreGoogle || d.email || 'Sin nombre').slice(0, 32), 15, y);
               doc.text(`${e.curso || ''} ${e.division || ''} ${e.turno || ''}`.trim().slice(0, 25), 78, y);
-              doc.text(`${p}%`, 126, y);
+              doc.text(`${resumenProgreso.completadas}/${resumenProgreso.total} (${p}%)`, 126, y);
               doc.text(notaTexto(datos.notaVigente(d)), 153, y);
               y += 5;
           });
