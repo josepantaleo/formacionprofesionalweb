@@ -4387,16 +4387,9 @@
       }
 
       function actualizarProgreso() {
-          const estadoReal = obtenerFinalizadasEfectivasEstudiante({
-              finalizadas: actividadesFinalizadas,
-              historialResultados,
-              codigos: Object.fromEntries(seccionesData.map(sec => [
-                  sec.id,
-                  document.getElementById(`editor-${sec.id}`)?.value || ''
-              ]))
-          });
-          const finalizadasCount = seccionesData.filter(sec => estadoReal[sec.id] === true).length;
-          const porcentaje = Math.round((finalizadasCount / seccionesData.length) * 100);
+          const resumenProgreso = obtenerResumenProgresoEstudiante({ finalizadas: actividadesFinalizadas });
+          const finalizadasCount = resumenProgreso.completadas;
+          const porcentaje = resumenProgreso.porcentaje;
           document.getElementById('progressBar').style.width = `${porcentaje}%`;
           document.getElementById('progressBarContainer')?.setAttribute('aria-valuenow', String(porcentaje));
           document.getElementById('progressText').innerText = `Progreso: ${porcentaje}% (${finalizadasCount}/${seccionesData.length} finalizadas)`;
@@ -9406,44 +9399,69 @@
       }
 
       function esDesafioFinalizado(valor) {
-          // Acepta el booleano normal de Firestore y formatos equivalentes
-          // que pueden aparecer en datos antiguos/importados. No acepta objetos
-          // ni textos arbitrarios para evitar contar desafíos pendientes.
+          // Solo acepta marcas explícitas de finalización; no infiere avance a partir del código.
           if (valor === true || valor === 1) return true;
-          if (typeof valor === 'string') {
-              const normalizado = valor.trim().toLowerCase();
-              return normalizado === 'true' || normalizado === '1' ||
-                  normalizado === 'finalizado' || normalizado === 'finalizada' ||
-                  normalizado === 'completado' || normalizado === 'completada';
-          }
-          return false;
+          if (typeof valor !== 'string') return false;
+          return ['true', '1', 'finalizado', 'finalizada', 'completado', 'completada', 'completed', 'done']
+              .includes(valor.trim().toLowerCase());
+      }
+
+      function tieneNotaValidaDesafioEstudiante(d = {}, sectionId) {
+          // Una nota 0 es válida; null, undefined y texto vacío significan que no hay nota.
+          const esNotaValida = valor => {
+              if (valor === null || valor === undefined || (typeof valor === 'string' && valor.trim() === '')) return false;
+              const numero = Number(valor);
+              return Number.isFinite(numero) && numero >= 0 && numero <= 10;
+          };
+          const notaDocente = d?.notasDesafiosDocente?.[sectionId]?.nota;
+          const resultado = d?.historialResultados?.[sectionId] || {};
+          const notaAutomatica = resultado.notaFinal;
+          const notaIA = resultado.notaIA;
+          return esNotaValida(notaDocente) || esNotaValida(notaAutomatica) || esNotaValida(notaIA);
       }
 
       function obtenerFinalizadasEfectivasEstudiante(d = {}) {
-          // La marca finalizada es el estado oficial del desafío. No exigir
-          // código, salida ni evaluación adicional: esos datos pueden faltar
-          // en registros antiguos o en desafíos finalizados por tiempo/docente.
-          const declaradas = d?.finalizadas && typeof d.finalizadas === 'object' ? d.finalizadas : {};
+          // Una única fuente de verdad para pantalla, panel docente e informes.
+          // Un desafío con nota automática o nota docente queda finalizado, aunque la marca
+          // de finalización no se haya guardado o todavía figure como false.
+          // Compatibilidad con ambos nombres de campo usados por el estado local y Firestore.
+          const finalizadasGuardadas = d?.finalizadas && typeof d.finalizadas === 'object' ? d.finalizadas : {};
+          const finalizadasLocales = d?.actividadesFinalizadas && typeof d.actividadesFinalizadas === 'object' ? d.actividadesFinalizadas : {};
           const finalizadas = {};
           seccionesData.forEach(sec => {
-              finalizadas[sec.id] = esDesafioFinalizado(declaradas[sec.id]);
+              const valor = Object.prototype.hasOwnProperty.call(finalizadasGuardadas, sec.id)
+                  ? finalizadasGuardadas[sec.id]
+                  : finalizadasLocales[sec.id];
+              finalizadas[sec.id] = esDesafioFinalizado(valor) || tieneNotaValidaDesafioEstudiante(d, sec.id);
           });
           return finalizadas;
       }
 
       function obtenerResumenProgresoEstudiante(d = {}) {
           const finalizadas = obtenerFinalizadasEfectivasEstudiante(d);
-          const total = seccionesData.length;
-          const completadas = seccionesData.filter(sec => finalizadas[sec.id] === true).length;
-          return {
-              completadas,
-              total,
-              porcentaje: total ? Math.round((completadas / total) * 100) : 0
-          };
+          const ids = [...new Set(seccionesData.map(sec => sec?.id).filter(id => id !== null && id !== undefined && String(id).trim() !== '').map(String))];
+          const total = ids.length;
+          const completadas = ids.reduce((suma, id) => suma + (finalizadas[id] === true ? 1 : 0), 0);
+          const pendientes = Math.max(0, total - completadas);
+          const porcentajeExacto = total ? (completadas / total) * 100 : 0;
+          const porcentaje = Math.max(0, Math.min(100, Math.round(porcentajeExacto)));
+          return { completadas, pendientes, total, porcentaje, porcentajeExacto };
       }
 
       function calcularProgresoEstudiante(d) {
           return obtenerResumenProgresoEstudiante(d).porcentaje;
+      }
+
+      function obtenerResumenProgresoGrupo(estudiantes = []) {
+          const resumenes = estudiantes.map(obtenerResumenProgresoEstudiante);
+          const estudiantesConDesafios = resumenes.filter(r => r.total > 0);
+          const completados = resumenes.reduce((suma, r) => suma + r.completadas, 0);
+          const posibles = resumenes.reduce((suma, r) => suma + r.total, 0);
+          const porcentaje = posibles ? Math.round(completados * 100 / posibles) : 0;
+          const promedioIndividual = estudiantesConDesafios.length
+              ? Math.round(estudiantesConDesafios.reduce((suma, r) => suma + r.porcentajeExacto, 0) / estudiantesConDesafios.length)
+              : 0;
+          return { completados, posibles, porcentaje, promedioIndividual, estudiantes: estudiantes.length };
       }
       function obtenerNotaDesafioEstudiante(d, sectionId, resultado = null) {
           const ajuste = d?.notasDesafiosDocente?.[sectionId];
@@ -13757,11 +13775,15 @@
               pendientes: estudiantes.filter(d => d.estadoCuenta === 'pendiente').length,
               inactivos: estudiantes.filter(d => d.estadoCuenta === 'inactivo').length
           };
-          const promedioProgreso = progreso.length ? Math.round(progreso.reduce((a, b) => a + b, 0) / progreso.length) : 0;
+          const resumenGrupo = obtenerResumenProgresoGrupo(estudiantes);
+          const promedioProgreso = resumenGrupo.promedioIndividual;
           const promedio = valores => valores.length ? Number((valores.reduce((a, b) => a + b, 0) / valores.length).toFixed(2)) : null;
           return {
               curso, division, turno, estudiantes, progreso,
               conectados, bloqueados, estados, promedioProgreso,
+              desafiosCompletadosGrupo: resumenGrupo.completados,
+              desafiosPosiblesGrupo: resumenGrupo.posibles,
+              progresoGlobalGrupo: resumenGrupo.porcentaje,
               promedioVigente: promedio(notasVigentes),
               notaVigente
           };
@@ -13814,7 +13836,8 @@
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.65rem;margin-bottom:1rem">
               <div class="teacher-group-report-summary"><small>Estudiantes incluidos</small><strong>${datos.estudiantes.length}</strong></div>
               <div class="teacher-group-report-summary"><small>Promedio real del grupo</small><strong>${mostrarNota(datos.promedioVigente)}</strong></div>
-              <div class="teacher-group-report-summary"><small>Progreso promedio</small><strong>${datos.promedioProgreso}%</strong></div>
+              <div class="teacher-group-report-summary"><small>Avance global del grupo</small><strong>${datos.progresoGlobalGrupo}%</strong><small>${datos.desafiosCompletadosGrupo}/${datos.desafiosPosiblesGrupo} desafíos</small></div>
+              <div class="teacher-group-report-summary"><small>Promedio de avance individual</small><strong>${datos.promedioProgreso}%</strong></div>
               <div class="teacher-group-report-summary"><small>Conectados</small><strong>${datos.conectados}/${datos.estudiantes.length}</strong></div>
             </div>
             <section style="padding:.8rem;border:1px solid rgba(148,163,184,.25);border-radius:8px;margin-bottom:1rem">
@@ -13887,7 +13910,7 @@
           doc.setFontSize(16); doc.text('Informe para preceptoría y tutores/padres', 15, 18);
           doc.setFontSize(10); doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')} · ${alcance}`, 15, 26);
           doc.setFontSize(10);
-          doc.text(doc.splitTextToSize(`Estudiantes: ${datos.estudiantes.length} · Promedio real del grupo: ${notaTexto(datos.promedioVigente)} · Progreso promedio: ${datos.promedioProgreso}%`, 180), 15, 34);
+          doc.text(doc.splitTextToSize(`Estudiantes: ${datos.estudiantes.length} · Promedio real del grupo: ${notaTexto(datos.promedioVigente)} · Avance global: ${datos.progresoGlobalGrupo}% (${datos.desafiosCompletadosGrupo}/${datos.desafiosPosiblesGrupo} desafíos) · Promedio individual: ${datos.promedioProgreso}%`, 180), 15, 34);
           doc.setFontSize(8); doc.setTextColor(71, 85, 105);
           doc.text(doc.splitTextToSize('Promedio real: una única calificación vigente por estudiante. Se prioriza la nota confirmada por el docente; si no existe, se utiliza la nota calculada y luego la automática. Los estudiantes sin nota aparecen como pendientes y no se incluyen en el promedio grupal.', 180), 15, 43);
           doc.setTextColor(15, 23, 42);
@@ -13947,12 +13970,13 @@
           const e = estudiante.estudiante || {};
           const nombre = e.nombre || estudiante.nombreGoogle || estudiante.email || 'Estudiante';
           const grupo = [e.curso, e.division, e.turno].filter(Boolean).join(' · ') || 'Sin grupo';
+          const finalizadasEfectivas = obtenerFinalizadasEfectivasEstudiante(estudiante);
           const actividades = seccionesData.map(sec => {
               const resultado = estudiante.historialResultados?.[sec.id] || {};
               const notaAutomatica = Number(resultado.notaFinal ?? resultado.notaIA);
               const ajuste = estudiante.notasDesafiosDocente?.[sec.id] || {};
               const notaDocente = Number(ajuste.nota);
-              const finalizada = estudiante.finalizadas?.[sec.id] === true;
+              const finalizada = finalizadasEfectivas[sec.id] === true;
               return {
                   titulo: sec.title || sec.id,
                   estado: finalizada ? 'Finalizada' : 'Pendiente',
@@ -14524,7 +14548,7 @@
               ? evaluadas.reduce((suma, item) => suma + item.nota, 0) / evaluadas.length
               : null;
           const finalizadas = actividades.filter(item => item.finalizada).length;
-          const progreso = actividades.length ? Math.round(finalizadas * 100 / actividades.length) : 0;
+          const progreso = obtenerResumenProgresoEstudiante({ finalizadas: Object.fromEntries(actividades.map(item => [item.id, item.finalizada])) }).porcentaje;
           const recomendaciones = generarRecomendacionesInformeEstudiante(actividades, promedio, progreso)
               .map(recomendacion => {
                   const id = idRecomendacionInformeEstudiante(recomendacion);
@@ -14783,10 +14807,9 @@
           doc.text(`Nota definitiva: ${notaDefinitivaNumero !== null ? `${notaDefinitivaPDF}/10 (confirmada por docente)` : 'pendiente de confirmación docente'}`, 14, yPos);
           yPos += 9;
 
-          const desafiosFinalizadosPDF = actividadesInformeEstudiante.filter(item => item.finalizada).length;
-          const progresoPDF = seccionesData.length
-              ? Math.round(desafiosFinalizadosPDF * 100 / seccionesData.length)
-              : 0;
+          const resumenProgresoPDF = obtenerResumenProgresoEstudiante({ finalizadas: Object.fromEntries(actividadesInformeEstudiante.map(item => [item.id, item.finalizada])) });
+          const desafiosFinalizadosPDF = resumenProgresoPDF.completadas;
+          const progresoPDF = resumenProgresoPDF.porcentaje;
           const totalSocraticoPDF = actividadesInformeEstudiante.reduce((total, item) => {
               Object.keys(total).forEach(nivel => {
                   total[nivel] += Number(item.conteoSocratico[nivel] || 0);
