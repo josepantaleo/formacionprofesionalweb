@@ -13793,6 +13793,37 @@
           return escapeHtml(String(valor ?? ''));
       }
 
+      function clavesNombreInformePreceptor(d) {
+          const e = d?.estudiante || {};
+          const nombreCompleto = String(e.nombre || d?.nombreGoogle || d?.email || '').trim();
+          const apellidoCampo = String(e.apellido || e.apellidos || d?.apellido || d?.apellidos || '').trim();
+          const nombreCampo = String(e.nombres || e.nombrePila || '').trim();
+          if (apellidoCampo) {
+              return { apellido: apellidoCampo, nombre: nombreCampo || nombreCompleto };
+          }
+          if (nombreCompleto.includes(',')) {
+              const partes = nombreCompleto.split(',');
+              return { apellido: partes.shift().trim(), nombre: partes.join(' ').trim() };
+          }
+          const partes = nombreCompleto.split(/\s+/).filter(Boolean);
+          if (partes.length > 1) {
+              return { apellido: partes.pop(), nombre: partes.join(' ') };
+          }
+          return { apellido: nombreCompleto, nombre: '' };
+      }
+
+      function ordenarEstudiantesInformePreceptorTutores(estudiantes) {
+          return estudiantes.slice().sort((a, b) => {
+              const ka = clavesNombreInformePreceptor(a);
+              const kb = clavesNombreInformePreceptor(b);
+              const porApellido = ka.apellido.localeCompare(kb.apellido, 'es', { sensitivity: 'base' });
+              if (porApellido) return porApellido;
+              const porNombre = ka.nombre.localeCompare(kb.nombre, 'es', { sensitivity: 'base' });
+              if (porNombre) return porNombre;
+              return String(a?.email || '').localeCompare(String(b?.email || ''), 'es', { sensitivity: 'base' });
+          });
+      }
+
       function llenarFiltrosInformePreceptorTutores() {
           const valores = id => [...new Set(estudiantesProfesor.map(d => String(d.estudiante?.[id] || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
           [['informePreceptorCurso', 'curso'], ['informePreceptorDivision', 'division'], ['informePreceptorTurno', 'turno']].forEach(([id, campo]) => {
@@ -13821,7 +13852,7 @@
           }
           const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los cursos, divisiones y turnos';
           const mostrarNota = valor => valor === null || !Number.isFinite(valor) ? 'Pendiente' : `${valor.toFixed(2)}/10`;
-          const filas = datos.estudiantes.slice().sort((a, b) => String(a.estudiante?.nombre || a.nombreGoogle || a.email || '').localeCompare(String(b.estudiante?.nombre || b.nombreGoogle || b.email || ''), 'es'));
+          const filas = ordenarEstudiantesInformePreceptorTutores(datos.estudiantes);
           const grafico = filas.map((d, i) => {
               const e = d.estudiante || {};
               const nota = datos.notaVigente(d);
@@ -13879,7 +13910,7 @@
       function exportarInformePreceptorTutoresCSV() {
           const datos = obtenerDatosInformePreceptorTutores();
           const filas = [['Estudiante', 'Email', 'Curso', 'Division', 'Turno', 'Estado', 'Progreso', 'Promedio real', 'Situacion']];
-          datos.estudiantes.forEach(d => {
+          ordenarEstudiantesInformePreceptorTutores(datos.estudiantes).forEach(d => {
               const e = d.estudiante || {};
               const resumenProgreso = obtenerResumenProgresoEstudiante(d);
               const p = resumenProgreso.porcentaje;
@@ -13916,7 +13947,7 @@
           doc.setTextColor(15, 23, 42);
           let y = 62;
           doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.text('Gráfico: promedio real por estudiante (escala 0 a 10)', 15, y); y += 8;
-          const ordenados = datos.estudiantes.slice().sort((a, b) => String(a.estudiante?.nombre || a.nombreGoogle || a.email || '').localeCompare(String(b.estudiante?.nombre || b.nombreGoogle || b.email || ''), 'es'));
+          const ordenados = ordenarEstudiantesInformePreceptorTutores(datos.estudiantes);
           const dibujarGrafico = () => {
               ordenados.forEach(d => {
                   if (y > 265) { doc.addPage(); y = 18; }
