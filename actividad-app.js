@@ -13740,11 +13740,13 @@
           guardarPDFProfesor(doc, `Detalle_docente_${nombre}_${e.curso || ''}_${e.division || ''}`);
       }
 
+      const filtrosAvanzadosPreceptor = { buscar: '', estado: '', progreso: '', nota: '', conexion: '' };
+
       function obtenerDatosInformePreceptorTutores() {
           const curso = String(document.getElementById('informePreceptorCurso')?.value || '');
           const division = String(document.getElementById('informePreceptorDivision')?.value || '');
           const turno = String(document.getElementById('informePreceptorTurno')?.value || '');
-          const estudiantes = estudiantesProfesor.filter(d => {
+          let estudiantes = estudiantesProfesor.filter(d => {
               if (d?.estadoCuenta === 'rechazado') return false;
               const e = d.estudiante || {};
               return (!curso || String(e.curso || '') === curso) &&
@@ -13764,6 +13766,31 @@
               if (calculada !== null) return calculada;
               return notaValida(calcularNotaEstudiante(d));
           };
+          estudiantes = estudiantes.filter(d => {
+              const e = d.estudiante || {};
+              const nombre = String(e.nombre || d.nombreGoogle || d.email || '').toLocaleLowerCase('es');
+              const busqueda = String(filtrosAvanzadosPreceptor.buscar || '').trim().toLocaleLowerCase('es');
+              if (busqueda && !nombre.includes(busqueda) && !String(d.email || '').toLocaleLowerCase('es').includes(busqueda)) return false;
+              if (filtrosAvanzadosPreceptor.estado && String(d.estadoCuenta || 'sin-estado') !== filtrosAvanzadosPreceptor.estado) return false;
+              const avance = Number(calcularProgresoEstudiante(d)) || 0;
+              if (filtrosAvanzadosPreceptor.progreso === 'inicial' && avance >= 20) return false;
+              if (filtrosAvanzadosPreceptor.progreso === 'desarrollo' && (avance < 20 || avance >= 40)) return false;
+              if (filtrosAvanzadosPreceptor.progreso === 'avanzado' && (avance < 40 || avance >= 60)) return false;
+              if (filtrosAvanzadosPreceptor.progreso === 'muy-avanzado' && avance < 60) return false;
+              const nota = notaVigente(d);
+              if (filtrosAvanzadosPreceptor.nota === 'sin-nota' && Number.isFinite(nota)) return false;
+              if (filtrosAvanzadosPreceptor.nota === 'baja' && (!Number.isFinite(nota) || nota >= 4)) return false;
+              if (filtrosAvanzadosPreceptor.nota === 'regular' && (!Number.isFinite(nota) || nota < 4 || nota >= 6)) return false;
+              if (filtrosAvanzadosPreceptor.nota === 'buena' && (!Number.isFinite(nota) || nota < 6 || nota >= 8)) return false;
+              if (filtrosAvanzadosPreceptor.nota === 'alta' && (!Number.isFinite(nota) || nota < 8)) return false;
+              const ms = d.ultimaConexion?.toMillis?.() || Date.parse(d.ultimaConexion || d.ultimaActividad || '') || 0;
+              const conectado = Boolean(ms && Date.now() - ms <= 120000);
+              if (filtrosAvanzadosPreceptor.conexion === 'conectado' && !conectado) return false;
+              if (filtrosAvanzadosPreceptor.conexion === 'sin-conexion' && conectado) return false;
+              if (filtrosAvanzadosPreceptor.conexion === 'bloqueado' && d.pantallaBloqueada !== true) return false;
+              return true;
+          });
+          const progresoFiltrado = estudiantes.map(d => Number(calcularProgresoEstudiante(d)) || 0);
           const notasVigentes = estudiantes.map(notaVigente).filter(Number.isFinite);
           const conectados = estudiantes.filter(d => {
               const ms = d.ultimaConexion?.toMillis?.() || Date.parse(d.ultimaConexion || d.ultimaActividad || '') || 0;
@@ -13863,6 +13890,17 @@
           }).join('');
           const altoGrafico = Math.max(100, filas.length * 34 + 12);
           contenedor.innerHTML = `
+            <section style="margin:1rem 0;padding:1rem;border:1px solid rgba(148,163,184,.3);border-radius:10px">
+              <h4 style="margin:.1rem 0 .8rem"><i class="fa-solid fa-filter"></i> Filtros del informe</h4>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:.65rem">
+                <label>Buscar estudiante o email<input id="filtroPreceptorBuscar" type="search" placeholder="Apellido, nombre o email" value="${escaparInforme(filtrosAvanzadosPreceptor.buscar)}" style="display:block;width:100%;margin-top:.25rem"></label>
+                <label>Estado de cuenta<select id="filtroPreceptorEstado" style="display:block;width:100%;margin-top:.25rem"><option value="">Todos los estados</option><option value="activo">Activo</option><option value="pendiente">Pendiente</option><option value="inactivo">Inactivo</option><option value="sin-estado">Sin estado</option></select></label>
+                <label>Progreso<select id="filtroPreceptorProgreso" style="display:block;width:100%;margin-top:.25rem"><option value="">Todos los niveles</option><option value="inicial">Inicial: menos de 20%</option><option value="desarrollo">En desarrollo: 20–39%</option><option value="avanzado">Avanzado: 40–59%</option><option value="muy-avanzado">Muy avanzado: 60% o más</option></select></label>
+                <label>Promedio vigente<select id="filtroPreceptorNota" style="display:block;width:100%;margin-top:.25rem"><option value="">Todas las notas</option><option value="sin-nota">Sin nota</option><option value="baja">Menos de 4</option><option value="regular">4 a menos de 6</option><option value="buena">6 a menos de 8</option><option value="alta">8 a 10</option></select></label>
+                <label>Conexión / dispositivo<select id="filtroPreceptorConexion" style="display:block;width:100%;margin-top:.25rem"><option value="">Todos</option><option value="conectado">Conectados ahora</option><option value="sin-conexion">Sin conexión reciente</option><option value="bloqueado">Pantalla bloqueada</option></select></label>
+              </div>
+              <button type="button" id="limpiarFiltrosPreceptor" class="btn btn-secondary" style="margin-top:.7rem">Limpiar filtros</button>
+            </section>
             <div style="margin:1rem 0;padding:.7rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06)"><strong>Alcance:</strong> ${escaparInforme(alcance)} · ${datos.estudiantes.length} estudiante${datos.estudiantes.length === 1 ? '' : 's'}</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.65rem;margin-bottom:1rem">
               <div class="teacher-group-report-summary"><small>Estudiantes incluidos</small><strong>${datos.estudiantes.length}</strong></div>
@@ -13884,6 +13922,24 @@
               const situacion = d.pantallaBloqueada ? 'Pantalla bloqueada' : (p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento');
               return `<tr><td><strong>${escaparInforme(e.nombre || d.nombreGoogle || d.email || 'Sin nombre')}</strong><br><small>${escaparInforme(d.email || '')}</small></td><td>${escaparInforme(e.curso || 'Sin curso')}</td><td>${escaparInforme(e.division || '—')}</td><td>${escaparInforme(e.turno || 'Sin turno')}</td><td>${escaparInforme(d.estadoCuenta || 'Sin estado')}</td><td><strong>${p}%</strong><br><small>${resumenProgreso.completadas}/${resumenProgreso.total} desafíos</small><div aria-label="Progreso ${p}%" style="margin-top:4px;height:6px;min-width:65px;background:rgba(148,163,184,.22);border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:${p}%;background:${p >= 75 ? '#22c55e' : p >= 40 ? '#f59e0b' : '#38bdf8'}"></span></div></td><td><strong>${mostrarNota(vigente)}</strong></td><td>${situacion}</td></tr>`;
             }).join('')}</tbody></table></div>`;
+          const controles = [
+              ['filtroPreceptorBuscar', 'buscar'], ['filtroPreceptorEstado', 'estado'],
+              ['filtroPreceptorProgreso', 'progreso'], ['filtroPreceptorNota', 'nota'],
+              ['filtroPreceptorConexion', 'conexion']
+          ];
+          controles.forEach(([id, campo]) => {
+              const el = document.getElementById(id);
+              if (!el) return;
+              el.value = filtrosAvanzadosPreceptor[campo];
+              el.addEventListener('change', () => {
+                  filtrosAvanzadosPreceptor[campo] = el.value;
+                  renderInformePreceptorTutores();
+              }, { once: true });
+          });
+          document.getElementById('limpiarFiltrosPreceptor')?.addEventListener('click', () => {
+              Object.keys(filtrosAvanzadosPreceptor).forEach(k => filtrosAvanzadosPreceptor[k] = '');
+              renderInformePreceptorTutores();
+          }, { once: true });
       }
 
       function abrirInformePreceptorTutores() {
@@ -13928,6 +13984,10 @@
 
       async function exportarInformePreceptorTutoresPDF() {
           const datos = obtenerDatosInformePreceptorTutores();
+          if (!datos.estudiantes.length) {
+              alert('No hay estudiantes para exportar con los filtros seleccionados.');
+              return;
+          }
           if (typeof asegurarLibreriasPdf === 'function') {
               try { await asegurarLibreriasPdf(); } catch (_) {}
           }
@@ -13936,51 +13996,103 @@
               return;
           }
           const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4' });
-          const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los grupos';
-          const notaTexto = n => Number.isFinite(n) ? `${n.toFixed(2)}/10` : 'Pendiente';
-          doc.setFontSize(16); doc.text('Informe para preceptoría y tutores/padres', 15, 18);
-          doc.setFontSize(10); doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')} · ${alcance}`, 15, 26);
-          doc.setFontSize(10);
-          doc.text(doc.splitTextToSize(`Estudiantes: ${datos.estudiantes.length} · Promedio real del grupo: ${notaTexto(datos.promedioVigente)} · Avance global: ${datos.progresoGlobalGrupo}% (${datos.desafiosCompletadosGrupo}/${datos.desafiosPosiblesGrupo} desafíos) · Promedio individual: ${datos.promedioProgreso}%`, 180), 15, 34);
-          doc.setFontSize(8); doc.setTextColor(71, 85, 105);
-          doc.text(doc.splitTextToSize('Promedio real: una única calificación vigente por estudiante. Se prioriza la nota confirmada por el docente; si no existe, se utiliza la nota calculada y luego la automática. Los estudiantes sin nota aparecen como pendientes y no se incluyen en el promedio grupal.', 180), 15, 43);
-          doc.setTextColor(15, 23, 42);
-          let y = 62;
-          doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.text('Gráfico: promedio real por estudiante (escala 0 a 10)', 15, y); y += 8;
           const ordenados = ordenarEstudiantesInformePreceptorTutores(datos.estudiantes);
-          const dibujarGrafico = () => {
-              ordenados.forEach(d => {
-                  if (y > 265) { doc.addPage(); y = 18; }
-                  const e = d.estudiante || {};
-                  const nombre = String(e.nombre || d.nombreGoogle || d.email || 'Sin nombre').slice(0, 34);
-                  const nota = datos.notaVigente(d);
-                  doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
-                  doc.text(nombre, 15, y);
-                  doc.setFillColor(226, 232, 240); doc.roundedRect(80, y - 3.5, 90, 4, 1, 1, 'F');
-                  if (Number.isFinite(nota)) {
-                      doc.setFillColor(14, 165, 233); doc.roundedRect(80, y - 3.5, Math.max(.5, 90 * Math.max(0, Math.min(10, nota)) / 10), 4, 1, 1, 'F');
-                  }
-                  doc.text(Number.isFinite(nota) ? nota.toFixed(2) : 'Pend.', 174, y);
-                  y += 7;
-              });
+          const alcance = [datos.curso && `Curso ${datos.curso}`, datos.division && `División ${datos.division}`, datos.turno && `Turno ${datos.turno}`].filter(Boolean).join(' · ') || 'Todos los cursos, divisiones y turnos';
+          const notaTexto = n => Number.isFinite(n) ? `${n.toFixed(2)}/10` : 'Pendiente';
+          const nombreDe = d => String(d.estudiante?.nombre || d.nombreGoogle || d.email || 'Sin nombre');
+          const grupoDe = d => [d.estudiante?.curso, d.estudiante?.division, d.estudiante?.turno].filter(Boolean).join(' · ') || 'Sin grupo informado';
+          const escribirLinea = (texto, x, y, ancho=180, alto=5) => {
+              const lineas = doc.splitTextToSize(String(texto ?? ''), ancho);
+              doc.text(lineas, x, y);
+              return y + lineas.length * alto;
           };
-          dibujarGrafico();
-          if (y > 260) { doc.addPage(); y = 18; } else { y += 5; }
-          doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.text('Detalle de seguimiento', 15, y); y += 7;
-          doc.setFontSize(8); doc.text('Estudiante', 15, y); doc.text('Grupo', 78, y); doc.text('Desafíos completados', 122, y); doc.text('Promedio real', 153, y); y += 5;
+
+          // Primera página: resumen general para preceptoría.
+          doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 34, 'F');
+          doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+          doc.text('Informe de seguimiento escolar', 15, 15);
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+          doc.text('Preceptoría y comunicación con tutores/padres', 15, 23);
+          doc.text(`Fecha: ${new Date().toLocaleDateString('es-AR')}`, 15, 29);
+          doc.setTextColor(15, 23, 42); let y = 44;
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text('Alcance del informe', 15, y); y += 7;
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+          y = escribirLinea(alcance, 15, y); y += 2;
+          y = escribirLinea(`Estudiantes incluidos: ${ordenados.length}`, 15, y);
+          y = escribirLinea(`Promedio vigente grupal: ${notaTexto(datos.promedioVigente)}`, 15, y);
+          y = escribirLinea(`Avance global: ${datos.progresoGlobalGrupo}% (${datos.desafiosCompletadosGrupo}/${datos.desafiosPosiblesGrupo} desafíos)`, 15, y);
+          y = escribirLinea(`Promedio de avance individual: ${datos.promedioProgreso}%`, 15, y); y += 5;
+          doc.setFont('helvetica', 'bold'); doc.text('Listado ordenado alfabéticamente por apellido', 15, y); y += 7;
+          doc.setFontSize(8); doc.setFillColor(226, 232, 240); doc.rect(15, y-4, 180, 7, 'F');
+          doc.text('Estudiante', 17, y); doc.text('Curso/división', 86, y); doc.text('Progreso', 130, y); doc.text('Nota vigente', 163, y); y += 7;
           doc.setFont('helvetica', 'normal');
-          ordenados.forEach(d => {
-              if (y > 280) { doc.addPage(); y = 18; }
-              const e = d.estudiante || {};
-              const resumenProgreso = obtenerResumenProgresoEstudiante(d);
-              const p = resumenProgreso.porcentaje;
-              doc.text(String(e.nombre || d.nombreGoogle || d.email || 'Sin nombre').slice(0, 32), 15, y);
-              doc.text(`${e.curso || ''} ${e.division || ''} ${e.turno || ''}`.trim().slice(0, 25), 78, y);
-              doc.text(`${resumenProgreso.completadas}/${resumenProgreso.total} (${p}%)`, 126, y);
-              doc.text(notaTexto(datos.notaVigente(d)), 153, y);
-              y += 5;
+          ordenados.forEach((d, i) => {
+              if (y > 278) { doc.addPage(); y = 18; }
+              const r = obtenerResumenProgresoEstudiante(d);
+              doc.text(doc.splitTextToSize(nombreDe(d), 66)[0], 17, y);
+              doc.text(doc.splitTextToSize([d.estudiante?.curso, d.estudiante?.division].filter(Boolean).join(' / ') || '—', 40)[0], 86, y);
+              doc.text(`${r.porcentaje}% (${r.completadas}/${r.total})`, 130, y);
+              doc.text(notaTexto(datos.notaVigente(d)), 163, y); y += 6;
           });
-          doc.save(`informe-preceptoria-${new Date().toISOString().slice(0, 10)}.pdf`);
+          doc.setFontSize(8); doc.setTextColor(71, 85, 105);
+          if (y > 270) { doc.addPage(); y = 18; } else { y += 4; }
+          escribirLinea('Criterio de nota: se prioriza la calificación confirmada por el docente; si no existe, se utiliza la calculada y luego la automática. “Pendiente” indica que no hay una nota válida registrada.', 15, y, 180, 4);
+
+          // Una ficha individual por estudiante, con estado de cada desafío.
+          ordenados.forEach((d, indiceEstudiante) => {
+              doc.addPage();
+              const e = d.estudiante || {};
+              const nombre = nombreDe(d);
+              const resumen = obtenerResumenProgresoEstudiante(d);
+              const progreso = Number(calcularProgresoEstudiante(d)) || resumen.porcentaje || 0;
+              const finalizadas = obtenerFinalizadasEfectivasEstudiante(d) || {};
+              const actividades = seccionesData.map(sec => {
+                  const resultado = d.historialResultados?.[sec.id] || {};
+                  const ajuste = d.notasDesafiosDocente?.[sec.id] || {};
+                  const notaAutomaticaRaw = resultado.notaFinal ?? resultado.notaIA;
+                  const notaAutomatica = notaAutomaticaRaw === null || notaAutomaticaRaw === undefined || notaAutomaticaRaw === '' ? null : Number(notaAutomaticaRaw);
+                  const notaDocente = ajuste.nota === null || ajuste.nota === undefined || ajuste.nota === '' ? null : Number(ajuste.nota);
+                  const automaticaValida = Number.isFinite(notaAutomatica) && notaAutomatica >= 0 && notaAutomatica <= 10;
+                  const docenteValida = Number.isFinite(notaDocente) && notaDocente >= 0 && notaDocente <= 10;
+                  return { titulo: sec.title || sec.id, finalizada: finalizadas[sec.id] === true, nota: docenteValida ? notaDocente : automaticaValida ? notaAutomatica : null, fuente: docenteValida ? 'Docente' : automaticaValida ? 'Automática' : 'Sin nota' };
+              });
+              doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 31, 'F');
+              doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+              doc.text('Ficha individual de seguimiento', 15, 14);
+              doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+              doc.text(`Estudiante ${indiceEstudiante + 1} de ${ordenados.length} · ${new Date().toLocaleDateString('es-AR')}`, 15, 23);
+              doc.setTextColor(15, 23, 42); let fy = 41;
+              doc.setFont('helvetica', 'bold'); doc.setFontSize(13); fy = escribirLinea(nombre, 15, fy, 180, 6); fy += 1;
+              doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+              fy = escribirLinea(`Grupo: ${grupoDe(d)}`, 15, fy);
+              fy = escribirLinea(`Correo: ${d.email || 'No informado'}`, 15, fy);
+              fy = escribirLinea(`Estado de cuenta: ${d.estadoCuenta || 'No informado'}`, 15, fy);
+              fy = escribirLinea(`Progreso: ${progreso}% · Desafíos finalizados: ${resumen.completadas}/${resumen.total}`, 15, fy);
+              fy = escribirLinea(`Promedio vigente: ${notaTexto(datos.notaVigente(d))}`, 15, fy);
+              fy = escribirLinea(`Situación orientativa: ${d.pantallaBloqueada ? 'Pantalla bloqueada: revisar con el equipo docente' : progreso >= 75 ? 'Avance favorable' : progreso >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento'}`, 15, fy, 180, 4.5);
+              fy += 5;
+              doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setFillColor(226, 232, 240); doc.rect(15, fy-4, 180, 8, 'F');
+              doc.text('Desafío / actividad', 17, fy+1); doc.text('Estado', 112, fy+1); doc.text('Nota', 145, fy+1); doc.text('Origen', 169, fy+1); fy += 10;
+              doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+              actividades.forEach((a, i) => {
+                  if (fy > 278) { doc.addPage(); fy = 18; }
+                  if (i % 2 === 0) { doc.setFillColor(248, 250, 252); doc.rect(15, fy-4, 180, 7, 'F'); }
+                  doc.text(doc.splitTextToSize(`${i+1}. ${a.titulo}`, 90)[0], 17, fy);
+                  doc.text(a.finalizada ? 'Finalizado' : 'Pendiente', 112, fy);
+                  doc.text(a.nota === null ? '—' : `${a.nota.toFixed(1)}/10`, 145, fy);
+                  doc.text(a.fuente, 169, fy); fy += 7;
+              });
+              fy = Math.min(fy + 8, 282);
+              if (fy > 270) { doc.addPage(); fy = 18; }
+              doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.text('Observaciones de preceptoría', 15, fy); fy += 7;
+              doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+              doc.setDrawColor(148, 163, 184);
+              for (let linea = 0; linea < 3; linea++) { doc.line(15, fy + linea * 9, 195, fy + linea * 9); }
+              fy += 32; doc.setFontSize(8); doc.setTextColor(71, 85, 105);
+              doc.text('Este informe es de seguimiento educativo. Verificar la información con el equipo docente antes de comunicar conclusiones a la familia.', 15, Math.min(fy, 287));
+              doc.setTextColor(15, 23, 42);
+          });
+          doc.save(`informe-preceptoria-por-estudiante-${new Date().toISOString().slice(0, 10)}.pdf`);
       }
       window.exportarInformePreceptorTutoresPDF = exportarInformePreceptorTutoresPDF;
 
