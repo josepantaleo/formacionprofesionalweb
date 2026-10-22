@@ -3650,9 +3650,22 @@
               boton.dataset.busy = 'true';
           }
           let sesion = window.__sesionCRDTEstudianteActiva;
-          if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
-              await window.iniciarColaboracionCRDTEstudiante?.();
-              sesion = window.__sesionCRDTEstudianteActiva;
+          try {
+              if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
+                  if (typeof window.iniciarColaboracionCRDTEstudiante !== 'function') {
+                      throw new Error('La función de colaboración todavía no está disponible. Recargá la actividad.');
+                  }
+                  await window.iniciarColaboracionCRDTEstudiante();
+                  sesion = window.__sesionCRDTEstudianteActiva;
+              }
+          } catch (error) {
+              liberarBotonSolicitud();
+              const estado = document.getElementById(`estado-colaboracion-${sectionId}`);
+              if (estado) {
+                  estado.hidden = false;
+                  estado.textContent = error?.message || 'No se pudo preparar la solicitud de ayuda.';
+              }
+              return;
           }
           if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
               liberarBotonSolicitud();
@@ -3660,32 +3673,35 @@
               return;
           }
           const sec = seccionesData.find(item => item.id === sectionId);
-          const motivoIngresado = prompt(
-              `¿Qué necesitás revisar con el docente en "${sec?.title || 'este desafío'}"?
-
-Describí brevemente el problema (entre 8 y 500 caracteres).`,
+          const motivo = prompt(
+              `¿Qué necesitás revisar con el docente en "${sec?.title || 'este desafío'}"?`,
               'Necesito ayuda para revisar mi código.'
           );
-          if (motivoIngresado === null) {
+          if (motivo === null) {
               liberarBotonSolicitud();
               return;
           }
-          const motivo = String(motivoIngresado).trim();
-          if (motivo.length < 8) {
+          const motivoLimpio = motivo.trim();
+          if (!motivoLimpio) {
               liberarBotonSolicitud();
-              alert('Contá un poco más qué necesitás revisar (mínimo 8 caracteres).');
+              alert('Contá brevemente qué necesitás revisar para que el docente pueda ayudarte.');
               return;
           }
-          if (motivo.length > 500) {
+          if (motivoLimpio.length > 500) {
               liberarBotonSolicitud();
-              alert('El motivo es demasiado largo. Resumilo en 500 caracteres como máximo.');
+              alert('El motivo puede tener hasta 500 caracteres. Acortalo e intentá nuevamente.');
+              return;
+          }
+          if (typeof window.registrarSolicitudColaboracionFirebase !== 'function') {
+              liberarBotonSolicitud();
+              alert('El servicio para enviar solicitudes no está disponible. Recargá la actividad e intentá nuevamente.');
               return;
           }
           try {
-              const okSolicitud = await window.registrarSolicitudColaboracionFirebase?.({
+              const okSolicitud = await window.registrarSolicitudColaboracionFirebase({
                   uid: window.firebaseCurrentUser?.uid,
                   sectionId,
-                  objetivo: motivo,
+                  objetivo: motivoLimpio,
                   solicitadoPor: window.firebaseCurrentUser?.displayName || window.firebaseCurrentUser?.email || 'Estudiante'
               });
               if (!okSolicitud) throw new Error(window.ultimoErrorCooperacion?.message || 'No se pudo registrar la solicitud.');
@@ -3696,6 +3712,33 @@ Describí brevemente el problema (entre 8 y 500 caracteres).`,
               }
               const cancelar = document.getElementById(`btn-cancelar-colaboracion-${sectionId}`);
               if (cancelar) cancelar.hidden = false;
+              // Mantener informado al estudiante cuando el docente responda, sin recargar.
+              window.escucharEstadoSolicitudColaboracionFirebase?.(sectionId, respuesta => {
+                  const estadoActual = document.getElementById(`estado-colaboracion-${sectionId}`);
+                  const botonSolicitud = document.getElementById(`btn-solicitar-colaboracion-${sectionId}`);
+                  const botonCancelar = document.getElementById(`btn-cancelar-colaboracion-${sectionId}`);
+                  if (estadoActual) {
+                      estadoActual.hidden = false;
+                      if (respuesta.estado === 'aceptado') {
+                          estadoActual.textContent = `¡Tu solicitud fue aceptada por ${respuesta.respondidoPor || 'el docente'}! Ya pueden revisar el código en colaboración.`;
+                      } else if (respuesta.estado === 'rechazado') {
+                          estadoActual.textContent = `El docente rechazó la solicitud.${respuesta.motivoRechazo ? ` Motivo: ${respuesta.motivoRechazo}` : ''}`;
+                      } else {
+                          estadoActual.textContent = 'La colaboración fue finalizada.';
+                      }
+                  }
+                  if (botonCancelar) botonCancelar.hidden = true;
+                  if (botonSolicitud) {
+                      botonSolicitud.disabled = respuesta.estado === 'aceptado';
+                      if (respuesta.estado !== 'aceptado') {
+                          delete botonSolicitud.dataset.busy;
+                          botonSolicitud.disabled = false;
+                      }
+                  }
+                  if (respuesta.estado === 'aceptado') {
+                      alert('¡El docente aceptó tu solicitud de colaboración! Ya pueden trabajar juntos en el código.');
+                  }
+              });
           } catch (error) {
               liberarBotonSolicitud();
               const estado = document.getElementById(`estado-colaboracion-${sectionId}`);
@@ -3711,13 +3754,17 @@ Describí brevemente el problema (entre 8 y 500 caracteres).`,
       window.solicitarColaboracionEstudiante = solicitarColaboracionEstudiante;
 
       async function cancelarColaboracionEstudiante(sectionId, boton) {
+          if (boton?.disabled || boton?.dataset.busy === 'true') return;
           const uid = window.firebaseCurrentUser?.uid;
           if (!uid || typeof window.eliminarSolicitudColaboracionEstudianteFirebase !== 'function') {
               alert('La función de cancelación todavía no está disponible. Recargá la actividad.');
               return;
           }
           if (!confirm('¿Cancelar esta solicitud de colaboración? Podrás volver a solicitar ayuda después.')) return;
-          if (boton) boton.disabled = true;
+          if (boton) {
+              boton.disabled = true;
+              boton.dataset.busy = 'true';
+          }
           try {
               const ok = await window.eliminarSolicitudColaboracionEstudianteFirebase({ uid, sectionId });
               if (!ok) throw new Error(window.ultimoErrorCooperacion?.message || 'No se pudo cancelar la solicitud.');
@@ -3728,9 +3775,16 @@ Describí brevemente el problema (entre 8 y 500 caracteres).`,
               }
               const solicitar = document.getElementById(`btn-solicitar-colaboracion-${sectionId}`);
               if (solicitar) solicitar.disabled = false;
-              if (boton) boton.hidden = true;
+              if (boton) {
+                  boton.hidden = true;
+                  boton.disabled = false;
+                  delete boton.dataset.busy;
+              }
           } catch (error) {
-              if (boton) boton.disabled = false;
+              if (boton) {
+                  boton.disabled = false;
+                  delete boton.dataset.busy;
+              }
               alert(error?.message || 'No se pudo cancelar la solicitud.');
           }
       }
@@ -12551,7 +12605,7 @@ Describí brevemente el problema (entre 8 y 500 caracteres).`,
 
           const comunicacion = [];
           if (disponibles('abrirMensajeriaDocente')) {
-              comunicacion.push(botonAccion('btn-primary', 'fa-message', 'Enviar mensaje', `abrirMensajeriaDocente('${escapeHtml(d.uid)}')`, false, 'Mostrá un aviso en la pantalla del estudiante'));
+              comunicacion.push(botonAccion('btn-primary', 'fa-message', 'Enviar mensaje', `abrirMensajeriaDocente('${escapeHtml(d.uid)}')`, false, 'Abrí la mensajería para enviar un aviso a este estudiante'));
           }
           if (disponibles('abrirJitsiDocente')) {
               comunicacion.push(botonAccion('btn-success', 'fa-video', jitsiDisponible ? 'Volver a Jitsi' : 'Iniciar llamada Jitsi', `abrirJitsiDocente(${indice})`, false, 'Abrí o iniciá la comunicación por video'));
@@ -12825,22 +12879,15 @@ Describí brevemente el problema (entre 8 y 500 caracteres).`,
               solicitudes = await window.obtenerSolicitudesColaboracionDocenteFirebase?.() || [];
               if (!solicitudes.length) await new Promise(resolve => setTimeout(resolve, 600));
           }
+          const mapa = new Map((Array.isArray(estudiantesProfesor) ? estudiantesProfesor : [])
+              .map(item => [item.uid || item.id, { ...item, __solicitudesColaboracion: [] }]));
           if (!solicitudes.length) {
               const detalle = window.ultimoErrorCooperacion?.message;
-              if (resumen) resumen.textContent = detalle
-                  ? `No se pudieron consultar las solicitudes. Verificá la conexión y los permisos docentes. Detalle: ${detalle}`
-                  : 'No hay solicitudes pendientes. La bandeja se actualizará cuando llegue una nueva solicitud.';
-              // Aun sin solicitudes, limpiar tarjetas antiguas que hayan quedado en memoria.
-              const mapaVacio = new Map((Array.isArray(estudiantesProfesor) ? estudiantesProfesor : [])
-                  .map(item => [item.uid || item.id, { ...item, __solicitudesColaboracion: [] }]));
-              estudiantesProfesor = [...mapaVacio.values()];
+              if (detalle && resumen) resumen.textContent = `No se pudieron consultar las solicitudes: ${detalle}`;
+              estudiantesProfesor = [...mapa.values()];
               renderSolicitudesColaboracionProfesor(estudiantesProfesor);
               return;
           }
-          // Reconstruir la bandeja desde la lectura actual: no conservar solicitudes
-          // antiguas en memoria que ya fueron aceptadas, rechazadas o canceladas.
-          const mapa = new Map((Array.isArray(estudiantesProfesor) ? estudiantesProfesor : [])
-              .map(item => [item.uid || item.id, { ...item, __solicitudesColaboracion: [] }]));
           solicitudes.forEach(item => {
               const estudiante = mapa.get(item.uid) || {
                   uid: item.uid,
@@ -12859,20 +12906,6 @@ Describí brevemente el problema (entre 8 y 500 caracteres).`,
           renderSolicitudesColaboracionProfesor(estudiantesProfesor);
       }
 
-      async function actualizarBandejaSolicitudesColaboracionProfesor(boton) {
-          const control = boton || document.getElementById('btnActualizarSolicitudesColaboracion');
-          if (control?.dataset.busy === 'true') return;
-          if (control) { control.disabled = true; control.dataset.busy = 'true'; }
-          const resumen = document.getElementById('resumenSolicitudesColaboracion');
-          if (resumen) resumen.textContent = 'Actualizando solicitudes…';
-          try {
-              await cargarSolicitudesColaboracionDirectas();
-          } finally {
-              if (control) { control.disabled = false; delete control.dataset.busy; }
-          }
-      }
-      window.actualizarBandejaSolicitudesColaboracionProfesor = actualizarBandejaSolicitudesColaboracionProfesor;
-
       async function responderSolicitudColaboracionProfesor(uid, sectionId, aceptar, boton) {
           if (boton?.disabled || boton?.dataset.busy === 'true') return;
           if (boton) {
@@ -12880,7 +12913,10 @@ Describí brevemente el problema (entre 8 y 500 caracteres).`,
               boton.dataset.busy = 'true';
           }
           if (typeof window.responderCooperacionDocenteFirebase !== 'function') {
-              if (boton) { boton.disabled = false; delete boton.dataset.busy; }
+              if (boton) {
+                  boton.disabled = false;
+                  delete boton.dataset.busy;
+              }
               alert('La función de colaboración docente todavía no está disponible. Recargá la página.');
               return;
           }
@@ -12894,7 +12930,7 @@ Describí brevemente el problema (entre 8 y 500 caracteres).`,
                   }
                   return;
               }
-              motivo = respuesta;
+              motivo = respuesta.trim().slice(0, 500);
           }
           const tarjeta = boton?.closest('article');
           const botones = tarjeta?.querySelectorAll('button');

@@ -2905,6 +2905,27 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         }
       };
 
+      // Escucha en tiempo real la respuesta docente para informar al estudiante.
+      window.escucharEstadoSolicitudColaboracionFirebase = function(sectionId, alCambiar) {
+        const user = window.firebaseCurrentUser;
+        if (!user?.uid || !db || !sectionId || typeof alCambiar !== "function") return null;
+        const clave = `${user.uid}_${sectionId}`;
+        window.__listenersEstadoSolicitudColaboracion ||= new Map();
+        const anterior = window.__listenersEstadoSolicitudColaboracion.get(clave);
+        if (anterior) anterior();
+        const detener = onSnapshot(doc(db, "solicitudesColaboracion", clave), snapshot => {
+          if (!snapshot.exists()) return;
+          const solicitud = snapshot.data();
+          if (["aceptado", "rechazado", "finalizado"].includes(solicitud.estado)) {
+            alCambiar({ ...solicitud, sectionId, estado: solicitud.estado });
+            detener();
+            window.__listenersEstadoSolicitudColaboracion.delete(clave);
+          }
+        }, error => console.warn("No se pudo consultar la respuesta de colaboración:", error));
+        window.__listenersEstadoSolicitudColaboracion.set(clave, detener);
+        return detener;
+      };
+
       window.obtenerSolicitudesColaboracionDocenteFirebase = async function() {
         const autorizado = await window.esDocenteAutorizadoFirebase?.();
         const contexto = contextoDocenteFirebase();
