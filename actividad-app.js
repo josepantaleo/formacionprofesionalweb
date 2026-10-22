@@ -3660,12 +3660,25 @@
               return;
           }
           const sec = seccionesData.find(item => item.id === sectionId);
-          const motivo = prompt(
-              `¿Qué necesitás revisar con el docente en "${sec?.title || 'este desafío'}"?`,
+          const motivoIngresado = prompt(
+              `¿Qué necesitás revisar con el docente en "${sec?.title || 'este desafío'}"?
+
+Describí brevemente el problema (entre 8 y 500 caracteres).`,
               'Necesito ayuda para revisar mi código.'
           );
-          if (motivo === null) {
+          if (motivoIngresado === null) {
               liberarBotonSolicitud();
+              return;
+          }
+          const motivo = String(motivoIngresado).trim();
+          if (motivo.length < 8) {
+              liberarBotonSolicitud();
+              alert('Contá un poco más qué necesitás revisar (mínimo 8 caracteres).');
+              return;
+          }
+          if (motivo.length > 500) {
+              liberarBotonSolicitud();
+              alert('El motivo es demasiado largo. Resumilo en 500 caracteres como máximo.');
               return;
           }
           try {
@@ -12814,11 +12827,20 @@
           }
           if (!solicitudes.length) {
               const detalle = window.ultimoErrorCooperacion?.message;
-              if (detalle && resumen) resumen.textContent = `No se pudieron consultar las solicitudes: ${detalle}`;
+              if (resumen) resumen.textContent = detalle
+                  ? `No se pudieron consultar las solicitudes. Verificá la conexión y los permisos docentes. Detalle: ${detalle}`
+                  : 'No hay solicitudes pendientes. La bandeja se actualizará cuando llegue una nueva solicitud.';
+              // Aun sin solicitudes, limpiar tarjetas antiguas que hayan quedado en memoria.
+              const mapaVacio = new Map((Array.isArray(estudiantesProfesor) ? estudiantesProfesor : [])
+                  .map(item => [item.uid || item.id, { ...item, __solicitudesColaboracion: [] }]));
+              estudiantesProfesor = [...mapaVacio.values()];
+              renderSolicitudesColaboracionProfesor(estudiantesProfesor);
               return;
           }
+          // Reconstruir la bandeja desde la lectura actual: no conservar solicitudes
+          // antiguas en memoria que ya fueron aceptadas, rechazadas o canceladas.
           const mapa = new Map((Array.isArray(estudiantesProfesor) ? estudiantesProfesor : [])
-              .map(item => [item.uid || item.id, item]));
+              .map(item => [item.uid || item.id, { ...item, __solicitudesColaboracion: [] }]));
           solicitudes.forEach(item => {
               const estudiante = mapa.get(item.uid) || {
                   uid: item.uid,
@@ -12837,6 +12859,20 @@
           renderSolicitudesColaboracionProfesor(estudiantesProfesor);
       }
 
+      async function actualizarBandejaSolicitudesColaboracionProfesor(boton) {
+          const control = boton || document.getElementById('btnActualizarSolicitudesColaboracion');
+          if (control?.dataset.busy === 'true') return;
+          if (control) { control.disabled = true; control.dataset.busy = 'true'; }
+          const resumen = document.getElementById('resumenSolicitudesColaboracion');
+          if (resumen) resumen.textContent = 'Actualizando solicitudes…';
+          try {
+              await cargarSolicitudesColaboracionDirectas();
+          } finally {
+              if (control) { control.disabled = false; delete control.dataset.busy; }
+          }
+      }
+      window.actualizarBandejaSolicitudesColaboracionProfesor = actualizarBandejaSolicitudesColaboracionProfesor;
+
       async function responderSolicitudColaboracionProfesor(uid, sectionId, aceptar, boton) {
           if (boton?.disabled || boton?.dataset.busy === 'true') return;
           if (boton) {
@@ -12844,6 +12880,7 @@
               boton.dataset.busy = 'true';
           }
           if (typeof window.responderCooperacionDocenteFirebase !== 'function') {
+              if (boton) { boton.disabled = false; delete boton.dataset.busy; }
               alert('La función de colaboración docente todavía no está disponible. Recargá la página.');
               return;
           }

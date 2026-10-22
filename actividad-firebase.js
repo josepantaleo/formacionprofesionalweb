@@ -2863,6 +2863,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           return [];
         }
         try {
+          window.ultimoErrorCooperacion = null;
           const snapshot = await getDocs(collection(contexto.database, "solicitudesColaboracion"));
           const solicitudesTodas = snapshot.docs
             .map(item => ({ id: item.id, ...item.data() }))

@@ -240,7 +240,7 @@
       }
     </style>
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
-      <script type="module" src="actividad-firebase.js?v=20261022-2"></script>
+      <script type="module" src="actividad-firebase.js?v=20261022-3"></script>
   </head>
   <body onload="initApp()">
     <a class="skip-link" href="#contenidoPrincipal">Saltar al contenido principal</a>
@@ -602,9 +602,15 @@
             <div id="resumenSolicitudesColaboracion" style="color:var(--text-muted);font-size:.82rem">
               No hay solicitudes de colaboración pendientes.
             </div>
-            <button id="btnEliminarSolicitudesColaboracionPendientes" class="btn btn-secondary" type="button" hidden>
-              <i class="fa-solid fa-trash-can"></i> Eliminar pendientes
-            </button>
+            <div style="display:flex;gap:.45rem;flex-wrap:wrap">
+              <button id="btnActualizarSolicitudesColaboracion" class="btn btn-secondary" type="button"
+                onclick="actualizarBandejaSolicitudesColaboracionProfesor(this)" aria-label="Actualizar solicitudes de colaboración">
+                <i class="fa-solid fa-rotate" aria-hidden="true"></i> Actualizar
+              </button>
+              <button id="btnEliminarSolicitudesColaboracionPendientes" class="btn btn-secondary" type="button" hidden>
+                <i class="fa-solid fa-trash-can"></i> Eliminar pendientes
+              </button>
+            </div>
           </div>
           <div id="diagnosticoSolicitudesColaboracion" role="status" aria-live="polite"
             style="margin-bottom:.65rem;padding:.5rem .65rem;border:1px solid rgba(148,163,184,.25);border-radius:6px;color:var(--text-muted);font-size:.76rem">
@@ -1300,10 +1306,10 @@
     <script src="actividad-network-status.js?v=20260914-9"></script>
     <script src="actividad-utils.js?v=20260914-9"></script>
     <script src="actividad-pdf-loader.js?v=20260914-9"></script>
-      <script src="actividad-app.js?v=20261022-2"></script>
-    <script src="panel-profesor.js?v=20261022-2"></script>
-    <script src="mensajeria-docente.js?v=20261022-2"></script>
-    <script src="actividad-cooperacion.js?v=20261022-2"></script>
+      <script src="actividad-app.js?v=20261022-3"></script>
+    <script src="panel-profesor.js?v=20261022-3"></script>
+    <script src="mensajeria-docente.js?v=20261022-3"></script>
+    <script src="actividad-cooperacion.js?v=20261022-3"></script>
       <script src="mejoras-seguimiento.js?v=20261001-1"></script>
   </body>
 </html>
