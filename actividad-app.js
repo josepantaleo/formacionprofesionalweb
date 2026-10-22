@@ -13484,8 +13484,8 @@
         renderFormularioDesafioFirebase();
       }
       function cerrarEditorDesafiosFirebase(){document.getElementById('editorDesafiosFirebaseModal').classList.remove('active');}
-      function textoArray(v){return Array.isArray(v)?v.join('\\n'):String(v||'');}
-      function lineas(id){return String(document.getElementById(id)?.value||'').split(/\\n+/).map(x=>x.trim()).filter(Boolean);}
+      function textoArray(v){return Array.isArray(v)?v.join('\n'):String(v||'');}
+      function lineas(id){return String(document.getElementById(id)?.value||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);}
 
       function renderListaDesafiosFirebase(){
         const q=(document.getElementById('buscarDesafioFirebase')?.value||'').toLowerCase().trim();
@@ -13494,9 +13494,9 @@
         desafiosEditorFirebase.forEach((d,i)=>{
           if(q&&!JSON.stringify(d).toLowerCase().includes(q))return;
           const b=document.createElement('button');
-          b.className='btn '+(i===desafioEditorActual?'btn-primary':'btn-secondary');
-          b.style='display:block;width:100%;text-align:left;margin-bottom:.4rem;';
-          b.textContent=(d.id||('sec-'+(i+1)))+' â€” '+(d.title||'Sin título');
+          b.className='edf-challenge-item '+(i===desafioEditorActual?'is-selected':'');
+          b.type='button';
+          b.innerHTML=`<span class="edf-challenge-id">${escapeHtml(d.id||('sec-'+(i+1)))}</span><span class="edf-challenge-title">${escapeHtml(d.exerciseTitle||d.title||'Sin título')}</span>`;
           b.onclick=()=>{guardarFormularioDesafioFirebase(false);desafioEditorActual=i;renderListaDesafiosFirebase();renderFormularioDesafioFirebase();};
           el.appendChild(b);
         });
@@ -13505,40 +13505,47 @@
       function renderFormularioDesafioFirebase(){
         const d=desafiosEditorFirebase[desafioEditorActual];if(!d)return;
         const criterios=d.criteriosEvaluacion||[];
+        const titulo=escapeHtml(d.exerciseTitle||d.title||'Desafío sin título');
         document.getElementById('formDesafioFirebase').innerHTML=`
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7rem;">
-            <div><label>ID</label><input id="edf_id" value="${escapeHtml(d.id||'')}" readonly></div>
-            <div><label>Ãcono</label><input id="edf_icon" value="${escapeHtml(d.icon||'')}"></div>
-            <div><label>Título</label><input id="edf_title" value="${escapeHtml(d.title||'')}"></div>
-            <div><label>Título del desafío</label><input id="edf_exerciseTitle" value="${escapeHtml(d.exerciseTitle||'')}"></div>
-            <div style="grid-column:1/-1"><label>Teoría</label><textarea id="edf_theory">${escapeHtml(d.theory||'')}</textarea></div>
-            <div style="grid-column:1/-1"><label>Consigna</label><textarea id="edf_exerciseDesc" style="min-height:120px">${escapeHtml(d.exerciseDesc||'')}</textarea></div>
-            <div style="grid-column:1/-1"><label>Código inicial</label><textarea id="edf_initialCode" style="min-height:140px">${escapeHtml(d.initialCode||'')}</textarea></div>
-            <div style="grid-column:1/-1"><label>Solución de referencia IA</label><textarea id="edf_aiSolution" style="min-height:160px">${escapeHtml(d.aiSolution||'')}</textarea></div>
-            <div style="grid-column:1/-1"><label>ðŸŽ¯ Objetivos pedagógicos</label><textarea id="edf_objetivos">${escapeHtml(textoArray(d.objetivosPedagogicos))}</textarea></div>
-            <div style="grid-column:1/-1"><label>ðŸ§  Conceptos que debe detectar la IA</label><textarea id="edf_conceptos">${escapeHtml(textoArray(d.conceptosDetectar))}</textarea></div>
-            <div style="grid-column:1/-1"><label>â“ Preguntas socráticas</label><textarea id="edf_preguntas" style="min-height:120px">${escapeHtml(textoArray(d.preguntasSocraticas))}</textarea></div>
-            <div style="grid-column:1/-1"><label>âš ï¸ Errores frecuentes</label><textarea id="edf_errores" style="min-height:120px">${escapeHtml(textoArray(d.erroresFrecuentes))}</textarea></div>
-            <div style="grid-column:1/-1"><label>ðŸš« Qué NO debe revelar la IA</label><textarea id="edf_norevelar" style="min-height:120px">${escapeHtml(textoArray(d.noRevelarIA))}</textarea></div>
+          <div class="edf-editor-top">
+            <div><div class="edf-eyebrow">${escapeHtml(d.id||'')}</div><h3>${titulo}</h3><p>Completá solo lo que necesitás. Los apartados se pueden desplegar y guardar por separado.</p></div>
+            <button class="btn btn-primary edf-save-top" type="button" onclick="guardarDesafioActualFirebase()"><i class="fa-solid fa-floppy-disk"></i> Guardar cambios</button>
           </div>
-          <h4>ðŸ“Š Criterios de evaluación</h4>
-          <p style="color:var(--text-muted);font-size:.8rem;">Los pesos deben sumar 100.</p>
-          <table style="width:100%;border-collapse:collapse;min-width:650px;"><thead><tr><th>Criterio</th><th>Peso</th><th>Indicador</th><th></th></tr></thead><tbody id="edf_criterios"></tbody></table>
-          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem;">
-            <button class="btn btn-secondary" onclick="agregarCriterioFirebase()">âž• Criterio</button>
-            <button class="btn btn-secondary" onclick="normalizarCriteriosFirebase()">âš–ï¸ Normalizar</button>
-            <button class="btn btn-primary" onclick="guardarDesafioActualFirebase()">â˜ï¸ Guardar desafío</button>
-            <button class="btn btn-secondary" onclick="guardarLos19Firebase()">â˜ï¸ Guardar los 19</button>
-          </div>`;
+          <details class="edf-section" open><summary>1. Datos principales <span>Nombre e icono</span></summary>
+            <div class="edf-fields">
+              <div><label>ID del desafío</label><input id="edf_id" value="${escapeHtml(d.id||'')}" readonly></div>
+              <div><label>Ícono</label><input id="edf_icon" value="${escapeHtml(d.icon||'')}" placeholder="Ej.: 💻"></div>
+              <div><label>Nombre en la lista</label><input id="edf_title" value="${escapeHtml(d.title||'')}" placeholder="Nombre breve"></div>
+              <div><label>Título de la actividad</label><input id="edf_exerciseTitle" value="${escapeHtml(d.exerciseTitle||'')}" placeholder="Título que verá el estudiante"></div>
+              <div class="edf-wide"><label>Teoría o explicación</label><textarea id="edf_theory" placeholder="Explicá los conceptos necesarios...">${escapeHtml(d.theory||'')}</textarea></div>
+            </div>
+          </details>
+          <details class="edf-section" open><summary>2. Consigna para el estudiante <span>Qué debe resolver</span></summary>
+            <div class="edf-fields"><div class="edf-wide"><label>Consigna</label><textarea id="edf_exerciseDesc" class="edf-tall" placeholder="Describí el objetivo y los requisitos...">${escapeHtml(d.exerciseDesc||'')}</textarea></div>
+            <div class="edf-wide"><label>Código inicial que verá el estudiante</label><textarea id="edf_initialCode" class="edf-code" spellcheck="false" placeholder="// Escribí aquí el código inicial">${escapeHtml(d.initialCode||'')}</textarea></div></div>
+          </details>
+          <details class="edf-section"><summary>3. Ayuda de inteligencia artificial <span>Solución y orientación</span></summary>
+            <div class="edf-fields"><div class="edf-wide"><label>Solución de referencia para la IA</label><textarea id="edf_aiSolution" class="edf-code" spellcheck="false" placeholder="Código de referencia para evaluar u orientar...">${escapeHtml(d.aiSolution||'')}</textarea></div>
+            <div><label>Objetivos pedagógicos <small>(uno por línea)</small></label><textarea id="edf_objetivos" placeholder="Comprender objetos\nUsar métodos de arreglos">${escapeHtml(textoArray(d.objetivosPedagogicos))}</textarea></div>
+            <div><label>Conceptos que debe detectar la IA <small>(uno por línea)</small></label><textarea id="edf_conceptos" placeholder="filter()\nreduce()">${escapeHtml(textoArray(d.conceptosDetectar))}</textarea></div>
+            <div><label>Preguntas para orientar <small>(una por línea)</small></label><textarea id="edf_preguntas" placeholder="¿Qué datos necesitás recorrer?">${escapeHtml(textoArray(d.preguntasSocraticas))}</textarea></div>
+            <div><label>Errores frecuentes <small>(uno por línea)</small></label><textarea id="edf_errores" placeholder="Olvidar devolver el resultado">${escapeHtml(textoArray(d.erroresFrecuentes))}</textarea></div>
+            <div class="edf-wide"><label>Qué NO debe revelar la IA <small>(una regla por línea)</small></label><textarea id="edf_norevelar" placeholder="No entregar la solución completa de entrada">${escapeHtml(textoArray(d.noRevelarIA))}</textarea></div></div>
+          </details>
+          <details class="edf-section"><summary>4. Criterios de evaluación <span>Los pesos deben sumar 100%</span></summary>
+            <p class="edf-help">Repartí el porcentaje entre los criterios. Si no suman 100, el sistema te avisará antes de guardar.</p>
+            <div class="edf-table-wrap"><table class="edf-rubric"><thead><tr><th>Criterio</th><th>Peso %</th><th>¿Qué se evalúa?</th><th></th></tr></thead><tbody id="edf_criterios"></tbody></table></div>
+            <div class="edf-inline-actions"><button class="btn btn-secondary" type="button" onclick="agregarCriterioFirebase()"><i class="fa-solid fa-plus"></i> Agregar criterio</button><button class="btn btn-secondary" type="button" onclick="normalizarCriteriosFirebase()">Repartir a 100%</button></div>
+          </details>
+          <div class="edf-bottom-actions"><span>Atajo: <kbd>Ctrl</kbd> + <kbd>S</kbd> para guardar</span><div><button class="btn btn-primary" type="button" onclick="guardarDesafioActualFirebase()"><i class="fa-solid fa-floppy-disk"></i> Guardar desafío</button></div></div>`;
         criterios.forEach(c=>agregarFilaCriterioFirebase(c));
         document.querySelectorAll('#formDesafioFirebase input,#formDesafioFirebase textarea').forEach(el => {
           el.addEventListener('input', () => {
             const estado = document.getElementById('estadoEditorDesafiosFirebase');
-            if (estado) estado.textContent = 'Cambios sin guardar';
+            if (estado) estado.textContent = 'Hay cambios sin guardar';
           });
         });
       }
-
       function agregarFilaCriterioFirebase(c={criterio:'',peso:0,indicador:''}){
         const tr=document.createElement('tr');
         tr.innerHTML=`<td><input data-k="criterio" value="${escapeHtml(c.criterio||'')}"></td>

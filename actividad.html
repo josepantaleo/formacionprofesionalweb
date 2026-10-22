@@ -241,7 +241,25 @@
     </style>
     <!-- Firebase Authentication + Firestore (modular browser SDK) -->
       <script type="module" src="actividad-firebase.js?v=20261022-1"></script>
-  </head>
+  
+    <style id="editor-desafios-simple-css">
+      #editorDesafiosFirebaseModal .modal-box{padding:clamp(1rem,2vw,1.5rem)!important}
+      .editor-desafios-layout{display:grid;grid-template-columns:minmax(220px,280px) minmax(0,1fr);gap:1rem;margin-top:1rem;align-items:start}
+      .editor-desafios-sidebar{position:sticky;top:0;padding:.8rem;border:1px solid var(--border-color,rgba(127,127,127,.25));border-radius:12px;background:var(--card-bg,rgba(127,127,127,.04))}
+      #formDesafioFirebase{min-width:0}
+      .edf-editor-top{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;padding:1rem;border:1px solid rgba(22,163,74,.28);border-radius:12px;background:rgba(22,163,74,.06)}
+      .edf-editor-top h3{margin:.2rem 0;font-size:1.15rem}.edf-editor-top p,.edf-help{margin:.35rem 0 0;color:var(--text-muted);font-size:.88rem}.edf-eyebrow{font-size:.75rem;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.06em}
+      .edf-section{margin:.7rem 0;border:1px solid var(--border-color,rgba(127,127,127,.22));border-radius:10px;overflow:hidden;background:var(--card-bg,rgba(127,127,127,.025))}
+      .edf-section summary{cursor:pointer;display:flex;justify-content:space-between;gap:.8rem;align-items:center;padding:.9rem 1rem;font-weight:700;list-style:none}.edf-section summary::-webkit-details-marker{display:none}.edf-section summary:after{content:'＋';font-size:1rem;color:var(--text-muted)}.edf-section[open] summary:after{content:'−'}.edf-section summary span{font-size:.78rem;font-weight:400;color:var(--text-muted);text-align:right}
+      .edf-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.85rem;padding:0 1rem 1rem}.edf-fields>div{min-width:0}.edf-fields .edf-wide{grid-column:1/-1}
+      .edf-fields label{display:block;font-weight:600;font-size:.86rem;margin-bottom:.35rem}.edf-fields label small{font-weight:400;color:var(--text-muted)}
+      .edf-fields input,.edf-fields textarea{width:100%;max-width:100%;box-sizing:border-box;padding:.65rem .75rem;border:1px solid var(--border-color,rgba(127,127,127,.35));border-radius:8px;background:var(--input-bg,var(--card-bg,#fff));color:var(--text-color,inherit);font:inherit}
+      .edf-fields textarea{min-height:88px;resize:vertical;line-height:1.5}.edf-fields textarea.edf-tall{min-height:180px}.edf-fields textarea.edf-code{min-height:190px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.85rem;tab-size:2}
+      .edf-table-wrap{overflow-x:auto;padding:0 1rem}.edf-rubric{width:100%;border-collapse:collapse;min-width:500px}.edf-rubric th,.edf-rubric td{padding:.45rem;border-bottom:1px solid var(--border-color,rgba(127,127,127,.2));text-align:left}.edf-rubric input{width:100%;min-width:0;box-sizing:border-box;padding:.55rem;border:1px solid var(--border-color,rgba(127,127,127,.3));border-radius:7px;background:var(--input-bg,var(--card-bg,#fff));color:inherit}.edf-rubric td:nth-child(2){width:90px}.edf-inline-actions{display:flex;gap:.5rem;flex-wrap:wrap;padding: .8rem 1rem 1rem}.edf-bottom-actions{position:sticky;bottom:0;z-index:3;display:flex;justify-content:space-between;align-items:center;gap:.7rem;flex-wrap:wrap;margin-top:1rem;padding:.8rem;background:var(--card-bg,#fff);border:1px solid var(--border-color,rgba(127,127,127,.3));border-radius:10px;box-shadow:0 -5px 18px rgba(0,0,0,.07)}.edf-bottom-actions>span{font-size:.8rem;color:var(--text-muted)}.edf-bottom-actions kbd{padding:.1rem .35rem;border:1px solid var(--border-color,rgba(127,127,127,.3));border-radius:4px}
+      .edf-challenge-item{display:block;width:100%;padding:.7rem;text-align:left;margin:.35rem 0;border:1px solid var(--border-color,rgba(127,127,127,.25));border-radius:9px;background:transparent;color:inherit;cursor:pointer}.edf-challenge-item:hover{border-color:#16a34a}.edf-challenge-item.is-selected{border-color:#16a34a;background:rgba(22,163,74,.1);box-shadow:inset 3px 0 #16a34a}.edf-challenge-id{display:block;font-size:.72rem;color:var(--text-muted);margin-bottom:.2rem}.edf-challenge-title{display:block;font-size:.88rem;font-weight:600;line-height:1.35}
+      @media(max-width:760px){.editor-desafios-layout{grid-template-columns:1fr}.editor-desafios-sidebar{position:static}.edf-fields{grid-template-columns:1fr}.edf-fields .edf-wide{grid-column:auto}.edf-bottom-actions{position:static}.edf-editor-top .edf-save-top{width:100%}.edf-section summary{align-items:flex-start}.edf-section summary span{max-width:45%}}
+    </style>
+</head>
   <body onload="initApp()">
     <a class="skip-link" href="#contenidoPrincipal">Saltar al contenido principal</a>
     <div id="firebaseAuthOverlay" role="dialog" aria-modal="true" aria-labelledby="firebaseAuthTitle">
@@ -1300,7 +1318,7 @@
     <script src="actividad-network-status.js?v=20260914-9"></script>
     <script src="actividad-utils.js?v=20260914-9"></script>
     <script src="actividad-pdf-loader.js?v=20260914-9"></script>
-      <script src="actividad-app.js?v=20261022-19-fix1"></script>
+      <script src="actividad-app.js?v=20261022-editor-simple1"></script>
     <script src="panel-profesor.js?v=20261022-1"></script>
     <script src="mensajeria-docente.js?v=20261022-1"></script>
     <script src="actividad-cooperacion.js?v=20261022-1"></script>
