@@ -3650,9 +3650,22 @@
               boton.dataset.busy = 'true';
           }
           let sesion = window.__sesionCRDTEstudianteActiva;
-          if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
-              await window.iniciarColaboracionCRDTEstudiante?.();
-              sesion = window.__sesionCRDTEstudianteActiva;
+          try {
+              if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
+                  if (typeof window.iniciarColaboracionCRDTEstudiante !== 'function') {
+                      throw new Error('La función de colaboración todavía no está disponible. Recargá la actividad.');
+                  }
+                  await window.iniciarColaboracionCRDTEstudiante();
+                  sesion = window.__sesionCRDTEstudianteActiva;
+              }
+          } catch (error) {
+              liberarBotonSolicitud();
+              const estado = document.getElementById(`estado-colaboracion-${sectionId}`);
+              if (estado) {
+                  estado.hidden = false;
+                  estado.textContent = error?.message || 'No se pudo preparar la solicitud de ayuda.';
+              }
+              return;
           }
           if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
               liberarBotonSolicitud();
@@ -3668,11 +3681,27 @@
               liberarBotonSolicitud();
               return;
           }
+          const motivoLimpio = motivo.trim();
+          if (!motivoLimpio) {
+              liberarBotonSolicitud();
+              alert('Contá brevemente qué necesitás revisar para que el docente pueda ayudarte.');
+              return;
+          }
+          if (motivoLimpio.length > 500) {
+              liberarBotonSolicitud();
+              alert('El motivo puede tener hasta 500 caracteres. Acortalo e intentá nuevamente.');
+              return;
+          }
+          if (typeof window.registrarSolicitudColaboracionFirebase !== 'function') {
+              liberarBotonSolicitud();
+              alert('El servicio para enviar solicitudes no está disponible. Recargá la actividad e intentá nuevamente.');
+              return;
+          }
           try {
-              const okSolicitud = await window.registrarSolicitudColaboracionFirebase?.({
+              const okSolicitud = await window.registrarSolicitudColaboracionFirebase({
                   uid: window.firebaseCurrentUser?.uid,
                   sectionId,
-                  objetivo: motivo,
+                  objetivo: motivoLimpio,
                   solicitadoPor: window.firebaseCurrentUser?.displayName || window.firebaseCurrentUser?.email || 'Estudiante'
               });
               if (!okSolicitud) throw new Error(window.ultimoErrorCooperacion?.message || 'No se pudo registrar la solicitud.');
@@ -3683,6 +3712,33 @@
               }
               const cancelar = document.getElementById(`btn-cancelar-colaboracion-${sectionId}`);
               if (cancelar) cancelar.hidden = false;
+              // Mantener informado al estudiante cuando el docente responda, sin recargar.
+              window.escucharEstadoSolicitudColaboracionFirebase?.(sectionId, respuesta => {
+                  const estadoActual = document.getElementById(`estado-colaboracion-${sectionId}`);
+                  const botonSolicitud = document.getElementById(`btn-solicitar-colaboracion-${sectionId}`);
+                  const botonCancelar = document.getElementById(`btn-cancelar-colaboracion-${sectionId}`);
+                  if (estadoActual) {
+                      estadoActual.hidden = false;
+                      if (respuesta.estado === 'aceptado') {
+                          estadoActual.textContent = `¡Tu solicitud fue aceptada por ${respuesta.respondidoPor || 'el docente'}! Ya pueden revisar el código en colaboración.`;
+                      } else if (respuesta.estado === 'rechazado') {
+                          estadoActual.textContent = `El docente rechazó la solicitud.${respuesta.motivoRechazo ? ` Motivo: ${respuesta.motivoRechazo}` : ''}`;
+                      } else {
+                          estadoActual.textContent = 'La colaboración fue finalizada.';
+                      }
+                  }
+                  if (botonCancelar) botonCancelar.hidden = true;
+                  if (botonSolicitud) {
+                      botonSolicitud.disabled = respuesta.estado === 'aceptado';
+                      if (respuesta.estado !== 'aceptado') {
+                          delete botonSolicitud.dataset.busy;
+                          botonSolicitud.disabled = false;
+                      }
+                  }
+                  if (respuesta.estado === 'aceptado') {
+                      alert('¡El docente aceptó tu solicitud de colaboración! Ya pueden trabajar juntos en el código.');
+                  }
+              });
           } catch (error) {
               liberarBotonSolicitud();
               const estado = document.getElementById(`estado-colaboracion-${sectionId}`);
@@ -3698,13 +3754,17 @@
       window.solicitarColaboracionEstudiante = solicitarColaboracionEstudiante;
 
       async function cancelarColaboracionEstudiante(sectionId, boton) {
+          if (boton?.disabled || boton?.dataset.busy === 'true') return;
           const uid = window.firebaseCurrentUser?.uid;
           if (!uid || typeof window.eliminarSolicitudColaboracionEstudianteFirebase !== 'function') {
               alert('La función de cancelación todavía no está disponible. Recargá la actividad.');
               return;
           }
           if (!confirm('¿Cancelar esta solicitud de colaboración? Podrás volver a solicitar ayuda después.')) return;
-          if (boton) boton.disabled = true;
+          if (boton) {
+              boton.disabled = true;
+              boton.dataset.busy = 'true';
+          }
           try {
               const ok = await window.eliminarSolicitudColaboracionEstudianteFirebase({ uid, sectionId });
               if (!ok) throw new Error(window.ultimoErrorCooperacion?.message || 'No se pudo cancelar la solicitud.');
@@ -3715,9 +3775,16 @@
               }
               const solicitar = document.getElementById(`btn-solicitar-colaboracion-${sectionId}`);
               if (solicitar) solicitar.disabled = false;
-              if (boton) boton.hidden = true;
+              if (boton) {
+                  boton.hidden = true;
+                  boton.disabled = false;
+                  delete boton.dataset.busy;
+              }
           } catch (error) {
-              if (boton) boton.disabled = false;
+              if (boton) {
+                  boton.disabled = false;
+                  delete boton.dataset.busy;
+              }
               alert(error?.message || 'No se pudo cancelar la solicitud.');
           }
       }
@@ -6331,7 +6398,7 @@
           if (!document.getElementById("cm-workbench-enhancements-style")) {
               const style = document.createElement("style");
               style.id = "cm-workbench-enhancements-style";
-              style.textContent = ".codemirror-host.cm-fullscreen{position:fixed!important;inset:0;z-index:9999;background:#0b1220;padding:12px;display:flex;flex-direction:column}.codemirror-host.cm-fullscreen .cm-editor{flex:1;min-height:0}.cm-workbench-lines,.cm-workbench-autosave{font-size:.72rem;opacity:.85;white-space:nowrap}.cm-workbench-autosave{color:#a7f3d0}";
+              style.textContent = ".codemirror-host.cm-fullscreen{position:fixed!important;inset:0;z-index:9999;background:#0b1220;padding:12px;display:flex;flex-direction:column}.codemirror-host.cm-fullscreen .cm-editor{flex:1;min-height:0}.cm-workbench-lines,.cm-workbench-autosave{font-size:.72rem;opacity:.85;white-space:nowrap}.cm-workbench-autosave{color:#a7f3d0}.cm-workbench-toolbar{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;padding:.45rem;background:#111c2f;border:1px solid #334155;border-radius:8px}.cm-workbench-toolbar button,.cm-workbench-toolbar select{min-height:36px;padding:.35rem .55rem;background:#1e293b;color:#e2e8f0;border:1px solid #475569;border-radius:6px;cursor:pointer}.cm-workbench-toolbar button:hover{background:#334155;border-color:#60a5fa}.cm-workbench-toolbar input{min-height:36px;background:#0f172a;color:#f8fafc;border:1px solid #475569;border-radius:6px;padding:.35rem .6rem}.cm-remote-cursors{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:hidden}.cm-remote-cursor{position:absolute;width:2px;height:1.45em;background:#22c55e;box-shadow:0 0 0 1px rgba(15,23,42,.5)}.cm-remote-cursor.student{background:#60a5fa}.cm-remote-cursor-label{position:absolute;left:2px;top:-1.3em;white-space:nowrap;padding:2px 5px;border-radius:4px;background:#166534;color:#fff;font:600 11px/1.3 system-ui}.cm-remote-cursor.student .cm-remote-cursor-label{background:#1d4ed8}.cm-code-diff-dialog{width:min(900px,92vw);max-height:80vh;background:#0b1220;color:#e2e8f0;border:1px solid #475569;border-radius:12px;padding:1rem}.cm-code-diff-dialog::backdrop{background:rgba(2,6,23,.78)}.cm-code-diff-dialog pre{white-space:pre-wrap;overflow:auto;max-height:58vh;font:1rem/1.65 ui-monospace,monospace}.cm-code-diff-dialog .diff-added{color:#86efac;background:rgba(22,163,74,.12)}.cm-code-diff-dialog .diff-removed{color:#fca5a5;background:rgba(220,38,38,.12)}.codemirror-host .cm-content .cm-author-student{color:#2563eb!important;background:rgba(37,99,235,.09)}.cm-author-teacher{color:#16a34a!important;background:rgba(22,163,74,.10)}.cm-author-base{color:inherit}";
               document.head.appendChild(style);
           }
           const {
@@ -6359,6 +6426,7 @@
           textarea.parentNode.insertBefore(host, textarea);
           textarea.classList.add("codemirror-source-hidden");
           const sectionIdEditor = textarea.id.replace("editor-", "");
+          const codigoBaseComparacion = String(textarea.value || "");
           host.addEventListener("click", () => {
               iniciarCronometro(sectionIdEditor);
           });
@@ -6409,6 +6477,10 @@
               <button type="button" data-cm-undo title="Deshacer" aria-label="Deshacer"><i class="fa-solid fa-rotate-left"></i></button>
               <button type="button" data-cm-redo title="Rehacer" aria-label="Rehacer"><i class="fa-solid fa-rotate-right"></i></button>
               <button type="button" data-cm-complete title="Mostrar sugerencias (Ctrl+Espacio)" aria-label="Mostrar sugerencias"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+              <button type="button" data-cm-comment title="Comentar o descomentar líneas (Ctrl+/)" aria-label="Comentar líneas"><i class="fa-solid fa-comment-dots"></i></button>
+              <button type="button" data-cm-compare title="Comparar con el código al abrir el editor" aria-label="Comparar cambios"><i class="fa-solid fa-code-compare"></i> Comparar</button>
+              <button type="button" data-cm-run title="Ejecutar código (Ctrl+Enter)" aria-label="Ejecutar código"><i class="fa-solid fa-play"></i> Ejecutar</button>
+              <button type="button" data-cm-hint title="Pedir una pista" aria-label="Pedir una pista"><i class="fa-solid fa-lightbulb"></i> Pista</button>
               <select data-cm-font aria-label="Tamaño de fuente">
                   <option value=".8rem">Pequeña</option>
                   <option value=".9rem" selected>Normal</option>
@@ -6729,7 +6801,7 @@
                   posicion += texto.length;
                   const fin = Math.min(limite, posicion);
                   if (fin <= inicio) return;
-                  const rol = fragmento?.attributes?.autorRol;
+                  const rol = fragmento?.attributes?.crdtAutor || fragmento?.attributes?.autorRol;
                   const clase = rol === "docente" ? "cm-author-teacher" : rol === "estudiante" ? "cm-author-student" : "cm-author-base";
                   rangos.push(Decoration.mark({ class: clase }).range(inicio, fin));
               });
@@ -6768,6 +6840,10 @@
           textarea.addEventListener("crdt-remote-change", () => {
               textarea.__syncCodeMirror(textarea.value);
               textarea.__renderRemoteCursors(textarea.__remoteCursorParticipants || []);
+          });
+          textarea.addEventListener("cm-selection-change", () => {
+              const seleccion = textarea.__getCodeMirrorSelection?.();
+              if (seleccion) textarea.__sesionCRDT?.actualizarPresencia?.({ inicio: seleccion.inicio, fin: seleccion.fin });
           });
           view.scrollDOM.addEventListener("scroll", () => {
               textarea.__renderRemoteCursors(textarea.__remoteCursorParticipants || []);
@@ -6831,10 +6907,47 @@
           barra.querySelector("[data-cm-redo]").onclick = rehacer;
           barra.querySelector("[data-cm-complete]").onclick = () => { view.focus(); startCompletion(view); };
           barra.querySelector("[data-cm-font]").onchange = evento => {
-              const tamanos = [".8rem", ".9rem", "1rem", "1.1rem"];
+              const tamanos = ["1rem", "1.15rem", "1.3rem", "1.5rem", "1.7rem"];
               host.dataset.cmFontLevel = String(Math.max(0, tamanos.indexOf(evento.target.value)));
               host.style.setProperty("--cm-font-size", evento.target.value);
               estadoHerramientas.textContent = `Tamaño de fuente: ${evento.target.value}.`;
+          };
+          barra.querySelector("[data-cm-comment]").onclick = () => { alternarComentarioLinea(); view.focus(); };
+          barra.querySelector("[data-cm-run]").onclick = () => {
+              if (typeof window.ejecutarCodigo === "function") window.ejecutarCodigo(sectionIdEditor);
+              else estadoHerramientas.textContent = "La función de ejecución no está disponible en esta página.";
+          };
+          barra.querySelector("[data-cm-hint]").onclick = () => {
+              if (typeof window.pedirPistaIA === "function") window.pedirPistaIA(sectionIdEditor, "pista");
+              else estadoHerramientas.textContent = "El tutor de pistas no está disponible en esta página.";
+          };
+          barra.querySelector("[data-cm-compare]").onclick = () => {
+              const actual = view.state.doc.toString();
+              const original = codigoBaseComparacion.split("\n");
+              const nuevo = actual.split("\n");
+              const max = Math.max(original.length, nuevo.length);
+              const lineas = [];
+              for (let i = 0; i < max; i++) {
+                  if (original[i] === nuevo[i]) {
+                      if (original[i] !== undefined) lineas.push(`  ${String(i+1).padStart(3," ")} ${original[i]}`);
+                  } else {
+                      if (original[i] !== undefined) lineas.push(`- ${String(i+1).padStart(3," ")} ${original[i]}`);
+                      if (nuevo[i] !== undefined) lineas.push(`+ ${String(i+1).padStart(3," ")} ${nuevo[i]}`);
+                  }
+              }
+              let dialogo = host.querySelector(".cm-code-diff-dialog");
+              if (!dialogo) {
+                  dialogo = document.createElement("dialog");
+                  dialogo.className = "cm-code-diff-dialog";
+                  const titulo = document.createElement("h3"); titulo.textContent = "Comparación de código";
+                  const ayuda = document.createElement("p"); ayuda.textContent = "Referencia: código que había al abrir el editor. + agregado/cambiado · − original eliminado/cambiado.";
+                  const pre = document.createElement("pre"); pre.dataset.diffContent = "true";
+                  const cerrar = document.createElement("button"); cerrar.type = "button"; cerrar.textContent = "Cerrar"; cerrar.onclick = () => dialogo.close();
+                  dialogo.append(titulo, ayuda, pre, cerrar); host.appendChild(dialogo);
+              }
+              const pre = dialogo.querySelector("pre");
+              pre.textContent = lineas.join("\n") || "Sin cambios respecto del código inicial.";
+              if (dialogo.showModal) dialogo.showModal(); else alert(pre.textContent);
           };
           barra.querySelector("[data-cm-wrap]").onclick = evento => {
               const activo = evento.currentTarget.getAttribute("aria-pressed") !== "true";
@@ -12538,7 +12651,7 @@
 
           const comunicacion = [];
           if (disponibles('abrirMensajeriaDocente')) {
-              comunicacion.push(botonAccion('btn-primary', 'fa-message', 'Enviar mensaje', `abrirMensajeriaDocente('${escapeHtml(d.uid)}')`, false, 'Mostrá un aviso en la pantalla del estudiante'));
+              comunicacion.push(botonAccion('btn-primary', 'fa-message', 'Enviar mensaje', `abrirMensajeriaDocente('${escapeHtml(d.uid)}')`, false, 'Abrí la mensajería para enviar un aviso a este estudiante'));
           }
           if (disponibles('abrirJitsiDocente')) {
               comunicacion.push(botonAccion('btn-success', 'fa-video', jitsiDisponible ? 'Volver a Jitsi' : 'Iniciar llamada Jitsi', `abrirJitsiDocente(${indice})`, false, 'Abrí o iniciá la comunicación por video'));
@@ -12812,13 +12925,15 @@
               solicitudes = await window.obtenerSolicitudesColaboracionDocenteFirebase?.() || [];
               if (!solicitudes.length) await new Promise(resolve => setTimeout(resolve, 600));
           }
+          const mapa = new Map((Array.isArray(estudiantesProfesor) ? estudiantesProfesor : [])
+              .map(item => [item.uid || item.id, { ...item, __solicitudesColaboracion: [] }]));
           if (!solicitudes.length) {
               const detalle = window.ultimoErrorCooperacion?.message;
               if (detalle && resumen) resumen.textContent = `No se pudieron consultar las solicitudes: ${detalle}`;
+              estudiantesProfesor = [...mapa.values()];
+              renderSolicitudesColaboracionProfesor(estudiantesProfesor);
               return;
           }
-          const mapa = new Map((Array.isArray(estudiantesProfesor) ? estudiantesProfesor : [])
-              .map(item => [item.uid || item.id, item]));
           solicitudes.forEach(item => {
               const estudiante = mapa.get(item.uid) || {
                   uid: item.uid,
@@ -12844,6 +12959,10 @@
               boton.dataset.busy = 'true';
           }
           if (typeof window.responderCooperacionDocenteFirebase !== 'function') {
+              if (boton) {
+                  boton.disabled = false;
+                  delete boton.dataset.busy;
+              }
               alert('La función de colaboración docente todavía no está disponible. Recargá la página.');
               return;
           }
@@ -12857,7 +12976,7 @@
                   }
                   return;
               }
-              motivo = respuesta;
+              motivo = respuesta.trim().slice(0, 500);
           }
           const tarjeta = boton?.closest('article');
           const botones = tarjeta?.querySelectorAll('button');
