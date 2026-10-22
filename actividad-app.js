@@ -6398,7 +6398,7 @@
           if (!document.getElementById("cm-workbench-enhancements-style")) {
               const style = document.createElement("style");
               style.id = "cm-workbench-enhancements-style";
-              style.textContent = ".codemirror-host.cm-fullscreen{position:fixed!important;inset:0;z-index:9999;background:#0b1220;padding:12px;display:flex;flex-direction:column}.codemirror-host.cm-fullscreen .cm-editor{flex:1;min-height:0}.cm-workbench-lines,.cm-workbench-autosave{font-size:.72rem;opacity:.85;white-space:nowrap}.cm-workbench-autosave{color:#a7f3d0}.codemirror-host .cm-content .cm-author-student{color:#93c5fd!important;background:rgba(37,99,235,.24);border-bottom:2px solid #3b82f6;border-radius:2px;text-shadow:0 0 1px rgba(147,197,253,.25)}.codemirror-host .cm-content .cm-author-teacher{color:#86efac!important;background:rgba(22,163,74,.23);border-bottom:2px solid #22c55e;border-radius:2px;text-shadow:0 0 1px rgba(134,239,172,.25)}.codemirror-host .cm-content .cm-author-base{color:inherit;background:transparent}";
+              style.textContent = ".codemirror-host .cm-editor{font-size:1.25rem;line-height:1.7}.codemirror-host .cm-content{font-size:var(--cm-font-size,1.25rem);line-height:1.7}.codemirror-host .cm-gutters{font-size:1rem;line-height:1.7}.codemirror-host.cm-fullscreen{position:fixed!important;inset:0;z-index:9999;background:#0b1220;padding:12px;display:flex;flex-direction:column}.codemirror-host.cm-fullscreen .cm-editor{flex:1;min-height:0}.cm-workbench-lines,.cm-workbench-autosave{font-size:.72rem;opacity:.85;white-space:nowrap}.cm-workbench-autosave{color:#a7f3d0}.codemirror-host .cm-content .cm-author-student{color:#93c5fd!important;background:rgba(37,99,235,.24);border-bottom:2px solid #3b82f6;border-radius:2px;text-shadow:0 0 1px rgba(147,197,253,.25)}.codemirror-host .cm-content .cm-author-teacher{color:#86efac!important;background:rgba(22,163,74,.23);border-bottom:2px solid #22c55e;border-radius:2px;text-shadow:0 0 1px rgba(134,239,172,.25)}.codemirror-host .cm-content .cm-author-base{color:inherit;background:transparent}";
               document.head.appendChild(style);
           }
           const {
@@ -6422,6 +6422,8 @@
 
           const host = document.createElement("div");
           host.className = "codemirror-host";
+          host.dataset.cmFontLevel = "2";
+          host.style.setProperty("--cm-font-size", "1.3rem");
           host.__sourceTextarea = textarea;
           textarea.parentNode.insertBefore(host, textarea);
           textarea.classList.add("codemirror-source-hidden");
@@ -6477,10 +6479,11 @@
               <button type="button" data-cm-redo title="Rehacer" aria-label="Rehacer"><i class="fa-solid fa-rotate-right"></i></button>
               <button type="button" data-cm-complete title="Mostrar sugerencias (Ctrl+Espacio)" aria-label="Mostrar sugerencias"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
               <select data-cm-font aria-label="Tamaño de fuente">
-                  <option value=".8rem">Pequeña</option>
-                  <option value=".9rem" selected>Normal</option>
-                  <option value="1rem">Grande</option>
-                  <option value="1.1rem">Muy grande</option>
+                  <option value="1rem">Normal</option>
+                  <option value="1.15rem">Grande</option>
+                  <option value="1.3rem" selected>Muy grande</option>
+                  <option value="1.5rem">Extra grande</option>
+                  <option value="1.7rem">Máxima</option>
               </select>
               <button type="button" data-cm-wrap title="Ajustar líneas largas" aria-label="Ajustar líneas largas" aria-pressed="false"><i class="fa-solid fa-align-left"></i></button>
               <span class="cm-workbench-position" aria-live="polite">Línea 1, columna 1</span>
@@ -6592,8 +6595,8 @@
           };
 
           const ajustarFuente = delta => {
-              const tamanos = [".8rem", ".9rem", "1rem", "1.1rem"];
-              let nivel = Number.parseInt(host.dataset.cmFontLevel || "1", 10);
+              const tamanos = ["1rem", "1.15rem", "1.3rem", "1.5rem", "1.7rem"];
+              let nivel = Number.parseInt(host.dataset.cmFontLevel || "2", 10);
               nivel = Math.max(0, Math.min(tamanos.length - 1, nivel + delta));
               host.dataset.cmFontLevel = String(nivel);
               host.style.setProperty("--cm-font-size", tamanos[nivel]);
@@ -6898,7 +6901,7 @@
           barra.querySelector("[data-cm-redo]").onclick = rehacer;
           barra.querySelector("[data-cm-complete]").onclick = () => { view.focus(); startCompletion(view); };
           barra.querySelector("[data-cm-font]").onchange = evento => {
-              const tamanos = [".8rem", ".9rem", "1rem", "1.1rem"];
+              const tamanos = ["1rem", "1.15rem", "1.3rem", "1.5rem", "1.7rem"];
               host.dataset.cmFontLevel = String(Math.max(0, tamanos.indexOf(evento.target.value)));
               host.style.setProperty("--cm-font-size", evento.target.value);
               estadoHerramientas.textContent = `Tamaño de fuente: ${evento.target.value}.`;
