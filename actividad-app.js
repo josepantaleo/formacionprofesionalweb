@@ -6398,7 +6398,7 @@
           if (!document.getElementById("cm-workbench-enhancements-style")) {
               const style = document.createElement("style");
               style.id = "cm-workbench-enhancements-style";
-              style.textContent = ".codemirror-host .cm-editor{font-size:1.25rem;line-height:1.7}.codemirror-host .cm-content{font-size:var(--cm-font-size,1.25rem);line-height:1.7}.codemirror-host .cm-gutters{font-size:1rem;line-height:1.7}.codemirror-host.cm-fullscreen{position:fixed!important;inset:0;z-index:9999;background:#0b1220;padding:12px;display:flex;flex-direction:column}.codemirror-host.cm-fullscreen .cm-editor{flex:1;min-height:0}.cm-workbench-lines,.cm-workbench-autosave{font-size:.72rem;opacity:.85;white-space:nowrap}.cm-workbench-autosave{color:#a7f3d0}.codemirror-host .cm-content .cm-author-student{color:#93c5fd!important;background:rgba(37,99,235,.24);border-bottom:2px solid #3b82f6;border-radius:2px;text-shadow:0 0 1px rgba(147,197,253,.25)}.codemirror-host .cm-content .cm-author-teacher{color:#86efac!important;background:rgba(22,163,74,.23);border-bottom:2px solid #22c55e;border-radius:2px;text-shadow:0 0 1px rgba(134,239,172,.25)}.codemirror-host .cm-content .cm-author-base{color:inherit;background:transparent}";
+              style.textContent = ".codemirror-host.cm-fullscreen{position:fixed!important;inset:0;z-index:9999;background:#0b1220;padding:12px;display:flex;flex-direction:column}.codemirror-host.cm-fullscreen .cm-editor{flex:1;min-height:0}.cm-workbench-lines,.cm-workbench-autosave{font-size:.72rem;opacity:.85;white-space:nowrap}.cm-workbench-autosave{color:#a7f3d0}.cm-workbench-toolbar{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;padding:.45rem;background:#111c2f;border:1px solid #334155;border-radius:8px}.cm-workbench-toolbar button,.cm-workbench-toolbar select{min-height:36px;padding:.35rem .55rem;background:#1e293b;color:#e2e8f0;border:1px solid #475569;border-radius:6px;cursor:pointer}.cm-workbench-toolbar button:hover{background:#334155;border-color:#60a5fa}.cm-workbench-toolbar input{min-height:36px;background:#0f172a;color:#f8fafc;border:1px solid #475569;border-radius:6px;padding:.35rem .6rem}.cm-remote-cursors{position:absolute;inset:0;pointer-events:none;z-index:5;overflow:hidden}.cm-remote-cursor{position:absolute;width:2px;height:1.45em;background:#22c55e;box-shadow:0 0 0 1px rgba(15,23,42,.5)}.cm-remote-cursor.student{background:#60a5fa}.cm-remote-cursor-label{position:absolute;left:2px;top:-1.3em;white-space:nowrap;padding:2px 5px;border-radius:4px;background:#166534;color:#fff;font:600 11px/1.3 system-ui}.cm-remote-cursor.student .cm-remote-cursor-label{background:#1d4ed8}.cm-code-diff-dialog{width:min(900px,92vw);max-height:80vh;background:#0b1220;color:#e2e8f0;border:1px solid #475569;border-radius:12px;padding:1rem}.cm-code-diff-dialog::backdrop{background:rgba(2,6,23,.78)}.cm-code-diff-dialog pre{white-space:pre-wrap;overflow:auto;max-height:58vh;font:1rem/1.65 ui-monospace,monospace}.cm-code-diff-dialog .diff-added{color:#86efac;background:rgba(22,163,74,.12)}.cm-code-diff-dialog .diff-removed{color:#fca5a5;background:rgba(220,38,38,.12)}.codemirror-host .cm-content .cm-author-student{color:#2563eb!important;background:rgba(37,99,235,.09)}.cm-author-teacher{color:#16a34a!important;background:rgba(22,163,74,.10)}.cm-author-base{color:inherit}";
               document.head.appendChild(style);
           }
           const {
@@ -6422,12 +6422,11 @@
 
           const host = document.createElement("div");
           host.className = "codemirror-host";
-          host.dataset.cmFontLevel = "2";
-          host.style.setProperty("--cm-font-size", "1.3rem");
           host.__sourceTextarea = textarea;
           textarea.parentNode.insertBefore(host, textarea);
           textarea.classList.add("codemirror-source-hidden");
           const sectionIdEditor = textarea.id.replace("editor-", "");
+          const codigoBaseComparacion = String(textarea.value || "");
           host.addEventListener("click", () => {
               iniciarCronometro(sectionIdEditor);
           });
@@ -6478,12 +6477,15 @@
               <button type="button" data-cm-undo title="Deshacer" aria-label="Deshacer"><i class="fa-solid fa-rotate-left"></i></button>
               <button type="button" data-cm-redo title="Rehacer" aria-label="Rehacer"><i class="fa-solid fa-rotate-right"></i></button>
               <button type="button" data-cm-complete title="Mostrar sugerencias (Ctrl+Espacio)" aria-label="Mostrar sugerencias"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+              <button type="button" data-cm-comment title="Comentar o descomentar líneas (Ctrl+/)" aria-label="Comentar líneas"><i class="fa-solid fa-comment-dots"></i></button>
+              <button type="button" data-cm-compare title="Comparar con el código al abrir el editor" aria-label="Comparar cambios"><i class="fa-solid fa-code-compare"></i> Comparar</button>
+              <button type="button" data-cm-run title="Ejecutar código (Ctrl+Enter)" aria-label="Ejecutar código"><i class="fa-solid fa-play"></i> Ejecutar</button>
+              <button type="button" data-cm-hint title="Pedir una pista" aria-label="Pedir una pista"><i class="fa-solid fa-lightbulb"></i> Pista</button>
               <select data-cm-font aria-label="Tamaño de fuente">
-                  <option value="1rem">Normal</option>
-                  <option value="1.15rem">Grande</option>
-                  <option value="1.3rem" selected>Muy grande</option>
-                  <option value="1.5rem">Extra grande</option>
-                  <option value="1.7rem">Máxima</option>
+                  <option value=".8rem">Pequeña</option>
+                  <option value=".9rem" selected>Normal</option>
+                  <option value="1rem">Grande</option>
+                  <option value="1.1rem">Muy grande</option>
               </select>
               <button type="button" data-cm-wrap title="Ajustar líneas largas" aria-label="Ajustar líneas largas" aria-pressed="false"><i class="fa-solid fa-align-left"></i></button>
               <span class="cm-workbench-position" aria-live="polite">Línea 1, columna 1</span>
@@ -6595,8 +6597,8 @@
           };
 
           const ajustarFuente = delta => {
-              const tamanos = ["1rem", "1.15rem", "1.3rem", "1.5rem", "1.7rem"];
-              let nivel = Number.parseInt(host.dataset.cmFontLevel || "2", 10);
+              const tamanos = [".8rem", ".9rem", "1rem", "1.1rem"];
+              let nivel = Number.parseInt(host.dataset.cmFontLevel || "1", 10);
               nivel = Math.max(0, Math.min(tamanos.length - 1, nivel + delta));
               host.dataset.cmFontLevel = String(nivel);
               host.style.setProperty("--cm-font-size", tamanos[nivel]);
@@ -6839,6 +6841,10 @@
               textarea.__syncCodeMirror(textarea.value);
               textarea.__renderRemoteCursors(textarea.__remoteCursorParticipants || []);
           });
+          textarea.addEventListener("cm-selection-change", () => {
+              const seleccion = textarea.__getCodeMirrorSelection?.();
+              if (seleccion) textarea.__sesionCRDT?.actualizarPresencia?.({ inicio: seleccion.inicio, fin: seleccion.fin });
+          });
           view.scrollDOM.addEventListener("scroll", () => {
               textarea.__renderRemoteCursors(textarea.__remoteCursorParticipants || []);
           }, { passive: true });
@@ -6905,6 +6911,43 @@
               host.dataset.cmFontLevel = String(Math.max(0, tamanos.indexOf(evento.target.value)));
               host.style.setProperty("--cm-font-size", evento.target.value);
               estadoHerramientas.textContent = `Tamaño de fuente: ${evento.target.value}.`;
+          };
+          barra.querySelector("[data-cm-comment]").onclick = () => { alternarComentarioLinea(); view.focus(); };
+          barra.querySelector("[data-cm-run]").onclick = () => {
+              if (typeof window.ejecutarCodigo === "function") window.ejecutarCodigo(sectionIdEditor);
+              else estadoHerramientas.textContent = "La función de ejecución no está disponible en esta página.";
+          };
+          barra.querySelector("[data-cm-hint]").onclick = () => {
+              if (typeof window.pedirPistaIA === "function") window.pedirPistaIA(sectionIdEditor, "pista");
+              else estadoHerramientas.textContent = "El tutor de pistas no está disponible en esta página.";
+          };
+          barra.querySelector("[data-cm-compare]").onclick = () => {
+              const actual = view.state.doc.toString();
+              const original = codigoBaseComparacion.split("\n");
+              const nuevo = actual.split("\n");
+              const max = Math.max(original.length, nuevo.length);
+              const lineas = [];
+              for (let i = 0; i < max; i++) {
+                  if (original[i] === nuevo[i]) {
+                      if (original[i] !== undefined) lineas.push(`  ${String(i+1).padStart(3," ")} ${original[i]}`);
+                  } else {
+                      if (original[i] !== undefined) lineas.push(`- ${String(i+1).padStart(3," ")} ${original[i]}`);
+                      if (nuevo[i] !== undefined) lineas.push(`+ ${String(i+1).padStart(3," ")} ${nuevo[i]}`);
+                  }
+              }
+              let dialogo = host.querySelector(".cm-code-diff-dialog");
+              if (!dialogo) {
+                  dialogo = document.createElement("dialog");
+                  dialogo.className = "cm-code-diff-dialog";
+                  const titulo = document.createElement("h3"); titulo.textContent = "Comparación de código";
+                  const ayuda = document.createElement("p"); ayuda.textContent = "Referencia: código que había al abrir el editor. + agregado/cambiado · − original eliminado/cambiado.";
+                  const pre = document.createElement("pre"); pre.dataset.diffContent = "true";
+                  const cerrar = document.createElement("button"); cerrar.type = "button"; cerrar.textContent = "Cerrar"; cerrar.onclick = () => dialogo.close();
+                  dialogo.append(titulo, ayuda, pre, cerrar); host.appendChild(dialogo);
+              }
+              const pre = dialogo.querySelector("pre");
+              pre.textContent = lineas.join("\n") || "Sin cambios respecto del código inicial.";
+              if (dialogo.showModal) dialogo.showModal(); else alert(pre.textContent);
           };
           barra.querySelector("[data-cm-wrap]").onclick = evento => {
               const activo = evento.currentTarget.getAttribute("aria-pressed") !== "true";

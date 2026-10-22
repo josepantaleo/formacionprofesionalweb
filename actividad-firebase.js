@@ -1657,6 +1657,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
                   nombre: datos.nombre || datos.rol || "Participante",
                   rol: datos.rol === "docente" ? "docente" : "estudiante",
                   propio: datos.clienteId === clienteId,
+                  cursorInicio: Number(datos.cursorInicio) || 0,
+                  cursorFin: Number(datos.cursorFin) || 0,
+                  escribiendo: datos.escribiendo === true,
                   inactivo: !activoMs || ahora - activoMs > 45000,
                   activoMs
                 };
@@ -2014,6 +2017,26 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         if (!textarea || !sesion) return () => {};
         if (textarea.__desvincularCRDT) textarea.__desvincularCRDT();
         const origenLocal = { tipo: "textarea", clienteId: sesion.clienteId };
+        textarea.__sesionCRDT = sesion;
+        let dejarEscucharPresenciaVisual = () => {};
+        if (typeof sesion.onPresence === "function") {
+          dejarEscucharPresenciaVisual = sesion.onPresence(participantes => {
+            textarea.__renderRemoteCursors?.(participantes);
+            const editor = textarea.__codeMirrorHost;
+            if (editor) {
+              let estadoPresencia = editor.querySelector(".cm-workbench-presence");
+              if (!estadoPresencia) {
+                estadoPresencia = document.createElement("span");
+                estadoPresencia.className = "cm-workbench-presence";
+                estadoPresencia.style.cssText = "font-size:.78rem;color:#cbd5e1;padding:.25rem .45rem;border-radius:5px;background:#1e293b";
+                editor.querySelector(".cm-workbench-toolbar")?.appendChild(estadoPresencia);
+              }
+              const activos = (participantes || []).filter(item => !item.inactivo);
+              estadoPresencia.textContent = `${activos.length} conectado${activos.length === 1 ? "" : "s"}`;
+              estadoPresencia.title = activos.map(item => `${item.nombre}${item.rol ? ` (${item.rol})` : ""}`).join(", ");
+            }
+          });
+        }
         // Capa de resaltado por autor: Y.Text conserva el atributo crdtAutor
         // en cada fragmento; la capa visual no reemplaza el textarea editable.
         let contenedorResaltado = textarea.parentElement?.classList.contains("crdt-author-wrap")
@@ -2559,6 +2582,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             contenedorResaltado.remove();
           }
           quitarModoCooperacion();
+          dejarEscucharPresenciaVisual?.();
+          if (textarea.__sesionCRDT === sesion) delete textarea.__sesionCRDT;
           if (detenerMensajes) detenerMensajes();
           document.removeEventListener("visibilitychange", revisarVisibilidadChat);
           window.removeEventListener("focus", marcarMensajesVisibles);
