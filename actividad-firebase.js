@@ -2038,14 +2038,38 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           }, 1800);
         };
         const aplicarRemoto = (_, transaccion) => {
-          if (transaccion.origin === origenLocal) return;
+          if (transaccion.origin === origenLocal || textarea.dataset.crdtAplicandoRemoto === "true") return;
+          const anteriorEditor = textarea.value;
           const siguiente = sesion.texto.toString();
-          if (textarea.value === siguiente) return;
-          const inicio = textarea.selectionStart || 0;
-          const fin = textarea.selectionEnd || inicio;
-          textarea.value = siguiente;
-          const posicion = Math.min(siguiente.length, inicio);
-          textarea.setSelectionRange(posicion, Math.min(siguiente.length, fin));
+          if (anteriorEditor === siguiente) return;
+
+          // Conserva la posición del cursor y la selección aunque el otro participante
+          // inserte o quite texto antes de ellos. Reemplazar el valor sin mapear la
+          // selección hacía que escribir en simultáneo resultara incómodo.
+          const inicioAnterior = Number.isInteger(textarea.selectionStart) ? textarea.selectionStart : anteriorEditor.length;
+          const finAnterior = Number.isInteger(textarea.selectionEnd) ? textarea.selectionEnd : inicioAnterior;
+          let prefijo = 0;
+          const limite = Math.min(anteriorEditor.length, siguiente.length);
+          while (prefijo < limite && anteriorEditor[prefijo] === siguiente[prefijo]) prefijo++;
+          let sufijo = 0;
+          while (sufijo < anteriorEditor.length - prefijo && sufijo < siguiente.length - prefijo &&
+                 anteriorEditor[anteriorEditor.length - 1 - sufijo] === siguiente[siguiente.length - 1 - sufijo]) sufijo++;
+          const finAnteriorCambio = anteriorEditor.length - sufijo;
+          const finNuevoCambio = siguiente.length - sufijo;
+          const mapearPosicion = posicion => {
+            if (posicion <= prefijo) return posicion;
+            if (posicion >= finAnteriorCambio) return Math.max(prefijo, Math.min(siguiente.length, posicion + (siguiente.length - anteriorEditor.length)));
+            return finNuevoCambio;
+          };
+          const nuevoInicio = mapearPosicion(inicioAnterior);
+          const nuevoFin = mapearPosicion(finAnterior);
+          textarea.dataset.crdtAplicandoRemoto = "true";
+          try {
+            textarea.value = siguiente;
+            textarea.setSelectionRange(Math.min(siguiente.length, nuevoInicio), Math.min(siguiente.length, nuevoFin));
+          } finally {
+            delete textarea.dataset.crdtAplicandoRemoto;
+          }
           if (sesion.rol === "estudiante") {
             setLocalStorage(`draft_editor-${sectionId}`, siguiente);
             actualizarMetricasEditor(sectionId);
@@ -2058,6 +2082,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           );
         };
         const sincronizarTextoLocal = () => {
+          if (textarea.dataset.crdtAplicandoRemoto === "true") return;
           const anterior = sesion.texto.toString();
           const siguiente = textarea.value;
           if (anterior === siguiente) return;
@@ -5076,7 +5101,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         window.__mensajesDocenteEstudianteUnsubscribe = onSnapshot(referencia, snapshot => {
           const mensajes = snapshot.docs
             .map(item => ({ id: item.id, ...item.data(), canal: "personal" }))
-            // Se conserva el historial completo para que el estudiante pueda volver a consultar mensajes leídos.
+            .filter(item => item.leido !== true)
             .sort((a, b) => {
               const fechaA = a.enviadoEn?.toMillis ? a.enviadoEn.toMillis() : new Date(a.enviadoEn || 0).getTime();
               const fechaB = b.enviadoEn?.toMillis ? b.enviadoEn.toMillis() : new Date(b.enviadoEn || 0).getTime();

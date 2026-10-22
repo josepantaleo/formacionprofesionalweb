@@ -3650,15 +3650,9 @@
               boton.dataset.busy = 'true';
           }
           let sesion = window.__sesionCRDTEstudianteActiva;
-          try {
-              if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
-                  await window.iniciarColaboracionCRDTEstudiante?.();
-                  sesion = window.__sesionCRDTEstudianteActiva;
-              }
-          } catch (error) {
-              liberarBotonSolicitud();
-              alert(error?.message || 'No se pudo preparar la solicitud de ayuda. Revisá tu conexión e intentá nuevamente.');
-              return;
+          if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
+              await window.iniciarColaboracionCRDTEstudiante?.();
+              sesion = window.__sesionCRDTEstudianteActiva;
           }
           if (!sesion || sesion.sectionId !== sectionId || !sesion.sesion?.solicitarCooperacion) {
               liberarBotonSolicitud();
@@ -3674,22 +3668,11 @@
               liberarBotonSolicitud();
               return;
           }
-          const motivoValidado = String(motivo).trim();
-          if (!motivoValidado) {
-              liberarBotonSolicitud();
-              alert('Contá brevemente qué necesitás revisar para que el docente pueda ayudarte.');
-              return;
-          }
-          if (motivoValidado.length > 500) {
-              liberarBotonSolicitud();
-              alert('El motivo debe tener como máximo 500 caracteres.');
-              return;
-          }
           try {
               const okSolicitud = await window.registrarSolicitudColaboracionFirebase?.({
                   uid: window.firebaseCurrentUser?.uid,
                   sectionId,
-                  objetivo: motivoValidado,
+                  objetivo: motivo,
                   solicitadoPor: window.firebaseCurrentUser?.displayName || window.firebaseCurrentUser?.email || 'Estudiante'
               });
               if (!okSolicitud) throw new Error(window.ultimoErrorCooperacion?.message || 'No se pudo registrar la solicitud.');
@@ -3720,9 +3703,8 @@
               alert('La función de cancelación todavía no está disponible. Recargá la actividad.');
               return;
           }
-          if (boton?.disabled || boton?.dataset.busy === 'true') return;
           if (!confirm('¿Cancelar esta solicitud de colaboración? Podrás volver a solicitar ayuda después.')) return;
-          if (boton) { boton.disabled = true; boton.dataset.busy = 'true'; }
+          if (boton) boton.disabled = true;
           try {
               const ok = await window.eliminarSolicitudColaboracionEstudianteFirebase({ uid, sectionId });
               if (!ok) throw new Error(window.ultimoErrorCooperacion?.message || 'No se pudo cancelar la solicitud.');
@@ -3733,9 +3715,9 @@
               }
               const solicitar = document.getElementById(`btn-solicitar-colaboracion-${sectionId}`);
               if (solicitar) solicitar.disabled = false;
-              if (boton) { boton.hidden = true; delete boton.dataset.busy; }
+              if (boton) boton.hidden = true;
           } catch (error) {
-              if (boton) { boton.disabled = false; delete boton.dataset.busy; }
+              if (boton) boton.disabled = false;
               alert(error?.message || 'No se pudo cancelar la solicitud.');
           }
       }
@@ -7043,17 +7025,6 @@
       // ===============================
       let profesorUnsubscribe = null;
       let estudiantesProfesor = [];
-      // API de solo lectura para la mensajería modular. No expone ni modifica el estado interno.
-      window.obtenerDestinatariosMensajesDocente = () => estudiantesProfesor
-          .map(d => ({
-              uid: String(d?.uid || d?.id || '').trim(),
-              nombre: String(d?.estudiante?.nombre || d?.nombreGoogle || d?.nombre || d?.email || 'Estudiante'),
-              email: String(d?.email || ''),
-              curso: String(d?.curso || d?.estudiante?.curso || d?.anio || ''),
-              division: String(d?.division || d?.estudiante?.division || ''),
-              turno: String(d?.turno || d?.estudiante?.turno || '')
-          }))
-          .filter(d => d.uid);
       let solicitudesPendientesConocidas = null;
       let solicitudesColaboracionConocidas = null;
       let sonidoSolicitudesActivo = localStorage.getItem('teacher_pending_request_sound') === 'true';
@@ -12873,10 +12844,6 @@
               boton.dataset.busy = 'true';
           }
           if (typeof window.responderCooperacionDocenteFirebase !== 'function') {
-              if (boton) {
-                  boton.disabled = false;
-                  delete boton.dataset.busy;
-              }
               alert('La función de colaboración docente todavía no está disponible. Recargá la página.');
               return;
           }
