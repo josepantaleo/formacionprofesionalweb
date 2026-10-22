@@ -350,6 +350,14 @@
       let seccionesData = (Array.isArray(window.DESAFIOS_DATA) && window.DESAFIOS_DATA.length === 19)
           ? window.DESAFIOS_DATA
           : seccionesDataBase;
+      // El Desafío 19 actualizado es parte de esta versión de la aplicación.
+      // Evita que una copia antigua de DESAFIOS_DATA lo reemplace al iniciar.
+      const desafio19Actualizado = seccionesDataBase.find(desafio => desafio.id === "sec-19");
+      if (desafio19Actualizado) {
+          seccionesData = seccionesData.map(desafio =>
+              desafio.id === "sec-19" ? { ...desafio, ...desafio19Actualizado } : desafio
+          );
+      }
 
       const SITIO_APOYO_URL = "https://josepantaleo.github.io/formacionprofesionalweb/";
       const ayudasPalabrasClave = {
@@ -2775,7 +2783,14 @@
               const remotos = await window.cargarDesafiosFirebase();
               if (Array.isArray(remotos) && remotos.length === 19) {
                   const mapa = new Map(remotos.map(d => [d.id,d]));
-                  seccionesData = seccionesData.map(local => ({...local,...(mapa.get(local.id)||{})}));
+                  // Los desafíos 1 a 18 siguen admitiendo la configuración docente remota.
+                  // Para el 19 se prioriza la versión incluida en este archivo, evitando
+                  // que una versión antigua almacenada en Firebase oculte la actualización.
+                  seccionesData = seccionesData.map(local =>
+                      local.id === "sec-19"
+                          ? { ...local, ...desafio19Actualizado }
+                          : { ...local, ...(mapa.get(local.id) || {}) }
+                  );
               }
           }
 
