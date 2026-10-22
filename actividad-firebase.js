@@ -1520,16 +1520,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           const temporal = new Y.Doc();
           temporal.getText("codigo").insert(0, String(codigoInicial || ""));
           const semillaNueva = bytesABase64(Y.encodeStateAsUpdate(temporal));
+          // Si el documento ya existe pero perdió la semilla, conservar sus
+          // metadatos de colaboración y reparar únicamente los campos base.
+          const datosPrevios = snapshot.exists() ? snapshot.data() : {};
           const datosNuevos = {
             uid,
             sectionId,
             semilla: semillaNueva,
-            creadoEn: serverTimestamp(),
-            creadoPor: user.email || user.uid,
-            actualizadoEn: serverTimestamp()
+            creadoEn: datosPrevios.creadoEn || serverTimestamp(),
+            creadoPor: datosPrevios.creadoPor || (user.email || user.uid),
+            actualizadoEn: serverTimestamp(),
+            actualizadoPor: user.email || user.uid
           };
           transaction.set(metaRef, datosNuevos, { merge: true });
-          return { semilla: semillaNueva, datos: datosNuevos };
+          return { semilla: semillaNueva, datos: { ...datosPrevios, ...datosNuevos } };
         });
         modoCooperacionActual = normalizarModoCooperacion(estadoInicial.datos);
         Y.applyUpdate(documento, base64ABytes(estadoInicial.semilla), ORIGEN_FIRESTORE_CRDT);
@@ -2038,38 +2042,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           }, 1800);
         };
         const aplicarRemoto = (_, transaccion) => {
-          if (transaccion.origin === origenLocal || textarea.dataset.crdtAplicandoRemoto === "true") return;
-          const anteriorEditor = textarea.value;
+          if (transaccion.origin === origenLocal) return;
           const siguiente = sesion.texto.toString();
-          if (anteriorEditor === siguiente) return;
-
-          // Conserva la posición del cursor y la selección aunque el otro participante
-          // inserte o quite texto antes de ellos. Reemplazar el valor sin mapear la
-          // selección hacía que escribir en simultáneo resultara incómodo.
-          const inicioAnterior = Number.isInteger(textarea.selectionStart) ? textarea.selectionStart : anteriorEditor.length;
-          const finAnterior = Number.isInteger(textarea.selectionEnd) ? textarea.selectionEnd : inicioAnterior;
-          let prefijo = 0;
-          const limite = Math.min(anteriorEditor.length, siguiente.length);
-          while (prefijo < limite && anteriorEditor[prefijo] === siguiente[prefijo]) prefijo++;
-          let sufijo = 0;
-          while (sufijo < anteriorEditor.length - prefijo && sufijo < siguiente.length - prefijo &&
-                 anteriorEditor[anteriorEditor.length - 1 - sufijo] === siguiente[siguiente.length - 1 - sufijo]) sufijo++;
-          const finAnteriorCambio = anteriorEditor.length - sufijo;
-          const finNuevoCambio = siguiente.length - sufijo;
-          const mapearPosicion = posicion => {
-            if (posicion <= prefijo) return posicion;
-            if (posicion >= finAnteriorCambio) return Math.max(prefijo, Math.min(siguiente.length, posicion + (siguiente.length - anteriorEditor.length)));
-            return finNuevoCambio;
-          };
-          const nuevoInicio = mapearPosicion(inicioAnterior);
-          const nuevoFin = mapearPosicion(finAnterior);
-          textarea.dataset.crdtAplicandoRemoto = "true";
-          try {
-            textarea.value = siguiente;
-            textarea.setSelectionRange(Math.min(siguiente.length, nuevoInicio), Math.min(siguiente.length, nuevoFin));
-          } finally {
-            delete textarea.dataset.crdtAplicandoRemoto;
-          }
+          if (textarea.value === siguiente) return;
+          const inicio = textarea.selectionStart || 0;
+          const fin = textarea.selectionEnd || inicio;
+          textarea.value = siguiente;
+          const posicion = Math.min(siguiente.length, inicio);
+          textarea.setSelectionRange(posicion, Math.min(siguiente.length, fin));
           if (sesion.rol === "estudiante") {
             setLocalStorage(`draft_editor-${sectionId}`, siguiente);
             actualizarMetricasEditor(sectionId);
@@ -2082,7 +2062,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           );
         };
         const sincronizarTextoLocal = () => {
-          if (textarea.dataset.crdtAplicandoRemoto === "true") return;
           const anterior = sesion.texto.toString();
           const siguiente = textarea.value;
           if (anterior === siguiente) return;
@@ -2863,7 +2842,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           return [];
         }
         try {
-          window.ultimoErrorCooperacion = null;
           const snapshot = await getDocs(collection(contexto.database, "solicitudesColaboracion"));
           const solicitudesTodas = snapshot.docs
             .map(item => ({ id: item.id, ...item.data() }))
