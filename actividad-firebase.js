@@ -1585,7 +1585,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               const codigoDocente = texto.toString().slice(0, 30000);
               const guardadoDocente = await window.guardarCodigoColaborativoDocenteFirebase?.(uid, sectionId, codigoDocente);
               if (guardadoDocente === false) {
-                throw new Error("teacher-code-save-failed");
+                // El lote CRDT ya se publicó correctamente. El guardado espejo
+                // en estudiantes/{uid}.codigos puede fallar por reglas de Firestore;
+                // no convertir ese fallo secundario en un fallo de sincronización CRDT.
+                console.warn(
+                  "El código CRDT se sincronizó, pero no se pudo actualizar el respaldo docente en estudiantes/{uid}.codigos."
+                );
               }
             }
             localStorage.removeItem(colaRespaldoClave);
