@@ -2009,6 +2009,69 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         if (!textarea || !sesion) return () => {};
         if (textarea.__desvincularCRDT) textarea.__desvincularCRDT();
         const origenLocal = { tipo: "textarea", clienteId: sesion.clienteId };
+        // Capa de resaltado por autor: Y.Text conserva el atributo crdtAutor
+        // en cada fragmento; la capa visual no reemplaza el textarea editable.
+        let contenedorResaltado = textarea.parentElement?.classList.contains("crdt-author-wrap")
+          ? textarea.parentElement : null;
+        if (!contenedorResaltado) {
+          contenedorResaltado = document.createElement("div");
+          contenedorResaltado.className = "crdt-author-wrap";
+          textarea.parentNode.insertBefore(contenedorResaltado, textarea);
+          contenedorResaltado.appendChild(textarea);
+        }
+        let capaResaltado = contenedorResaltado.querySelector(".crdt-author-highlight");
+        if (!capaResaltado) {
+          capaResaltado = document.createElement("pre");
+          capaResaltado.className = "crdt-author-highlight";
+          capaResaltado.setAttribute("aria-hidden", "true");
+          contenedorResaltado.insertBefore(capaResaltado, textarea);
+        }
+        if (!document.getElementById("crdt-author-highlight-styles")) {
+          const estiloAutor = document.createElement("style");
+          estiloAutor.id = "crdt-author-highlight-styles";
+          estiloAutor.textContent = `
+            .crdt-author-wrap{position:relative;width:100%;min-width:0;isolation:isolate}
+            .crdt-author-wrap>.crdt-author-highlight{position:absolute;inset:0;margin:0;overflow:hidden;pointer-events:none;white-space:pre-wrap;overflow-wrap:break-word;word-break:normal;tab-size:2;color:#334155;background:transparent;z-index:0;font:inherit;letter-spacing:inherit;line-height:inherit;padding:inherit;border:1px solid transparent;box-sizing:border-box}
+            .crdt-author-wrap>textarea{position:relative;z-index:1;background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent!important;caret-color:var(--text-primary,#111827);}
+            .crdt-author-wrap>textarea::selection{background:rgba(59,130,246,.28);color:transparent}
+            .crdt-author-highlight .crdt-author-student{color:#2563eb;background:rgba(37,99,235,.09)}
+            .crdt-author-highlight .crdt-author-teacher{color:#16a34a;background:rgba(22,163,74,.10)}
+            .crdt-author-legend{display:flex;gap:.85rem;flex-wrap:wrap;font-size:.78rem;margin:.25rem 0 .45rem;color:var(--text-muted,#64748b)}
+            .crdt-author-legend span{display:inline-flex;align-items:center;gap:.35rem}
+            .crdt-author-legend i{display:inline-block;width:.65rem;height:.65rem;border-radius:2px}
+          `;
+          document.head.appendChild(estiloAutor);
+        }
+        const leyendaAutor = document.createElement("div");
+        leyendaAutor.className = "crdt-author-legend";
+        leyendaAutor.innerHTML = '<span><i style="background:#2563eb"></i> Código del estudiante</span><span><i style="background:#16a34a"></i> Código del docente</span>';
+        contenedorResaltado.insertAdjacentElement("beforebegin", leyendaAutor);
+        const renderizarAutores = () => {
+          const estiloTextarea = getComputedStyle(textarea);
+          ["fontFamily", "fontSize", "fontWeight", "fontStyle", "lineHeight", "letterSpacing", "textIndent", "textTransform", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "borderRadius"].forEach(propiedad => {
+            capaResaltado.style[propiedad] = estiloTextarea[propiedad];
+          });
+          const fragmentos = sesion.texto.toDelta();
+          capaResaltado.replaceChildren();
+          for (const fragmento of fragmentos) {
+            const textoFragmento = String(fragmento.insert ?? "");
+            if (!textoFragmento) continue;
+            const span = document.createElement("span");
+            const autor = fragmento.attributes?.crdtAutor;
+            if (autor === "estudiante") span.className = "crdt-author-student";
+            else if (autor === "docente") span.className = "crdt-author-teacher";
+            span.textContent = textoFragmento;
+            capaResaltado.appendChild(span);
+          }
+          // El espacio final evita que el pre colapse visualmente la última línea vacía.
+          capaResaltado.appendChild(document.createTextNode("\n"));
+          capaResaltado.scrollTop = textarea.scrollTop;
+          capaResaltado.scrollLeft = textarea.scrollLeft;
+        };
+        const sincronizarScrollResaltado = () => {
+          capaResaltado.scrollTop = textarea.scrollTop;
+          capaResaltado.scrollLeft = textarea.scrollLeft;
+        };
         const autorCambioElemento = document.createElement("span");
         autorCambioElemento.className = "collaboration-change-author";
         autorCambioElemento.setAttribute("aria-live", "polite");
@@ -2048,6 +2111,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           const inicio = textarea.selectionStart || 0;
           const fin = textarea.selectionEnd || inicio;
           textarea.value = siguiente;
+          renderizarAutores();
           const posicion = Math.min(siguiente.length, inicio);
           textarea.setSelectionRange(posicion, Math.min(siguiente.length, fin));
           if (sesion.rol === "estudiante") {
@@ -2068,8 +2132,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           const cambio = diferenciaTextoCRDT(anterior, siguiente);
           sesion.documento.transact(() => {
             if (cambio.eliminar) sesion.texto.delete(cambio.inicio, cambio.eliminar);
-            if (cambio.insertar) sesion.texto.insert(cambio.inicio, cambio.insertar);
+            if (cambio.insertar) sesion.texto.insert(cambio.inicio, cambio.insertar, { crdtAutor: sesion.rol });
           }, origenLocal);
+          renderizarAutores();
           marcarCambio(sesion.rol);
           sesion.actualizarPresencia({ inicio: textarea.selectionStart, fin: textarea.selectionEnd });
         };
@@ -2083,12 +2148,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           }), 250);
         };
         textarea.value = sesion.texto.toString();
+        renderizarAutores();
         if (sesion.rol === "estudiante") {
           setLocalStorage(`draft_editor-${sectionId}`, textarea.value);
           actualizarMetricasEditor(sectionId);
         }
         textarea.dataset.crdtActivo = "true";
         textarea.addEventListener("input", aplicarLocal);
+        textarea.addEventListener("scroll", sincronizarScrollResaltado, { passive: true });
         textarea.addEventListener("keyup", actualizarCursor);
         textarea.addEventListener("click", actualizarCursor);
         textarea.addEventListener("cm-selection-change", actualizarCursor);
@@ -2178,7 +2245,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               <span class="collaboration-chat-counter">0/600</span>
             </div>
           </div>`;
-        textarea.insertAdjacentElement("afterend", chatElemento);
+        contenedorResaltado.insertAdjacentElement("afterend", chatElemento);
         const chatToggle = chatElemento.querySelector(".collaboration-chat-toggle");
         const chatBody = chatElemento.querySelector(".collaboration-chat-body");
         const chatMensajes = chatElemento.querySelector(".collaboration-chat-messages");
@@ -2468,6 +2535,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           clearTimeout(temporizadorAutorCambio);
           textarea.classList.remove("crdt-change-teacher", "crdt-change-student");
           textarea.removeEventListener("input", aplicarLocal);
+          textarea.removeEventListener("scroll", sincronizarScrollResaltado);
           textarea.removeEventListener("keyup", actualizarCursor);
           textarea.removeEventListener("click", actualizarCursor);
           textarea.removeEventListener("cm-selection-change", actualizarCursor);
@@ -2476,6 +2544,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           quitarPresencia();
           presenciaElemento.remove();
           autorCambioElemento.remove();
+          leyendaAutor.remove();
+          capaResaltado.remove();
+          if (contenedorResaltado?.parentNode) {
+            contenedorResaltado.parentNode.insertBefore(textarea, contenedorResaltado);
+            contenedorResaltado.remove();
+          }
           quitarModoCooperacion();
           if (detenerMensajes) detenerMensajes();
           document.removeEventListener("visibilitychange", revisarVisibilidadChat);
