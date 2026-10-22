@@ -6398,7 +6398,7 @@
           if (!document.getElementById("cm-workbench-enhancements-style")) {
               const style = document.createElement("style");
               style.id = "cm-workbench-enhancements-style";
-              style.textContent = ".codemirror-host.cm-fullscreen{position:fixed!important;inset:0;z-index:9999;background:#0b1220;padding:12px;display:flex;flex-direction:column}.codemirror-host.cm-fullscreen .cm-editor{flex:1;min-height:0}.cm-workbench-lines,.cm-workbench-autosave{font-size:.72rem;opacity:.85;white-space:nowrap}.cm-workbench-autosave{color:#a7f3d0}.cm-author-student{color:#2563eb!important;background:rgba(37,99,235,.09)}.cm-author-teacher{color:#16a34a!important;background:rgba(22,163,74,.10)}.cm-author-base{color:inherit}";
+              style.textContent = ".codemirror-host.cm-fullscreen{position:fixed!important;inset:0;z-index:9999;background:#0b1220;padding:12px;display:flex;flex-direction:column}.codemirror-host.cm-fullscreen .cm-editor{flex:1;min-height:0}.cm-workbench-lines,.cm-workbench-autosave{font-size:.72rem;opacity:.85;white-space:nowrap}.cm-workbench-autosave{color:#a7f3d0}.codemirror-host .cm-content .cm-author-student{color:#93c5fd!important;background:rgba(37,99,235,.24);border-bottom:2px solid #3b82f6;border-radius:2px;text-shadow:0 0 1px rgba(147,197,253,.25)}.codemirror-host .cm-content .cm-author-teacher{color:#86efac!important;background:rgba(22,163,74,.23);border-bottom:2px solid #22c55e;border-radius:2px;text-shadow:0 0 1px rgba(134,239,172,.25)}.codemirror-host .cm-content .cm-author-base{color:inherit;background:transparent}";
               document.head.appendChild(style);
           }
           const {
