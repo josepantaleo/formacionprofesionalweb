@@ -6398,7 +6398,7 @@
           if (!document.getElementById("cm-workbench-enhancements-style")) {
               const style = document.createElement("style");
               style.id = "cm-workbench-enhancements-style";
-              style.textContent = ".codemirror-host.cm-fullscreen{position:fixed!important;inset:0;z-index:9999;background:#0b1220;padding:12px;display:flex;flex-direction:column}.codemirror-host.cm-fullscreen .cm-editor{flex:1;min-height:0}.cm-workbench-lines,.cm-workbench-autosave{font-size:.72rem;opacity:.85;white-space:nowrap}.cm-workbench-autosave{color:#a7f3d0}";
+              style.textContent = ".codemirror-host.cm-fullscreen{position:fixed!important;inset:0;z-index:9999;background:#0b1220;padding:12px;display:flex;flex-direction:column}.codemirror-host.cm-fullscreen .cm-editor{flex:1;min-height:0}.cm-workbench-lines,.cm-workbench-autosave{font-size:.72rem;opacity:.85;white-space:nowrap}.cm-workbench-autosave{color:#a7f3d0}.cm-author-student{color:#2563eb!important;background:rgba(37,99,235,.09)}.cm-author-teacher{color:#16a34a!important;background:rgba(22,163,74,.10)}.cm-author-base{color:inherit}";
               document.head.appendChild(style);
           }
           const {
@@ -6796,7 +6796,7 @@
                   posicion += texto.length;
                   const fin = Math.min(limite, posicion);
                   if (fin <= inicio) return;
-                  const rol = fragmento?.attributes?.autorRol;
+                  const rol = fragmento?.attributes?.crdtAutor || fragmento?.attributes?.autorRol;
                   const clase = rol === "docente" ? "cm-author-teacher" : rol === "estudiante" ? "cm-author-student" : "cm-author-base";
                   rangos.push(Decoration.mark({ class: clase }).range(inicio, fin));
               });

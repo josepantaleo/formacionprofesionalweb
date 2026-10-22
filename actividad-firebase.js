@@ -2057,6 +2057,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             capaResaltado.style[propiedad] = estiloTextarea[propiedad];
           });
           const fragmentos = sesion.texto.toDelta();
+          // Aplicar también las marcas a CodeMirror 6, que es la superficie visible del editor.
+          // CodeMirror consume crdtAutor para distinguir los fragmentos de cada participante.
+          textarea.__renderAuthorDecorations?.(fragmentos);
           capaResaltado.replaceChildren();
           for (const fragmento of fragmentos) {
             const textoFragmento = String(fragmento.insert ?? "");
