@@ -5076,7 +5076,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         window.__mensajesDocenteEstudianteUnsubscribe = onSnapshot(referencia, snapshot => {
           const mensajes = snapshot.docs
             .map(item => ({ id: item.id, ...item.data(), canal: "personal" }))
-            .filter(item => item.leido !== true)
+            // Se conserva el historial completo para que el estudiante pueda volver a consultar mensajes leídos.
             .sort((a, b) => {
               const fechaA = a.enviadoEn?.toMillis ? a.enviadoEn.toMillis() : new Date(a.enviadoEn || 0).getTime();
               const fechaB = b.enviadoEn?.toMillis ? b.enviadoEn.toMillis() : new Date(b.enviadoEn || 0).getTime();
