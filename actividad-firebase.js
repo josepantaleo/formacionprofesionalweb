@@ -1520,20 +1520,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           const temporal = new Y.Doc();
           temporal.getText("codigo").insert(0, String(codigoInicial || ""));
           const semillaNueva = bytesABase64(Y.encodeStateAsUpdate(temporal));
-          // Si el documento ya existe pero perdió la semilla, conservar sus
-          // metadatos de colaboración y reparar únicamente los campos base.
-          const datosPrevios = snapshot.exists() ? snapshot.data() : {};
           const datosNuevos = {
             uid,
             sectionId,
             semilla: semillaNueva,
-            creadoEn: datosPrevios.creadoEn || serverTimestamp(),
-            creadoPor: datosPrevios.creadoPor || (user.email || user.uid),
-            actualizadoEn: serverTimestamp(),
-            actualizadoPor: user.email || user.uid
+            creadoEn: serverTimestamp(),
+            creadoPor: user.email || user.uid,
+            actualizadoEn: serverTimestamp()
           };
           transaction.set(metaRef, datosNuevos, { merge: true });
-          return { semilla: semillaNueva, datos: { ...datosPrevios, ...datosNuevos } };
+          return { semilla: semillaNueva, datos: datosNuevos };
         });
         modoCooperacionActual = normalizarModoCooperacion(estadoInicial.datos);
         Y.applyUpdate(documento, base64ABytes(estadoInicial.semilla), ORIGEN_FIRESTORE_CRDT);
@@ -1585,12 +1581,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               const codigoDocente = texto.toString().slice(0, 30000);
               const guardadoDocente = await window.guardarCodigoColaborativoDocenteFirebase?.(uid, sectionId, codigoDocente);
               if (guardadoDocente === false) {
-                // El lote CRDT ya se publicó correctamente. El guardado espejo
-                // en estudiantes/{uid}.codigos puede fallar por reglas de Firestore;
-                // no convertir ese fallo secundario en un fallo de sincronización CRDT.
-                console.warn(
-                  "El código CRDT se sincronizó, pero no se pudo actualizar el respaldo docente en estudiantes/{uid}.codigos."
-                );
+                throw new Error("teacher-code-save-failed");
               }
             }
             localStorage.removeItem(colaRespaldoClave);
@@ -1657,9 +1648,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
                   nombre: datos.nombre || datos.rol || "Participante",
                   rol: datos.rol === "docente" ? "docente" : "estudiante",
                   propio: datos.clienteId === clienteId,
-                  cursorInicio: Number(datos.cursorInicio) || 0,
-                  cursorFin: Number(datos.cursorFin) || 0,
-                  escribiendo: datos.escribiendo === true,
                   inactivo: !activoMs || ahora - activoMs > 45000,
                   activoMs
                 };
@@ -2017,92 +2005,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         if (!textarea || !sesion) return () => {};
         if (textarea.__desvincularCRDT) textarea.__desvincularCRDT();
         const origenLocal = { tipo: "textarea", clienteId: sesion.clienteId };
-        textarea.__sesionCRDT = sesion;
-        let dejarEscucharPresenciaVisual = () => {};
-        if (typeof sesion.onPresence === "function") {
-          dejarEscucharPresenciaVisual = sesion.onPresence(participantes => {
-            textarea.__renderRemoteCursors?.(participantes);
-            const editor = textarea.__codeMirrorHost;
-            if (editor) {
-              let estadoPresencia = editor.querySelector(".cm-workbench-presence");
-              if (!estadoPresencia) {
-                estadoPresencia = document.createElement("span");
-                estadoPresencia.className = "cm-workbench-presence";
-                estadoPresencia.style.cssText = "font-size:.78rem;color:#cbd5e1;padding:.25rem .45rem;border-radius:5px;background:#1e293b";
-                editor.querySelector(".cm-workbench-toolbar")?.appendChild(estadoPresencia);
-              }
-              const activos = (participantes || []).filter(item => !item.inactivo);
-              estadoPresencia.textContent = `${activos.length} conectado${activos.length === 1 ? "" : "s"}`;
-              estadoPresencia.title = activos.map(item => `${item.nombre}${item.rol ? ` (${item.rol})` : ""}`).join(", ");
-            }
-          });
-        }
-        // Capa de resaltado por autor: Y.Text conserva el atributo crdtAutor
-        // en cada fragmento; la capa visual no reemplaza el textarea editable.
-        let contenedorResaltado = textarea.parentElement?.classList.contains("crdt-author-wrap")
-          ? textarea.parentElement : null;
-        if (!contenedorResaltado) {
-          contenedorResaltado = document.createElement("div");
-          contenedorResaltado.className = "crdt-author-wrap";
-          textarea.parentNode.insertBefore(contenedorResaltado, textarea);
-          contenedorResaltado.appendChild(textarea);
-        }
-        let capaResaltado = contenedorResaltado.querySelector(".crdt-author-highlight");
-        if (!capaResaltado) {
-          capaResaltado = document.createElement("pre");
-          capaResaltado.className = "crdt-author-highlight";
-          capaResaltado.setAttribute("aria-hidden", "true");
-          contenedorResaltado.insertBefore(capaResaltado, textarea);
-        }
-        if (!document.getElementById("crdt-author-highlight-styles")) {
-          const estiloAutor = document.createElement("style");
-          estiloAutor.id = "crdt-author-highlight-styles";
-          estiloAutor.textContent = `
-            .crdt-author-wrap{position:relative;width:100%;min-width:0;isolation:isolate}
-            .crdt-author-wrap>.crdt-author-highlight{position:absolute;inset:0;margin:0;overflow:hidden;pointer-events:none;white-space:pre-wrap;overflow-wrap:break-word;word-break:normal;tab-size:2;color:#334155;background:transparent;z-index:0;font:inherit;letter-spacing:inherit;line-height:inherit;padding:inherit;border:1px solid transparent;box-sizing:border-box}
-            .crdt-author-wrap>textarea{position:relative;z-index:1;background:transparent!important;color:transparent!important;-webkit-text-fill-color:transparent!important;caret-color:var(--text-primary,#111827);}
-            .crdt-author-wrap>textarea::selection{background:rgba(59,130,246,.28);color:transparent}
-            .crdt-author-highlight .crdt-author-student{color:#2563eb;background:rgba(37,99,235,.09)}
-            .crdt-author-highlight .crdt-author-teacher{color:#16a34a;background:rgba(22,163,74,.10)}
-            .crdt-author-legend{display:flex;gap:.85rem;flex-wrap:wrap;font-size:.78rem;margin:.25rem 0 .45rem;color:var(--text-muted,#64748b)}
-            .crdt-author-legend span{display:inline-flex;align-items:center;gap:.35rem}
-            .crdt-author-legend i{display:inline-block;width:.65rem;height:.65rem;border-radius:2px}
-          `;
-          document.head.appendChild(estiloAutor);
-        }
-        const leyendaAutor = document.createElement("div");
-        leyendaAutor.className = "crdt-author-legend";
-        leyendaAutor.innerHTML = '<span><i style="background:#2563eb"></i> Código del estudiante</span><span><i style="background:#16a34a"></i> Código del docente</span>';
-        contenedorResaltado.insertAdjacentElement("beforebegin", leyendaAutor);
-        const renderizarAutores = () => {
-          const estiloTextarea = getComputedStyle(textarea);
-          ["fontFamily", "fontSize", "fontWeight", "fontStyle", "lineHeight", "letterSpacing", "textIndent", "textTransform", "paddingTop", "paddingRight", "paddingBottom", "paddingLeft", "borderRadius"].forEach(propiedad => {
-            capaResaltado.style[propiedad] = estiloTextarea[propiedad];
-          });
-          const fragmentos = sesion.texto.toDelta();
-          // Aplicar también las marcas a CodeMirror 6, que es la superficie visible del editor.
-          // CodeMirror consume crdtAutor para distinguir los fragmentos de cada participante.
-          textarea.__renderAuthorDecorations?.(fragmentos);
-          capaResaltado.replaceChildren();
-          for (const fragmento of fragmentos) {
-            const textoFragmento = String(fragmento.insert ?? "");
-            if (!textoFragmento) continue;
-            const span = document.createElement("span");
-            const autor = fragmento.attributes?.crdtAutor;
-            if (autor === "estudiante") span.className = "crdt-author-student";
-            else if (autor === "docente") span.className = "crdt-author-teacher";
-            span.textContent = textoFragmento;
-            capaResaltado.appendChild(span);
-          }
-          // El espacio final evita que el pre colapse visualmente la última línea vacía.
-          capaResaltado.appendChild(document.createTextNode("\n"));
-          capaResaltado.scrollTop = textarea.scrollTop;
-          capaResaltado.scrollLeft = textarea.scrollLeft;
-        };
-        const sincronizarScrollResaltado = () => {
-          capaResaltado.scrollTop = textarea.scrollTop;
-          capaResaltado.scrollLeft = textarea.scrollLeft;
-        };
         const autorCambioElemento = document.createElement("span");
         autorCambioElemento.className = "collaboration-change-author";
         autorCambioElemento.setAttribute("aria-live", "polite");
@@ -2142,7 +2044,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           const inicio = textarea.selectionStart || 0;
           const fin = textarea.selectionEnd || inicio;
           textarea.value = siguiente;
-          renderizarAutores();
           const posicion = Math.min(siguiente.length, inicio);
           textarea.setSelectionRange(posicion, Math.min(siguiente.length, fin));
           if (sesion.rol === "estudiante") {
@@ -2163,9 +2064,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           const cambio = diferenciaTextoCRDT(anterior, siguiente);
           sesion.documento.transact(() => {
             if (cambio.eliminar) sesion.texto.delete(cambio.inicio, cambio.eliminar);
-            if (cambio.insertar) sesion.texto.insert(cambio.inicio, cambio.insertar, { crdtAutor: sesion.rol });
+            if (cambio.insertar) sesion.texto.insert(cambio.inicio, cambio.insertar);
           }, origenLocal);
-          renderizarAutores();
           marcarCambio(sesion.rol);
           sesion.actualizarPresencia({ inicio: textarea.selectionStart, fin: textarea.selectionEnd });
         };
@@ -2179,14 +2079,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           }), 250);
         };
         textarea.value = sesion.texto.toString();
-        renderizarAutores();
         if (sesion.rol === "estudiante") {
           setLocalStorage(`draft_editor-${sectionId}`, textarea.value);
           actualizarMetricasEditor(sectionId);
         }
         textarea.dataset.crdtActivo = "true";
         textarea.addEventListener("input", aplicarLocal);
-        textarea.addEventListener("scroll", sincronizarScrollResaltado, { passive: true });
         textarea.addEventListener("keyup", actualizarCursor);
         textarea.addEventListener("click", actualizarCursor);
         textarea.addEventListener("cm-selection-change", actualizarCursor);
@@ -2276,7 +2174,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               <span class="collaboration-chat-counter">0/600</span>
             </div>
           </div>`;
-        contenedorResaltado.insertAdjacentElement("afterend", chatElemento);
+        textarea.insertAdjacentElement("afterend", chatElemento);
         const chatToggle = chatElemento.querySelector(".collaboration-chat-toggle");
         const chatBody = chatElemento.querySelector(".collaboration-chat-body");
         const chatMensajes = chatElemento.querySelector(".collaboration-chat-messages");
@@ -2566,7 +2464,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           clearTimeout(temporizadorAutorCambio);
           textarea.classList.remove("crdt-change-teacher", "crdt-change-student");
           textarea.removeEventListener("input", aplicarLocal);
-          textarea.removeEventListener("scroll", sincronizarScrollResaltado);
           textarea.removeEventListener("keyup", actualizarCursor);
           textarea.removeEventListener("click", actualizarCursor);
           textarea.removeEventListener("cm-selection-change", actualizarCursor);
@@ -2575,15 +2472,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           quitarPresencia();
           presenciaElemento.remove();
           autorCambioElemento.remove();
-          leyendaAutor.remove();
-          capaResaltado.remove();
-          if (contenedorResaltado?.parentNode) {
-            contenedorResaltado.parentNode.insertBefore(textarea, contenedorResaltado);
-            contenedorResaltado.remove();
-          }
           quitarModoCooperacion();
-          dejarEscucharPresenciaVisual?.();
-          if (textarea.__sesionCRDT === sesion) delete textarea.__sesionCRDT;
           if (detenerMensajes) detenerMensajes();
           document.removeEventListener("visibilitychange", revisarVisibilidadChat);
           window.removeEventListener("focus", marcarMensajesVisibles);
@@ -2936,27 +2825,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           };
           return false;
         }
-      };
-
-      // Escucha en tiempo real la respuesta docente para informar al estudiante.
-      window.escucharEstadoSolicitudColaboracionFirebase = function(sectionId, alCambiar) {
-        const user = window.firebaseCurrentUser;
-        if (!user?.uid || !db || !sectionId || typeof alCambiar !== "function") return null;
-        const clave = `${user.uid}_${sectionId}`;
-        window.__listenersEstadoSolicitudColaboracion ||= new Map();
-        const anterior = window.__listenersEstadoSolicitudColaboracion.get(clave);
-        if (anterior) anterior();
-        const detener = onSnapshot(doc(db, "solicitudesColaboracion", clave), snapshot => {
-          if (!snapshot.exists()) return;
-          const solicitud = snapshot.data();
-          if (["aceptado", "rechazado", "finalizado"].includes(solicitud.estado)) {
-            alCambiar({ ...solicitud, sectionId, estado: solicitud.estado });
-            detener();
-            window.__listenersEstadoSolicitudColaboracion.delete(clave);
-          }
-        }, error => console.warn("No se pudo consultar la respuesta de colaboración:", error));
-        window.__listenersEstadoSolicitudColaboracion.set(clave, detener);
-        return detener;
       };
 
       window.obtenerSolicitudesColaboracionDocenteFirebase = async function() {
