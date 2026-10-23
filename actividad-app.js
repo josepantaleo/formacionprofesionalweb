@@ -1053,21 +1053,27 @@
           return Number.isNaN(fecha.getTime()) ? '' : fecha.toLocaleString('es-AR');
       }
 
+      // Convierte una nota a número solo si está informada y pertenece a la escala 0–10.
+      // Evita que Number("") o Number(null) introduzcan un cero falso en los promedios.
+      function convertirNotaValida(valor) {
+          if (valor === null || valor === undefined) return null;
+          if (typeof valor === 'string' && valor.trim() === '') return null;
+          const numero = typeof valor === 'number' ? valor : Number(String(valor).trim().replace(',', '.'));
+          return Number.isFinite(numero) && numero >= 0 && numero <= 10 ? numero : null;
+      }
+
+      function obtenerPromedioNumericoDesafiosFinalizados(d) {
+          const notas = obtenerNotasDesafiosFinalizadosEstudiante(d).map(item => item.nota);
+          return notas.length ? notas.reduce((suma, nota) => suma + nota, 0) / notas.length : null;
+      }
+
       function obtenerNotaVigenteModuloEstudiante(sectionId) {
           const resultado = historialResultados[sectionId] || {};
           const ajuste = notasDesafiosDocente[sectionId] || null;
-          const notaDocente = ajuste?.nota === null || ajuste?.nota === undefined || ajuste?.nota === ''
-              ? NaN
-              : Number(ajuste.nota);
-          const notaAutomatica = Number(resultado.notaFinal ?? resultado.notaIA);
-          return {
-              nota: Number.isFinite(notaDocente)
-                  ? Math.max(0, Math.min(10, notaDocente))
-                  : (Number.isFinite(notaAutomatica) ? Math.max(0, Math.min(10, notaAutomatica)) : null),
-              notaAutomatica: Number.isFinite(notaAutomatica) ? notaAutomatica : null,
-              corregida: Number.isFinite(notaDocente),
-              ajuste
-          };
+          const notaDocente = convertirNotaValida(ajuste?.nota);
+          const notaAutomatica = convertirNotaValida(resultado.notaFinal) ?? convertirNotaValida(resultado.notaIA);
+          const corregida = notaDocente !== null;
+          return { nota: corregida ? notaDocente : notaAutomatica, notaAutomatica, corregida, ajuste };
       }
 
       function actualizarNotaDocenteVisibleEstudiante(sectionId) {
@@ -9460,13 +9466,10 @@
       }
       function obtenerNotaDesafioEstudiante(d, sectionId, resultado = null) {
           const ajuste = d?.notasDesafiosDocente?.[sectionId];
-          const notaDocente = ajuste?.nota === null || ajuste?.nota === undefined || ajuste?.nota === ''
-              ? NaN
-              : Number(ajuste.nota);
-          if (Number.isFinite(notaDocente)) return Math.max(0, Math.min(10, notaDocente));
+          const notaDocente = convertirNotaValida(ajuste?.nota);
+          if (notaDocente !== null) return notaDocente;
           const registro = resultado || d?.historialResultados?.[sectionId] || {};
-          const notaAutomatica = Number(registro.notaFinal ?? registro.notaIA);
-          return Number.isFinite(notaAutomatica) ? Math.max(0, Math.min(10, notaAutomatica)) : null;
+          return convertirNotaValida(registro.notaFinal) ?? convertirNotaValida(registro.notaIA);
       }
       function obtenerNotasDesafiosFinalizadosEstudiante(d) {
           const historial = d?.historialResultados || {};
@@ -9479,25 +9482,29 @@
           }, []);
       }
       function calcularNotaEstudiante(d) {
-          const notas = obtenerNotasDesafiosFinalizadosEstudiante(d).map(item => item.nota);
-          if (!notas.length) return '—';
-          return (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1);
+          const promedio = obtenerPromedioNumericoDesafiosFinalizados(d);
+          return promedio === null ? '—' : promedio.toFixed(2);
       }
       function calcularNotaProvisionalEstudiante(d) {
-          const academica = Number(calcularNotaEstudiante(d));
-          if (!Number.isFinite(academica)) return '—';
-          const penalizacion = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
-          return Math.max(0, academica - penalizacion).toFixed(1);
+          // El cálculo usa el promedio sin redondear; solo se redondea para mostrar.
+          const academica = obtenerPromedioNumericoDesafiosFinalizados(d);
+          if (academica === null) return '—';
+          const penalizacion = Math.max(0, Math.min(10, Number(d?.revisionSalidas?.penalizacion) || 0));
+          return Math.max(0, academica - penalizacion).toFixed(2);
       }
       function calcularPromedioFinalAcademicoEstudiante(d) {
-          // El promedio final académico solo existe cuando todos los desafíos están finalizados
-          // y cada uno tiene una nota automática o una nota docente válida.
+          // El promedio final requiere todos los desafíos configurados finalizados
+          // y una nota válida (automática o docente) por cada desafío.
+          const ids = [...new Set(seccionesData.map(sec => String(sec.id)))];
+          if (!ids.length) return '—';
           const finalizadas = obtenerFinalizadasEfectivasEstudiante(d);
-          const ids = seccionesData.map(sec => sec.id);
-          if (!ids.length || !ids.every(id => finalizadas[id] === true)) return '—';
-          const notas = obtenerNotasDesafiosFinalizadosEstudiante(d);
-          if (notas.length !== ids.length) return '—';
-          return (notas.reduce((suma, item) => suma + item.nota, 0) / notas.length).toFixed(2);
+          if (!ids.every(id => finalizadas[id] === true)) return '—';
+          const notasPorId = new Map(
+              obtenerNotasDesafiosFinalizadosEstudiante(d).map(item => [String(item.id), item.nota])
+          );
+          if (ids.some(id => !Number.isFinite(notasPorId.get(id)))) return '—';
+          const suma = ids.reduce((total, id) => total + notasPorId.get(id), 0);
+          return (suma / ids.length).toFixed(2);
       }
       function calcularNotaDefinitivaEstudiante(d) {
           const revision = d.revisionSalidas || {};
@@ -13783,7 +13790,7 @@
           const progreso = Math.max(0, Math.min(100, Number(calcularProgresoEstudiante(d)) || 0)); const resumen = obtenerResumenProgresoEstudiante(d);
           const actividad = obtenerFechaActividadPreceptor(d); const proyecto = obtenerEstadoProyectoFinalPreceptor(d);
           const indice = estudiantesProfesor.findIndex(x => String(x?.uid || x?.email || '') === String(d?.uid || d?.email || ''));
-          return `<tr class="fila-detalle-preceptor"><td colspan="9"><section style="padding:1rem;border:1px solid rgba(56,189,248,.35);border-radius:10px;margin:.35rem 0 1rem">
+          return `<tr class="fila-detalle-preceptor"><td colspan="10"><section style="padding:1rem;border:1px solid rgba(56,189,248,.35);border-radius:10px;margin:.35rem 0 1rem">
             <div style="display:flex;justify-content:space-between;gap:1rem;align-items:start;flex-wrap:wrap"><div><h4 style="margin:.1rem 0 .35rem">Ficha individual: ${escaparInforme(nombreOrdenApellidosInformePreceptor(d))}</h4><div>${escaparInforme(d.email || e.email || 'Sin correo')} · ${escaparInforme([e.curso,e.division,e.turno].filter(Boolean).join(' / ') || 'Grupo sin especificar')}</div></div><button type="button" class="btn btn-secondary" data-preceptor-cerrar-detalle>Cerrar ficha</button></div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.65rem;margin:.8rem 0"><div class="teacher-group-report-summary"><small>Progreso</small><strong>${progreso}%</strong><small>${resumen.completadas}/${resumen.total} desafíos</small></div><div class="teacher-group-report-summary"><small>Estado de cuenta</small><strong>${escaparInforme(d.estadoCuenta || 'Sin dato')}</strong></div><div class="teacher-group-report-summary"><small>Última actividad conocida</small><strong style="font-size:.9rem">${escaparInforme(formatearFechaPreceptor(actividad))}</strong></div><div class="teacher-group-report-summary"><small>Desafío 19 · Proyecto Final</small><strong>${escaparInforme(proyecto === 'sin-dato' ? 'Sin dato en la fuente' : proyecto === 'entregado' ? 'Finalizado/entregado' : 'Pendiente')}</strong></div></div>
             <p style="font-size:.82rem;color:var(--text-muted)">“Sin dato” indica que no se encontró un campo reconocible en el registro, no que la actividad no se haya realizado.</p>
@@ -13810,13 +13817,11 @@
               const numero = Number(valor);
               return Number.isFinite(numero) && numero >= 0 && numero <= 10 ? numero : null;
           };
-          const notaVigente = d => {
-              const docente = notaValida(calcularNotaDefinitivaEstudiante(d));
-              if (docente !== null) return docente;
-              const calculada = notaValida(calcularNotaProvisionalEstudiante(d));
-              if (calculada !== null) return calculada;
-              return notaValida(calcularNotaEstudiante(d));
-          };
+          // Preceptoría utiliza el mismo criterio académico que el panel docente:
+          // promedio parcial = desafíos explícitamente finalizados con nota válida.
+          // No mezcla descuentos de revisión ni una nota definitiva confirmada con el promedio.
+          const notaVigente = d => obtenerPromedioNumericoDesafiosFinalizados(d);
+          const promedioFinalAcademico = d => notaValida(calcularPromedioFinalAcademicoEstudiante(d));
           estudiantes = estudiantes.filter(d => {
               const e = d.estudiante || {};
               const nombre = String(e.nombre || d.nombreGoogle || d.email || '').toLocaleLowerCase('es');
@@ -13850,6 +13855,7 @@
           });
           const progresoFiltrado = estudiantes.map(d => Number(calcularProgresoEstudiante(d)) || 0);
           const notasVigentes = estudiantes.map(notaVigente).filter(Number.isFinite);
+          const notasFinalesAcademicas = estudiantes.map(promedioFinalAcademico).filter(Number.isFinite);
           const conectados = estudiantes.filter(d => {
               const ms = obtenerFechaActividadPreceptor(d) || 0;
               return ms && Date.now() - ms <= 120000;
@@ -13870,7 +13876,10 @@
               desafiosPosiblesGrupo: resumenGrupo.posibles,
               progresoGlobalGrupo: resumenGrupo.porcentaje,
               promedioVigente: promedio(notasVigentes),
-              notaVigente
+              promedioFinalAcademico: promedio(notasFinalesAcademicas),
+              estudiantesConPromedioFinal: notasFinalesAcademicas.length,
+              notaVigente,
+              promedioFinalAcademico
           };
       }
 
@@ -14023,7 +14032,8 @@
             <div style="margin:1rem 0;padding:.7rem;border:1px solid rgba(56,189,248,.3);border-radius:8px;background:rgba(56,189,248,.06)"><h3 style="margin:.1rem 0 .35rem;font-size:1.05rem">${escaparInforme(tituloDinamico)}</h3><strong>Alcance:</strong> ${escaparInforme(alcance)} · ${datos.estudiantes.length} estudiante${datos.estudiantes.length === 1 ? '' : 's'}${etiquetasFiltrosPreceptor.length ? `<div style="margin-top:.35rem;font-size:.85rem"><strong>Filtros activos:</strong> ${escaparInforme(etiquetasFiltrosPreceptor.join(' · '))}</div>` : ''}</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.65rem;margin-bottom:1rem">
               <div class="teacher-group-report-summary"><small>Estudiantes incluidos</small><strong>${datos.estudiantes.length}</strong></div>
-              <div class="teacher-group-report-summary"><small>Promedio real del grupo</small><strong>${mostrarNota(datos.promedioVigente)}</strong></div>
+              <div class="teacher-group-report-summary"><small>Promedio parcial del grupo</small><strong>${mostrarNota(datos.promedioVigente)}</strong></div>
+              <div class="teacher-group-report-summary"><small>Promedio final académico</small><strong>${mostrarNota(datos.promedioFinalAcademico)}</strong><small>${datos.estudiantesConPromedioFinal} estudiante(s) con todos los desafíos finalizados y calificados</small></div>
               <div class="teacher-group-report-summary"><small>Avance global del grupo</small><strong>${datos.progresoGlobalGrupo}%</strong><small>${datos.desafiosCompletadosGrupo}/${datos.desafiosPosiblesGrupo} desafíos</small></div>
               <div class="teacher-group-report-summary"><small>Promedio de avance individual</small><strong>${datos.promedioProgreso}%</strong></div>
               <div class="teacher-group-report-summary"><small>Conectados</small><strong>${datos.conectados}/${datos.estudiantes.length}</strong></div>
@@ -14033,17 +14043,17 @@
             </div>
             <section style="padding:.8rem;border:1px solid rgba(148,163,184,.25);border-radius:8px;margin-bottom:1rem">
               <h4 style="margin:.2rem 0 .6rem"><i class="fa-solid fa-chart-column"></i> ${escaparInforme(tituloGrafico)}</h4>
-              <p style="font-size:.82rem;color:var(--text-muted)">Se muestra una sola nota por estudiante: la calificación vigente, priorizando la nota confirmada por el docente y, si no existe, la calculada o automática. Escala de 0 a 10.</p>
-              <div style="overflow-x:auto"><svg role="img" aria-label="Gráfico de promedio real por estudiante" viewBox="0 0 720 ${altoGrafico}" style="width:100%;min-width:560px;height:auto;max-height:900px">${grafico}</svg></div>
+              <p style="font-size:.82rem;color:var(--text-muted)">El promedio parcial incluye solo desafíos finalizados con nota válida. La nota docente reemplaza a la automática en cada desafío. El promedio final académico solo se calcula cuando todos los desafíos están finalizados y calificados. Escala de 0 a 10.</p>
+              <div style="overflow-x:auto"><svg role="img" aria-label="Gráfico de promedio parcial por estudiante" viewBox="0 0 720 ${altoGrafico}" style="width:100%;min-width:560px;height:auto;max-height:900px">${grafico}</svg></div>
             </section>
-            <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Estudiante (apellido y nombre)</th><th>Curso</th><th>División</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Promedio real</th><th>Situación</th><th>Ficha</th></tr></thead><tbody>${filas.map(d => {
+            <div class="teacher-table-scroll"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Estudiante (apellido y nombre)</th><th>Curso</th><th>División</th><th>Turno</th><th>Estado</th><th>Progreso</th><th>Promedio parcial</th><th>Promedio final</th><th>Situación</th><th>Ficha</th></tr></thead><tbody>${filas.map(d => {
               const e = d.estudiante || {};
               const resumenProgreso = obtenerResumenProgresoEstudiante(d);
               const p = resumenProgreso.porcentaje;
               const vigente = datos.notaVigente(d);
               const situacion = d.pantallaBloqueada ? 'Pantalla bloqueada' : (p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento');
               const clave = obtenerClaveEstudiantePreceptor(d); const abierta = estudianteDetallePreceptorUid === clave;
-              return `<tr><td><strong>${escaparInforme(nombreOrdenApellidosInformePreceptor(d))}</strong><br><small>${escaparInforme(d.email || '')}</small></td><td>${escaparInforme(e.curso || 'Sin curso')}</td><td>${escaparInforme(e.division || '—')}</td><td>${escaparInforme(e.turno || 'Sin turno')}</td><td>${escaparInforme(d.estadoCuenta || 'Sin estado')}</td><td><strong>${p}%</strong><br><small>${resumenProgreso.completadas}/${resumenProgreso.total} desafíos</small><div aria-label="Progreso ${p}%" style="margin-top:4px;height:6px;min-width:65px;background:rgba(148,163,184,.22);border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:${p}%;background:${p >= 75 ? '#22c55e' : p >= 40 ? '#f59e0b' : '#38bdf8'}"></span></div></td><td><strong>${mostrarNota(vigente)}</strong></td><td>${situacion}</td><td><button type="button" class="btn btn-secondary" data-preceptor-detalle="${escaparInforme(clave)}">${abierta ? 'Ocultar' : 'Ver ficha'}</button></td></tr>${abierta ? renderDetalleEstudiantePreceptor(d) : ''}`;
+              return `<tr><td><strong>${escaparInforme(nombreOrdenApellidosInformePreceptor(d))}</strong><br><small>${escaparInforme(d.email || '')}</small></td><td>${escaparInforme(e.curso || 'Sin curso')}</td><td>${escaparInforme(e.division || '—')}</td><td>${escaparInforme(e.turno || 'Sin turno')}</td><td>${escaparInforme(d.estadoCuenta || 'Sin estado')}</td><td><strong>${p}%</strong><br><small>${resumenProgreso.completadas}/${resumenProgreso.total} desafíos</small><div aria-label="Progreso ${p}%" style="margin-top:4px;height:6px;min-width:65px;background:rgba(148,163,184,.22);border-radius:4px;overflow:hidden"><span style="display:block;height:100%;width:${p}%;background:${p >= 75 ? '#22c55e' : p >= 40 ? '#f59e0b' : '#38bdf8'}"></span></div></td><td><strong>${mostrarNota(vigente)}</strong></td><td>${mostrarNota(datos.promedioFinalAcademico(d))}</td><td>${situacion}</td><td><button type="button" class="btn btn-secondary" data-preceptor-detalle="${escaparInforme(clave)}">${abierta ? 'Ocultar' : 'Ver ficha'}</button></td></tr>${abierta ? renderDetalleEstudiantePreceptor(d) : ''}`;
             }).join('')}</tbody></table></div>`;
           const controles = [
               ['filtroPreceptorBuscar', 'buscar'], ['filtroPreceptorEstado', 'estado'], ['filtroPreceptorProgreso', 'progreso'], ['filtroPreceptorNota', 'nota'],
@@ -14080,7 +14090,7 @@
 
       function exportarInformePreceptorTutoresCSV() {
           const datos = obtenerDatosInformePreceptorTutores();
-          const filas = [['Estudiante (apellido, nombre)', 'Email', 'Curso', 'Division', 'Turno', 'Estado', 'Progreso', 'Promedio real', 'Situacion', 'Desafio 19 - Proyecto Final', 'Ultima actividad', 'Intervenciones en esta sesion']];
+          const filas = [['Estudiante (apellido, nombre)', 'Email', 'Curso', 'Division', 'Turno', 'Estado', 'Progreso', 'Promedio parcial', 'Promedio final académico', 'Situacion', 'Desafio 19 - Proyecto Final', 'Ultima actividad', 'Intervenciones en esta sesion']];
           const estudiantesCSV = ordenarEstudiantesInformePreceptorTutores(datos.estudiantes);
           if (filtrosAvanzadosPreceptor.orden === 'progreso-menor') estudiantesCSV.sort((a,b)=>(Number(calcularProgresoEstudiante(a))||0)-(Number(calcularProgresoEstudiante(b))||0)); else if (filtrosAvanzadosPreceptor.orden === 'progreso-mayor') estudiantesCSV.sort((a,b)=>(Number(calcularProgresoEstudiante(b))||0)-(Number(calcularProgresoEstudiante(a))||0)); else if (filtrosAvanzadosPreceptor.orden === 'nota-menor') estudiantesCSV.sort((a,b)=>(Number.isFinite(datos.notaVigente(a))?datos.notaVigente(a):-1)-(Number.isFinite(datos.notaVigente(b))?datos.notaVigente(b):-1)); else if (filtrosAvanzadosPreceptor.orden === 'nota-mayor') estudiantesCSV.sort((a,b)=>(Number.isFinite(datos.notaVigente(b))?datos.notaVigente(b):-1)-(Number.isFinite(datos.notaVigente(a))?datos.notaVigente(a):-1));
           estudiantesCSV.forEach(d => {
@@ -14089,7 +14099,7 @@
               const p = resumenProgreso.porcentaje;
               const n = datos.notaVigente(d);
               const clave = obtenerClaveEstudiantePreceptor(d); const intervenciones = leerIntervencionesPreceptor()[clave] || []; const actividad = obtenerFechaActividadPreceptor(d);
-              filas.push([nombreOrdenApellidosInformePreceptor(d), d.email || '', e.curso || '', e.division || '', e.turno || '', d.estadoCuenta || '', `${resumenProgreso.completadas}/${resumenProgreso.total} desafíos (${p}%)`, Number.isFinite(n) ? n : '', d.pantallaBloqueada ? 'Pantalla bloqueada' : p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento', obtenerEstadoProyectoFinalPreceptor(d), actividad ? formatearFechaPreceptor(actividad) : 'Sin registro', intervenciones.length]);
+              filas.push([nombreOrdenApellidosInformePreceptor(d), d.email || '', e.curso || '', e.division || '', e.turno || '', d.estadoCuenta || '', `${resumenProgreso.completadas}/${resumenProgreso.total} desafíos (${p}%)`, Number.isFinite(n) ? n : '', Number.isFinite(datos.promedioFinalAcademico(d)) ? datos.promedioFinalAcademico(d) : '', d.pantallaBloqueada ? 'Pantalla bloqueada' : p >= 75 ? 'Avance favorable' : p >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento', obtenerEstadoProyectoFinalPreceptor(d), actividad ? formatearFechaPreceptor(actividad) : 'Sin registro', intervenciones.length]);
           });
           const csv = filas.map(fila => fila.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
           const enlace = document.createElement('a');
@@ -14138,12 +14148,13 @@
           doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
           y = escribirLinea(alcance, 15, y); y += 2;
           y = escribirLinea(`Estudiantes incluidos: ${ordenados.length}`, 15, y);
-          y = escribirLinea(`Promedio vigente grupal: ${notaTexto(datos.promedioVigente)}`, 15, y);
+          y = escribirLinea(`Promedio parcial grupal: ${notaTexto(datos.promedioVigente)}`, 15, y);
+          y = escribirLinea(`Promedio final académico grupal: ${notaTexto(datos.promedioFinalAcademico)} (${datos.estudiantesConPromedioFinal} estudiante(s) con todos los desafíos finalizados y calificados)`, 15, y);
           y = escribirLinea(`Avance global: ${datos.progresoGlobalGrupo}% (${datos.desafiosCompletadosGrupo}/${datos.desafiosPosiblesGrupo} desafíos)`, 15, y);
           y = escribirLinea(`Promedio de avance individual: ${datos.promedioProgreso}%`, 15, y); y += 5;
           doc.setFont('helvetica', 'bold'); doc.text('Listado ordenado alfabéticamente por apellido', 15, y); y += 7;
           doc.setFontSize(8); doc.setFillColor(226, 232, 240); doc.rect(15, y-4, 180, 7, 'F');
-          doc.text('Estudiante', 17, y); doc.text('Curso/división', 86, y); doc.text('Progreso', 130, y); doc.text('Nota vigente', 163, y); y += 7;
+          doc.text('Estudiante', 17, y); doc.text('Curso/división', 86, y); doc.text('Progreso', 130, y); doc.text('Prom. parcial', 163, y); y += 7;
           doc.setFont('helvetica', 'normal');
           ordenados.forEach((d, i) => {
               if (y > 278) { doc.addPage(); y = 18; }
@@ -14155,7 +14166,7 @@
           });
           doc.setFontSize(8); doc.setTextColor(71, 85, 105);
           if (y > 270) { doc.addPage(); y = 18; } else { y += 4; }
-          escribirLinea('Criterio de nota: se prioriza la calificación confirmada por el docente; si no existe, se utiliza la calculada y luego la automática. “Pendiente” indica que no hay una nota válida registrada.', 15, y, 180, 4);
+          escribirLinea('Criterio de promedio: solo se incluyen desafíos explícitamente finalizados con nota válida; la nota docente reemplaza a la automática. El promedio final académico requiere que todos los desafíos estén finalizados y calificados. Los descuentos de revisión y la nota definitiva confirmada se informan por separado y no se mezclan con el promedio parcial.', 15, y, 180, 4);
 
           // Una ficha individual por estudiante, con estado de cada desafío.
           ordenados.forEach((d, indiceEstudiante) => {
@@ -14168,12 +14179,13 @@
               const actividades = seccionesData.map(sec => {
                   const resultado = d.historialResultados?.[sec.id] || {};
                   const ajuste = d.notasDesafiosDocente?.[sec.id] || {};
-                  const notaAutomaticaRaw = resultado.notaFinal ?? resultado.notaIA;
-                  const notaAutomatica = notaAutomaticaRaw === null || notaAutomaticaRaw === undefined || notaAutomaticaRaw === '' ? null : Number(notaAutomaticaRaw);
-                  const notaDocente = ajuste.nota === null || ajuste.nota === undefined || ajuste.nota === '' ? null : Number(ajuste.nota);
-                  const automaticaValida = Number.isFinite(notaAutomatica) && notaAutomatica >= 0 && notaAutomatica <= 10;
-                  const docenteValida = Number.isFinite(notaDocente) && notaDocente >= 0 && notaDocente <= 10;
-                  return { titulo: sec.title || sec.id, finalizada: finalizadas[sec.id] === true, nota: docenteValida ? notaDocente : automaticaValida ? notaAutomatica : null, fuente: docenteValida ? 'Docente' : automaticaValida ? 'Automática' : 'Sin nota' };
+                  const notaAutomatica = convertirNotaValida(resultado.notaFinal) ?? convertirNotaValida(resultado.notaIA);
+                  const notaDocente = convertirNotaValida(ajuste.nota);
+                  const automaticaValida = notaAutomatica !== null;
+                  const docenteValida = notaDocente !== null;
+                  const finalizada = finalizadas[sec.id] === true;
+                  const notaValida = docenteValida ? notaDocente : automaticaValida ? notaAutomatica : null;
+                  return { titulo: sec.title || sec.id, finalizada, nota: finalizada ? notaValida : null, fuente: !finalizada ? 'Pendiente' : docenteValida ? 'Docente' : automaticaValida ? 'Automática' : 'Sin nota' };
               });
               doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 31, 'F');
               doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
@@ -14187,7 +14199,8 @@
               fy = escribirLinea(`Correo: ${d.email || 'No informado'}`, 15, fy);
               fy = escribirLinea(`Estado de cuenta: ${d.estadoCuenta || 'No informado'}`, 15, fy);
               fy = escribirLinea(`Progreso: ${progreso}% · Desafíos finalizados: ${resumen.completadas}/${resumen.total}`, 15, fy);
-              fy = escribirLinea(`Promedio vigente: ${notaTexto(datos.notaVigente(d))}`, 15, fy);
+              fy = escribirLinea(`Promedio parcial: ${notaTexto(datos.notaVigente(d))}`, 15, fy);
+              fy = escribirLinea(`Promedio final académico: ${notaTexto(datos.promedioFinalAcademico(d))}`, 15, fy);
               fy = escribirLinea(`Situación orientativa: ${d.pantallaBloqueada ? 'Pantalla bloqueada: revisar con el equipo docente' : progreso >= 75 ? 'Avance favorable' : progreso >= 40 ? 'Requiere seguimiento' : 'Prioridad de acompañamiento'}`, 15, fy, 180, 4.5);
               fy += 5;
               doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setFillColor(226, 232, 240); doc.rect(15, fy-4, 180, 8, 'F');
@@ -14235,21 +14248,25 @@
           const finalizadasEfectivas = obtenerFinalizadasEfectivasEstudiante(estudiante);
           const actividades = seccionesData.map(sec => {
               const resultado = estudiante.historialResultados?.[sec.id] || {};
-              const notaAutomatica = Number(resultado.notaFinal ?? resultado.notaIA);
+              const notaAutomatica = convertirNotaValida(resultado.notaFinal) ?? convertirNotaValida(resultado.notaIA);
               const ajuste = estudiante.notasDesafiosDocente?.[sec.id] || {};
-              const notaDocente = Number(ajuste.nota);
+              const notaDocente = convertirNotaValida(ajuste.nota);
               const finalizada = finalizadasEfectivas[sec.id] === true;
+              const automaticaValida = notaAutomatica !== null;
+              const docenteValida = notaDocente !== null;
               return {
                   titulo: sec.title || sec.id,
                   estado: finalizada ? 'Finalizada' : 'Pendiente',
-                  automatica: Number.isFinite(notaAutomatica) ? notaAutomatica : null,
-                  docente: Number.isFinite(notaDocente) ? notaDocente : null,
-                  vigente: Number.isFinite(notaDocente) ? notaDocente : (Number.isFinite(notaAutomatica) ? notaAutomatica : null)
+                  automatica: automaticaValida ? notaAutomatica : null,
+                  docente: docenteValida ? notaDocente : null,
+                  vigente: finalizada ? (docenteValida ? notaDocente : automaticaValida ? notaAutomatica : null) : null
               };
           });
           const notasAutomaticas = actividades.map(a => a.automatica).filter(Number.isFinite);
-          const notasVigentes = actividades.map(a => a.vigente).filter(Number.isFinite);
+          const notasVigentes = actividades.filter(a => a.estado === 'Finalizada').map(a => a.vigente).filter(Number.isFinite);
           const promedio = valores => valores.length ? (valores.reduce((a, b) => a + b, 0) / valores.length).toFixed(2) : 'Sin datos';
+          const todasFinalizadas = actividades.length > 0 && actividades.every(a => a.estado === 'Finalizada');
+          const promedioFinalAcademico = todasFinalizadas && notasVigentes.length === actividades.length ? promedio(notasVigentes) : 'Pendiente';
           const progreso = Number(calcularProgresoEstudiante(estudiante)) || 0;
           doc.setFillColor(15, 23, 42);
           doc.rect(0, 0, 210, 35, 'F');
@@ -14264,15 +14281,16 @@
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(10);
           doc.text(`Progreso: ${progreso}%`, 15, 46);
-          doc.text(`Promedio vigente: ${promedio(notasVigentes)}/10`, 65, 46);
+          doc.text(`Promedio parcial: ${promedio(notasVigentes)}/10`, 65, 46);
+          doc.text(`Promedio final académico: ${promedioFinalAcademico === 'Pendiente' ? 'Pendiente' : `${promedioFinalAcademico}/10`}`, 15, 51);
           doc.setFontSize(8);
           doc.setTextColor(71, 85, 105);
           const leyenda = doc.splitTextToSize(
-              'Nota automática: resultado generado por la evaluación de la actividad. Nota calculada: nota automática ajustada por descuentos o criterios de seguimiento. Nota docente: calificación revisada y confirmada manualmente por el docente; cuando existe, es la nota vigente.',
+              'El promedio parcial solo incluye desafíos finalizados con nota válida. La nota docente reemplaza a la automática. El promedio final académico queda pendiente hasta que todos los desafíos estén finalizados y calificados. Las actividades pendientes no aportan nota al promedio.',
               180
           );
-          doc.text(leyenda, 15, 55);
-          let y = 70 + leyenda.length * 4;
+          doc.text(leyenda, 15, 60);
+          let y = 75 + leyenda.length * 4;
           doc.setFillColor(15, 23, 42);
           doc.rect(12, y, 186, 9, 'F');
           doc.setTextColor(255, 255, 255);
@@ -14280,7 +14298,7 @@
           doc.setFontSize(8);
           doc.text('Actividad', 15, y + 6);
           doc.text('Estado', 95, y + 6);
-          doc.text('Promedio vigente', 155, y + 6);
+          doc.text('Nota del desafío', 155, y + 6);
           y += 15;
           doc.setFont('helvetica', 'normal');
           doc.setTextColor(15, 23, 42);
