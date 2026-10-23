@@ -9417,33 +9417,17 @@
               .includes(valor.trim().toLowerCase());
       }
 
-      function tieneNotaValidaDesafioEstudiante(d = {}, sectionId) {
-          // Una nota 0 es válida; null, undefined y texto vacío significan que no hay nota.
-          const esNotaValida = valor => {
-              if (valor === null || valor === undefined || (typeof valor === 'string' && valor.trim() === '')) return false;
-              const numero = Number(valor);
-              return Number.isFinite(numero) && numero >= 0 && numero <= 10;
-          };
-          const notaDocente = d?.notasDesafiosDocente?.[sectionId]?.nota;
-          const resultado = d?.historialResultados?.[sectionId] || {};
-          const notaAutomatica = resultado.notaFinal;
-          const notaIA = resultado.notaIA;
-          return esNotaValida(notaDocente) || esNotaValida(notaAutomatica) || esNotaValida(notaIA);
-      }
-
       function obtenerFinalizadasEfectivasEstudiante(d = {}) {
-          // Una única fuente de verdad para pantalla, panel docente e informes.
-          // Un desafío con nota automática o nota docente queda finalizado, aunque la marca
-          // de finalización no se haya guardado o todavía figure como false.
+          // Solo cuentan desafíos marcados explícitamente como finalizados.
+          // Tener una nota guardada, por sí solo, no convierte un desafío pendiente en finalizado.
           // Compatibilidad con ambos nombres de campo usados por el estado local y Firestore.
           const finalizadasGuardadas = d?.finalizadas && typeof d.finalizadas === 'object' ? d.finalizadas : {};
           const finalizadasLocales = d?.actividadesFinalizadas && typeof d.actividadesFinalizadas === 'object' ? d.actividadesFinalizadas : {};
           const finalizadas = {};
           seccionesData.forEach(sec => {
-              const valor = Object.prototype.hasOwnProperty.call(finalizadasGuardadas, sec.id)
-                  ? finalizadasGuardadas[sec.id]
-                  : finalizadasLocales[sec.id];
-              finalizadas[sec.id] = esDesafioFinalizado(valor) || tieneNotaValidaDesafioEstudiante(d, sec.id);
+              const tieneMarcaNueva = Object.prototype.hasOwnProperty.call(finalizadasGuardadas, sec.id);
+              const valor = tieneMarcaNueva ? finalizadasGuardadas[sec.id] : finalizadasLocales[sec.id];
+              finalizadas[sec.id] = esDesafioFinalizado(valor);
           });
           return finalizadas;
       }
@@ -9504,6 +9488,16 @@
           if (!Number.isFinite(academica)) return 'â€”';
           const penalizacion = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
           return Math.max(0, academica - penalizacion).toFixed(1);
+      }
+      function calcularPromedioFinalAcademicoEstudiante(d) {
+          // El promedio final académico solo existe cuando todos los desafíos están finalizados
+          // y cada uno tiene una nota automática o una nota docente válida.
+          const finalizadas = obtenerFinalizadasEfectivasEstudiante(d);
+          const ids = seccionesData.map(sec => sec.id);
+          if (!ids.length || !ids.every(id => finalizadas[id] === true)) return '—';
+          const notas = obtenerNotasDesafiosFinalizadosEstudiante(d);
+          if (notas.length !== ids.length) return '—';
+          return (notas.reduce((suma, item) => suma + item.nota, 0) / notas.length).toFixed(2);
       }
       function calcularNotaDefinitivaEstudiante(d) {
           const revision = d.revisionSalidas || {};
