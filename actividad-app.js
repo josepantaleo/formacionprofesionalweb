@@ -51,11 +51,11 @@
               ["Ã±", "ñ"], ["Ã¼", "ü"], ["Ã", "Á"], ["Ã‰", "É"], ["Ã", "Í"],
               ["Ã“", "Ó"], ["Ãš", "Ú"], ["Ã‘", "Ñ"], ["Ãœ", "Ü"],
               ["â€œ", "“"], ["â€", "”"], ["â€˜", "‘"], ["â€™", "’"],
-              ["â€”", "—"], ["â€“", "–"], ["â€¦", "…"], ["â†’", "→"],
+              ["—", "—"], ["â€“", "–"], ["â€¦", "…"], ["â†’", "→"],
               ["â‰¥", "≥"], ["â‰¤", "≤"], ["âš ï¸", "⚠️"], ["âš ", "⚠"],
               ["âœ…", "✅"], ["âŒ", "❌"], ["â˜‘", "☑"], ["â˜", "☐"],
               ["â°", "⏰"], ["â¸", "⏸"], ["â–¶", "▶"], ["â„¹ï¸", "ℹ️"],
-              ["â•", "═"], ["Ã—", "×"], ["Ã·", "÷"], ["Ãšlt", "Últ"],
+              ["â•", "═"], ["Ã—", "×"], ["÷", "÷"], ["Ãšlt", "Últ"],
               ["Ãš", "Ú"], ["Ã“", "Ó"], ["Ã‰", "É"], ["Ã", "Í"], ["Ã‘", "Ñ"],
               ["Ã‚¿", "¿"], ["Â¿", "¿"], ["Ã‚¡", "¡"], ["Â¡", "¡"],
               ["Ã‚·", "·"], ["Â·", "·"], ["Â°", "°"], ["N.Âº", "N.º"],
@@ -2070,7 +2070,7 @@
           if (!valor) return { curso: '', division: '' };
 
           // Acepta formatos antiguos: "6TO A", "6TO - A", "5° Año A", "5° Año 'A'"
-          const m = valor.match(/^(.*?)(?:\s*[-â€“â€”]?\s*['"]?([A-Za-z])['"]?)$/);
+          const m = valor.match(/^(.*?)(?:\s*[-â€“—]?\s*['"]?([A-Za-z])['"]?)$/);
           if (m && m[2] && m[1].trim()) {
               return { curso: m[1].trim(), division: m[2].toUpperCase() };
           }
@@ -3220,7 +3220,7 @@
                               <div class="analyst-box" id="analyst-${sec.id}">
                                   <div class="analyst-header">
                                       <i class="fa-solid fa-user-check"></i>
-                                      Analista de Viabilidad y Excelencia â€” RESPONDE AHORA
+                                      Analista de Viabilidad y Excelencia — RESPONDE AHORA
                                   </div>
                                   <div style="margin-bottom:0.8rem;color:#cbd5e1;line-height:1.45;">
                                       ðŸ¤– Al pulsar <strong>IA</strong>, estas preguntas se habilitan para responder.
@@ -3493,7 +3493,7 @@
           if (tipo === "uno") {
               alertBox.className = "time-review-alert is-urgent";
               alertBox.innerHTML = `
-                  <div class="time-review-alert-heading"><span aria-hidden="true">â°</span><strong>¡Ãšltimo minuto!</strong><span class="time-review-alert-time">${String(Math.floor(segundos / 60)).padStart(2, "0")}:${String(segundos % 60).padStart(2, "0")}</span></div>
+                  <div class="time-review-alert-heading"><span aria-hidden="true">â°</span><strong>¡Último minuto!</strong><span class="time-review-alert-time">${String(Math.floor(segundos / 60)).padStart(2, "0")}:${String(segundos % 60).padStart(2, "0")}</span></div>
                   <p>Antes de entregar, revisá rápidamente:</p>
                   <ul>${renderizarListaRevision(["Que el código ejecute sin errores.", "Que la salida responda a la consigna.", "Que hayas completado la parte principal del desafío."])}</ul>
                   <p class="time-review-priority">Enfocate en completar lo indispensable y corregir el error más importante.</p>`;
@@ -4566,7 +4566,7 @@
           const total = eventos.length;
           const segundos = eventos.reduce((suma, item) => suma + Math.max(0, Number(item.duracionSegundos || item.duracion || 0)), 0);
           const minutos = Math.round(segundos / 60);
-          contenido.innerHTML = `<div class="student-tabs-summary-stats"><div><small>Cambios registrados</small><strong>${total}</strong></div><div><small>Tiempo fuera</small><strong>${minutos} min</strong></div><div><small>Ãšltimo cambio</small><strong>${total ? escapeHtml(new Date(eventos[total - 1].timestamp || eventos[total - 1].en || Date.now()).toLocaleTimeString('es-AR')) : 'Sin cambios'}</strong></div></div><div class="student-tabs-summary-list">${total ? eventos.slice(-12).reverse().map(item => `<article><strong>${escapeHtml(item.titulo || item.dominio || item.motivo || 'Cambio de pestaña')}</strong><small>${escapeHtml(new Date(item.timestamp || item.en || Date.now()).toLocaleString('es-AR'))} · ${Math.max(0, Number(item.duracionSegundos || item.duracion || 0))} s</small></article>`).join('') : '<p class="student-tabs-summary-empty">Todavía no hay cambios de pestaña registrados.</p>'}</div>`;
+          contenido.innerHTML = `<div class="student-tabs-summary-stats"><div><small>Cambios registrados</small><strong>${total}</strong></div><div><small>Tiempo fuera</small><strong>${minutos} min</strong></div><div><small>Último cambio</small><strong>${total ? escapeHtml(new Date(eventos[total - 1].timestamp || eventos[total - 1].en || Date.now()).toLocaleTimeString('es-AR')) : 'Sin cambios'}</strong></div></div><div class="student-tabs-summary-list">${total ? eventos.slice(-12).reverse().map(item => `<article><strong>${escapeHtml(item.titulo || item.dominio || item.motivo || 'Cambio de pestaña')}</strong><small>${escapeHtml(new Date(item.timestamp || item.en || Date.now()).toLocaleString('es-AR'))} · ${Math.max(0, Number(item.duracionSegundos || item.duracion || 0))} s</small></article>`).join('') : '<p class="student-tabs-summary-empty">Todavía no hay cambios de pestaña registrados.</p>'}</div>`;
           modal.classList.add('active');
           document.body.classList.add('student-tabs-summary-open');
           modal.querySelector('.student-tabs-summary-box')?.focus({preventScroll:true});
@@ -5092,7 +5092,7 @@
           },
           {
               respuestaAbierta: true,
-              q: () => `Compará una diferencia concreta entre tu solución y la solución de referencia. Elegí un criterio â€”claridad, robustez, eficiencia o facilidad de mantenimientoâ€” y defendé cuál decisión es más adecuada y en qué situación podría convenir la otra.`
+              q: () => `Compará una diferencia concreta entre tu solución y la solución de referencia. Elegí un criterio —claridad, robustez, eficiencia o facilidad de mantenimiento— y defendé cuál decisión es más adecuada y en qué situación podría convenir la otra.`
           },
           {
               respuestaAbierta: true,
@@ -7985,9 +7985,9 @@
                       estudiante.estudiante?.division,
                       estudiante.estudiante?.turno
                   ].filter(Boolean).join(" · "),
-                  academica: academicaTexto === "â€”" ? null : Number(academicaTexto),
-                  calculada: calculadaTexto === "â€”" ? null : Number(calculadaTexto),
-                  final: finalTexto === "â€”" ? null : Number(finalTexto),
+                  academica: academicaTexto === "—" ? null : Number(academicaTexto),
+                  calculada: calculadaTexto === "—" ? null : Number(calculadaTexto),
+                  final: finalTexto === "—" ? null : Number(finalTexto),
                   progreso: calcularProgresoEstudiante(estudiante),
                   desafiosConNota: obtenerNotasDesafiosFinalizadosEstudiante(estudiante).length,
                   desafiosFinalizados: seccionesData.filter(sec =>
@@ -8194,7 +8194,7 @@
                               <td>${formatearNotaGrafico(fila.academica)}</td>
                               <td>${formatearNotaGrafico(fila.calculada)}</td>
                               <td>${formatearNotaGrafico(fila.final)}</td>
-                              <td>${diferencia === null ? "â€”" : `${diferencia > 0 ? "+" : ""}${formatearNotaGrafico(diferencia)}`}</td>
+                              <td>${diferencia === null ? "—" : `${diferencia > 0 ? "+" : ""}${formatearNotaGrafico(diferencia)}`}</td>
                               <td><span class="teacher-grade-status ${fila.final === null ? "is-pending" : "is-confirmed"}">${fila.final === null ? "Final pendiente" : "Confirmada"}</span></td>
                           </tr>`;
                       }).join("")}</tbody>
@@ -8310,7 +8310,7 @@
                       <td class="is-parcial">${porcentajeExactoPanel(item.porcentajes.parcial)}</td>
                       <td class="is-incorrecta">${porcentajeExactoPanel(item.porcentajes.incorrecta)}</td>
                       <td>${porcentajeExactoPanel(item.riesgo)}</td>
-                      <td>${indice === 0 ? "â€”" : `${item.aumentoRiesgo > 0 ? "+" : ""}${porcentajeExactoPanel(item.aumentoRiesgo)}`}</td>
+                      <td>${indice === 0 ? "—" : `${item.aumentoRiesgo > 0 ? "+" : ""}${porcentajeExactoPanel(item.aumentoRiesgo)}`}</td>
                   </tr>`).join("")}</tbody>
               </table></div>
           </details>`;
@@ -9480,12 +9480,12 @@
       }
       function calcularNotaEstudiante(d) {
           const notas = obtenerNotasDesafiosFinalizadosEstudiante(d).map(item => item.nota);
-          if (!notas.length) return 'â€”';
+          if (!notas.length) return '—';
           return (notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1);
       }
       function calcularNotaProvisionalEstudiante(d) {
           const academica = Number(calcularNotaEstudiante(d));
-          if (!Number.isFinite(academica)) return 'â€”';
+          if (!Number.isFinite(academica)) return '—';
           const penalizacion = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
           return Math.max(0, academica - penalizacion).toFixed(1);
       }
@@ -9501,12 +9501,12 @@
       }
       function calcularNotaDefinitivaEstudiante(d) {
           const revision = d.revisionSalidas || {};
-          if (revision.notaConfirmada !== true) return 'â€”';
+          if (revision.notaConfirmada !== true) return '—';
           const confirmada = revision.notaConfirmadaValor === null || revision.notaConfirmadaValor === ''
               ? NaN
               : Number(revision.notaConfirmadaValor);
           if (Number.isFinite(confirmada)) return Math.max(0, Math.min(10, confirmada)).toFixed(1);
-          return 'â€”';
+          return '—';
       }
       function obtenerDetallePromedioEstudiante(d) {
           const historial = d.historialResultados || {};
@@ -9788,7 +9788,7 @@
           const tituloActual = desafioActual.desafio?.title || 'Sin desafío informado';
           const estadoActual = desafioActual.trabajandoAhora
               ? 'Trabajando ahora'
-              : (desafioActual.conectado ? 'Desafío abierto' : (desafioActual.id ? 'Ãšltimo desafío informado' : 'Sin actividad informada'));
+              : (desafioActual.conectado ? 'Desafío abierto' : (desafioActual.id ? 'Último desafío informado' : 'Sin actividad informada'));
           const estadoActualTexto = desafioActual.siguiente ? 'Siguiente desafío' : estadoActual;
           const conteosFiltros = {
               todos: datos.length,
@@ -10219,7 +10219,7 @@
               alert('Escribí una justificación antes de aplicar una penalización.');
               return;
           }
-          if (notaConfirmada && notaCalculada === 'â€”') {
+          if (notaConfirmada && notaCalculada === '—') {
               alert('Todavía no hay un promedio académico para confirmar.');
               return;
           }
@@ -10711,7 +10711,7 @@
                   const marcas=[seleccionada?'Seleccionada':'',correcta?'Correcta':''].filter(Boolean).join(' · ');
                   return `<span class="${clases}">
                       ${seleccionada ? 'â˜‘' : 'â˜'} ${String.fromCharCode(65+j)}) ${escapeHtml(op?.texto || op?.t || '')}
-                      ${marcas ? `<small style="color:var(--text-muted)"> â€” ${marcas}</small>` : ''}
+                      ${marcas ? `<small style="color:var(--text-muted)"> — ${marcas}</small>` : ''}
                   </span>`;
               }).join('')}
           </div>`;
@@ -11181,7 +11181,7 @@
       }
 
       // ============================================================
-      // DATOS PERSONALES DEL ESTUDIANTE â€” EDICIÃ“N DOCENTE
+      // DATOS PERSONALES DEL ESTUDIANTE — EDICIÃ“N DOCENTE
       // El docente autorizado puede modificar nombre, curso, división y turno.
       // El guardado se realiza por UID en estudiantes/{uid} y no toca progreso,
       // respuestas, códigos, notas ni historial del estudiante.
@@ -11324,7 +11324,7 @@
           const promedio = calcularNotaEstudiante(d);
           const notaCalculada = calcularNotaProvisionalEstudiante(d);
           const notaDefinitiva = calcularNotaDefinitivaEstudiante(d);
-          const notaFinalEditable = notaDefinitiva !== 'â€”' ? notaDefinitiva : notaCalculada;
+          const notaFinalEditable = notaDefinitiva !== '—' ? notaDefinitiva : notaCalculada;
           const detallePromedio = obtenerDetallePromedioEstudiante(d);
           const desafioActualDetalle = obtenerDesafioActualEstudiante(d);
           const graficoNotasDesafios = renderGraficoNotasDesafiosEstudiante(d);
@@ -11461,7 +11461,7 @@
                           <div class="teacher-detail-stat"><small>Intentos</small><strong>${intentosModulo}</strong></div>
                       </div>
                       ${ultimoDesbloqueoModulo ? `<div style="padding:.65rem;border-radius:6px;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.25);margin-bottom:.8rem;line-height:1.5">
-                          <strong><i class="fa-solid fa-unlock-keyhole"></i> Ãšltimo desbloqueo</strong><br>
+                          <strong><i class="fa-solid fa-unlock-keyhole"></i> Último desbloqueo</strong><br>
                           Motivo: ${escapeHtml(ultimoDesbloqueoModulo.motivo || 'Nuevo intento autorizado')}<br>
                           Docente: ${escapeHtml(ultimoDesbloqueoModulo.por || 'Docente autorizado')}
                           ${fechaDesbloqueoModulo ? `<br>Fecha: ${escapeHtml(fechaDesbloqueoModulo)}` : ''}
@@ -11486,7 +11486,7 @@
                               <div>
                                   <h4><i class="fa-solid fa-pen-to-square"></i> Calificación del docente</h4>
                                   <p>${tieneNotaDocente
-                                      ? `Esta nota reemplaza la automática en el promedio. Ãšltima modificación: ${escapeHtml(ajusteNotaDocente.modificadaPor || 'docente autorizado')}.`
+                                      ? `Esta nota reemplaza la automática en el promedio. Última modificación: ${escapeHtml(ajusteNotaDocente.modificadaPor || 'docente autorizado')}.`
                                       : 'Podés reemplazar la nota automática de este desafío sin modificar el código ni las respuestas.'}</p>
                               </div>
                               <span id="estadoNotaDesafioDocente-${sec.id}" class="teacher-challenge-grade-status ${tieneNotaDocente ? 'saved' : ''}">
@@ -11572,7 +11572,7 @@
               ? detallePromedio.evaluadas.map(x=>`${escapeHtml(x.titulo)}: ${x.nota}/10`).join('<br>')
               : 'Todavía no hay actividades con una nota vigente para incluir en el promedio.';
           const formulaPromedio = detallePromedio.promedio !== null
-              ? `${detallePromedio.evaluadas.map(x=>x.nota).join(' + ')} = ${detallePromedio.suma.toFixed(1)}; ${detallePromedio.suma.toFixed(1)} Ã· ${detallePromedio.evaluadas.length} = ${detallePromedio.promedio.toFixed(1)}`
+              ? `${detallePromedio.evaluadas.map(x=>x.nota).join(' + ')} = ${detallePromedio.suma.toFixed(1)}; ${detallePromedio.suma.toFixed(1)} ÷ ${detallePromedio.evaluadas.length} = ${detallePromedio.promedio.toFixed(1)}`
               : 'Pendiente';
           const eventosHtml = eventos.length ? eventos.map(evento => {
               const salida = evento.salidaEn ? new Date(evento.salidaEn).toLocaleString() : 'Sin fecha';
@@ -11580,7 +11580,7 @@
                   ? 'No registrada'
                   : `${evento.duracionSegundos} segundos`;
               const justificacion = evento.justificacion
-                  ? `<div style="margin-top:.4rem;color:#cbd5e1"><strong>Justificación:</strong> ${escapeHtml(evento.justificacion.motivo || '')} â€” ${escapeHtml(evento.justificacion.detalle || '')}</div>`
+                  ? `<div style="margin-top:.4rem;color:#cbd5e1"><strong>Justificación:</strong> ${escapeHtml(evento.justificacion.motivo || '')} — ${escapeHtml(evento.justificacion.detalle || '')}</div>`
                   : '<div style="margin-top:.4rem;color:#fbbf24">Sin justificación del estudiante.</div>';
               return `<div class="teacher-question">
                   <strong>Evento ${Number(evento.numero || 0)} · ${escapeHtml(salida)}</strong>
@@ -11631,15 +11631,15 @@
               <div class="teacher-detail-summary">
                   <div class="teacher-detail-stat"><small>Nombre</small><strong>${escapeHtml(e.nombre || d.nombreGoogle || 'Sin nombre')}</strong></div>
                   <div class="teacher-detail-stat"><small>Email</small><strong>${escapeHtml(d.email || 'Sin email')}</strong></div>
-                  <div class="teacher-detail-stat"><small>Curso y división</small><strong>${escapeHtml(`${e.curso || 'â€”'} ${e.division || ''}`)}</strong></div>
-                   <div class="teacher-detail-stat"><small>Turno</small><strong>${escapeHtml(e.turno || 'â€”')}</strong></div>
+                  <div class="teacher-detail-stat"><small>Curso y división</small><strong>${escapeHtml(`${e.curso || '—'} ${e.division || ''}`)}</strong></div>
+                   <div class="teacher-detail-stat"><small>Turno</small><strong>${escapeHtml(e.turno || '—')}</strong></div>
                    <div class="teacher-detail-stat"><small>Progreso</small><strong>${progreso}%</strong></div>
-                   <div class="teacher-detail-stat teacher-current-challenge-stat"><small>${desafioActualDetalle.siguiente ? 'Siguiente desafío' : 'Desafío actual'}</small><strong>${escapeHtml(desafioActualDetalle.desafio?.title || 'Sin actividad informada')}</strong><span>${desafioActualDetalle.trabajandoAhora ? 'Trabajando ahora' : (desafioActualDetalle.siguiente ? 'Calculado por finalización' : (desafioActualDetalle.id ? 'Ãšltimo informado' : 'Sin conexión activa'))}</span></div>
+                   <div class="teacher-detail-stat teacher-current-challenge-stat"><small>${desafioActualDetalle.siguiente ? 'Siguiente desafío' : 'Desafío actual'}</small><strong>${escapeHtml(desafioActualDetalle.desafio?.title || 'Sin actividad informada')}</strong><span>${desafioActualDetalle.trabajandoAhora ? 'Trabajando ahora' : (desafioActualDetalle.siguiente ? 'Calculado por finalización' : (desafioActualDetalle.id ? 'Último informado' : 'Sin conexión activa'))}</span></div>
                    <div class="teacher-detail-stat"><small>Desafíos con evaluación socrática</small><strong>${actividadesSocraticasValidas.length}</strong></div>
                   <div class="teacher-detail-stat"><small>Total de respuestas socráticas</small><strong>${respuestasSocraticasValidas}</strong></div>
-                  <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === 'â€”' ? 'Pendiente' : `${promedio}/10`}</strong></div>
-                  <div class="teacher-detail-stat"><small>Nota calculada</small><strong>${notaCalculada === 'â€”' ? 'Pendiente' : `${notaCalculada}/10`}</strong></div>
-                  <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === 'â€”' ? 'Pendiente de confirmación' : `${notaDefinitiva}/10`}</strong></div>
+                  <div class="teacher-detail-stat"><small>Promedio académico</small><strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong></div>
+                  <div class="teacher-detail-stat"><small>Nota calculada</small><strong>${notaCalculada === '—' ? 'Pendiente' : `${notaCalculada}/10`}</strong></div>
+                  <div class="teacher-detail-stat"><small>Nota definitiva</small><strong>${notaDefinitiva === '—' ? 'Pendiente de confirmación' : `${notaDefinitiva}/10`}</strong></div>
                   <div class="teacher-detail-stat teacher-level-completa"><small>Respuestas completas</small><strong>${resumenNivelesAnalista.completa}</strong></div>
                   <div class="teacher-detail-stat teacher-level-incompleta"><small>Correctas incompletas</small><strong>${resumenNivelesAnalista.incompleta}</strong></div>
                   <div class="teacher-detail-stat teacher-level-parcial"><small>Respuestas parciales</small><strong>${resumenNivelesAnalista.parcial}</strong></div>
@@ -11647,7 +11647,7 @@
                   <div class="teacher-detail-stat"><small>Estado de cuenta</small><strong style="color:${colorCuentaDetalle}">${estadoCuentaDetalle}</strong></div>
                   <div class="teacher-detail-stat"><small>Salidas de pestaña</small><strong>${Number(d.salidasPestana ?? d.salidasPestana ?? 0)}</strong></div>
                   <div class="teacher-detail-stat"><small>Desbloqueos</small><strong>${cantidadDesbloqueos}</strong></div>
-                   <div class="teacher-detail-stat"><small>Ãšltima actualización</small><strong>${escapeHtml(fecha)}</strong></div>
+                   <div class="teacher-detail-stat"><small>Última actualización</small><strong>${escapeHtml(fecha)}</strong></div>
                </div>
                ${graficoNotasDesafios}
                <button type="button" class="teacher-floating-chart-button" onclick="irAlGraficoNotasEstudiante(this)" title="Ir al gráfico de notas">
@@ -11742,9 +11742,9 @@
                   <div style="margin-top:.4rem;color:var(--text-muted);line-height:1.5">
                     Fecha del bloqueo: ${escapeHtml(d.pantallaBloqueadaEn ? new Date(d.pantallaBloqueadaEn).toLocaleString() : 'Sin bloqueo registrado')}<br>
                     Cantidad de salidas: ${Number(d.pantallaBloqueadaSalidas || d.salidasPestana || 0)}<br>
-                    Ãšltima sección: ${escapeHtml(d.pantallaBloqueadaSeccion || 'Sin identificar')}<br>
+                    Última sección: ${escapeHtml(d.pantallaBloqueadaSeccion || 'Sin identificar')}<br>
                     Total de desbloqueos: ${cantidadDesbloqueos}<br>
-                    Ãšltimo desbloqueo: ${escapeHtml(ultimoDesbloqueoFecha)}<br>
+                    Último desbloqueo: ${escapeHtml(ultimoDesbloqueoFecha)}<br>
                     Realizado por: ${escapeHtml(ultimoDesbloqueo.por || 'Sin registrar')}<br>
                     Motivo: ${escapeHtml(ultimoDesbloqueo.motivo || 'Sin motivo registrado')}
                   </div>
@@ -11754,7 +11754,7 @@
               <details class="teacher-activity">
                   <summary>Cómo se calculó el promedio académico</summary>
                   <div class="teacher-activity-content">
-                      <p><strong>Fórmula:</strong> suma de las notas vigentes evaluadas Ã· cantidad de actividades evaluadas. Las correcciones docentes reemplazan a la nota automática.</p>
+                      <p><strong>Fórmula:</strong> suma de las notas vigentes evaluadas ÷ cantidad de actividades evaluadas. Las correcciones docentes reemplazan a la nota automática.</p>
                       <p style="margin-top:.5rem;"><strong>Cálculo actual:</strong> ${escapeHtml(formulaPromedio)}</p>
                       <p style="margin-top:.7rem;"><strong>Actividades incluidas (${detallePromedio.evaluadas.length}):</strong></p>
                       <div style="margin-top:.35rem;color:#cbd5e1;line-height:1.5">${notasUsadas}</div>
@@ -11793,21 +11793,21 @@
                           </div>
                           <div class="input-group" style="margin-top:.7rem">
                               <label for="notaFinalDocenteProfesor">Nota final que desea confirmar el docente</label>
-                              <input id="notaFinalDocenteProfesor" type="number" min="0" max="10" step="0.1" value="${notaFinalEditable === 'â€”' ? '' : notaFinalEditable}">
+                              <input id="notaFinalDocenteProfesor" type="number" min="0" max="10" step="0.1" value="${notaFinalEditable === '—' ? '' : notaFinalEditable}">
                               <small style="color:var(--text-muted)">Puede conservar la nota calculada o reemplazarla por otro valor entre 0 y 10. Solo será definitiva al marcar la confirmación.</small>
                           </div>
                           <div style="margin-top:.7rem;line-height:1.5">
-                              Promedio académico: <strong>${promedio === 'â€”' ? 'Pendiente' : `${promedio}/10`}</strong><br>
+                              Promedio académico: <strong>${promedio === '—' ? 'Pendiente' : `${promedio}/10`}</strong><br>
                               Penalización: <strong>-${Number(revision.penalizacion || 0).toFixed(1)}</strong><br>
-                              Nota calculada: <strong>${notaCalculada === 'â€”' ? 'Pendiente' : `${notaCalculada}/10`}</strong><br>
-                              Nota definitiva: <strong>${notaDefinitiva === 'â€”' ? 'Pendiente de confirmación docente' : `${notaDefinitiva}/10`}</strong>
+                              Nota calculada: <strong>${notaCalculada === '—' ? 'Pendiente' : `${notaCalculada}/10`}</strong><br>
+                              Nota definitiva: <strong>${notaDefinitiva === '—' ? 'Pendiente de confirmación docente' : `${notaDefinitiva}/10`}</strong>
                               ${revision.notaConfirmada === true && revision.notaModificadaManualmente === true
                                   ? '<br><small>La nota definitiva fue modificada manualmente por el docente.</small>'
                                   : ''}
-                              ${revision.revisadoPor ? `<br><small>Ãšltima revisión: ${escapeHtml(revision.revisadoPor)}</small>` : ''}
+                              ${revision.revisadoPor ? `<br><small>Última revisión: ${escapeHtml(revision.revisadoPor)}</small>` : ''}
                           </div>
                           <label style="display:flex;align-items:flex-start;gap:.55rem;margin-top:.8rem;padding:.75rem;border:1px solid rgba(56,189,248,.35);border-radius:7px;background:rgba(56,189,248,.08);cursor:pointer">
-                              <input id="confirmarNotaDefinitivaProfesor" type="checkbox" ${revision.notaConfirmada === true ? 'checked' : ''} ${notaCalculada === 'â€”' ? 'disabled' : ''} style="margin-top:.2rem">
+                              <input id="confirmarNotaDefinitivaProfesor" type="checkbox" ${revision.notaConfirmada === true ? 'checked' : ''} ${notaCalculada === '—' ? 'disabled' : ''} style="margin-top:.2rem">
                               <span>
                                   <strong>Confirmar nota definitiva</strong><br>
                                   <small>Se confirmará el valor ingresado arriba. Si se modifica el descuento desde el editor rápido, deberá confirmarse nuevamente.</small>
@@ -12405,7 +12405,7 @@
           const nota = calcularNotaProvisionalEstudiante(d);
           indiceEditorDescuentoEstudiante = indice;
           document.getElementById('editarDescuentoSubtitulo').textContent = `${nombre} · ${d.email || 'Sin email'}`;
-          document.getElementById('editarDescuentoNotaActual').textContent = nota === 'â€”' ? 'Pendiente' : `${nota}/10 calculada`;
+          document.getElementById('editarDescuentoNotaActual').textContent = nota === '—' ? 'Pendiente' : `${nota}/10 calculada`;
           document.getElementById('editarDescuentoPuntos').value = Number(revision.penalizacion || 0).toFixed(1);
           document.getElementById('editarDescuentoMotivo').value = revision.motivo || '';
           const error = document.getElementById('editarDescuentoError');
@@ -13013,7 +13013,7 @@
               const email = String(d.email||'').toLowerCase();
               const progreso = calcularProgresoEstudiante(d);
               const notaTexto = calcularNotaDefinitivaEstudiante(d);
-              const nota = notaTexto === 'â€”' ? NaN : Number(notaTexto);
+              const nota = notaTexto === '—' ? NaN : Number(notaTexto);
               const descuento = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
               const alerta = obtenerAlertaConsultasIA(d);
               const actualizado = obtenerMarcaConexionProfesor(d);
@@ -13161,8 +13161,8 @@
           const bloqueados=rows.filter(d=>d.pantallaBloqueada===true).length;
           const desbloqueosTotales=rows.reduce((total,d)=>total+Number(d.cantidadDesbloqueos||0),0);
           const intentosPortapapelesTotales=rows.reduce((total,d)=>total+obtenerResumenPortapapeles(d).total,0);
-          const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='â€”').map(Number);
-          const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'â€”';
+          const notas=rows.map(calcularNotaDefinitivaEstudiante).filter(n=>n!=='—').map(Number);
+          const promedio=notas.length?(notas.reduce((a,b)=>a+b,0)/notas.length).toFixed(1):'—';
           document.getElementById('resumenProfesor').innerHTML=[
               ['Estudiantes',total,'','fa-users'],
               ['Solicitudes pendientes',solicitudesPendientes,'','fa-user-clock'],
@@ -13183,7 +13183,7 @@
               const resumenPortapapelesFila = obtenerResumenPortapapeles(d);
               const riesgoColor = resumenPortapapelesFila.riesgo === 'alto' ? '#fecaca' : (resumenPortapapelesFila.riesgo === 'medio' ? '#fde68a' : '#bfdbfe');
               const portapapelesFilaHtml = resumenPortapapelesFila.total > 0
-                  ? `<div style="margin-top:.35rem;padding:.3rem .45rem;border-radius:5px;background:rgba(239,68,68,.14);color:${riesgoColor};font-size:.7rem;line-height:1.35" title="Copiar: ${resumenPortapapelesFila.conteos.copiar} · Cortar: ${resumenPortapapelesFila.conteos.cortar} · Pegar: ${resumenPortapapelesFila.conteos.pegar} · Ãšltimos 2 min: ${resumenPortapapelesFila.intentosUltimosDosMinutos}">
+                  ? `<div style="margin-top:.35rem;padding:.3rem .45rem;border-radius:5px;background:rgba(239,68,68,.14);color:${riesgoColor};font-size:.7rem;line-height:1.35" title="Copiar: ${resumenPortapapelesFila.conteos.copiar} · Cortar: ${resumenPortapapelesFila.conteos.cortar} · Pegar: ${resumenPortapapelesFila.conteos.pegar} · Últimos 2 min: ${resumenPortapapelesFila.intentosUltimosDosMinutos}">
                       <i class="fa-solid fa-clipboard-list"></i> Portapapeles: <strong>${resumenPortapapelesFila.total}</strong> · Riesgo <strong>${escapeHtml(resumenPortapapelesFila.riesgo)}</strong>
                     </div>`
                   : '';
@@ -13194,7 +13194,7 @@
                       · Comprensión: ${resumenAyudasFila.verificacionesCorrectas}/${resumenAyudasFila.verificacionesIntentadas}
                     </div>`
                   : '';
-              const fecha=d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : 'â€”';
+              const fecha=d.actualizadoEn?.toDate ? d.actualizadoEn.toDate().toLocaleString() : '—';
               const indice=estudiantesProfesor.indexOf(d);
               const inactiva = d.estadoCuenta === 'inactivo';
               const cronometroPausado = d.controlCronometroIndividual?.pausado === true;
@@ -13213,13 +13213,13 @@
               const progresoClase = p >= 100 ? 'is-complete' : (p < 35 ? 'is-low' : '');
               const progresoIcono = p >= 100 ? 'fa-circle-check' : 'fa-chart-line';
               const progresoHtml = `<div class="teacher-progress-indicator ${progresoClase}" title="Progreso completado: ${p}%"><div class="teacher-progress-value"><span>${p}%</span><i class="fa-solid ${progresoIcono}"></i></div><div class="teacher-progress-track" aria-hidden="true"><span class="teacher-progress-fill" style="width:${Math.max(0, Math.min(100, p))}%"></span></div></div>`;
-              const notaNumero = n === 'â€”' ? NaN : Number(n);
+              const notaNumero = n === '—' ? NaN : Number(n);
               const notaClase = !Number.isFinite(notaNumero) ? '' : (notaNumero >= 7 ? 'grade-high' : (notaNumero >= 6 ? 'grade-medium' : 'grade-low'));
               const notaIcono = !Number.isFinite(notaNumero) ? 'fa-minus' : (notaNumero >= 7 ? 'fa-star' : (notaNumero >= 6 ? 'fa-circle-half-stroke' : 'fa-triangle-exclamation'));
               const notaCalculada = calcularNotaProvisionalEstudiante(d);
               const notaHtml = Number.isFinite(notaNumero)
                   ? `<span class="teacher-grade-badge ${notaClase}" title="Nota definitiva confirmada por el docente: ${n}"><i class="fa-solid ${notaIcono}"></i> ${n}</span>`
-                  : `<span class="teacher-grade-badge" title="${notaCalculada === 'â€”' ? 'Sin nota calculada' : `Nota calculada ${notaCalculada}/10, pendiente de confirmación docente`}"><i class="fa-solid fa-clock"></i> ${notaCalculada === 'â€”' ? 'Pendiente' : `${notaCalculada} sin confirmar`}</span>`;
+                  : `<span class="teacher-grade-badge" title="${notaCalculada === '—' ? 'Sin nota calculada' : `Nota calculada ${notaCalculada}/10, pendiente de confirmación docente`}"><i class="fa-solid fa-clock"></i> ${notaCalculada === '—' ? 'Pendiente' : `${notaCalculada} sin confirmar`}</span>`;
               const descuentoPuntos = Math.max(0, Math.min(10, Number(d.revisionSalidas?.penalizacion) || 0));
               const descuentoMotivo = String(d.revisionSalidas?.motivo || '').trim();
               const descuentoTitulo = descuentoPuntos > 0
@@ -13230,7 +13230,7 @@
               const totalIntentosDesafio = Object.values(intentosDesafioFila).reduce((total, valor) => total + Math.max(0, Number(valor || 0)), 0);
               const ultimoDesbloqueoFila = Array.isArray(d.historialDesbloqueosDesafios) ? d.historialDesbloqueosDesafios[d.historialDesbloqueosDesafios.length - 1] : null;
               const ultimoDesbloqueoTitulo = ultimoDesbloqueoFila
-                  ? `Ãšltimo desbloqueo: ${ultimoDesbloqueoFila.motivo || 'Nuevo intento'} · ${ultimoDesbloqueoFila.fecha ? new Date(ultimoDesbloqueoFila.fecha).toLocaleString('es-AR') : 'Sin fecha'}`
+                  ? `Último desbloqueo: ${ultimoDesbloqueoFila.motivo || 'Nuevo intento'} · ${ultimoDesbloqueoFila.fecha ? new Date(ultimoDesbloqueoFila.fecha).toLocaleString('es-AR') : 'Sin fecha'}`
                   : 'Sin desbloqueos de desafíos registrados';
               const intentosDesafioHtml = totalIntentosDesafio
                   ? `<div style="margin-top:.35rem;font-size:.68rem;color:#a7f3d0" title="${escapeHtml(ultimoDesbloqueoTitulo)}"><i class="fa-solid fa-repeat"></i> Intentos de desafíos: ${totalIntentosDesafio}</div>`
@@ -13291,7 +13291,7 @@
           [...document.querySelectorAll('#tablaProfesorBody tr')].forEach((fila, posicion) => {
               const estudiante = rows[posicion];
               if (!estudiante) return;
-              const etiquetasColumnas = ['Acciones','Descuento de puntos','Estudiante','Email','Curso','División','Turno','Estado','Progreso','Nota definitiva','Cambios de pestaña','Ãšltima reapertura','Desbloqueos'];
+              const etiquetasColumnas = ['Acciones','Descuento de puntos','Estudiante','Email','Curso','División','Turno','Estado','Progreso','Nota definitiva','Cambios de pestaña','Última reapertura','Desbloqueos'];
               [...fila.children].forEach((celda, indiceCelda) => {
                   if (etiquetasColumnas[indiceCelda]) celda.setAttribute('data-label', etiquetasColumnas[indiceCelda]);
               });
@@ -13689,7 +13689,7 @@
           doc.line(14, y, 196, y);
           y += 6;
           doc.setFont('helvetica', 'bold');
-          y = agregarTextoPDFProfesor(doc, `Progreso: ${calcularProgresoEstudiante(d)}% · Promedio académico: ${calcularNotaEstudiante(d)} · Nota definitiva: ${calcularNotaDefinitivaEstudiante(d)}`, y);
+          y = agregarTextoPDFProfesor(doc, `Progreso: ${calcularProgresoEstudiante(d)}% · Promedio parcial (desafíos finalizados): ${calcularNotaEstudiante(d)}/10 · Promedio final académico: ${calcularPromedioFinalAcademicoEstudiante(d)}/10 · Nota definitiva docente: ${calcularNotaDefinitivaEstudiante(d)}`, y);
           doc.setFont('helvetica', 'normal');
 
           const actividadesVisibles = [...document.querySelectorAll('#detalleEstudianteProfesorContenido .teacher-activity[data-section-id]')]
@@ -13728,7 +13728,7 @@
               y = agregarTextoPDFProfesor(doc, `${indice + 1}. ${sec.title}`, y);
               doc.setFontSize(8.5);
               y = agregarTextoPDFProfesor(doc, `Estado: ${finalizadas[sec.id] ? 'Finalizada' : 'Pendiente'} · Nota automática: ${r.notaFinal ?? r.notaIA ?? 'Pendiente'} · Nota vigente: ${notaVigente ?? 'Pendiente'}${ajuste.nota !== undefined && ajuste.nota !== null ? ' (corrección docente)' : ''}`, y);
-              y = agregarTextoPDFProfesor(doc, `Intentos: ${intentosDesafio} · Ãšltima reapertura: ${reaperturaDesafio ? formatearFechaPDF(reaperturaDesafio.item.fecha || reaperturaDesafio.item.en) : 'Sin reaperturas registradas'} · Motivo: ${reaperturaDesafio?.item?.motivo || 'Sin motivo registrado'}`, y);
+              y = agregarTextoPDFProfesor(doc, `Intentos: ${intentosDesafio} · Última reapertura: ${reaperturaDesafio ? formatearFechaPDF(reaperturaDesafio.item.fecha || reaperturaDesafio.item.en) : 'Sin reaperturas registradas'} · Motivo: ${reaperturaDesafio?.item?.motivo || 'Sin motivo registrado'}`, y);
               doc.setFont('helvetica', 'normal');
               y = agregarTextoPDFProfesor(doc, `Consigna: ${sec.exerciseDesc || 'Sin consigna'}`, y);
               if (evaluacion.nota !== undefined) {
@@ -13806,7 +13806,7 @@
           });
           const progreso = estudiantes.map(d => Number(calcularProgresoEstudiante(d)) || 0);
           const notaValida = valor => {
-              if (valor === null || valor === undefined || valor === '' || valor === '—' || valor === 'â€”') return null;
+              if (valor === null || valor === undefined || valor === '' || valor === '—' || valor === '—') return null;
               const numero = Number(valor);
               return Number.isFinite(numero) && numero >= 0 && numero <= 10 ? numero : null;
           };
@@ -14396,8 +14396,8 @@
               }, { errores: 0, pendientes: 0, modificadas: 0, finalizadas: 0 });
           };
           const estadisticas = estudiantes.map(d => ({ estudiante: d, ...contarSituacionDesafios(d) }));
-          const notasAcademicas = estudiantes.map(calcularNotaEstudiante).filter(x => x !== 'â€”').map(Number);
-          const notasDefinitivas = estudiantes.map(calcularNotaDefinitivaEstudiante).filter(x => x !== 'â€”').map(Number);
+          const notasAcademicas = estudiantes.map(calcularNotaEstudiante).filter(x => x !== '—').map(Number);
+          const notasDefinitivas = estudiantes.map(calcularNotaDefinitivaEstudiante).filter(x => x !== '—').map(Number);
           const promedio = valores => valores.length
               ? (valores.reduce((a, b) => a + b, 0) / valores.length).toFixed(1)
               : 'Pendiente';
@@ -14434,7 +14434,7 @@
           doc.setFontSize(9);
           y = agregarTextoPDFProfesor(doc, [
               `Estudiantes: ${estudiantes.length} · Cuentas activas: ${activas} · Solicitudes pendientes: ${pendientesCuenta} · Inactivas o rechazadas: ${inactivas}`,
-              `Progreso promedio: ${progresoPromedio}% · Promedio académico: ${promedio(notasAcademicas)}/10 · Promedio definitivo confirmado: ${promedio(notasDefinitivas)}/10`,
+              `Progreso promedio: ${progresoPromedio}% · Promedio parcial del grupo: ${promedio(notasAcademicas)}/10 · Promedio definitivo confirmado: ${promedio(notasDefinitivas)}/10`,
               `Desafíos con errores: ${totalErrores} · Desafíos pendientes: ${totalPendientes} · Notas corregidas por docentes: ${totalModificadas}`,
               `Cambios de pestaña: ${totalSalidas} · Desbloqueos registrados: ${totalDesbloqueos}`
           ].join('\n'), y, { altoLinea: 5 });
@@ -14451,7 +14451,7 @@
               y = agregarTextoPDFProfesor(
                   doc,
                   `${indice + 1}. ${e.nombre || d.nombreGoogle || 'Sin nombre'} · ${d.email || 'Sin email'}\n` +
-                  `Estado: ${textoEstadoCuenta(d)} · Progreso: ${calcularProgresoEstudiante(d)}% · Promedio: ${calcularNotaEstudiante(d)}/10 · Nota definitiva: ${notaDefinitiva === 'â€”' ? 'Pendiente' : `${notaDefinitiva}/10`} · Errores: ${item.errores} · Pendientes: ${item.pendientes} · Correcciones docentes: ${item.modificadas}`,
+                  `Estado: ${textoEstadoCuenta(d)} · Progreso: ${calcularProgresoEstudiante(d)}% · Promedio parcial: ${calcularNotaEstudiante(d)}/10 · Promedio final académico: ${calcularPromedioFinalAcademicoEstudiante(d)}/10 · Nota definitiva docente: ${notaDefinitiva === '—' ? 'Pendiente' : `${notaDefinitiva}/10`} · Errores: ${item.errores} · Pendientes: ${item.pendientes} · Correcciones docentes: ${item.modificadas}`,
                   y,
                   { altoLinea: 4 }
               );
@@ -14482,8 +14482,8 @@
               y = agregarTextoPDFProfesor(doc, [
                   `Email: ${d.email || 'Sin email'} · UID: ${d.uid || 'Sin registrar'}`,
                   `Grupo: ${grupo} · Estado: ${textoEstadoCuenta(d)}`,
-                  `Ãšltima actualización: ${formatearFechaPDF(d.actualizadoEn)}`,
-                  `Progreso: ${calcularProgresoEstudiante(d)}% · Promedio académico: ${calcularNotaEstudiante(d)}/10 · Nota calculada: ${calcularNotaProvisionalEstudiante(d)}/10 · Nota definitiva: ${calcularNotaDefinitivaEstudiante(d) === 'â€”' ? 'Pendiente' : `${calcularNotaDefinitivaEstudiante(d)}/10`}`,
+                  `Última actualización: ${formatearFechaPDF(d.actualizadoEn)}`,
+                  `Progreso: ${calcularProgresoEstudiante(d)}% · Promedio parcial: ${calcularNotaEstudiante(d)}/10 · Promedio final académico: ${calcularPromedioFinalAcademicoEstudiante(d)}/10 · Nota calculada con revisión: ${calcularNotaProvisionalEstudiante(d)}/10 · Nota definitiva docente: ${calcularNotaDefinitivaEstudiante(d) === '—' ? 'Pendiente' : `${calcularNotaDefinitivaEstudiante(d)}/10`}`,
                   `Desafíos finalizados: ${resumen.finalizadas}/${seccionesData.length} · Con errores: ${resumen.errores} · Pendientes: ${resumen.pendientes} · Notas docentes: ${resumen.modificadas}`,
                   d.estadoCuenta === 'inactivo' ? `Baja: ${d.bajaMotivo || 'Sin motivo'} · Fecha: ${formatearFechaPDF(d.bajaFecha)} · Responsable: ${d.bajaPor || 'Sin registrar'}` : '',
                   d.estadoCuenta === 'rechazado' ? `Rechazo: ${d.rechazoMotivo || 'Sin motivo'} · Fecha: ${formatearFechaPDF(d.rechazadoEn)} · Responsable: ${d.rechazadoPor || 'Sin registrar'}` : ''
@@ -14504,8 +14504,8 @@
                   `Confirmación de nota final: ${revision.notaConfirmada === true ? 'Confirmada' : 'Pendiente'}${revision.notaModificadaManualmente === true ? ' · Modificada manualmente por el docente' : ''}`,
                   `Cambios de pestaña: ${Number(d.salidasPestana || 0)} · Pantalla bloqueada: ${d.pantallaBloqueada === true ? 'Sí' : 'No'} · Desbloqueos: ${Number(d.cantidadDesbloqueos || 0)}`,
                   d.ultimoDesbloqueo || d.desbloqueoPantalla
-                      ? `Ãšltimo desbloqueo: ${formatearFechaPDF((d.ultimoDesbloqueo || d.desbloqueoPantalla).en)} · Docente: ${(d.ultimoDesbloqueo || d.desbloqueoPantalla).por || 'Sin registrar'} · Motivo: ${(d.ultimoDesbloqueo || d.desbloqueoPantalla).motivo || 'Sin motivo'}`
-                      : 'Ãšltimo desbloqueo: sin registros'
+                      ? `Último desbloqueo: ${formatearFechaPDF((d.ultimoDesbloqueo || d.desbloqueoPantalla).en)} · Docente: ${(d.ultimoDesbloqueo || d.desbloqueoPantalla).por || 'Sin registrar'} · Motivo: ${(d.ultimoDesbloqueo || d.desbloqueoPantalla).motivo || 'Sin motivo'}`
+                      : 'Último desbloqueo: sin registros'
               ].join('\n'), y, { altoLinea: 4.2 });
 
               if (eventos.length) {
@@ -14560,7 +14560,7 @@
                   y = agregarTextoPDFProfesor(doc, [
                       `Estado: ${finalizadas[sec.id] ? 'Finalizado' : 'Pendiente'}`,
                       `Nota del código (70%): ${r.notaCodigo ?? 'Pendiente'} · Nota de preguntas (30%): ${r.notaPreguntas ?? 'Pendiente'} · Nota automática: ${notaAutomatica ?? 'Pendiente'} · Nota vigente: ${notaVigente ?? 'Pendiente'}${ajuste.nota !== undefined && ajuste.nota !== null ? ' (corregida por docente)' : ''}`,
-                      `Intentos: ${intentosDesafio} · Ãšltima reapertura: ${reaperturaDesafio ? formatearFechaPDF(reaperturaDesafio.item.fecha || reaperturaDesafio.item.en) : 'Sin reaperturas registradas'} · Motivo: ${reaperturaDesafio?.item?.motivo || 'Sin motivo registrado'}`,
+                      `Intentos: ${intentosDesafio} · Última reapertura: ${reaperturaDesafio ? formatearFechaPDF(reaperturaDesafio.item.fecha || reaperturaDesafio.item.en) : 'Sin reaperturas registradas'} · Motivo: ${reaperturaDesafio?.item?.motivo || 'Sin motivo registrado'}`,
                       `Tiempo restante: ${formatearTiempoProfesor(tiempos[sec.id] ?? 2400)} · Consultas de nota previa: ${Number(previews[sec.id] || 0)}/3`,
                       `Ayudas pedagógicas: palabras consultadas ${consultasPalabras} · pasos abiertos ${Number(ayudaModulo.pasosVistos || 0)} · material de apoyo ${Number(ayudaModulo.materialApoyoVistas || 0)} · verificación ${Number(ayudaModulo.verificacion?.intentos || 0)} intento(s)`
                   ].join('\n'), y, { altoLinea: 4 });
@@ -14768,7 +14768,7 @@
       function obtenerActividadesInformeEstudianteActual() {
           return seccionesData.map((sec, indice) => {
               const detalleNota = obtenerNotaVigenteModuloEstudiante(sec.id);
-              const finalizada = actividadesFinalizadas[sec.id] === true;
+              const finalizada = obtenerFinalizadasEfectivasEstudiante({ finalizadas: actividadesFinalizadas })[sec.id] === true;
               const analista = finalizada ? historialResultados[sec.id]?.analista : null;
               const conteoSocratico = obtenerConteoNivelesAnalista(analista);
               return {
@@ -14962,7 +14962,7 @@
                           Number(actividad.conteoSocratico.incorrecta || 0);
                       return `<article class="student-heatmap-cell ${colores(actividad)}" title="${escapeHtml(`${actividad.titulo}: ${actividad.finalizada ? (Number.isFinite(actividad.nota) ? `${actividad.nota.toFixed(1)}/10` : "sin nota") : "pendiente"} · ${actividad.respuestasSocraticas} respuestas · ${riesgo} a reforzar`)}">
                           <span>${actividad.indice}</span>
-                          <strong>${Number.isFinite(actividad.nota) ? actividad.nota.toFixed(1) : (actividad.finalizada ? "â€”" : "P")}</strong>
+                          <strong>${Number.isFinite(actividad.nota) ? actividad.nota.toFixed(1) : (actividad.finalizada ? "—" : "P")}</strong>
                           <small>${escapeHtml(actividad.titulo.replace(/^\d+\.\s*/, ""))}</small>
                       </article>`;
                   }).join("")}</div>
@@ -15050,7 +15050,11 @@
           const notasFinales = actividadesEvaluadasPDF.map(x => x.nota);
           const sumaNotasFinales = notasFinales.reduce((a,b)=>a+b,0);
           const promedioFinalNumero = notasFinales.length ? sumaNotasFinales / notasFinales.length : null;
-          const promedioFinal = promedioFinalNumero !== null ? promedioFinalNumero.toFixed(2) : 'Sin evaluar';
+          const promedioParcialPDF = promedioFinalNumero !== null ? promedioFinalNumero.toFixed(2) : 'Sin evaluar';
+          const todasFinalizadasPDF = actividadesInformeEstudiante.length > 0 && actividadesInformeEstudiante.every(item => item.finalizada);
+          const todasConNotaPDF = actividadesEvaluadasPDF.length === actividadesInformeEstudiante.length;
+          const promedioFinalAcademicoPDF = todasFinalizadasPDF && todasConNotaPDF && promedioFinalNumero !== null ? promedioFinalNumero.toFixed(2) : 'Pendiente';
+          const promedioFinal = promedioParcialPDF;
           const penalizacionRevision = Math.max(0, Math.min(10, Number(revisionSalidasActual.penalizacion) || 0));
           const notaCalculadaNumero = promedioFinalNumero !== null
               ? Math.max(0, promedioFinalNumero - penalizacionRevision)
@@ -15064,9 +15068,13 @@
           const notaCalculadaPDF = notaCalculadaNumero !== null ? notaCalculadaNumero.toFixed(2) : 'Sin evaluar';
           const notaDefinitivaPDF = notaDefinitivaNumero !== null ? notaDefinitivaNumero.toFixed(2) : 'Pendiente';
           doc.setFontSize(11);
-          doc.text(`Promedio académico: ${promedioFinal}/10 | Nota calculada: ${notaCalculadaPDF}/10`, 14, yPos);
+          doc.text(`Promedio parcial (desafíos finalizados): ${promedioParcialPDF}/10`, 14, yPos);
           yPos += 6;
-          doc.text(`Nota definitiva: ${notaDefinitivaNumero !== null ? `${notaDefinitivaPDF}/10 (confirmada por docente)` : 'pendiente de confirmación docente'}`, 14, yPos);
+          doc.text(`Promedio final académico: ${promedioFinalAcademicoPDF === 'Pendiente' ? 'pendiente: faltan desafíos finalizados o notas' : `${promedioFinalAcademicoPDF}/10`}`, 14, yPos);
+          yPos += 6;
+          doc.text(`Nota calculada con revisión: ${notaCalculadaPDF}/10`, 14, yPos);
+          yPos += 6;
+          doc.text(`Nota definitiva docente: ${notaDefinitivaNumero !== null ? `${notaDefinitivaPDF}/10 (confirmada)` : 'pendiente de confirmación'}`, 14, yPos);
           yPos += 9;
 
           const resumenProgresoPDF = obtenerResumenProgresoEstudiante({ finalizadas: Object.fromEntries(actividadesInformeEstudiante.map(item => [item.id, item.finalizada])) });
@@ -15378,7 +15386,7 @@
           doc.setFont("helvetica", "normal");
           doc.setFontSize(9);
           const formulaGeneral = doc.splitTextToSize(
-              "Fórmula: suma de las notas vigentes de las actividades evaluadas Ã· cantidad de actividades evaluadas. Cuando existe una corrección docente, esa nota reemplaza a la automática en el promedio. Las actividades pendientes no se incluyen.",
+              "Promedio parcial: suma de las notas vigentes de los desafíos finalizados ÷ cantidad de desafíos finalizados con nota. La nota docente reemplaza a la automática cuando existe una corrección. Los desafíos pendientes no se incluyen. El promedio final académico solo se informa cuando todos los desafíos están finalizados y tienen nota.",
               180
           );
           doc.text(formulaGeneral, 14, yPos);
@@ -15412,7 +15420,7 @@
               doc.text(lineasSuma, 14, yPos);
               yPos += lineasSuma.length * 4 + 1;
               doc.text(
-                  `División: ${sumaNotasFinales.toFixed(1)} Ã· ${actividadesEvaluadasPDF.length} actividades = ${promedioFinal}/10`,
+                  `Cálculo del promedio parcial: ${sumaNotasFinales.toFixed(1)} ÷ ${actividadesEvaluadasPDF.length} desafíos finalizados con nota = ${promedioParcialPDF}/10`,
                   14,
                   yPos
               );
@@ -15437,7 +15445,7 @@
           doc.text(lineasMotivoRevision, 14, yPos);
           yPos += lineasMotivoRevision.length * 4 + 1;
           doc.text(
-              `Cálculo provisorio: ${promedioFinal}/10 - ${penalizacionRevision.toFixed(1)} = ${notaCalculadaPDF}/10`,
+              `Cálculo provisorio: promedio parcial ${promedioParcialPDF}/10 - descuento docente ${penalizacionRevision.toFixed(1)} = ${notaCalculadaPDF}/10`,
               14,
               yPos
           );
