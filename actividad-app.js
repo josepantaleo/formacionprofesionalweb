@@ -4802,17 +4802,19 @@
               : ejecucionIntentada
                   ? (resultadoEjecucion?.ok ? 1 : 0)
                   : 0.45;
+          // Sin salida esperada definida, la ejecución correcta acredita que corre,
+          // pero no se presume que el resultado sea correcto: se usa una evidencia neutral.
           const similitudSalida = salidaEsperada
               ? calcularSimilitudSalida(salidaReal, salidaEsperada)
-              : (limpiarSalidaEvaluacion(salidaReal) ? 0.75 : (resultadoEjecucion?.ok ? 0.55 : 0));
+              : (resultadoEjecucion?.ok ? 0.5 : 0);
           const puntajeComportamiento = esPlantilla || !sintaxis.valida || !resultadoEjecucion?.ok
               ? 0
               : similitudSalida;
           const suficiencia = Math.min(1, instruccionesEstimadas / Math.max(2, Math.min(6, conceptos.length + 1)));
           const puntajeEstructura = esPlantilla ? 0 : Math.max(0, Math.min(1,
-              proporcionConceptos * 0.55 +
-              suficiencia * 0.2 +
-              coberturaReferencia * 0.15 +
+              proporcionConceptos * 0.6 +
+              suficiencia * 0.25 +
+              coberturaReferencia * 0.05 +
               coberturaNombresExigidos * 0.1 +
               (complejidad || conceptos.length <= 1 ? 0.05 : 0)
           ));
@@ -4899,10 +4901,8 @@
               nota = Math.min(nota, 5);
               limites.push("Faltan identificadores o funciones expresamente solicitados en la consigna: nota máxima 5.");
           }
-          if (!esPlantilla && referencia && coberturaReferencia < 0.45) {
-              nota = Math.min(nota, 6);
-              limites.push("La implementación no demuestra suficientes estructuras de la solución esperada: nota máxima 6.");
-          }
+          // No se limita la nota por diferir de aiSolution: soluciones alternativas válidas
+          // deben poder obtener buena nota. La referencia solo aporta una evidencia menor.
           if (resultadoEjecucion?.ok && salidaEsperada && similitudSalida < 0.35) {
               nota = Math.min(nota, 6);
               limites.push("La salida difiere sustancialmente de la referencia: nota máxima 6.");
@@ -4923,7 +4923,7 @@
           if (conceptosCumplidos) fortalezas.push(`Se verificaron ${conceptosCumplidos}/${evidenciasConceptos.length || conceptos.length || 1} conceptos esperados.`);
           if (evidenciasConceptos.some(x => !x.cumple)) mejoras.push("Completar las estructuras que exige la consigna.");
           if (coberturaNombresExigidos < 1 && nombresExigidos.length) mejoras.push(`Incorporar los identificadores exigidos: ${nombresExigidos.filter(nombre => !nombresExigidosCumplidos.includes(nombre)).join(", ")}.`);
-          if (referencia && coberturaReferencia < 0.75) mejoras.push("Comparar la estructura de tu solución con las acciones y métodos pedidos, sin copiar la referencia.");
+          if (referencia && coberturaReferencia < 0.45 && evidenciasConceptos.some(x => !x.cumple)) mejoras.push("Revisar los requisitos de la consigna; se aceptan soluciones alternativas que cumplan el mismo objetivo.");
           if (puntajeComportamiento >= 0.8) fortalezas.push("La salida coincide razonablemente con el comportamiento de referencia.");
           else if (salidaEsperada) mejoras.push("Revisar la salida: no coincide suficientemente con el comportamiento esperado.");
           if (puntajeCalidad < 0.65) mejoras.push("Mejorar nombres, declaraciones y organización del código.");

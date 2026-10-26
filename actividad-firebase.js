@@ -1655,7 +1655,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
                   rol: datos.rol === "docente" ? "docente" : "estudiante",
                   propio: datos.clienteId === clienteId,
                   inactivo: !activoMs || ahora - activoMs > 45000,
-                  activoMs
+                  activoMs,
+                  cursorInicio: Math.max(0, Number(datos.cursorInicio) || 0),
+                  cursorFin: Math.max(0, Number(datos.cursorFin) || 0),
+                  escribiendo: datos.escribiendo === true
                 };
               }).filter(item => !item.activoMs || ahora - item.activoMs < 120000)
                 .sort((a, b) => Number(b.propio) - Number(a.propio) || b.activoMs - a.activoMs);
@@ -1701,6 +1704,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         );
 
         let ultimaPresenciaPublicada = "";
+        let ultimaPosicionCursor = { inicio: 0, fin: 0 };
         const actualizarPresencia = (cursor = {}, forzar = false) => {
           const cooperacionAceptada = rol === "docente"
             ? true
@@ -1708,8 +1712,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           if (!cooperacionAceptada) {
             return deleteDoc(presenciaRef).catch(() => {});
           }
-          const inicio = Math.max(0, Number(cursor.inicio) || 0);
-          const fin = Math.max(0, Number(cursor.fin) || 0);
+          if (cursor && (Number.isFinite(Number(cursor.inicio)) || Number.isFinite(Number(cursor.fin)))) {
+            ultimaPosicionCursor = {
+              inicio: Math.max(0, Number(cursor.inicio) || 0),
+              fin: Math.max(0, Number(cursor.fin) || 0)
+            };
+          }
+          const { inicio, fin } = ultimaPosicionCursor;
           const clavePresencia = `${inicio}:${fin}`;
           if (!forzar && clavePresencia === ultimaPresenciaPublicada) return Promise.resolve();
           ultimaPresenciaPublicada = clavePresencia;
@@ -1731,7 +1740,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           iniciarEscuchaPresencia();
           await actualizarPresencia();
         }
-        const latido = setInterval(() => actualizarPresencia({}, true), 20000);
+        const latido = setInterval(() => actualizarPresencia(ultimaPosicionCursor, true), 20000);
         const sesion = {
           clave,
           documento,
@@ -2019,6 +2028,40 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         } else {
           textarea.parentElement?.insertBefore(autorCambioElemento, textarea);
         }
+        const cambioDetalle = document.createElement("div");
+        cambioDetalle.className = "collaboration-change-detail";
+        cambioDetalle.setAttribute("aria-live", "polite");
+        cambioDetalle.style.cssText = "display:none;margin:.35rem 0;padding:.55rem .7rem;border-left:4px solid #38bdf8;border-radius:0 6px 6px 0;background:rgba(14,165,233,.09);color:var(--text-color,#cbd5e1);font:12px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere";
+        if (autorCambioElemento.parentElement) autorCambioElemento.insertAdjacentElement("afterend", cambioDetalle);
+        else textarea.parentElement?.insertBefore(cambioDetalle, textarea);
+        const cursorRemotoElemento = document.createElement("div");
+        cursorRemotoElemento.className = "collaboration-remote-cursor";
+        cursorRemotoElemento.style.cssText = "display:none;margin:.25rem 0;color:#a7f3d0;font-size:.78rem";
+        cambioDetalle.insertAdjacentElement("afterend", cursorRemotoElemento);
+        let temporizadorDetalleCambio = null;
+        const obtenerLinea = (texto, indice) => String(texto || "").slice(0, Math.max(0, indice)).split("\n").length;
+        const mostrarDetalleCambioRemoto = (anterior, siguiente, rol, nombre = "") => {
+          let prefijo = 0;
+          const limite = Math.min(anterior.length, siguiente.length);
+          while (prefijo < limite && anterior[prefijo] === siguiente[prefijo]) prefijo++;
+          let sufijo = 0;
+          while (sufijo < anterior.length - prefijo && sufijo < siguiente.length - prefijo &&
+                 anterior[anterior.length - 1 - sufijo] === siguiente[siguiente.length - 1 - sufijo]) sufijo++;
+          const lineaInicio = obtenerLinea(siguiente, prefijo);
+          const tramo = siguiente.slice(prefijo, Math.max(prefijo, siguiente.length - sufijo));
+          const lineas = tramo.split("\n").slice(0, 5);
+          const esDocente = rol === "docente";
+          cambioDetalle.style.display = "block";
+          cambioDetalle.style.borderLeftColor = esDocente ? "#60a5fa" : "#34d399";
+          cambioDetalle.textContent = `${esDocente ? "DOCENTE" : "ESTUDIANTE"} modificó cerca de la línea ${lineaInicio}${nombre ? ` · ${String(nombre).split("@")[0]}` : ""}\n` +
+            (lineas.filter(Boolean).length ? lineas.map(linea => `+ ${linea}`).join("\n") : "+ Se modificó o eliminó texto en esta zona.");
+          textarea.style.boxShadow = `inset 4px 0 0 ${esDocente ? "#60a5fa" : "#34d399"}`;
+          clearTimeout(temporizadorDetalleCambio);
+          temporizadorDetalleCambio = setTimeout(() => {
+            cambioDetalle.style.display = "none";
+            textarea.style.boxShadow = "";
+          }, 6500);
+        };
         let quitarModoCooperacion = () => {};
         if (sesion.rol === "estudiante") {
           quitarModoCooperacion = sesion.onModoCooperacion(modo => {
@@ -2045,8 +2088,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         };
         const aplicarRemoto = (_, transaccion) => {
           if (transaccion.origin === origenLocal) return;
+          const anterior = textarea.value;
           const siguiente = sesion.texto.toString();
-          if (textarea.value === siguiente) return;
+          if (anterior === siguiente) return;
           const inicio = textarea.selectionStart || 0;
           const fin = textarea.selectionEnd || inicio;
           textarea.value = siguiente;
@@ -2058,10 +2102,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
             programarGuardadoFirebase();
           }
           textarea.dispatchEvent(new CustomEvent("crdt-remote-change", { bubbles: true }));
-          marcarCambio(
-            transaccion.origin?.rol || (sesion.rol === "docente" ? "estudiante" : "docente"),
-            transaccion.origin?.autorEmail || ""
-          );
+          const rolRemoto = transaccion.origin?.rol || (sesion.rol === "docente" ? "estudiante" : "docente");
+          const nombreRemoto = transaccion.origin?.autorEmail || "";
+          marcarCambio(rolRemoto, nombreRemoto);
+          mostrarDetalleCambioRemoto(anterior, siguiente, rolRemoto, nombreRemoto);
         };
         const sincronizarTextoLocal = () => {
           const anterior = sesion.texto.toString();
@@ -2122,8 +2166,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           resumen.innerHTML = `<i class="fa-solid ${otrosActivos.length ? "fa-user-group" : "fa-user-clock"}"></i><span>${otrosActivos.length ? `${otrosActivos.length + 1} conectados` : "Solo vos"}</span>`;
           presenciaElemento.appendChild(resumen);
 
+          const otroEscribiendo = otrosActivos.find(item => item.escribiendo);
+          if (otroEscribiendo) {
+            const linea = obtenerLinea(textarea.value, otroEscribiendo.cursorInicio);
+            cursorRemotoElemento.style.display = "block";
+            cursorRemotoElemento.textContent = `${otroEscribiendo.rol === "docente" ? "Docente" : "Estudiante"} ${otroEscribiendo.nombre || "participante"} · cursor cerca de la línea ${linea}`;
+          } else {
+            cursorRemotoElemento.style.display = "none";
+          }
           participantes.slice(0, 4).forEach(item => {
-            const persona = document.createElement("span");
             persona.className = `collaboration-presence-person${item.inactivo ? " is-idle" : ""}`;
             const nombre = item.propio ? "Vos" : String(item.nombre || "Participante");
             const rol = item.rol === "docente" ? "Docente" : "Estudiante";
@@ -2468,7 +2519,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
         const desvincular = () => {
           clearTimeout(temporizadorPresencia);
           clearTimeout(temporizadorAutorCambio);
+          clearTimeout(temporizadorDetalleCambio);
           textarea.classList.remove("crdt-change-teacher", "crdt-change-student");
+          cambioDetalle.remove();
+          cursorRemotoElemento.remove();
+          textarea.style.boxShadow = "";
           textarea.removeEventListener("input", aplicarLocal);
           textarea.removeEventListener("keyup", actualizarCursor);
           textarea.removeEventListener("click", actualizarCursor);
