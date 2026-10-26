@@ -3528,8 +3528,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               collection(database, "estudiantes", uid, "historialNotasDesafios"),
               historialId
             );
+            const finalizadasActuales = { ...(datos.finalizadas || {}) };
+            // Una calificación docente válida finaliza el desafío automáticamente.
+            if (Number.isFinite(valorNuevo) && valorNuevo >= 0 && valorNuevo <= 10) {
+              finalizadasActuales[sectionId] = true;
+            }
             transaction.set(estudianteRef, {
               notasDesafiosDocente: notasDocente,
+              finalizadas: finalizadasActuales,
               revisionSalidas: {
                 ...revisionAnterior,
                 notaConfirmada: false,

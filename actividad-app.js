@@ -9424,16 +9424,19 @@
       }
 
       function obtenerFinalizadasEfectivasEstudiante(d = {}) {
-          // Solo cuentan desafíos marcados explícitamente como finalizados.
-          // Tener una nota guardada, por sí solo, no convierte un desafío pendiente en finalizado.
-          // Compatibilidad con ambos nombres de campo usados por el estado local y Firestore.
+          // Una marca explícita o una nota automática/docente válida finaliza el desafío.
           const finalizadasGuardadas = d?.finalizadas && typeof d.finalizadas === 'object' ? d.finalizadas : {};
           const finalizadasLocales = d?.actividadesFinalizadas && typeof d.actividadesFinalizadas === 'object' ? d.actividadesFinalizadas : {};
+          const historial = d?.historialResultados && typeof d.historialResultados === 'object' ? d.historialResultados : {};
+          const notasDocente = d?.notasDesafiosDocente && typeof d.notasDesafiosDocente === 'object' ? d.notasDesafiosDocente : {};
           const finalizadas = {};
           seccionesData.forEach(sec => {
               const tieneMarcaNueva = Object.prototype.hasOwnProperty.call(finalizadasGuardadas, sec.id);
               const valor = tieneMarcaNueva ? finalizadasGuardadas[sec.id] : finalizadasLocales[sec.id];
-              finalizadas[sec.id] = esDesafioFinalizado(valor);
+              const notaDocente = convertirNotaValida(notasDocente[sec.id]?.nota);
+              const resultado = historial[sec.id] || {};
+              const notaAutomatica = convertirNotaValida(resultado.notaFinal) ?? convertirNotaValida(resultado.notaIA);
+              finalizadas[sec.id] = esDesafioFinalizado(valor) || notaDocente !== null || notaAutomatica !== null;
           });
           return finalizadas;
       }
