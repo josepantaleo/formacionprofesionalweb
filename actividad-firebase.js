@@ -1627,7 +1627,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
           });
         }, error => {
           console.error("Error escuchando actualizaciones CRDT:", error);
-          notificar("error", "ConexiÃƒ³n colaborativa interrumpida");
+          const detalle = error?.code === "permission-denied"
+            ? "Firestore denegó la lectura de cambios colaborativos. Revisá las reglas publicadas."
+            : `Conexión colaborativa interrumpida${error?.code ? ` (${error.code})` : ""}`;
+          notificar("error", detalle);
         });
 
         let detenerPresencia = null;

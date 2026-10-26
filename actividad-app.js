@@ -1258,6 +1258,19 @@
           );
           editor.disabled = bloqueado;
           editor.__setCodeMirrorDisabled?.(bloqueado);
+          // Reintenta iniciar CRDT cuando el editor pasa de bloqueado a habilitado.
+          // La inicialización al cargar podía ocurrir antes de que empezara la clase.
+          if (!bloqueado && cuentaEstudianteActiva && claseHabilitada &&
+              typeof window.iniciarColaboracionCRDTEstudiante === "function") {
+              clearTimeout(window.__temporizadorInicioCRDTEstudiante);
+              window.__temporizadorInicioCRDTEstudiante = setTimeout(async () => {
+                  if (window.__sesionCRDTEstudianteActiva || window.__inicioCRDTEstudianteEnCurso) return;
+                  window.__inicioCRDTEstudianteEnCurso = true;
+                  try { await window.iniciarColaboracionCRDTEstudiante(); }
+                  catch (error) { console.error("No se pudo iniciar la sincronización colaborativa:", error); }
+                  finally { window.__inicioCRDTEstudianteEnCurso = false; }
+              }, 150);
+          }
           return bloqueado;
       }
       window.actualizarBloqueoEditorEstudiante = actualizarBloqueoEditorEstudiante;
