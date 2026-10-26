@@ -12722,6 +12722,189 @@
               .sort((a, b) => b.tiempo - a.tiempo)[0] || null;
       }
 
+      // Editor CRDT compartido: el docente y el estudiante escriben sobre
+      // el mismo documento Yjs y las actualizaciones se distribuyen por Firestore.
+      let editorColaborativoProfesorActual = null;
+
+      function buscarEstudianteParaColaboracion(referencia) {
+          const lista = Array.isArray(estudiantesProfesor) ? estudiantesProfesor : [];
+          if (typeof referencia === 'number' || (/^\d+$/.test(String(referencia)) && !lista.some(x => String(x.uid || x.id) === String(referencia)))) {
+              return lista[Number(referencia)] || null;
+          }
+          return lista.find(item => String(item?.uid || item?.id || '') === String(referencia || '')) || null;
+      }
+
+      async function cerrarEditorColaborativoProfesor() {
+          const actual = editorColaborativoProfesorActual;
+          if (!actual) return true;
+          const botonCerrar = actual.modal?.querySelector('[data-action="close"]');
+          if (botonCerrar) {
+              botonCerrar.disabled = true;
+              botonCerrar.textContent = 'Sincronizando…';
+          }
+          try {
+              if (actual.sesion) {
+                  const cerrado = await actual.sesion.destroy();
+                  if (cerrado === false) {
+                      if (actual.estado) actual.estado.textContent = 'Hay cambios pendientes. Esperá a que se sincronicen antes de cerrar.';
+                      if (botonCerrar) {
+                          botonCerrar.disabled = false;
+                          botonCerrar.textContent = 'Cerrar';
+                      }
+                      return false;
+                  }
+              }
+              actual.textarea?.__desvincularCRDT?.();
+              actual.quitarEstado?.();
+              actual.quitarPresencia?.();
+              actual.modal?.remove();
+              editorColaborativoProfesorActual = null;
+              return true;
+          } catch (error) {
+              console.error('No se pudo cerrar la sesión colaborativa:', error);
+              if (actual.estado) actual.estado.textContent = `No se pudo cerrar: ${error?.message || 'error de sincronización'}`;
+              if (botonCerrar) {
+                  botonCerrar.disabled = false;
+                  botonCerrar.textContent = 'Cerrar';
+              }
+              return false;
+          }
+      }
+      window.cerrarEditorColaborativoProfesor = cerrarEditorColaborativoProfesor;
+
+      window.abrirEditorColaborativoProfesor = async function(referenciaEstudiante, sectionId) {
+          const autorizado = Boolean(
+              document.body.classList.contains('teacher-authorized') &&
+              document.body.classList.contains('teacher-temporary') &&
+              window.firebaseTeacherUser
+          );
+          if (!autorizado) {
+              alert('Para colaborar con el estudiante, ingresá primero con una cuenta docente autorizada.');
+              await ingresarComoDocente();
+              return false;
+          }
+          if (typeof window.iniciarEditorCRDTDocente !== 'function') {
+              alert('El módulo de sincronización en tiempo real todavía no terminó de cargar. Recargá la página.');
+              return false;
+          }
+          const estudiante = buscarEstudianteParaColaboracion(referenciaEstudiante);
+          const uid = String(estudiante?.uid || estudiante?.id ||
+              (typeof referenciaEstudiante === 'string' ? referenciaEstudiante : '')).trim();
+          if (!uid || !sectionId) {
+              alert('No se pudo identificar al estudiante o al desafío. Cerrá el detalle y volvé a abrirlo.');
+              return false;
+          }
+          if (editorColaborativoProfesorActual && !(await cerrarEditorColaborativoProfesor())) return false;
+
+          const seccion = (Array.isArray(seccionesData) ? seccionesData : []).find(item => item.id === sectionId);
+          const tituloSeccion = seccion?.title || sectionId;
+          const codigoEntregado = String(
+              estudiante?.codigos?.[sectionId] ??
+              (estudiante?.colaboracionDocente?.sectionId === sectionId ? estudiante?.colaboracionDocente?.codigo : '') ??
+              ''
+          );
+
+          const modal = document.createElement('div');
+          modal.id = 'editorColaborativoProfesorModal';
+          Object.assign(modal.style, {
+              position: 'fixed', inset: '0', zIndex: '100010', display: 'flex',
+              alignItems: 'center', justifyContent: 'center', padding: '1rem',
+              background: 'rgba(2,6,23,.82)'
+          });
+          const caja = document.createElement('section');
+          Object.assign(caja.style, {
+              display: 'flex', flexDirection: 'column', width: 'min(1100px, 98vw)',
+              height: 'min(88vh, 850px)', minHeight: '380px', overflow: 'hidden',
+              background: '#0f172a', color: '#e2e8f0', border: '1px solid #334155',
+              borderRadius: '12px', boxShadow: '0 20px 70px rgba(0,0,0,.5)'
+          });
+          const cabecera = document.createElement('header');
+          Object.assign(cabecera.style, {
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              gap: '.8rem', flexWrap: 'wrap', padding: '1rem',
+              borderBottom: '1px solid #334155'
+          });
+          const titulo = document.createElement('div');
+          const h = document.createElement('h2');
+          h.textContent = `Colaboración en tiempo real · ${estudiante?.nombre || estudiante?.email || 'Estudiante'}`;
+          h.style.cssText = 'margin:0;font-size:1.05rem';
+          const subtitulo = document.createElement('p');
+          subtitulo.textContent = tituloSeccion;
+          subtitulo.style.cssText = 'margin:.3rem 0 0;color:#94a3b8;font-size:.85rem';
+          titulo.append(h, subtitulo);
+          const cerrar = document.createElement('button');
+          cerrar.type = 'button';
+          cerrar.dataset.action = 'close';
+          cerrar.className = 'btn btn-secondary';
+          cerrar.textContent = 'Cerrar';
+          cerrar.addEventListener('click', () => { void cerrarEditorColaborativoProfesor(); });
+          cabecera.append(titulo, cerrar);
+
+          const ayuda = document.createElement('div');
+          ayuda.textContent = 'Los cambios que escribas acá se sincronizan con el editor del estudiante. Ambos pueden editar el mismo código.';
+          ayuda.style.cssText = 'padding:.65rem 1rem;background:rgba(14,165,233,.08);color:#bae6fd;font-size:.84rem;border-bottom:1px solid #334155';
+          const estado = document.createElement('div');
+          estado.setAttribute('role', 'status');
+          estado.setAttribute('aria-live', 'polite');
+          estado.textContent = 'Conectando con el editor del estudiante…';
+          estado.style.cssText = 'padding:.55rem 1rem;color:#93c5fd;font-size:.82rem';
+          const participantes = document.createElement('div');
+          participantes.textContent = 'Participantes: esperando conexión…';
+          participantes.style.cssText = 'padding:0 1rem .55rem;color:#a7f3d0;font-size:.82rem';
+          const textarea = document.createElement('textarea');
+          textarea.id = 'editorCodigoColaborativoProfesor';
+          textarea.spellcheck = false;
+          textarea.setAttribute('aria-label', 'Código compartido con el estudiante');
+          textarea.value = codigoEntregado;
+          Object.assign(textarea.style, {
+              flex: '1', width: '100%', minHeight: '0', resize: 'none', boxSizing: 'border-box',
+              padding: '1rem', border: '0', borderTop: '1px solid #334155',
+              outline: 'none', background: '#020617', color: '#e2e8f0',
+              font: '14px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace',
+              tabSize: '2', whiteSpace: 'pre', overflow: 'auto'
+          });
+          const pie = document.createElement('footer');
+          pie.textContent = 'No cierres la ventana mientras aparezca “Sincronizando cambios”.';
+          pie.style.cssText = 'padding:.65rem 1rem;border-top:1px solid #334155;color:#94a3b8;font-size:.78rem';
+          caja.append(cabecera, ayuda, estado, participantes, textarea, pie);
+          modal.appendChild(caja);
+          document.body.appendChild(modal);
+          editorColaborativoProfesorActual = { modal, textarea, estado, uid, sectionId, sesion: null };
+
+          try {
+              const sesion = await window.iniciarEditorCRDTDocente({
+                  uid, sectionId, codigoInicial: codigoEntregado, textarea, estado
+              });
+              if (editorColaborativoProfesorActual?.modal !== modal) return false;
+              editorColaborativoProfesorActual.sesion = sesion;
+              estado.textContent = "Conectado · editor compartido listo";
+              estado.style.color = "#86efac";
+              editorColaborativoProfesorActual.quitarEstado = sesion.onStatus(({ estado: estadoSync, detalle }) => {
+                  if (!editorColaborativoProfesorActual || editorColaborativoProfesorActual.modal !== modal) return;
+                  estado.textContent = detalle || ({
+                      syncing: 'Sincronizando cambios…',
+                      synced: 'Conectado · cambios sincronizados',
+                      error: 'Conexión interrumpida; los cambios pendientes se reintentarán'
+                  }[estadoSync] || 'Colaboración activa');
+                  estado.style.color = estadoSync === 'error' ? '#fca5a5' : (estadoSync === 'synced' ? '#86efac' : '#93c5fd');
+              });
+              editorColaborativoProfesorActual.quitarPresencia = sesion.onPresence(lista => {
+                  if (!editorColaborativoProfesorActual || editorColaborativoProfesorActual.modal !== modal) return;
+                  const activos = (lista || []).filter(item => !item.inactivo);
+                  participantes.textContent = activos.length
+                      ? `Conectados: ${activos.map(item => `${item.nombre}${item.propio ? ' (vos)' : ''}`).join(' · ')}`
+                      : 'Participantes: todavía no hay otra sesión conectada.';
+              });
+              textarea.focus();
+              return true;
+          } catch (error) {
+              console.error('No se pudo abrir el editor colaborativo del docente:', error);
+              estado.textContent = `No se pudo conectar: ${error?.message || error?.code || 'error desconocido'}`;
+              estado.style.color = '#fca5a5';
+              return false;
+          }
+      };
+
       function renderSolicitudesColaboracionProfesor(datos) {
           const contador = document.getElementById('contadorSolicitudesColaboracion');
           const resumen = document.getElementById('resumenSolicitudesColaboracion');

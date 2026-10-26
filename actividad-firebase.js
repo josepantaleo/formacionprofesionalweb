@@ -1577,16 +1577,22 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/fireba
               actualizadoPor: user.email || user.uid
             }, { merge: true });
             await loteFirestore.commit();
+            let respaldoDocenteActualizado = true;
             if (rol === "docente") {
               const codigoDocente = texto.toString().slice(0, 30000);
-              const guardadoDocente = await window.guardarCodigoColaborativoDocenteFirebase?.(uid, sectionId, codigoDocente);
-              if (guardadoDocente === false) {
-                throw new Error("teacher-code-save-failed");
+              try {
+                const guardadoDocente = await window.guardarCodigoColaborativoDocenteFirebase?.(uid, sectionId, codigoDocente);
+                respaldoDocenteActualizado = guardadoDocente !== false;
+              } catch (errorRespaldo) {
+                respaldoDocenteActualizado = false;
+                console.warn("El CRDT se sincronizó, pero no se pudo actualizar el respaldo del código del estudiante:", errorRespaldo);
               }
             }
             localStorage.removeItem(colaRespaldoClave);
             notificar("synced", rol === "docente"
-              ? "Código del estudiante actualizado y sincronizado"
+              ? (respaldoDocenteActualizado
+                  ? "Código compartido sincronizado en tiempo real"
+                  : "Código compartido sincronizado; el respaldo del documento del estudiante requiere revisar permisos")
               : "Cambios sincronizados");
             return true;
           } catch (error) {
